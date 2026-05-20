@@ -1,5 +1,6 @@
 import { useGetThisDayEpisodes } from "@workspace/api-client-react";
-import { Play, BookOpen, Calendar, ChevronDown, RotateCcw } from "lucide-react";
+import type { ThisDayEpisode } from "@workspace/api-client-react";
+import { Play, BookOpen, Calendar, ChevronDown, RotateCcw, ExternalLink } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { usePlayer } from "@/context/player-context";
@@ -25,6 +26,150 @@ function formatTimestamp(seconds: number): string {
 
 function yearsAgo(year: number): number {
   return new Date().getFullYear() - year;
+}
+
+function HistoryTile({ ep, onPlay }: { ep: ThisDayEpisode; onPlay: (ep: ThisDayEpisode) => void }) {
+  const year = new Date(ep.pubDate).getUTCFullYear();
+  const ago = yearsAgo(year);
+  const [imgError, setImgError] = useState(false);
+  const [artworkError, setArtworkError] = useState(false);
+
+  const bgImage = !imgError && ep.historyImageUrl
+    ? ep.historyImageUrl
+    : (!artworkError && ep.artworkUrl ? ep.artworkUrl : null);
+
+  const bullets = ep.bulletPoints?.filter(Boolean) ?? [];
+  const sources = ep.sourceLinks?.filter(s => s.label && s.url) ?? [];
+
+  return (
+    <div className="snap-start shrink-0 w-72 md:w-auto relative rounded-xl overflow-hidden border border-white/10 group flex flex-col" style={{ height: "380px" }}>
+      {/* Background image layer */}
+      {bgImage ? (
+        <div className="absolute inset-0">
+          <img
+            src={ep.historyImageUrl && !imgError ? ep.historyImageUrl : (ep.artworkUrl ?? "")}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={() => {
+              if (!imgError && ep.historyImageUrl) {
+                setImgError(true);
+              } else {
+                setArtworkError(true);
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img
+            src={tspLogo}
+            alt=""
+            className="w-24 h-24 object-cover rounded-xl opacity-10"
+          />
+        </div>
+      )}
+
+      {/* Dark gradient overlay — aggressive for WCAG AA contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/50" />
+
+      {/* Content stacked above overlay */}
+      <div className="relative flex flex-col h-full p-4 gap-2">
+
+        {/* Year + episode badge */}
+        <div className="flex items-center justify-between gap-2 shrink-0">
+          <div>
+            <span className="text-4xl font-serif font-bold text-[#D9A066] leading-none drop-shadow-lg">
+              {year}
+            </span>
+            {ago >= 1 && (
+              <p className="text-xs text-[#D9A066]/70 font-medium mt-0.5">
+                {ago === 1 ? "1 year ago" : `${ago} years ago`}
+              </p>
+            )}
+          </div>
+          {ep.episodeNumber != null && (
+            <span className="text-xs font-bold uppercase tracking-widest text-white/50 bg-black/40 border border-white/15 px-2 py-0.5 rounded-full shrink-0 backdrop-blur-sm">
+              EP {ep.episodeNumber}
+            </span>
+          )}
+        </div>
+
+        {/* Pull-quote — headline lesson */}
+        {ep.lessonQuote ? (
+          <blockquote className="text-sm font-semibold text-white leading-snug italic drop-shadow-md shrink-0 line-clamp-3 border-l-2 border-[#D9A066]/60 pl-2">
+            {ep.lessonQuote}
+          </blockquote>
+        ) : (
+          <Link href={`/episodes/${ep.slug}`}>
+            <h3 className="text-sm font-semibold text-white leading-snug line-clamp-3 drop-shadow-md shrink-0">
+              {decodeHtml(ep.title)}
+            </h3>
+          </Link>
+        )}
+
+        {/* Accessible title always present even when quote is shown */}
+        {ep.lessonQuote && (
+          <Link href={`/episodes/${ep.slug}`}>
+            <h3 className="text-xs text-white/50 leading-snug line-clamp-2 hover:text-white/80 transition-colors">
+              {decodeHtml(ep.title)}
+            </h3>
+          </Link>
+        )}
+
+        {/* Bullet points */}
+        {bullets.length > 0 && (
+          <ul className="flex flex-col gap-1 overflow-hidden min-h-0 shrink-[2]">
+            {bullets.slice(0, 4).map((b, i) => (
+              <li key={i} className="flex items-start gap-1.5 min-w-0">
+                <span className="text-[#D9A066]/70 mt-0.5 shrink-0 text-xs">▸</span>
+                <span className="text-xs text-white/75 leading-snug line-clamp-2">{b}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1 min-h-0" />
+
+        {/* Threads to pull — source links */}
+        {sources.length > 0 && (
+          <div className="shrink-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#D9A066]/60 mb-1.5">
+              Threads to pull
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {sources.map((s, i) => (
+                <a
+                  key={i}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-medium text-white/70 bg-white/10 hover:bg-white/20 hover:text-white border border-white/15 rounded-full px-2 py-0.5 transition-colors backdrop-blur-sm"
+                >
+                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                  <span className="line-clamp-1 max-w-[100px]">{s.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Play button */}
+        <div className="shrink-0 pt-1">
+          <button
+            onClick={() => onPlay(ep)}
+            disabled={!ep.audioUrl}
+            className="flex items-center gap-2 bg-[#D9A066] hover:bg-[#c48a4a] disabled:opacity-40 disabled:cursor-not-allowed text-[#1A2E1F] px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-black/50 w-full justify-center"
+          >
+            <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+            {ep.historyTimestamp && ep.historyTimestamp > 0
+              ? `Play History @ ${formatTimestamp(ep.historyTimestamp)}`
+              : "Play Episode"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ThisDayInHistory() {
@@ -96,15 +241,7 @@ export function ThisDayInHistory() {
     setLocation("/", { replace: true });
   };
 
-  const handlePlay = (ep: {
-    slug: string;
-    title: string;
-    audioUrl?: string | null;
-    artworkUrl?: string | null;
-    episodeNumber?: number | null;
-    durationSeconds?: number | null;
-    historyTimestamp?: number | null;
-  }) => {
+  const handlePlay = (ep: ThisDayEpisode) => {
     if (!ep.audioUrl) return;
     load(
       {
@@ -241,7 +378,8 @@ export function ThisDayInHistory() {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="snap-start shrink-0 w-72 h-36 bg-white/5 rounded-xl border border-white/10 animate-pulse"
+                className="snap-start shrink-0 w-72 rounded-xl border border-white/10 animate-pulse bg-white/5"
+                style={{ height: "380px" }}
               />
             ))}
           </div>
@@ -269,73 +407,11 @@ export function ThisDayInHistory() {
           </div>
         ) : (
           <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:overflow-x-visible">
-            {[...episodes].sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear()).map((ep) => {
-              const year = new Date(ep.pubDate).getUTCFullYear();
-              const ago = yearsAgo(year);
-              return (
-                <div
-                  key={ep.slug}
-                  className="snap-start shrink-0 w-72 md:w-auto flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/8 hover:border-[#D9A066]/30 transition-all group"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-serif font-bold text-[#D9A066] leading-none">
-                          {year}
-                        </span>
-                        {ep.episodeNumber != null && (
-                          <span className="text-xs font-bold uppercase tracking-widest text-white/40 bg-white/8 border border-white/10 px-2 py-0.5 rounded-full">
-                            EP {ep.episodeNumber}
-                          </span>
-                        )}
-                      </div>
-                      {ago > 1 && (
-                        <span className="text-xs text-[#D9A066]/60 font-medium leading-none">
-                          {ago} years ago
-                        </span>
-                      )}
-                      {ago === 1 && (
-                        <span className="text-xs text-[#D9A066]/60 font-medium leading-none">
-                          1 year ago
-                        </span>
-                      )}
-                    </div>
-                    {ep.artworkUrl ? (
-                      <img
-                        src={ep.artworkUrl}
-                        alt=""
-                        className="w-10 h-10 rounded-md object-cover border border-white/15 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
-                      />
-                    ) : (
-                      <img
-                        src={tspLogo}
-                        alt=""
-                        className="w-10 h-10 rounded-md object-cover border border-white/10 shrink-0 opacity-30"
-                      />
-                    )}
-                  </div>
-
-                  <Link href={`/episodes/${ep.slug}`}>
-                    <h3 className="text-sm font-semibold text-white/85 leading-snug line-clamp-2 group-hover:text-white transition-colors">
-                      {decodeHtml(ep.title)}
-                    </h3>
-                  </Link>
-
-                  <div className="flex items-center gap-2 mt-auto pt-1">
-                    <button
-                      onClick={() => handlePlay(ep)}
-                      disabled={!ep.audioUrl}
-                      className="flex items-center gap-2 bg-[#D9A066] hover:bg-[#c48a4a] disabled:opacity-40 disabled:cursor-not-allowed text-[#1A2E1F] px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      {ep.historyTimestamp && ep.historyTimestamp > 0
-                        ? `Play @ ${formatTimestamp(ep.historyTimestamp)}`
-                        : "Play"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {[...episodes]
+              .sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear())
+              .map((ep) => (
+                <HistoryTile key={ep.slug} ep={ep} onPlay={handlePlay} />
+              ))}
           </div>
         )}
       </div>

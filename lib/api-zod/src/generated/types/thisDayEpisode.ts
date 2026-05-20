@@ -7,10 +7,33 @@
  */
 import type { Episode } from './episode';
 
+export type ThisDayEpisodeSourceLinksItem = {
+  label: string;
+  url: string;
+};
+
 export type ThisDayEpisode = Episode & ({
   /**
      * Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes
      * @nullable
      */
   historyTimestamp?: number | null;
+  /**
+   * Wikipedia thumbnail URL for the history topic, or null if unavailable
+   * @nullable
+   */
+  historyImageUrl?: string | null;
+  /**
+   * A pull-quote distilling the core lesson from the episode show notes
+   * @nullable
+   */
+  lessonQuote?: string | null;
+  /**
+   * Up to 6 short insight bullets extracted from the episode show notes
+   */
+  bulletPoints?: string[];
+  /**
+   * 1–3 Wikipedia reference links related to the history topic
+   */
+  sourceLinks?: ThisDayEpisodeSourceLinksItem[];
 });

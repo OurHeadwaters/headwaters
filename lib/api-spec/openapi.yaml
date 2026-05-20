@@ -575,6 +575,25 @@ components:
             historyTimestamp:
               type: ["integer", "null"]
               description: "Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes"
+            historyImageUrl:
+              type: ["string", "null"]
+              description: "Wikipedia thumbnail URL for the history topic, or null if unavailable"
+            lessonQuote:
+              type: ["string", "null"]
+              description: "A pull-quote distilling the core lesson from the episode show notes"
+            bulletPoints:
+              type: array
+              items: { type: string }
+              description: "Up to 6 short insight bullets extracted from the episode show notes"
+            sourceLinks:
+              type: array
+              description: "1–3 Wikipedia reference links related to the history topic"
+              items:
+                type: object
+                required: [label, url]
+                properties:
+                  label: { type: string }
+                  url: { type: string }
     EpisodeDetail:
       allOf:
         - $ref: "#/components/schemas/Episode"

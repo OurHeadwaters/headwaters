@@ -104,7 +104,14 @@ export const GetThisDayEpisodesResponseItem = zod.object({
   "artworkUrl": zod.string().nullish(),
   "categories": zod.array(zod.string())
 }).and(zod.object({
-  "historyTimestamp": zod.number().nullish().describe('Seconds into the episode where the \'This Day in History\' segment begins, if detected in the show notes')
+  "historyTimestamp": zod.number().nullish().describe('Seconds into the episode where the \'This Day in History\' segment begins, if detected in the show notes'),
+  "historyImageUrl": zod.string().nullish().describe('Wikipedia thumbnail URL for the history topic, or null if unavailable'),
+  "lessonQuote": zod.string().nullish().describe('A pull-quote distilling the core lesson from the episode show notes'),
+  "bulletPoints": zod.array(zod.string()).optional().describe('Up to 6 short insight bullets extracted from the episode show notes'),
+  "sourceLinks": zod.array(zod.object({
+    "label": zod.string(),
+    "url": zod.string()
+  })).optional().describe('1–3 Wikipedia reference links related to the history topic')
 }))
 export const GetThisDayEpisodesResponse = zod.array(GetThisDayEpisodesResponseItem)
 
