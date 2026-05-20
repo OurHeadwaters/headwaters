@@ -88,8 +88,9 @@ function mergeAndDeduplicateEpisodes(
   return merged;
 }
 
-router.get("/series", async (_req, res) => {
+router.get("/series", async (req, res) => {
   try {
+    const orderBy = typeof req.query.orderBy === "string" ? req.query.orderBy : "";
     const feed = await getFeedCached();
     const summaries = await Promise.all(
       SERIES_REGISTRY.map(async (series) => {
@@ -99,6 +100,11 @@ router.get("/series", async (_req, res) => {
         return buildSeriesSummary(series, merged);
       }),
     );
+    if (orderBy === "episodeCount:desc") {
+      summaries.sort((a, b) => b.episodeCount - a.episodeCount);
+    } else if (orderBy === "episodeCount:asc") {
+      summaries.sort((a, b) => a.episodeCount - b.episodeCount);
+    }
     res.json(summaries);
   } catch (err) {
     logger.error({ err }, "Failed to list series");

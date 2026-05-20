@@ -90,7 +90,7 @@ export function EpisodeDetail() {
     { query: { enabled: !!primaryCategory, queryKey: getListEpisodesQueryKey({ limit: 3, category: primaryCategory }) } }
   );
 
-  const { data: seriesList } = useListSeries({
+  const { data: seriesList } = useListSeries(undefined, {
     query: { queryKey: getListSeriesQueryKey() }
   });
 

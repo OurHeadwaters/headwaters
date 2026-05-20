@@ -177,9 +177,10 @@ export function Home() {
   const { data: stats, isLoading: statsLoading } = useGetEpisodeStats();
   const { data: libraryStats } = useGetLibraryStats();
   const { data: categories, isLoading: categoriesLoading } = useListCategories();
-  const { data: seriesList, isLoading: seriesLoading } = useListSeries({
-    query: { queryKey: getListSeriesQueryKey() },
-  });
+  const { data: seriesList, isLoading: seriesLoading } = useListSeries(
+    { orderBy: "episodeCount:desc" },
+    { query: { queryKey: getListSeriesQueryKey({ orderBy: "episodeCount:desc" }) } },
+  );
   const { data: zones } = useListZones();
 
   const yearsOnAir = new Date().getFullYear() - 2008;

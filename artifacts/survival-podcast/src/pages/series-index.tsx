@@ -4,7 +4,7 @@ import { ChevronRight, Layers } from "lucide-react";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 
 export function SeriesIndex() {
-  const { data: seriesList, isLoading, isError } = useListSeries({
+  const { data: seriesList, isLoading, isError } = useListSeries(undefined, {
     query: { queryKey: getListSeriesQueryKey() },
   });
 
