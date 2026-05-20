@@ -3,14 +3,17 @@ import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQ
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
-import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin, BookOpen, Copy, Check } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 import { matchZones, type ZoneMeta } from "@/lib/zones";
+import { HistorySegmentPlayer } from "@/components/history-segment-player";
+import type { HistorySegment } from "@workspace/api-client-react";
 
 function matchTransformations(
   episodeCategories: string[],
@@ -21,6 +24,92 @@ function matchTransformations(
     const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
     return lowerCats.some((c) => tLower.includes(c));
   });
+}
+
+function HistoryLessonCard({
+  episode,
+  historySegment,
+}: {
+  episode: {
+    slug: string;
+    title: string;
+    audioUrl?: string | null;
+    artworkUrl?: string | null;
+    episodeNumber?: number | null;
+    durationSeconds?: number | null;
+  };
+  historySegment: HistorySegment;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!historySegment.lessonText) return;
+    navigator.clipboard.writeText(historySegment.lessonText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-amber-300/50 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/20 p-5 md:p-6 flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+            History Lesson
+          </span>
+        </div>
+        {historySegment.lessonText && (
+          <button
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 transition-colors border border-amber-300/60 dark:border-amber-600/40 rounded-lg px-2.5 py-1"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3 h-3" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3" />
+                Copy lesson
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      {historySegment.lessonText ? (
+        <blockquote className="text-sm leading-relaxed text-amber-900 dark:text-amber-100 italic border-l-2 border-amber-400/60 pl-4">
+          {historySegment.lessonText}
+        </blockquote>
+      ) : (
+        <p className="text-sm text-amber-700 dark:text-amber-400 italic">
+          Listen to the segment for Jack's history lesson.
+        </p>
+      )}
+
+      {episode.audioUrl && historySegment.startSeconds > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-amber-700/70 dark:text-amber-400/70 font-medium">
+            <Clock className="w-3 h-3" />
+            Listen to just the history segment
+          </div>
+          <HistorySegmentPlayer
+            audioUrl={episode.audioUrl}
+            startSeconds={historySegment.startSeconds}
+            endSeconds={historySegment.endSeconds}
+            episode={episode}
+          />
+        </div>
+      )}
+      {episode.audioUrl && historySegment.startSeconds === 0 && (
+        <p className="text-xs text-amber-700/70 dark:text-amber-400/60 italic">
+          This historical event is covered in the full episode.
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function EpisodeDetail() {
@@ -192,6 +281,20 @@ export function EpisodeDetail() {
                 durationSeconds: episode.durationSeconds,
               }} />
             </div>
+          )}
+
+          {episode.historySegment && (
+            <HistoryLessonCard
+              episode={{
+                slug: episode.slug,
+                title: episode.title,
+                audioUrl: episode.audioUrl,
+                artworkUrl: episode.artworkUrl,
+                episodeNumber: episode.episodeNumber,
+                durationSeconds: episode.durationSeconds,
+              }}
+              historySegment={episode.historySegment as HistorySegment}
+            />
           )}
 
           {/* Series prev/next navigation */}

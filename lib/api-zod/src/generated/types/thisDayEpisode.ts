@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Episode } from './episode';
+import type { HistorySegment } from './historySegment';
 
 export type ThisDayEpisodeSourceLinksItem = {
   label: string;
@@ -36,4 +37,6 @@ export type ThisDayEpisode = Episode & ({
    * 1–3 Wikipedia reference links related to the history topic
    */
   sourceLinks?: ThisDayEpisodeSourceLinksItem[];
+  /** @nullable */
+  historySegment?: HistorySegment | null;
 });

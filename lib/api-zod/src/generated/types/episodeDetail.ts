@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Episode } from './episode';
+import type { HistorySegment } from './historySegment';
 
 export type EpisodeDetail = Episode & ({
   descriptionHtml: string;
@@ -13,4 +14,6 @@ export type EpisodeDetail = Episode & ({
   seriesSlug?: string | null;
   /** @nullable */
   positionInSeries?: number | null;
+  /** @nullable */
+  historySegment?: HistorySegment | null;
 });

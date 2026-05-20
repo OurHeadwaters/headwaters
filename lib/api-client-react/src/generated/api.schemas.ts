@@ -55,6 +55,12 @@ export type ThisDayEpisodeSourceLinksItem = {
   url: string;
 };
 
+export interface HistorySegment {
+  startSeconds: number;
+  endSeconds: number;
+  lessonText: string;
+}
+
 export type ThisDayEpisode = Episode & ({
   /**
      * Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes
@@ -79,6 +85,8 @@ export type ThisDayEpisode = Episode & ({
    * 1–3 Wikipedia reference links related to the history topic
    */
   sourceLinks?: ThisDayEpisodeSourceLinksItem[];
+  /** @nullable */
+  historySegment?: HistorySegment | null;
 });
 
 export type EpisodeDetail = Episode & ({
@@ -87,6 +95,8 @@ export type EpisodeDetail = Episode & ({
   seriesSlug?: string | null;
   /** @nullable */
   positionInSeries?: number | null;
+  /** @nullable */
+  historySegment?: HistorySegment | null;
 });
 
 export interface EpisodePage {
@@ -101,7 +111,6 @@ export interface CategoryCount {
   count: number;
   description?: string;
   autoDescriptionStale?: boolean;
-  /** @nullable */
   descriptionUpdatedAt?: string | null;
 }
 
@@ -283,7 +292,6 @@ export interface SeriesSummary {
   description: string;
   iconEmoji: string;
   episodeCount: number;
-  featured: boolean;
   /** @nullable */
   latestPubDate?: string | null;
   /** @nullable */
@@ -298,123 +306,57 @@ export interface SeriesEpisodePage {
   offset: number;
 }
 
-export interface AuthUser {
-  id: string;
-  /** @nullable */
-  email: string | null;
-  /** @nullable */
-  firstName: string | null;
-  /** @nullable */
-  lastName: string | null;
-  /** @nullable */
-  profileImageUrl: string | null;
-}
-
-export interface AuthUserEnvelope {
-  user: AuthUser | null;
-}
-
-export interface MobileTokenExchangeRequest {
-  /** @minLength 1 */
-  code: string;
-  /** @minLength 1 */
-  code_verifier: string;
-  /** @minLength 1 */
-  redirect_uri: string;
-  /** @minLength 1 */
-  state: string;
-  /** @minLength 1 */
-  nonce?: string;
-}
-
-export interface MobileTokenExchangeSuccess {
-  token: string;
-}
-
-export const LogoutSuccessValue = {
-  success: true,
-} as const;
-export type LogoutSuccess = typeof LogoutSuccessValue;
-
-export interface ErrorEnvelope {
-  error: string;
-}
-
-export interface TrackProgressResponse {
-  doneIds: number[];
-}
-
-export interface TrackProgressUpdate {
-  episodeId: number;
-  done: boolean;
-}
-
-/**
- * Opaque session token — `Bearer <sid>`.
- */
-export type AuthorizationSessionHeaderParameter = string;
-
 export type ListEpisodesParams = {
-/**
- * @minimum 1
- * @maximum 100
- */
-limit?: number;
-/**
- * @minimum 0
- */
-offset?: number;
-q?: string;
-category?: string;
-/**
- * One or more topic tags to filter by (sent as tags[] array)
- */
-tags?: string[];
-/**
- * Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)
- */
-sort?: 'newest' | 'oldest' | 'popular';
+  /**
+   * @minimum 1
+   * @maximum 2000
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+  q?: string;
+  category?: string;
+  tags?: string[];
+  sort?: string;
+  hasHistory?: boolean;
 };
 
 export type GetThisDayEpisodesParams = {
-/**
- * @minimum 1
- * @maximum 12
- */
-month?: number;
-/**
- * @minimum 1
- * @maximum 31
- */
-day?: number;
+  /**
+   * @minimum 1
+   * @maximum 12
+   */
+  month?: number;
+  /**
+   * @minimum 1
+   * @maximum 31
+   */
+  day?: number;
 };
 
 export type SearchLibraryParams = {
-q?: string;
-/**
- * Comma-separated subset of audio,article,video
- */
-kind?: string;
-tag?: string;
-category?: string;
-/**
- * Slug of a series from the SERIES_REGISTRY (e.g. unloose-the-goose)
- */
-series?: string;
-/**
- * @minimum 1
- * @maximum 100
- */
-limit?: number;
-/**
- * @minimum 0
- */
-offset?: number;
-sort?: SearchLibrarySort;
+  q?: string;
+  /**
+   * Comma-separated subset of audio,article,video
+   */
+  kind?: string;
+  tag?: string;
+  category?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+  sort?: SearchLibrarySort;
 };
 
 export type SearchLibrarySort = typeof SearchLibrarySort[keyof typeof SearchLibrarySort];
-
 
 export const SearchLibrarySort = {
   newest: 'newest',
@@ -423,59 +365,92 @@ export const SearchLibrarySort = {
 } as const;
 
 export type ListLibraryTagsParams = {
-/**
- * @minimum 1
- * @maximum 500
- */
-limit?: number;
+  /**
+   * @minimum 1
+   * @maximum 500
+   */
+  limit?: number;
 };
 
 export type GetSeriesEpisodesParams = {
-/**
- * @minimum 1
- * @maximum 500
- */
-limit?: number;
-/**
- * @minimum 0
- */
-offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 500
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
 };
 
 export type GetZoneEpisodesParams = {
-/**
- * @minimum 1
- * @maximum 100
- */
-limit?: number;
-/**
- * @minimum 0
- */
-offset?: number;
-excludeSeries?: boolean;
-};
-
-export type ListSeriesParams = {
-/**
- * Sort order for series list: episodeCount:desc (default), episodeCount:asc, featured (featured entries first, then by episode count)
- */
-orderBy?: 'episodeCount:desc' | 'episodeCount:asc' | 'featured';
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+  excludeSeries?: boolean;
 };
 
 export type RefreshLibraryParams = {
-force?: boolean;
+  force?: boolean;
 };
 
+export interface TrackProgressUpdate {
+  progress: number;
+}
+
+export interface TrackProgressResponse {
+  slug: string;
+  progress: number;
+  updatedAt: string;
+}
+
+export interface MobileTokenExchangeRequest {
+  replitToken: string;
+}
+
+export interface MobileTokenExchangeSuccess {
+  token: string;
+}
+
+export interface LogoutSuccess {
+  ok: boolean;
+}
+
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  profileImage?: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
 export type BeginBrowserLoginParams = {
-/**
- * Relative path to redirect to after login (must start with `/`). Defaults to `/`.
- */
-returnTo?: string;
+  redirectTo?: string;
 };
 
 export type HandleBrowserLoginCallbackParams = {
-code?: string;
-state?: string;
-iss?: string;
+  code?: string;
+  state?: string;
 };
 
+export type AuthorizationSessionHeaderParameter = string;
+
+export type ListSeriesParams = {
+  limit?: number;
+  offset?: number;
+};

@@ -28,6 +28,7 @@ import { AdminSeriesHealth } from "@/pages/admin-series-health";
 import { CouncilPage } from "@/pages/council";
 import { CouncilMemberPage } from "@/pages/council-member";
 import { AdminContentGaps } from "@/pages/admin-content-gaps";
+import HistoryPage from "@/pages/history";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ function Router() {
         <Route path="/admin/series-health" component={AdminSeriesHealth} />
         <Route path="/admin/content-gaps" component={AdminContentGaps} />
         <Route path="/wishing-well" component={WishingWell} />
+        <Route path="/history" component={HistoryPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

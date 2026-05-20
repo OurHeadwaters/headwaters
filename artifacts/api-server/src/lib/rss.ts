@@ -205,7 +205,8 @@ export function parseChannel(xml: string): RssFeed {
         ? guidRaw
         : textOf(guidRaw) || link;
     const pubDate = parsePubDate(textOf(item["pubDate"]));
-    const descriptionHtml = sanitizeHtml(textOf(item["description"]));
+    const contentEncoded = textOf(item["content:encoded"]);
+    const descriptionHtml = sanitizeHtml(contentEncoded || textOf(item["description"]));
     const summaryRaw =
       textOf(item["itunes:summary"]) || textOf(item["description"]);
     const summary = stripHtml(summaryRaw).slice(0, 320);

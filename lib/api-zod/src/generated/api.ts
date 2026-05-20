@@ -38,7 +38,7 @@ export const GetFeedResponse = zod.object({
  * @summary List episodes
  */
 export const listEpisodesQueryLimitDefault = 20;
-export const listEpisodesQueryLimitMax = 100;
+export const listEpisodesQueryLimitMax = 2000;
 
 export const listEpisodesQueryOffsetDefault = 0;
 export const listEpisodesQueryOffsetMin = 0;
@@ -51,7 +51,8 @@ export const ListEpisodesQueryParams = zod.object({
   "q": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
   "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)'),
-  "sort": zod.enum(["newest", "oldest", "popular"]).default("newest").optional().describe('Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)')
+  "sort": zod.enum(["newest", "oldest", "popular"]).default("newest").optional().describe('Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)'),
+  "hasHistory": zod.coerce.boolean().optional().describe('When true, return only episodes that have a detected history segment')
 })
 
 export const ListEpisodesResponse = zod.object({
@@ -90,6 +91,12 @@ export const GetThisDayEpisodesQueryParams = zod.object({
   "day": zod.coerce.number().min(1).max(getThisDayEpisodesQueryDayMax).optional()
 })
 
+export const HistorySegmentSchema = zod.object({
+  "startSeconds": zod.number(),
+  "endSeconds": zod.number(),
+  "lessonText": zod.string()
+})
+
 export const GetThisDayEpisodesResponseItem = zod.object({
   "slug": zod.string(),
   "guid": zod.string(),
@@ -111,7 +118,8 @@ export const GetThisDayEpisodesResponseItem = zod.object({
   "sourceLinks": zod.array(zod.object({
     "label": zod.string(),
     "url": zod.string()
-  })).optional().describe('1–3 Wikipedia reference links related to the history topic')
+  })).optional().describe('1–3 Wikipedia reference links related to the history topic'),
+  "historySegment": HistorySegmentSchema.nullish()
 }))
 export const GetThisDayEpisodesResponse = zod.array(GetThisDayEpisodesResponseItem)
 
@@ -180,7 +188,8 @@ export const GetEpisodeResponse = zod.object({
 }).and(zod.object({
   "descriptionHtml": zod.string(),
   "seriesSlug": zod.string().nullish(),
-  "positionInSeries": zod.number().nullish()
+  "positionInSeries": zod.number().nullish(),
+  "historySegment": HistorySegmentSchema.nullish()
 }))
 
 

@@ -19,6 +19,7 @@ export * from './episodeStats';
 export * from './errorEnvelope';
 export * from './feed';
 export * from './getSeriesEpisodesParams';
+export * from './historySegment';
 export * from './getThisDayEpisodesParams';
 export * from './getZoneEpisodesParams';
 export * from './handleBrowserLoginCallbackParams';
