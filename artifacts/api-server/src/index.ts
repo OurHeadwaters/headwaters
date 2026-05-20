@@ -1,6 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startBackgroundRefresh } from "./lib/library";
+import { getFeedCached } from "./lib/rss";
+import { checkSeriesConsistency } from "./lib/series-consistency";
 
 const rawPort = process.env["PORT"];
 
@@ -24,4 +26,13 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   startBackgroundRefresh();
+
+  getFeedCached()
+    .then((feed) => checkSeriesConsistency(feed.episodes))
+    .catch((feedErr) =>
+      logger.warn(
+        { err: feedErr },
+        "series-consistency: could not fetch RSS feed at startup; skipping consistency check",
+      ),
+    );
 });
