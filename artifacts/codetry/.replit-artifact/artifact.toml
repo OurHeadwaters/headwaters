@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/codetry/"
+title = "Codetry — Digital Self-Reliance"
+version = "1.0.0"
+id = "artifacts/codetry"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/codetry/" ]
+localPort = 20426
+
+[services.development]
+run = "pnpm --filter @workspace/codetry run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/codetry", "run", "build" ]
+publicDir = "artifacts/codetry/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20426"
+BASE_PATH = "/codetry/"
