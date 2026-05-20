@@ -168,6 +168,26 @@ export interface RefreshSummary {
   youtube: RefreshSourceResult;
 }
 
+export interface SeriesSummary {
+  slug: string;
+  title: string;
+  description: string;
+  iconEmoji: string;
+  episodeCount: number;
+  /** @nullable */
+  latestPubDate?: string | null;
+  /** @nullable */
+  sampleArtworkUrl?: string | null;
+}
+
+export interface SeriesEpisodePage {
+  series: SeriesSummary;
+  items: Episode[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export type ListEpisodesParams = {
 /**
  * @minimum 1
@@ -217,6 +237,18 @@ export type ListLibraryTagsParams = {
  * @maximum 500
  */
 limit?: number;
+};
+
+export type GetSeriesEpisodesParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
 };
 
 export type RefreshLibraryParams = {

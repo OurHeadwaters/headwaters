@@ -295,6 +295,71 @@ export const GetLibraryItemResponse = zod.object({
 
 
 /**
+ * @summary List all episode series with episode counts
+ */
+export const ListSeriesResponseItem = zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "iconEmoji": zod.string(),
+  "episodeCount": zod.number(),
+  "latestPubDate": zod.string().nullish(),
+  "sampleArtworkUrl": zod.string().nullish()
+})
+export const ListSeriesResponse = zod.array(ListSeriesResponseItem)
+
+
+/**
+ * @summary Get episodes for a series
+ */
+export const GetSeriesEpisodesParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const getSeriesEpisodesQueryLimitDefault = 20;
+export const getSeriesEpisodesQueryLimitMax = 100;
+
+export const getSeriesEpisodesQueryOffsetDefault = 0;
+export const getSeriesEpisodesQueryOffsetMin = 0;
+
+
+
+export const GetSeriesEpisodesQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(getSeriesEpisodesQueryLimitMax).default(getSeriesEpisodesQueryLimitDefault),
+  "offset": zod.coerce.number().min(getSeriesEpisodesQueryOffsetMin).default(getSeriesEpisodesQueryOffsetDefault)
+})
+
+export const GetSeriesEpisodesResponse = zod.object({
+  "series": zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "iconEmoji": zod.string(),
+  "episodeCount": zod.number(),
+  "latestPubDate": zod.string().nullish(),
+  "sampleArtworkUrl": zod.string().nullish()
+}),
+  "items": zod.array(zod.object({
+  "slug": zod.string(),
+  "guid": zod.string(),
+  "episodeNumber": zod.number().nullable(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "pubDate": zod.string(),
+  "summary": zod.string(),
+  "durationSeconds": zod.number().nullish(),
+  "audioUrl": zod.string().nullish(),
+  "audioType": zod.string().nullish(),
+  "artworkUrl": zod.string().nullish(),
+  "categories": zod.array(zod.string())
+})),
+  "total": zod.number(),
+  "limit": zod.number(),
+  "offset": zod.number()
+})
+
+
+/**
  * Re-syncs all sources from upstream. Throttled to once every 6 hours unless force=true.
  * @summary Trigger a library refresh
  */

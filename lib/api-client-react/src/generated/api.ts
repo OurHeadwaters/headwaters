@@ -27,6 +27,7 @@ import type {
   EpisodePage,
   EpisodeStats,
   Feed,
+  GetSeriesEpisodesParams,
   HealthStatus,
   LibraryItemDetail,
   LibraryPage,
@@ -35,7 +36,9 @@ import type {
   ListLibraryTagsParams,
   RefreshLibraryParams,
   RefreshSummary,
-  SearchLibraryParams
+  SearchLibraryParams,
+  SeriesEpisodePage,
+  SeriesSummary
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -908,6 +911,172 @@ export function useGetLibraryItem<TData = Awaited<ReturnType<typeof getLibraryIt
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLibraryItemQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListSeriesUrl = () => {
+
+
+
+
+  return `/api/series`
+}
+
+/**
+ * @summary List all episode series with episode counts
+ */
+export const listSeries = async ( options?: RequestInit): Promise<SeriesSummary[]> => {
+
+  return customFetch<SeriesSummary[]>(getListSeriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSeriesQueryKey = () => {
+    return [
+    `/api/series`
+    ] as const;
+    }
+
+
+export const getListSeriesQueryOptions = <TData = Awaited<ReturnType<typeof listSeries>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSeriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSeries>>> = ({ signal }) => listSeries({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSeries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSeriesQueryResult = NonNullable<Awaited<ReturnType<typeof listSeries>>>
+export type ListSeriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all episode series with episode counts
+ */
+
+export function useListSeries<TData = Awaited<ReturnType<typeof listSeries>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSeriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSeriesEpisodesUrl = (slug: string,
+    params?: GetSeriesEpisodesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/series/${slug}/episodes?${stringifiedParams}` : `/api/series/${slug}/episodes`
+}
+
+/**
+ * @summary Get episodes for a series
+ */
+export const getSeriesEpisodes = async (slug: string,
+    params?: GetSeriesEpisodesParams, options?: RequestInit): Promise<SeriesEpisodePage> => {
+
+  return customFetch<SeriesEpisodePage>(getGetSeriesEpisodesUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSeriesEpisodesQueryKey = (slug: string,
+    params?: GetSeriesEpisodesParams,) => {
+    return [
+    `/api/series/${slug}/episodes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSeriesEpisodesQueryOptions = <TData = Awaited<ReturnType<typeof getSeriesEpisodes>>, TError = ErrorType<ApiError>>(slug: string,
+    params?: GetSeriesEpisodesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeriesEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSeriesEpisodesQueryKey(slug,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSeriesEpisodes>>> = ({ signal }) => getSeriesEpisodes(slug,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSeriesEpisodes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSeriesEpisodesQueryResult = NonNullable<Awaited<ReturnType<typeof getSeriesEpisodes>>>
+export type GetSeriesEpisodesQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get episodes for a series
+ */
+
+export function useGetSeriesEpisodes<TData = Awaited<ReturnType<typeof getSeriesEpisodes>>, TError = ErrorType<ApiError>>(
+ slug: string,
+    params?: GetSeriesEpisodesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeriesEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSeriesEpisodesQueryOptions(slug,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

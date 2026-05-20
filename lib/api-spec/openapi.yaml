@@ -16,6 +16,8 @@ tags:
     description: Channel-level podcast information
   - name: library
     description: Unified library across audio, articles, and video
+  - name: series
+    description: Recurring episode series
 paths:
   /healthz:
     get:
@@ -182,6 +184,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LibraryItemDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /series:
+    get:
+      operationId: listSeries
+      tags: [series]
+      summary: List all episode series with episode counts
+      responses:
+        "200":
+          description: Series list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeriesSummary"
+  /series/{slug}/episodes:
+    get:
+      operationId: getSeriesEpisodes
+      tags: [series]
+      summary: Get episodes for a series
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        "200":
+          description: Series episodes page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeriesEpisodePage"
         "404":
           description: Not found
           content:
@@ -399,3 +437,26 @@ components:
       properties:
         wordpress: { $ref: "#/components/schemas/RefreshSourceResult" }
         youtube: { $ref: "#/components/schemas/RefreshSourceResult" }
+    SeriesSummary:
+      type: object
+      required: [slug, title, description, iconEmoji, episodeCount]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        iconEmoji: { type: string }
+        episodeCount: { type: integer }
+        latestPubDate: { type: ["string", "null"] }
+        sampleArtworkUrl: { type: ["string", "null"] }
+    SeriesEpisodePage:
+      type: object
+      required: [series, items, total, limit, offset]
+      properties:
+        series:
+          $ref: "#/components/schemas/SeriesSummary"
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Episode" }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }

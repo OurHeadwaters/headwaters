@@ -1,12 +1,39 @@
 import { useRoute } from "wouter";
-import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
+import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
 import { EpisodeCard } from "@/components/episode-card";
-import { Calendar, Clock, Tag, ChevronLeft } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, Layers } from "lucide-react";
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+
+type EpisodeLike = { title: string; categories: string[] };
+
+function detectSeriesSlug(ep: EpisodeLike): string | null {
+  const t = ep.title;
+  const cats = ep.categories;
+  if (/unloose\s+the\s+goose/i.test(t) || cats.some((c) => /unloose/i.test(c))) {
+    return "unloose-the-goose";
+  }
+  if (/13\s+stomps?/i.test(t) || cats.some((c) => /13\s+stomps?/i.test(c))) {
+    return "13-stomps";
+  }
+  if (/tuesday\s+chat/i.test(t) || cats.some((c) => /tuesday\s+chat/i.test(c))) {
+    return "tuesday-chats";
+  }
+  const tl = t.toLowerCase();
+  if (
+    /history\s+with\s+jack/i.test(t) ||
+    /history\s+of\s+/i.test(t) ||
+    /\bhistory\b.*\b(episode|epi)\b/i.test(t) ||
+    (cats.some((c) => /\bhistory\b/i.test(c) && !/natural history/i.test(c))) ||
+    /\b(ancient|medieval|world war|civil war|revolutionary|colonial|roman|greek|viking|renaissance|ottoman|mongol|byzantine|empire)\b/i.test(tl)
+  ) {
+    return "history";
+  }
+  return null;
+}
 
 export function EpisodeDetail() {
   const [, params] = useRoute("/episodes/:slug");
@@ -22,6 +49,15 @@ export function EpisodeDetail() {
     { limit: 3, category: primaryCategory },
     { query: { enabled: !!primaryCategory, queryKey: getListEpisodesQueryKey({ limit: 3, category: primaryCategory }) } }
   );
+
+  const { data: seriesList } = useListSeries({
+    query: { queryKey: getListSeriesQueryKey() }
+  });
+
+  const episodeSeriesSlug = episode ? detectSeriesSlug(episode) : null;
+  const episodeSeries = episodeSeriesSlug
+    ? seriesList?.find((s) => s.slug === episodeSeriesSlug)
+    : null;
 
   if (isLoading) {
     return (
@@ -77,6 +113,16 @@ export function EpisodeDetail() {
                   {formatDuration(episode.durationSeconds)}
                 </div>
               ) : null}
+              {episodeSeries && (
+                <Link
+                  href={`/series/${episodeSeries.slug}`}
+                  className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors font-bold text-xs uppercase tracking-wider"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>{episodeSeries.iconEmoji}</span>
+                  Part of: {episodeSeries.title} →
+                </Link>
+              )}
             </div>
 
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight text-balance">
@@ -104,6 +150,27 @@ export function EpisodeDetail() {
               alt="Episode Artwork" 
               className="w-full aspect-square object-cover rounded-lg mb-6 shadow-sm border border-border/50"
             />
+
+            {episodeSeries && (
+              <div className="mb-5">
+                <Link
+                  href={`/series/${episodeSeries.slug}`}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/15 hover:bg-primary/10 hover:border-primary/30 transition-colors group"
+                >
+                  <span className="text-2xl leading-none">{episodeSeries.iconEmoji}</span>
+                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <Layers className="w-3 h-3" />
+                      Part of Series
+                    </div>
+                    <span className="font-serif font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                      {episodeSeries.title}
+                    </span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-primary rotate-180 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
+                </Link>
+              </div>
+            )}
             
             <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" />

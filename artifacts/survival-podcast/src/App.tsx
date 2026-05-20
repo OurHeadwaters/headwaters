@@ -10,6 +10,8 @@ import { Categories } from "@/pages/categories";
 import { About } from "@/pages/about";
 import { Library } from "@/pages/library";
 import { LibraryItemDetail } from "@/pages/library-item";
+import { SeriesIndex } from "@/pages/series-index";
+import { SeriesDetail } from "@/pages/series-detail";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ function Router() {
         <Route path="/library/:slug" component={LibraryItemDetail} />
         <Route path="/episodes" component={Archive} />
         <Route path="/episodes/:slug" component={EpisodeDetail} />
+        <Route path="/series" component={SeriesIndex} />
+        <Route path="/series/:slug" component={SeriesDetail} />
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
         <Route component={NotFound} />
