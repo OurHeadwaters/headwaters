@@ -279,6 +279,7 @@ limit?: number;
 offset?: number;
 q?: string;
 category?: string;
+tags?: string[];
 };
 
 export type GetThisDayEpisodesParams = {

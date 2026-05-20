@@ -49,7 +49,8 @@ export const ListEpisodesQueryParams = zod.object({
   "limit": zod.coerce.number().min(1).max(listEpisodesQueryLimitMax).default(listEpisodesQueryLimitDefault),
   "offset": zod.coerce.number().min(listEpisodesQueryOffsetMin).default(listEpisodesQueryOffsetDefault),
   "q": zod.coerce.string().optional(),
-  "category": zod.coerce.string().optional()
+  "category": zod.coerce.string().optional(),
+  "tags": zod.array(zod.string()).optional()
 })
 
 export const ListEpisodesResponse = zod.object({

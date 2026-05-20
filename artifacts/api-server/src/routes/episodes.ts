@@ -40,21 +40,34 @@ router.get("/feed", async (_req, res) => {
 
 router.get("/episodes", async (req, res) => {
   try {
+    const rawTags = req.query["tags[]"] ?? req.query.tags;
+    const tagsInput: string[] = Array.isArray(rawTags)
+      ? (rawTags as string[])
+      : typeof rawTags === "string"
+        ? [rawTags]
+        : [];
+
     const parsed = ListEpisodesQueryParams.safeParse({
       limit: req.query.limit != null ? Number(req.query.limit) : undefined,
       offset: req.query.offset != null ? Number(req.query.offset) : undefined,
       q: typeof req.query.q === "string" ? req.query.q : undefined,
       category:
         typeof req.query.category === "string" ? req.query.category : undefined,
+      tags: tagsInput.length > 0 ? tagsInput : undefined,
     });
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid query parameters" });
       return;
     }
-    const { limit = 20, offset = 0, q, category } = parsed.data;
+    const { limit = 20, offset = 0, q, category, tags } = parsed.data;
     const feed = await getFeedCached();
     let items = feed.episodes;
-    if (category) {
+    if (tags && tags.length > 0) {
+      const normalizedTags = tags.map((t) => t.toLowerCase());
+      items = items.filter((e) =>
+        e.categories.some((c) => normalizedTags.includes(c.toLowerCase())),
+      );
+    } else if (category) {
       const cat = category.toLowerCase();
       items = items.filter((e) =>
         e.categories.some((c) => c.toLowerCase() === cat),

@@ -67,18 +67,17 @@ export function Archive() {
 
   // Build query params: transformation filters take priority, user search overlays on top
   let queryCategory: string | undefined;
+  let queryTags: string[] | undefined;
   let queryQ: string | undefined;
 
   if (activeTransformation) {
-    if (activeTransformation.categories.length > 0) {
-      // Use first category as the primary filter
-      queryCategory = activeTransformation.categories[0];
-    } else if (activeTransformation.tags.length > 0) {
-      // No category mapping — fall back to a tag-based keyword search
-      queryQ = activeTransformation.tags.slice(0, 6).join(" ");
-    }
-    // When the user has typed something, that overrides the tag fallback
-    // (category filter stays active regardless)
+    // Combine tags + categories into a single OR filter for richer results
+    const allTerms = [
+      ...activeTransformation.tags,
+      ...activeTransformation.categories,
+    ];
+    queryTags = [...new Set(allTerms.map((t) => t.toLowerCase()))];
+    // User search overlays on top of the tag filter
     if (debouncedSearch) {
       queryQ = debouncedSearch;
     }
@@ -88,8 +87,8 @@ export function Archive() {
   }
 
   const { data: episodePage, isLoading, isError } = useListEpisodes(
-    { limit, offset, q: queryQ, category: queryCategory },
-    { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: queryQ, category: queryCategory }) } },
+    { limit, offset, q: queryQ, category: queryCategory, tags: queryTags },
+    { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: queryQ, category: queryCategory, tags: queryTags }) } },
   );
 
   const { data: categoryList } = useListCategories();
