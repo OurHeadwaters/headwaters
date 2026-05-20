@@ -352,9 +352,13 @@ export function EpisodeDetail() {
                         <h4 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{ep.title}</h4>
                         <div className="text-xs text-muted-foreground">{format(parseISO(ep.pubDate), "MMM d, yyyy")}</div>
                         {relSeriesMeta && relSeriesTheme && (
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider border px-1.5 py-0.5 rounded-sm w-fit ${relSeriesTheme.badge}`}>
-                            <Layers className="w-2.5 h-2.5 shrink-0" />
-                            <span>{relSeriesMeta.emoji}</span>
+                          <span
+                            title={`Part of the ${relSeriesMeta.name} series`}
+                            aria-label={`Series: ${relSeriesMeta.name}`}
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider border px-1.5 py-0.5 rounded-sm w-fit ${relSeriesTheme.badge}`}
+                          >
+                            <Layers className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                            <span aria-hidden="true">{relSeriesMeta.emoji}</span>
                             <span>{relSeriesMeta.name}</span>
                           </span>
                         )}
