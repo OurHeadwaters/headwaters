@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListTracks, TrackSummary } from "@/hooks/use-tracks";
 import { useAllTracksProgress } from "@/hooks/use-track-progress";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -13,6 +13,7 @@ function TrackCard({
   track: TrackSummary;
   doneCount: number;
 }) {
+  const [, navigate] = useLocation();
   const pct =
     track.episodeCount > 0 ? Math.min(100, (doneCount / track.episodeCount) * 100) : 0;
   const isStarted = doneCount > 0;
@@ -65,9 +66,32 @@ function TrackCard({
 
       {/* Body */}
       <div className="px-6 py-5 flex flex-col flex-1">
-        <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-3 flex-1">
           {track.description}
         </p>
+
+        {track.topTags && track.topTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {track.topTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(`/tracks/${track.slug}?tag=${encodeURIComponent(tag)}`);
+                }}
+                className="text-[11px] font-medium px-2 py-0.5 rounded-full border transition-colors hover:text-foreground hover:border-current"
+                style={{
+                  color: track.color + "cc",
+                  borderColor: track.color + "44",
+                  background: track.color + "10",
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
 
         {track.sampleArtwork.length > 0 && (
           <div className="flex gap-1.5 mb-4">

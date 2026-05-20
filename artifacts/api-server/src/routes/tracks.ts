@@ -72,7 +72,7 @@ router.get("/tracks", async (_req, res) => {
       TRACKS.map(async (track) => {
         const whereFragment = trackWhereFragment(track.tags, track.categories);
 
-        const [countRow, sampleRows] = await Promise.all([
+        const [countRow, sampleRows, topTagsRow] = await Promise.all([
           db.execute(sql.raw(
             `SELECT count(*)::int AS count FROM content_items WHERE ${whereFragment}`,
           )),
@@ -80,6 +80,15 @@ router.get("/tracks", async (_req, res) => {
             `SELECT artwork_url FROM content_items
              WHERE ${whereFragment} AND artwork_url IS NOT NULL
              ORDER BY published_at DESC LIMIT 3`,
+          )),
+          db.execute(sql.raw(
+            `SELECT lower(t.value) AS tag, count(*)::int AS cnt
+             FROM content_items ci,
+                  jsonb_array_elements_text(ci.tags) t
+             WHERE ${whereFragment}
+             GROUP BY lower(t.value)
+             ORDER BY cnt DESC
+             LIMIT 6`,
           )),
         ]);
 
@@ -97,6 +106,7 @@ router.get("/tracks", async (_req, res) => {
           sampleArtwork: (sampleRows.rows as { artwork_url: string | null }[])
             .map((r) => r.artwork_url)
             .filter((u): u is string => !!u),
+          topTags: (topTagsRow.rows as { tag: string; cnt: number }[]).map((r) => r.tag),
         };
       }),
     );

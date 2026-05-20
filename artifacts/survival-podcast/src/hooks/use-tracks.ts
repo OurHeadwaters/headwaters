@@ -13,6 +13,7 @@ export type TrackSummary = {
   icon: string;
   episodeCount: number;
   sampleArtwork: string[];
+  topTags: string[];
 };
 
 export type TrackItem = {
