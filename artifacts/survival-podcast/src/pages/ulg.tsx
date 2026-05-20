@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, PlayCircle, Clock, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlayCircle, Clock, Calendar, Search, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { usePlayer, type PlayerEpisode } from "@/context/player-context";
 
@@ -43,10 +43,19 @@ function formatDuration(seconds: number | null | undefined): string | null {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function useUlgEpisodes(page: number) {
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+function useUlgEpisodes(page: number, query: string) {
   const offset = (page - 1) * LIMIT;
   return useQuery<SearchResult>({
-    queryKey: ["ulg-episodes", page],
+    queryKey: ["ulg-episodes", page, query],
     queryFn: async () => {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       const params = new URLSearchParams({
@@ -55,6 +64,7 @@ function useUlgEpisodes(page: number) {
         limit: String(LIMIT),
         offset: String(offset),
       });
+      if (query) params.set("q", query);
       const res = await fetch(`${base}/api/library/search?${params}`);
       if (!res.ok) throw new Error("Failed to load ULG episodes");
       return res.json();
@@ -174,12 +184,23 @@ function UlgEpisodeCard({ item, position }: { item: LibraryItem; position: numbe
 export function UlgPage() {
   const [page, setPage] = useState(1);
   const [heroImgFailed, setHeroImgFailed] = useState(false);
-  const { data, isLoading, isError } = useUlgEpisodes(page);
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const debouncedQuery = useDebounce(inputValue.trim(), 300);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
+
+  const { data, isLoading, isError } = useUlgEpisodes(page, debouncedQuery);
 
   const totalPages = data ? Math.ceil(data.total / LIMIT) : 0;
   const offset = (page - 1) * LIMIT;
 
   const firstArtwork = data?.items.find((i) => i.artworkUrl)?.artworkUrl;
+
+  const isFiltering = debouncedQuery.length > 0;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 flex flex-col gap-8">
@@ -238,12 +259,42 @@ export function UlgPage() {
           {data && (
             <div className="flex items-center gap-3 mt-2">
               <span className="bg-amber-600/20 text-amber-400 border border-amber-600/30 px-4 py-1.5 rounded-full font-bold text-sm uppercase tracking-wider">
-                {data.total} episode{data.total !== 1 ? "s" : ""}
+                {isFiltering
+                  ? `${data.total} episode${data.total !== 1 ? "s" : ""} found`
+                  : `${data.total} episode${data.total !== 1 ? "s" : ""}`}
               </span>
-              <span className="text-amber-100/40 text-xs">Sorted newest first</span>
+              {!isFiltering && (
+                <span className="text-amber-100/40 text-xs">Sorted newest first</span>
+              )}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="search"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="Search ULG episodes…"
+          aria-label="Search ULG episodes"
+          className="w-full bg-card border border-border rounded-xl pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-600/50 focus:border-amber-600/50 transition-all"
+        />
+        {inputValue && (
+          <button
+            onClick={() => {
+              setInputValue("");
+              inputRef.current?.focus();
+            }}
+            aria-label="Clear search"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Divider */}
@@ -265,10 +316,22 @@ export function UlgPage() {
       ) : data?.items.length === 0 ? (
         <div className="py-24 text-center bg-card border border-border rounded-xl flex flex-col items-center gap-4">
           <span className="text-5xl">🪿</span>
-          <h3 className="font-serif text-xl font-bold text-foreground">No episodes found</h3>
+          <h3 className="font-serif text-xl font-bold text-foreground">
+            {isFiltering ? "No episodes matched your search" : "No episodes found"}
+          </h3>
           <p className="text-muted-foreground max-w-sm">
-            ULG episodes haven't been synced yet. Try refreshing the library from the admin panel.
+            {isFiltering
+              ? `No ULG episodes match "${debouncedQuery}". Try different keywords.`
+              : "ULG episodes haven't been synced yet. Try refreshing the library from the admin panel."}
           </p>
+          {isFiltering && (
+            <button
+              onClick={() => setInputValue("")}
+              className="mt-2 text-sm font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <>
