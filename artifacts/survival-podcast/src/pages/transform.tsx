@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowRight, Compass, Loader2 } from "lucide-react";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
+import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
 
 type Transformation = {
   slug: string;
@@ -32,7 +33,19 @@ function buildEpisodesUrl(t: Transformation): string {
   return `/episodes?transformation=${encodeURIComponent(t.slug)}`;
 }
 
+function buildTagsFilter(t: Transformation): string[] {
+  const allTerms = [...t.tags, ...t.categories];
+  return [...new Set(allTerms.map((s) => s.toLowerCase()))];
+}
+
 function TransformationCard({ t }: { t: Transformation }) {
+  const queryTags = buildTagsFilter(t);
+  const params = { limit: 1, offset: 0, tags: queryTags };
+  const { data: episodePage } = useListEpisodes(params, {
+    query: { queryKey: getListEpisodesQueryKey(params) },
+  });
+  const count = episodePage?.total ?? null;
+
   return (
     <div
       className="flex flex-col rounded-xl border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
@@ -60,6 +73,14 @@ function TransformationCard({ t }: { t: Transformation }) {
             </span>
           </div>
         </div>
+        {count !== null && (
+          <div
+            className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
+            style={{ color: t.color, background: t.color + "18", border: `1px solid ${t.color}30` }}
+          >
+            {count} ep{count !== 1 ? "s" : ""}
+          </div>
+        )}
       </div>
 
       <div className="px-6 py-5 flex flex-col flex-1">
