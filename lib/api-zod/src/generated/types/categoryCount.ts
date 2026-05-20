@@ -11,4 +11,6 @@ export interface CategoryCount {
   count: number;
   description?: string;
   autoDescriptionStale?: boolean;
+  /** @nullable */
+  descriptionUpdatedAt?: string | null;
 }

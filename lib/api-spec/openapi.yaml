@@ -602,6 +602,7 @@ components:
         count: { type: integer }
         description: { type: string }
         autoDescriptionStale: { type: boolean }
+        descriptionUpdatedAt: { type: ["string", "null"] }
     MonthBucket:
       type: object
       required: [month, count]

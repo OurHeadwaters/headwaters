@@ -3,6 +3,13 @@ import { Link } from "wouter";
 import { Folder, Hash } from "lucide-react";
 import { getCategoryDescription } from "@/data/category-descriptions";
 
+function formatDescriptionDate(isoString: string | null | undefined): string | null {
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 export function Categories() {
   const { data: categories, isLoading, isError } = useListCategories();
 
@@ -28,33 +35,44 @@ export function Categories() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {categories?.map(cat => (
-              <Link
-                key={cat.name}
-                href={`/episodes?category=${encodeURIComponent(cat.name)}`}
-                className="group flex flex-col gap-1.5 p-4 bg-card border border-border rounded-lg hover:border-primary hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 rounded-md bg-secondary text-secondary-foreground flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
-                      <Folder className="w-4 h-4" />
+            {categories?.map(cat => {
+              const description = cat.description ?? getCategoryDescription(cat.name);
+              const updatedLabel = formatDescriptionDate(cat.descriptionUpdatedAt);
+              return (
+                <Link
+                  key={cat.name}
+                  href={`/episodes?category=${encodeURIComponent(cat.name)}`}
+                  className="group flex flex-col gap-1.5 p-4 bg-card border border-border rounded-lg hover:border-primary hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-8 h-8 rounded-md bg-secondary text-secondary-foreground flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                        <Folder className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                        {cat.name}
+                      </span>
                     </div>
-                    <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                      {cat.name}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {updatedLabel && (
+                        <span className="text-[10px] text-muted-foreground/60 hidden sm:block">
+                          updated {updatedLabel}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground bg-muted px-2 py-1 rounded">
+                        <Hash className="w-3 h-3" />
+                        {cat.count}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground bg-muted px-2 py-1 rounded shrink-0">
-                    <Hash className="w-3 h-3" />
-                    {cat.count}
-                  </div>
-                </div>
-                {(cat.description ?? getCategoryDescription(cat.name)) && (
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 pl-11">
-                    {cat.description ?? getCategoryDescription(cat.name)}
-                  </p>
-                )}
-              </Link>
-            ))}
+                  {description && (
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 pl-11">
+                      {description}
+                    </p>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
