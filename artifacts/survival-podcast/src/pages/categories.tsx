@@ -1,6 +1,7 @@
 import { useListCategories } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Folder, Hash } from "lucide-react";
+import { getCategoryDescription } from "@/data/category-descriptions";
 
 export function Categories() {
   const { data: categories, isLoading, isError } = useListCategories();
@@ -47,9 +48,9 @@ export function Categories() {
                     {cat.count}
                   </div>
                 </div>
-                {cat.description && (
+                {(cat.description ?? getCategoryDescription(cat.name)) && (
                   <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 pl-11">
-                    {cat.description}
+                    {cat.description ?? getCategoryDescription(cat.name)}
                   </p>
                 )}
               </Link>
