@@ -20,6 +20,13 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
 }
 
+export const STALE_DOWNLOAD_DAYS = 30;
+
+export function isStaleDownload(downloadedAt: number): boolean {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Date.now() - downloadedAt > STALE_DOWNLOAD_DAYS * msPerDay;
+}
+
 export interface DownloadedEpisode {
   slug: string;
   title: string;

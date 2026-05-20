@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useDownloads, formatBytes, type DownloadedEpisode } from "@/context/DownloadContext";
+import { useDownloads, formatBytes, isStaleDownload, STALE_DOWNLOAD_DAYS, type DownloadedEpisode } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -27,12 +27,22 @@ function formatDuration(seconds: number): string {
   return `${m}m`;
 }
 
+function StaleBadge() {
+  return (
+    <View style={styles.staleBadge}>
+      <Ionicons name="time-outline" size={10} color="#92400e" style={{ marginTop: 1 }} />
+      <Text style={styles.staleBadgeText}>Older than {STALE_DOWNLOAD_DAYS} days</Text>
+    </View>
+  );
+}
+
 function DownloadItem({ item }: { item: DownloadedEpisode }) {
   const colors = useColors();
   const { deleteDownload } = useDownloads();
   const { play, currentEpisode, isPlaying, pause, resume } = usePlayer();
 
   const isThisEpisode = currentEpisode?.slug === item.slug;
+  const stale = isStaleDownload(item.downloadedAt);
 
   const handlePlay = async () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -99,6 +109,7 @@ function DownloadItem({ item }: { item: DownloadedEpisode }) {
               {formatDuration(item.durationSeconds)}
             </Text>
           )}
+          {stale && <StaleBadge />}
         </View>
 
         <View style={styles.actions}>
@@ -130,7 +141,7 @@ function DownloadItem({ item }: { item: DownloadedEpisode }) {
 export default function DownloadsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { downloads, totalStorageBytes } = useDownloads();
+  const { downloads, totalStorageBytes, deleteDownload } = useDownloads();
   const { currentEpisode, playQueue } = usePlayer();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
@@ -139,6 +150,31 @@ export default function DownloadsScreen() {
     : Platform.OS === "web" ? 84 + 16 : 49 + insets.bottom + 16;
 
   const items = Object.values(downloads).sort((a, b) => b.downloadedAt - a.downloadedAt);
+  const staleItems = items.filter(item => isStaleDownload(item.downloadedAt));
+  const hasStale = staleItems.length > 0;
+
+  const handleCleanupOld = () => {
+    const count = staleItems.length;
+    const message = `Remove ${count} episode${count !== 1 ? "s" : ""} older than ${STALE_DOWNLOAD_DAYS} days?`;
+
+    if (Platform.OS === "web") {
+      staleItems.forEach(item => deleteDownload(item.slug));
+      return;
+    }
+
+    Alert.alert(
+      "Clean Up Old Downloads",
+      message,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove All",
+          style: "destructive",
+          onPress: () => staleItems.forEach(item => deleteDownload(item.slug)),
+        },
+      ]
+    );
+  };
 
   const handlePlayAll = async () => {
     if (items.length === 0) return;
@@ -185,6 +221,17 @@ export default function DownloadsScreen() {
                 </Pressable>
               )}
             </View>
+            {hasStale && (
+              <Pressable
+                onPress={handleCleanupOld}
+                style={[styles.cleanupBtn, { backgroundColor: "#fef3c7", borderColor: "#fcd34d" }]}
+              >
+                <Ionicons name="time-outline" size={14} color="#92400e" />
+                <Text style={[styles.cleanupBtnText, { fontFamily: "DMSans_600SemiBold" }]}>
+                  Clean up {staleItems.length} old download{staleItems.length !== 1 ? "s" : ""}
+                </Text>
+              </Pressable>
+            )}
           </View>
         }
         ListEmptyComponent={
@@ -237,6 +284,39 @@ const styles = StyleSheet.create({
   },
   playAllText: {
     fontSize: 14,
+  },
+  cleanupBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: "flex-start",
+  },
+  cleanupBtnText: {
+    fontSize: 13,
+    color: "#92400e",
+  },
+  staleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+    backgroundColor: "#fef3c7",
+    borderColor: "#fcd34d",
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: "flex-start",
+  },
+  staleBadgeText: {
+    fontSize: 10,
+    color: "#92400e",
+    fontFamily: "DMSans_500Medium",
   },
   item: {
     borderBottomWidth: 1,
