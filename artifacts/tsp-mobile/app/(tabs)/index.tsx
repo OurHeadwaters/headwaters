@@ -153,9 +153,14 @@ const wheelStyles = StyleSheet.create({
   },
 });
 
+function yearsAgo(year: number): number {
+  return new Date().getFullYear() - year;
+}
+
 function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
   const { play, seek } = usePlayer();
   const year = new Date(episode.pubDate).getUTCFullYear();
+  const ago = yearsAgo(year);
 
   const handlePlay = async () => {
     if (!episode.audioUrl) return;
@@ -187,16 +192,23 @@ function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
       ]}
     >
       <View style={styles.thisDayCardTop}>
-        <View style={styles.thisDayYearRow}>
-          <Text style={[styles.thisDayYear, { color: "#c7d2fe", fontFamily: "DMSans_700Bold" }]}>
-            {year}
-          </Text>
-          {episode.episodeNumber != null && (
-            <View style={[styles.thisDayEpBadge, { backgroundColor: "rgba(79, 70, 229, 0.4)", borderColor: "rgba(99, 102, 241, 0.4)" }]}>
-              <Text style={[styles.thisDayEpNum, { color: "#a5b4fc", fontFamily: "DMSans_600SemiBold" }]}>
-                EP {episode.episodeNumber}
-              </Text>
-            </View>
+        <View style={styles.thisDayYearCol}>
+          <View style={styles.thisDayYearRow}>
+            <Text style={[styles.thisDayYear, { color: "#c7d2fe", fontFamily: "DMSans_700Bold" }]}>
+              {year}
+            </Text>
+            {episode.episodeNumber != null && (
+              <View style={[styles.thisDayEpBadge, { backgroundColor: "rgba(79, 70, 229, 0.4)", borderColor: "rgba(99, 102, 241, 0.4)" }]}>
+                <Text style={[styles.thisDayEpNum, { color: "#a5b4fc", fontFamily: "DMSans_600SemiBold" }]}>
+                  EP {episode.episodeNumber}
+                </Text>
+              </View>
+            )}
+          </View>
+          {ago > 0 && (
+            <Text style={[styles.thisDayAgoText, { color: "rgba(199, 210, 254, 0.5)", fontFamily: "DMSans_400Regular" }]}>
+              {ago === 1 ? "1 year ago" : `${ago} years ago`}
+            </Text>
           )}
         </View>
         {episode.artworkUrl ? (
@@ -486,9 +498,11 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.thisDayList}
           >
-            {thisDayEpisodes.map(ep => (
-              <ThisDayCard key={ep.slug} episode={ep} />
-            ))}
+            {[...thisDayEpisodes]
+              .sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear())
+              .map(ep => (
+                <ThisDayCard key={ep.slug} episode={ep} />
+              ))}
           </ScrollView>
         )}
       </View>
@@ -720,11 +734,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
+  thisDayYearCol: {
+    flexDirection: "column",
+    gap: 2,
+    flex: 1,
+  },
   thisDayYearRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    flex: 1,
+  },
+  thisDayAgoText: {
+    fontSize: 10,
+    lineHeight: 13,
   },
   thisDayYear: {
     fontSize: 20,

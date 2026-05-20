@@ -23,6 +23,10 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function yearsAgo(year: number): number {
+  return new Date().getFullYear() - year;
+}
+
 export function ThisDayInHistory() {
   const today = new Date();
   const searchString = useSearch();
@@ -265,21 +269,34 @@ export function ThisDayInHistory() {
           </div>
         ) : (
           <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:overflow-x-visible">
-            {episodes.map((ep) => {
+            {[...episodes].sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear()).map((ep) => {
               const year = new Date(ep.pubDate).getUTCFullYear();
+              const ago = yearsAgo(year);
               return (
                 <div
                   key={ep.slug}
                   className="snap-start shrink-0 w-72 md:w-auto flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/8 hover:border-[#D9A066]/30 transition-all group"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-serif font-bold text-[#D9A066] leading-none">
-                        {year}
-                      </span>
-                      {ep.episodeNumber != null && (
-                        <span className="text-xs font-bold uppercase tracking-widest text-white/40 bg-white/8 border border-white/10 px-2 py-0.5 rounded-full">
-                          EP {ep.episodeNumber}
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-serif font-bold text-[#D9A066] leading-none">
+                          {year}
+                        </span>
+                        {ep.episodeNumber != null && (
+                          <span className="text-xs font-bold uppercase tracking-widest text-white/40 bg-white/8 border border-white/10 px-2 py-0.5 rounded-full">
+                            EP {ep.episodeNumber}
+                          </span>
+                        )}
+                      </div>
+                      {ago > 1 && (
+                        <span className="text-xs text-[#D9A066]/60 font-medium leading-none">
+                          {ago} years ago
+                        </span>
+                      )}
+                      {ago === 1 && (
+                        <span className="text-xs text-[#D9A066]/60 font-medium leading-none">
+                          1 year ago
                         </span>
                       )}
                     </div>
