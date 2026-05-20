@@ -360,8 +360,8 @@ export default function TrackDetailPage() {
   const [isSharedView, setIsSharedView] = useState(sharedIds !== null);
   const [sharedDismissed, setSharedDismissed] = useState(false);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
+  const [activeTag, setActiveTag] = useState<string | null>(searchParams.get("tag") ?? null);
   const debouncedSearch = useDebounce(searchInput, 300);
 
   const queryParams = {
@@ -481,27 +481,34 @@ export default function TrackDetailPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function resetToFirstPage() {
+  function handleSearchChange(val: string) {
+    setSearchInput(val);
     const qs = new URLSearchParams(window.location.search);
     qs.set("page", "1");
-    window.history.pushState({}, "", `${window.location.pathname}?${qs.toString()}`);
+    if (val) qs.set("q", val); else qs.delete("q");
+    window.history.replaceState({}, "", `${window.location.pathname}?${qs.toString()}`);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
-  function handleSearchChange(val: string) {
-    setSearchInput(val);
-    resetToFirstPage();
-  }
-
   function handleTagClick(tag: string) {
-    setActiveTag((prev) => (prev === tag ? null : tag));
-    resetToFirstPage();
+    const newTag = activeTag === tag ? null : tag;
+    setActiveTag(newTag);
+    const qs = new URLSearchParams(window.location.search);
+    qs.set("page", "1");
+    if (newTag) qs.set("tag", newTag); else qs.delete("tag");
+    window.history.replaceState({}, "", `${window.location.pathname}?${qs.toString()}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   function clearFilters() {
     setSearchInput("");
     setActiveTag(null);
-    resetToFirstPage();
+    const qs = new URLSearchParams(window.location.search);
+    qs.set("page", "1");
+    qs.delete("q");
+    qs.delete("tag");
+    window.history.replaceState({}, "", `${window.location.pathname}?${qs.toString()}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   if (isLoading) {
