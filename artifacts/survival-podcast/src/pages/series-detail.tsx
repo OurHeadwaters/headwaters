@@ -122,10 +122,12 @@ function HistoryTimeline({ episodes, continueSlug, theme }: { episodes: Episode[
                       <span className={`${theme.badge} px-2 py-0.5 rounded text-[10px] font-bold tabular-nums`}>
                         #{position}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {format(pubDate, "MMM d, yyyy")}
-                      </span>
+                      {pubDate.getTime() >= 86_400_000 && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {format(pubDate, "MMM d, yyyy")}
+                        </span>
+                      )}
                       {ep.durationSeconds && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />

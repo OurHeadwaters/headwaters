@@ -127,10 +127,12 @@ export function EpisodeDetail() {
                   EPISODE {episode.episodeNumber}
                 </span>
               )}
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {format(parseISO(episode.pubDate), "MMMM d, yyyy")}
-              </div>
+              {new Date(episode.pubDate).getTime() >= 86_400_000 && (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {format(parseISO(episode.pubDate), "MMMM d, yyyy")}
+                </div>
+              )}
               {episode.durationSeconds ? (
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
@@ -350,7 +352,9 @@ export function EpisodeDetail() {
                       <img src={ep.artworkUrl || tspLogo} alt="" className="w-16 h-16 rounded object-cover border border-border/50 shrink-0" />
                       <div className="flex flex-col gap-1 min-w-0">
                         <h4 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{ep.title}</h4>
-                        <div className="text-xs text-muted-foreground">{format(parseISO(ep.pubDate), "MMM d, yyyy")}</div>
+                        {new Date(ep.pubDate).getTime() >= 86_400_000 && (
+                          <div className="text-xs text-muted-foreground">{format(parseISO(ep.pubDate), "MMM d, yyyy")}</div>
+                        )}
                         {relSeriesMeta && relSeriesTheme && (
                           <span
                             title={`Part of the ${relSeriesMeta.name} series`}

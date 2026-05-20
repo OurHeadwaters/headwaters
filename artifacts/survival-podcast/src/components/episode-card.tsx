@@ -32,6 +32,11 @@ interface EpisodeCardProps {
   seriesSlug?: string;
 }
 
+function isEpochDate(dateStr: string): boolean {
+  const t = new Date(dateStr).getTime();
+  return !Number.isNaN(t) && t < 86_400_000;
+}
+
 export function EpisodeCard({ episode, featured = false, seriesPosition, seriesTotal, transformation, seriesSlug: seriesSlugProp }: EpisodeCardProps) {
   const isRecent = new Date().getTime() - new Date(episode.pubDate).getTime() < 7 * 24 * 60 * 60 * 1000;
 
@@ -65,10 +70,12 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
       
       <div className="p-5 flex flex-col flex-1">
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-3 font-medium">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" />
-            {format(parseISO(episode.pubDate), "MMM d, yyyy")}
-          </div>
+          {!isEpochDate(episode.pubDate) && (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5" />
+              {format(parseISO(episode.pubDate), "MMM d, yyyy")}
+            </div>
+          )}
           {episode.durationSeconds ? (
             <div className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />

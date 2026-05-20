@@ -133,10 +133,12 @@ function UlgEpisodeCard({ item, position }: { item: LibraryItem; position: numbe
           <span className="bg-amber-900/30 text-amber-300 border border-amber-700/40 px-2 py-0.5 rounded text-[10px] font-bold tabular-nums">
             #{position}
           </span>
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {format(parseISO(item.publishedAt), "MMM d, yyyy")}
-          </span>
+          {new Date(item.publishedAt).getTime() >= 86_400_000 && (
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {format(parseISO(item.publishedAt), "MMM d, yyyy")}
+            </span>
+          )}
           {item.durationSeconds && (
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
