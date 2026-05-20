@@ -115,7 +115,7 @@ router.get("/series/:slug/episodes", async (req, res) => {
       return;
     }
 
-    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 500);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
 
     const [feed, libraryEps] = await Promise.all([

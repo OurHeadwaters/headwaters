@@ -317,7 +317,7 @@ export const GetSeriesEpisodesParams = zod.object({
 })
 
 export const getSeriesEpisodesQueryLimitDefault = 20;
-export const getSeriesEpisodesQueryLimitMax = 100;
+export const getSeriesEpisodesQueryLimitMax = 500;
 
 export const getSeriesEpisodesQueryOffsetDefault = 0;
 export const getSeriesEpisodesQueryOffsetMin = 0;

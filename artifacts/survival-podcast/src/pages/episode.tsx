@@ -1,10 +1,10 @@
 import { useRoute } from "wouter";
-import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey } from "@workspace/api-client-react";
+import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
 import { EpisodeCard } from "@/components/episode-card";
-import { Calendar, Clock, Tag, ChevronLeft, Layers } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
@@ -58,6 +58,29 @@ export function EpisodeDetail() {
   const episodeSeries = episodeSeriesSlug
     ? seriesList?.find((s) => s.slug === episodeSeriesSlug)
     : null;
+
+  const { data: seriesEpisodesData } = useGetSeriesEpisodes(
+    episodeSeriesSlug ?? "",
+    { limit: 500, offset: 0 },
+    {
+      query: {
+        enabled: !!episodeSeriesSlug,
+        queryKey: getGetSeriesEpisodesQueryKey(episodeSeriesSlug ?? "", { limit: 500, offset: 0 }),
+      },
+    }
+  );
+
+  const seriesEpisodes = seriesEpisodesData?.items ?? [];
+  const currentSeriesIndex = episode
+    ? seriesEpisodes.findIndex((ep) => ep.slug === episode.slug)
+    : -1;
+  const positionInSeries = currentSeriesIndex >= 0 ? currentSeriesIndex + 1 : null;
+  const totalInSeries = seriesEpisodesData?.total ?? null;
+  const prevSeriesEpisode = currentSeriesIndex > 0 ? seriesEpisodes[currentSeriesIndex - 1] : null;
+  const nextSeriesEpisode =
+    currentSeriesIndex >= 0 && currentSeriesIndex < seriesEpisodes.length - 1
+      ? seriesEpisodes[currentSeriesIndex + 1]
+      : null;
 
   if (isLoading) {
     return (
@@ -113,7 +136,17 @@ export function EpisodeDetail() {
                   {formatDuration(episode.durationSeconds)}
                 </div>
               ) : null}
-              {episodeSeries && (
+              {episodeSeries && positionInSeries && totalInSeries && (
+                <Link
+                  href={`/series/${episodeSeries.slug}`}
+                  className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors font-bold text-xs uppercase tracking-wider"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>{episodeSeries.iconEmoji}</span>
+                  Part of: {episodeSeries.title} ({positionInSeries} of {totalInSeries}) →
+                </Link>
+              )}
+              {episodeSeries && !positionInSeries && (
                 <Link
                   href={`/series/${episodeSeries.slug}`}
                   className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors font-bold text-xs uppercase tracking-wider"
@@ -133,6 +166,48 @@ export function EpisodeDetail() {
           {episode.audioUrl && (
             <div className="my-2">
               <AudioPlayer src={episode.audioUrl} title={episode.title} />
+            </div>
+          )}
+
+          {/* Series prev/next navigation */}
+          {episodeSeries && (prevSeriesEpisode || nextSeriesEpisode) && (
+            <div className="flex items-stretch gap-3 border border-border rounded-xl overflow-hidden bg-card">
+              {prevSeriesEpisode ? (
+                <Link
+                  href={`/episodes/${prevSeriesEpisode.slug}`}
+                  className="group flex-1 flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors min-w-0 border-r border-border"
+                >
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                      {episodeSeries.iconEmoji} Previous in series
+                    </span>
+                    <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      {prevSeriesEpisode.title}
+                    </span>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex-1 border-r border-border" />
+              )}
+              {nextSeriesEpisode ? (
+                <Link
+                  href={`/episodes/${nextSeriesEpisode.slug}`}
+                  className="group flex-1 flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors min-w-0 text-right justify-end"
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                      Next in series {episodeSeries.iconEmoji}
+                    </span>
+                    <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      {nextSeriesEpisode.title}
+                    </span>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                </Link>
+              ) : (
+                <div className="flex-1" />
+              )}
             </div>
           )}
 
@@ -166,6 +241,11 @@ export function EpisodeDetail() {
                     <span className="font-serif font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
                       {episodeSeries.title}
                     </span>
+                    {positionInSeries && totalInSeries && (
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Episode {positionInSeries} of {totalInSeries}
+                      </span>
+                    )}
                   </div>
                   <ChevronLeft className="w-4 h-4 text-primary rotate-180 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
                 </Link>

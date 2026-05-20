@@ -15,13 +15,13 @@ const LIMIT = 20;
 const HISTORY_LIMIT = 500;
 
 function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
-  const byDecade = new Map<string, Episode[]>();
-  for (const ep of episodes) {
+  const byDecade = new Map<string, { ep: Episode; position: number }[]>();
+  episodes.forEach((ep, idx) => {
     const year = new Date(ep.pubDate).getFullYear();
     const decade = `${Math.floor(year / 10) * 10}s`;
     if (!byDecade.has(decade)) byDecade.set(decade, []);
-    byDecade.get(decade)!.push(ep);
-  }
+    byDecade.get(decade)!.push({ ep, position: idx + 1 });
+  });
   const decades = [...byDecade.entries()].sort(([a], [b]) => a.localeCompare(b));
 
   return (
@@ -29,7 +29,7 @@ function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
       {/* Vertical spine */}
       <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-gradient-to-b from-indigo-500/60 via-indigo-400/30 to-transparent" aria-hidden="true" />
 
-      {decades.map(([decade, decEps]) => (
+      {decades.map(([decade, decItems]) => (
         <div key={decade} className="flex flex-col gap-0">
           {/* Decade marker */}
           <div className="flex items-center gap-4 mb-3 mt-6 first:mt-0">
@@ -39,7 +39,7 @@ function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
             <div className="h-px flex-1 bg-indigo-500/20" />
           </div>
 
-          {decEps.map((ep, idx) => {
+          {decItems.map(({ ep, position }) => {
             const pubDate = parseISO(ep.pubDate);
             return (
               <div key={ep.guid} className="flex items-start gap-4 pl-0 pb-4 relative">
@@ -60,6 +60,9 @@ function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
                   />
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
+                      <span className="bg-indigo-900/40 text-indigo-300 border border-indigo-700/40 px-2 py-0.5 rounded text-[10px] font-bold tabular-nums">
+                        #{position}
+                      </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {format(pubDate, "MMM d, yyyy")}
@@ -181,9 +184,19 @@ export function SeriesDetail() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data?.items.map((ep) => (
-              <EpisodeCard key={ep.guid} episode={ep} />
-            ))}
+            {data?.items.map((ep, idx) => {
+              const position = offset + idx + 1;
+              const total = data.total;
+              return (
+                <div key={ep.guid} className="relative">
+                  <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-background/90 backdrop-blur-sm border border-border/60 rounded-md px-2 py-1 shadow-sm pointer-events-none">
+                    <span className="text-xs font-bold text-foreground tabular-nums">{position}</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">/ {total}</span>
+                  </div>
+                  <EpisodeCard episode={ep} />
+                </div>
+              );
+            })}
           </div>
 
           {totalPages > 1 && (
