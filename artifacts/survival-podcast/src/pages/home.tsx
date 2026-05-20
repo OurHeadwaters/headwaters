@@ -2,6 +2,7 @@ import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategori
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
+import { ThisDayInHistory } from "@/components/this-day-in-history";
 import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
@@ -33,6 +34,9 @@ export function Home() {
 
   return (
     <div className="flex flex-col w-full">
+      {/* This Day in History */}
+      <ThisDayInHistory />
+
       {/* Hero Section */}
       <section className="relative bg-primary text-primary-foreground py-20 md:py-28 overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay"></div>

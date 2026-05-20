@@ -74,6 +74,40 @@ export const ListEpisodesResponse = zod.object({
 
 
 /**
+ * Returns all episodes whose publish date matches the given month and day (defaults to today). Each entry includes a historyTimestamp (seconds) if a "This Day in History" segment was detected in the show notes.
+ * @summary Episodes published on this calendar date across all years
+ */
+export const getThisDayEpisodesQueryMonthMax = 12;
+
+export const getThisDayEpisodesQueryDayMax = 31;
+
+
+
+export const GetThisDayEpisodesQueryParams = zod.object({
+  "month": zod.coerce.number().min(1).max(getThisDayEpisodesQueryMonthMax).optional(),
+  "day": zod.coerce.number().min(1).max(getThisDayEpisodesQueryDayMax).optional()
+})
+
+export const GetThisDayEpisodesResponseItem = zod.object({
+  "slug": zod.string(),
+  "guid": zod.string(),
+  "episodeNumber": zod.number().nullable(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "pubDate": zod.string(),
+  "summary": zod.string(),
+  "durationSeconds": zod.number().nullish(),
+  "audioUrl": zod.string().nullish(),
+  "audioType": zod.string().nullish(),
+  "artworkUrl": zod.string().nullish(),
+  "categories": zod.array(zod.string())
+}).and(zod.object({
+  "historyTimestamp": zod.number().nullish().describe('Seconds into the episode where the \'This Day in History\' segment begins, if detected in the show notes')
+}))
+export const GetThisDayEpisodesResponse = zod.array(GetThisDayEpisodesResponseItem)
+
+
+/**
  * @summary Get featured episodes
  */
 export const GetFeaturedEpisodesResponseItem = zod.object({

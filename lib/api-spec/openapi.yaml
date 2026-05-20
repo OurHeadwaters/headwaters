@@ -63,6 +63,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EpisodePage"
+  /episodes/this-day:
+    get:
+      operationId: getThisDayEpisodes
+      tags: [episodes]
+      summary: Episodes published on this calendar date across all years
+      description: Returns all episodes whose publish date matches the given month and day (defaults to today). Each entry includes a historyTimestamp (seconds) if a "This Day in History" segment was detected in the show notes.
+      parameters:
+        - { name: month, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 12 } }
+        - { name: day, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 31 } }
+      responses:
+        "200":
+          description: Episodes matching this calendar date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThisDayEpisode"
   /episodes/featured:
     get:
       operationId: getFeaturedEpisodes
@@ -324,6 +342,14 @@ components:
         categories:
           type: array
           items: { type: string }
+    ThisDayEpisode:
+      allOf:
+        - $ref: "#/components/schemas/Episode"
+        - type: object
+          properties:
+            historyTimestamp:
+              type: ["integer", "null"]
+              description: "Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes"
     EpisodeDetail:
       allOf:
         - $ref: "#/components/schemas/Episode"

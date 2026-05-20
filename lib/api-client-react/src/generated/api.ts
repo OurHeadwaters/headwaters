@@ -28,6 +28,7 @@ import type {
   EpisodeStats,
   Feed,
   GetSeriesEpisodesParams,
+  GetThisDayEpisodesParams,
   GetZoneEpisodesParams,
   HealthStatus,
   LibraryItemDetail,
@@ -40,6 +41,7 @@ import type {
   SearchLibraryParams,
   SeriesEpisodePage,
   SeriesSummary,
+  ThisDayEpisode,
   ZoneEpisodePage,
   ZoneSummary
 } from './api.schemas';
@@ -283,6 +285,91 @@ export function useListEpisodes<TData = Awaited<ReturnType<typeof listEpisodes>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListEpisodesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetThisDayEpisodesUrl = (params?: GetThisDayEpisodesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/episodes/this-day?${stringifiedParams}` : `/api/episodes/this-day`
+}
+
+/**
+ * Returns all episodes whose publish date matches the given month and day (defaults to today). Each entry includes a historyTimestamp (seconds) if a "This Day in History" segment was detected in the show notes.
+ * @summary Episodes published on this calendar date across all years
+ */
+export const getThisDayEpisodes = async (params?: GetThisDayEpisodesParams, options?: RequestInit): Promise<ThisDayEpisode[]> => {
+
+  return customFetch<ThisDayEpisode[]>(getGetThisDayEpisodesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetThisDayEpisodesQueryKey = (params?: GetThisDayEpisodesParams,) => {
+    return [
+    `/api/episodes/this-day`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetThisDayEpisodesQueryOptions = <TData = Awaited<ReturnType<typeof getThisDayEpisodes>>, TError = ErrorType<unknown>>(params?: GetThisDayEpisodesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getThisDayEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetThisDayEpisodesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getThisDayEpisodes>>> = ({ signal }) => getThisDayEpisodes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getThisDayEpisodes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetThisDayEpisodesQueryResult = NonNullable<Awaited<ReturnType<typeof getThisDayEpisodes>>>
+export type GetThisDayEpisodesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Episodes published on this calendar date across all years
+ */
+
+export function useGetThisDayEpisodes<TData = Awaited<ReturnType<typeof getThisDayEpisodes>>, TError = ErrorType<unknown>>(
+ params?: GetThisDayEpisodesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getThisDayEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetThisDayEpisodesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

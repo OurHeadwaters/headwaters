@@ -8,7 +8,7 @@ import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
 
-type EpisodeLike = { title: string; categories: string[] };
+type EpisodeLike = { title: string; categories: string[]; descriptionHtml?: string };
 
 function detectSeriesSlug(ep: EpisodeLike): string | null {
   const t = ep.title;
@@ -23,7 +23,11 @@ function detectSeriesSlug(ep: EpisodeLike): string | null {
     return "tuesday-chats";
   }
   const tl = t.toLowerCase();
+  const showNotesHaveHistory =
+    !!ep.descriptionHtml &&
+    /this\s+day\s+in\s+history|today\s+in\s+history|on\s+this\s+day/i.test(ep.descriptionHtml);
   if (
+    showNotesHaveHistory ||
     /history\s+with\s+jack/i.test(t) ||
     /history\s+of\s+/i.test(t) ||
     /\bhistory\b.*\b(episode|epi)\b/i.test(t) ||

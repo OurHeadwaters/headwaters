@@ -50,6 +50,14 @@ export interface Episode {
   categories: string[];
 }
 
+export type ThisDayEpisode = Episode & ({
+  /**
+     * Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes
+     * @nullable
+     */
+  historyTimestamp?: number | null;
+});
+
 export type EpisodeDetail = Episode & {
   descriptionHtml: string;
 };
@@ -271,6 +279,19 @@ limit?: number;
 offset?: number;
 q?: string;
 category?: string;
+};
+
+export type GetThisDayEpisodesParams = {
+/**
+ * @minimum 1
+ * @maximum 12
+ */
+month?: number;
+/**
+ * @minimum 1
+ * @maximum 31
+ */
+day?: number;
 };
 
 export type SearchLibraryParams = {
