@@ -238,42 +238,63 @@ export default function ArchiveScreen() {
           style={{ backgroundColor: colors.background }}
           contentContainerStyle={styles.chipList}
         >
-          {categories.slice(0, 20).map(cat => (
-            <Pressable
-              key={cat.name}
-              onPress={() => handleCategoryPress(cat.name)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: selectedCategory === cat.name ? colors.primary : colors.muted,
-                  borderColor: selectedCategory === cat.name ? colors.primary : colors.border,
-                },
-              ]}
-            >
-              <Text
+          {categories.slice(0, 20).map(cat => {
+            const active = selectedCategory === cat.name;
+            return (
+              <Pressable
+                key={cat.name}
+                onPress={() => handleCategoryPress(cat.name)}
                 style={[
-                  styles.chipText,
+                  styles.chip,
                   {
-                    color: selectedCategory === cat.name ? colors.primaryForeground : colors.foreground,
-                    fontFamily: "DMSans_500Medium",
+                    backgroundColor: active ? colors.primary : colors.muted,
+                    borderColor: active ? colors.primary : colors.border,
                   },
                 ]}
               >
-                {cat.name}
-              </Text>
-              <Text
-                style={[
-                  styles.chipCount,
-                  {
-                    color: selectedCategory === cat.name ? colors.primaryForeground : colors.mutedForeground,
-                    fontFamily: "DMSans_400Regular",
-                  },
-                ]}
-              >
-                {cat.count}
-              </Text>
-            </Pressable>
-          ))}
+                <View style={styles.chipHeader}>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      {
+                        color: active ? colors.primaryForeground : colors.foreground,
+                        fontFamily: "DMSans_500Medium",
+                        flex: 1,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {cat.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.chipCount,
+                      {
+                        color: active ? colors.primaryForeground : colors.mutedForeground,
+                        fontFamily: "DMSans_400Regular",
+                      },
+                    ]}
+                  >
+                    {cat.count}
+                  </Text>
+                </View>
+                {cat.description ? (
+                  <Text
+                    style={[
+                      styles.chipDescription,
+                      {
+                        color: active ? colors.primaryForeground + "cc" : colors.mutedForeground,
+                        fontFamily: "DMSans_400Regular",
+                      },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {cat.description}
+                  </Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
         </ScrollView>
       )}
 
@@ -307,29 +328,33 @@ export default function ArchiveScreen() {
                     },
                   ]}
                 >
-                  <Text style={styles.chipEmoji}>{s.iconEmoji}</Text>
-                  <Text
-                    style={[
-                      styles.chipText,
-                      {
-                        color: active ? colors.primaryForeground : colors.foreground,
-                        fontFamily: "DMSans_500Medium",
-                      },
-                    ]}
-                  >
-                    {s.title}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.chipCount,
-                      {
-                        color: active ? colors.primaryForeground : colors.mutedForeground,
-                        fontFamily: "DMSans_400Regular",
-                      },
-                    ]}
-                  >
-                    {s.episodeCount}
-                  </Text>
+                  <View style={styles.chipHeader}>
+                    <Text style={styles.chipEmoji}>{s.iconEmoji}</Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: active ? colors.primaryForeground : colors.foreground,
+                          fontFamily: "DMSans_500Medium",
+                          flex: 1,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {s.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.chipCount,
+                        {
+                          color: active ? colors.primaryForeground : colors.mutedForeground,
+                          fontFamily: "DMSans_400Regular",
+                        },
+                      ]}
+                    >
+                      {s.episodeCount}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
@@ -460,13 +485,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
+    flexDirection: "column",
+    width: 160,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 4,
+  },
+  chipHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
+    gap: 6,
   },
   chipEmoji: {
     fontSize: 13,
@@ -476,6 +506,10 @@ const styles = StyleSheet.create({
   },
   chipCount: {
     fontSize: 11,
+  },
+  chipDescription: {
+    fontSize: 11,
+    lineHeight: 15,
   },
   resultRow: {
     flexDirection: "row",
