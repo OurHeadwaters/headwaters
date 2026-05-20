@@ -428,6 +428,13 @@ offset?: number;
 excludeSeries?: boolean;
 };
 
+export type ListSeriesParams = {
+/**
+ * Sort order for series list: episodeCount:desc (default), episodeCount:asc
+ */
+orderBy?: 'episodeCount:desc' | 'episodeCount:asc';
+};
+
 export type RefreshLibraryParams = {
 force?: boolean;
 };

@@ -4,7 +4,7 @@ import { ChevronRight, Layers } from "lucide-react";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 
 export function SeriesIndex() {
-  const { data: seriesList, isLoading, isError } = useListSeries();
+  const { data: seriesList, isLoading, isError } = useListSeries({ orderBy: "episodeCount:desc" });
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-10">
