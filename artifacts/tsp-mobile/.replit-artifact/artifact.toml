@@ -1,0 +1,30 @@
+kind = "mobile"
+  previewPath = "/mobile/"
+  title = "TSP Mobile"
+  version = "1.0.0"
+  id = "artifacts/tsp-mobile"
+
+  [[integratedSkills]]
+  name = "expo"
+  version = "1.0.0"
+
+  [[services]]
+  name = "expo"
+  paths = [ "/mobile/" ]
+  localPort = 24655
+
+  [services.development]
+  run = "pnpm --filter @workspace/tsp-mobile run dev"
+
+  [services.production]
+  build = [ "pnpm", "--filter", "@workspace/tsp-mobile", "run", "build" ]
+  run = [ "pnpm", "--filter", "@workspace/tsp-mobile", "run", "serve" ]
+
+  [services.env]
+  PORT = "24655"
+  BASE_PATH = "/mobile/"
+  EXPO_PACKAGER_PROXY_URL = "https://$REPLIT_EXPO_DEV_DOMAIN"
+  EXPO_PUBLIC_DOMAIN = "$REPLIT_DEV_DOMAIN"
+  EXPO_PUBLIC_REPL_ID = "$REPL_ID"
+  REACT_NATIVE_PACKAGER_HOSTNAME = "$REPLIT_DEV_DOMAIN"
+  
