@@ -36,6 +36,10 @@ function NativeTabLayout() {
           <Icon sf={{ default: "lock.shield", selected: "lock.shield.fill" }} />
           <Label>Privacy</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="bookmarks">
+          <Icon sf={{ default: "bookmark", selected: "bookmark.fill" }} />
+          <Label>Bookmarks</Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
       {currentEpisode && <MiniPlayer />}
     </View>
@@ -139,6 +143,18 @@ function ClassicTabLayout() {
                 <SymbolView name="lock.shield" tintColor={color} size={24} />
               ) : (
                 <Feather name="shield" size={22} color={color} />
+              ),
+          }}
+        />
+        <Tabs.Screen
+          name="bookmarks"
+          options={{
+            title: "Bookmarks",
+            tabBarIcon: ({ color }) =>
+              isIOS ? (
+                <SymbolView name="bookmark" tintColor={color} size={22} />
+              ) : (
+                <Feather name="bookmark" size={22} color={color} />
               ),
           }}
         />
