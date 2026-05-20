@@ -1,13 +1,14 @@
-import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories } from "@workspace/api-client-react";
+import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
-import { Mic, Headphones, Users, ChevronRight, Compass } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 export function Home() {
   const { data: feed, isLoading: feedLoading } = useGetFeed();
   const { data: featured, isLoading: featuredLoading } = useGetFeaturedEpisodes();
   const { data: stats, isLoading: statsLoading } = useGetEpisodeStats();
+  const { data: libraryStats } = useGetLibraryStats();
   const { data: categories, isLoading: categoriesLoading } = useListCategories();
 
   const yearsOnAir = new Date().getFullYear() - 2008;
@@ -88,6 +89,47 @@ export function Home() {
       <div className="container mx-auto px-4 md:px-6 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-16">
+          
+          {/* Library CTA */}
+          <section className="bg-primary/5 border border-primary/20 rounded-2xl p-8 md:p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <LibraryIcon className="w-48 h-48" />
+            </div>
+            <div className="relative z-10 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 text-accent font-bold uppercase tracking-wider text-xs mb-4 bg-accent/10 px-3 py-1.5 rounded-full border border-accent/20">
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                New Feature
+              </div>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">Dig into the full library</h2>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                We've indexed over 15 years of content. Search across thousands of audio episodes, written articles, and YouTube videos in one place.
+              </p>
+              
+              {libraryStats && libraryStats.totalItems > 100 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-serif font-bold text-primary">{libraryStats.totalItems.toLocaleString()}+</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Total Items</span>
+                  </div>
+                  {libraryStats.byKind.map(k => (
+                    <div key={k.kind} className="flex flex-col">
+                      <span className="text-2xl font-serif font-bold text-foreground">{k.count.toLocaleString()}+</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase">{k.kind}s</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <Link 
+                href="/library" 
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3.5 rounded-md font-bold hover:bg-primary/90 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <Search className="w-5 h-5" />
+                Explore the Library
+              </Link>
+            </div>
+          </section>
+
           {/* Latest / Featured Rail */}
           <section>
             <div className="flex items-end justify-between mb-8">

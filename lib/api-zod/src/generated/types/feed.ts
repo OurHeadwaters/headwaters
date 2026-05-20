@@ -17,14 +17,8 @@ export interface Feed {
   /** @nullable */
   language?: string | null;
   totalEpisodes: number;
-  /**
-     * ISO-8601 timestamp of the newest episode.
-     * @nullable
-     */
+  /** @nullable */
   latestPubDate?: string | null;
-  /**
-     * URL where listeners can tip the host.
-     * @nullable
-     */
+  /** @nullable */
   tipUrl?: string | null;
 }

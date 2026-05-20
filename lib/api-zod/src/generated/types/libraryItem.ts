@@ -6,15 +6,19 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Episode {
+export interface LibraryItem {
+  id: number;
+  /** wordpress | youtube */
+  source: string;
+  /** audio | article | video */
+  kind: string;
   slug: string;
-  guid: string;
-  /** @nullable */
-  episodeNumber: number | null;
   title: string;
   link: string;
-  pubDate: string;
   summary: string;
+  publishedAt: string;
+  /** @nullable */
+  episodeNumber?: number | null;
   /** @nullable */
   durationSeconds?: number | null;
   /** @nullable */
@@ -22,6 +26,11 @@ export interface Episode {
   /** @nullable */
   audioType?: string | null;
   /** @nullable */
+  videoUrl?: string | null;
+  /** @nullable */
+  videoId?: string | null;
+  /** @nullable */
   artworkUrl?: string | null;
   categories: string[];
+  tags: string[];
 }

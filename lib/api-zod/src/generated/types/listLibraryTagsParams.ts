@@ -6,16 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListEpisodesParams = {
+export type ListLibraryTagsParams = {
 /**
  * @minimum 1
- * @maximum 100
+ * @maximum 500
  */
 limit?: number;
-/**
- * @minimum 0
- */
-offset?: number;
-q?: string;
-category?: string;
 };

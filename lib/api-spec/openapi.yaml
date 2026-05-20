@@ -11,16 +11,17 @@ tags:
   - name: health
     description: Health operations
   - name: episodes
-    description: The Survival Podcast episodes (fetched from the public RSS feed)
+    description: The Survival Podcast episodes (RSS-fed, latest ~400)
   - name: feed
     description: Channel-level podcast information
+  - name: library
+    description: Unified library across audio, articles, and video
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -33,7 +34,6 @@ paths:
       operationId: getFeed
       tags: [feed]
       summary: Get podcast channel information
-      description: Returns the podcast's title, description, artwork, host, and aggregate stats from the RSS feed.
       responses:
         "200":
           description: Feed info
@@ -46,35 +46,12 @@ paths:
       operationId: listEpisodes
       tags: [episodes]
       summary: List episodes
-      description: Returns paginated episodes, newest first. Supports full-text search and category filtering.
+      description: Paginated, newest-first podcast episodes from the live RSS feed. For the full archive (3,800+ episodes including written posts and videos), use /library/search.
       parameters:
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: offset
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-        - name: q
-          in: query
-          required: false
-          description: Full-text search across title, description and categories.
-          schema:
-            type: string
-        - name: category
-          in: query
-          required: false
-          description: Filter by exact category label.
-          schema:
-            type: string
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { type: string } }
       responses:
         "200":
           description: Episodes page
@@ -87,7 +64,6 @@ paths:
       operationId: getFeaturedEpisodes
       tags: [episodes]
       summary: Get featured episodes
-      description: Returns the most recent episodes hand-picked for the hero rail (5 items).
       responses:
         "200":
           description: Featured episodes
@@ -102,7 +78,6 @@ paths:
       operationId: getEpisodeStats
       tags: [episodes]
       summary: Aggregate episode stats
-      description: Totals, latest publish date, top categories, and a 12-month publish histogram.
       responses:
         "200":
           description: Aggregate stats
@@ -116,11 +91,7 @@ paths:
       tags: [episodes]
       summary: Get a single episode by slug
       parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
+        - { name: slug, in: path, required: true, schema: { type: string } }
       responses:
         "200":
           description: Episode
@@ -138,8 +109,7 @@ paths:
     get:
       operationId: listCategories
       tags: [episodes]
-      summary: List categories with counts
-      description: Returns every category seen in the feed with the number of episodes that reference it, newest first.
+      summary: List categories with counts (from RSS feed)
       responses:
         "200":
           description: Categories
@@ -149,153 +119,283 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CategoryCount"
+  /library/search:
+    get:
+      operationId: searchLibrary
+      tags: [library]
+      summary: Search the unified library
+      description: Full-text search across audio episodes, written articles, and YouTube videos. Filter by kind, tag, or category.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: kind, in: query, required: false, description: "Comma-separated subset of audio,article,video", schema: { type: string } }
+        - { name: tag, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: sort, in: query, required: false, schema: { type: string, enum: [newest, oldest, relevance], default: newest } }
+      responses:
+        "200":
+          description: Library search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryPage"
+  /library/stats:
+    get:
+      operationId: getLibraryStats
+      tags: [library]
+      summary: Library counts and sync status
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryStats"
+  /library/tags:
+    get:
+      operationId: listLibraryTags
+      tags: [library]
+      summary: Top tags across the library
+      parameters:
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+      responses:
+        "200":
+          description: Tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryCount"
+  /library/items/{slug}:
+    get:
+      operationId: getLibraryItem
+      tags: [library]
+      summary: Fetch a single library item by slug
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Library item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryItemDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /library/refresh:
+    post:
+      operationId: refreshLibrary
+      tags: [library]
+      summary: Trigger a library refresh
+      description: Re-syncs all sources from upstream. Throttled to once every 6 hours unless force=true.
+      parameters:
+        - { name: force, in: query, required: false, schema: { type: boolean, default: false } }
+      responses:
+        "200":
+          description: Refresh summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshSummary"
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
     ApiError:
       type: object
       required: [error]
       properties:
-        error:
-          type: string
+        error: { type: string }
     Feed:
       type: object
       required: [title, description, link, host, artworkUrl, totalEpisodes]
       properties:
-        title:
-          type: string
-        description:
-          type: string
-        link:
-          type: string
-        host:
-          type: string
-        artworkUrl:
-          type: string
-        copyright:
-          type: ["string", "null"]
-        language:
-          type: ["string", "null"]
-        totalEpisodes:
-          type: integer
-        latestPubDate:
-          type: ["string", "null"]
-          description: ISO-8601 timestamp of the newest episode.
-        tipUrl:
-          type: ["string", "null"]
-          description: URL where listeners can tip the host.
+        title: { type: string }
+        description: { type: string }
+        link: { type: string }
+        host: { type: string }
+        artworkUrl: { type: string }
+        copyright: { type: ["string", "null"] }
+        language: { type: ["string", "null"] }
+        totalEpisodes: { type: integer }
+        latestPubDate: { type: ["string", "null"] }
+        tipUrl: { type: ["string", "null"] }
     Episode:
       type: object
-      required:
-        - slug
-        - guid
-        - episodeNumber
-        - title
-        - link
-        - pubDate
-        - summary
-        - categories
+      required: [slug, guid, episodeNumber, title, link, pubDate, summary, categories]
       properties:
-        slug:
-          type: string
-          description: URL-safe slug derived from the episode link.
-        guid:
-          type: string
-        episodeNumber:
-          type: ["integer", "null"]
-          description: Parsed episode number (e.g. 3848) when present in the title.
-        title:
-          type: string
-          description: Episode title with the episode-number suffix stripped.
-        link:
-          type: string
-          description: Canonical link to the episode page on thesurvivalpodcast.com.
-        pubDate:
-          type: string
-          description: ISO-8601 publish date.
-        summary:
-          type: string
-          description: Short, plain-text summary (HTML stripped, ~280 chars).
-        durationSeconds:
-          type: ["integer", "null"]
-        audioUrl:
-          type: ["string", "null"]
-        audioType:
-          type: ["string", "null"]
-        artworkUrl:
-          type: ["string", "null"]
+        slug: { type: string }
+        guid: { type: string }
+        episodeNumber: { type: ["integer", "null"] }
+        title: { type: string }
+        link: { type: string }
+        pubDate: { type: string }
+        summary: { type: string }
+        durationSeconds: { type: ["integer", "null"] }
+        audioUrl: { type: ["string", "null"] }
+        audioType: { type: ["string", "null"] }
+        artworkUrl: { type: ["string", "null"] }
         categories:
           type: array
-          items:
-            type: string
+          items: { type: string }
     EpisodeDetail:
       allOf:
         - $ref: "#/components/schemas/Episode"
         - type: object
           required: [descriptionHtml]
           properties:
-            descriptionHtml:
-              type: string
-              description: Full episode description as sanitized HTML.
+            descriptionHtml: { type: string }
     EpisodePage:
       type: object
       required: [items, total, limit, offset]
       properties:
         items:
           type: array
-          items:
-            $ref: "#/components/schemas/Episode"
-        total:
-          type: integer
-        limit:
-          type: integer
-        offset:
-          type: integer
+          items: { $ref: "#/components/schemas/Episode" }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
     CategoryCount:
       type: object
       required: [name, count]
       properties:
-        name:
-          type: string
-        count:
-          type: integer
+        name: { type: string }
+        count: { type: integer }
     MonthBucket:
       type: object
       required: [month, count]
       properties:
-        month:
-          type: string
-          description: Year-month label, e.g. "2026-05".
-        count:
-          type: integer
+        month: { type: string }
+        count: { type: integer }
     EpisodeStats:
       type: object
-      required:
-        - totalEpisodes
-        - topCategories
-        - publishHistogram
+      required: [totalEpisodes, topCategories, publishHistogram]
       properties:
-        totalEpisodes:
-          type: integer
-        latestPubDate:
-          type: ["string", "null"]
-        latestEpisodeNumber:
-          type: ["integer", "null"]
-        averageDurationSeconds:
-          type: ["integer", "null"]
-        episodesLast30Days:
-          type: integer
+        totalEpisodes: { type: integer }
+        latestPubDate: { type: ["string", "null"] }
+        latestEpisodeNumber: { type: ["integer", "null"] }
+        averageDurationSeconds: { type: ["integer", "null"] }
+        episodesLast30Days: { type: integer }
         topCategories:
           type: array
-          items:
-            $ref: "#/components/schemas/CategoryCount"
+          items: { $ref: "#/components/schemas/CategoryCount" }
         publishHistogram:
           type: array
-          items:
-            $ref: "#/components/schemas/MonthBucket"
+          items: { $ref: "#/components/schemas/MonthBucket" }
+    LibraryItem:
+      type: object
+      required:
+        - id
+        - source
+        - kind
+        - slug
+        - title
+        - link
+        - summary
+        - publishedAt
+        - categories
+        - tags
+      properties:
+        id: { type: integer }
+        source:
+          type: string
+          description: "wordpress | youtube"
+        kind:
+          type: string
+          description: "audio | article | video"
+        slug: { type: string }
+        title: { type: string }
+        link: { type: string }
+        summary: { type: string }
+        publishedAt: { type: string }
+        episodeNumber: { type: ["integer", "null"] }
+        durationSeconds: { type: ["integer", "null"] }
+        audioUrl: { type: ["string", "null"] }
+        audioType: { type: ["string", "null"] }
+        videoUrl: { type: ["string", "null"] }
+        videoId: { type: ["string", "null"] }
+        artworkUrl: { type: ["string", "null"] }
+        categories:
+          type: array
+          items: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+    LibraryItemDetail:
+      allOf:
+        - $ref: "#/components/schemas/LibraryItem"
+        - type: object
+          required: [bodyHtml]
+          properties:
+            bodyHtml: { type: string }
+            related:
+              type: array
+              items: { $ref: "#/components/schemas/LibraryItem" }
+    LibraryPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/LibraryItem" }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    KindCount:
+      type: object
+      required: [kind, count]
+      properties:
+        kind: { type: string }
+        count: { type: integer }
+    SyncStatus:
+      type: object
+      required: [source, status]
+      properties:
+        source: { type: string }
+        status: { type: string }
+        finishedAt: { type: ["string", "null"] }
+        itemsSeen: { type: ["integer", "null"] }
+        itemsUpserted: { type: ["integer", "null"] }
+        errorMessage: { type: ["string", "null"] }
+    LibraryStats:
+      type: object
+      required: [totalItems, byKind, topCategories, topTags, sync]
+      properties:
+        totalItems: { type: integer }
+        byKind:
+          type: array
+          items: { $ref: "#/components/schemas/KindCount" }
+        latestPublishedAt: { type: ["string", "null"] }
+        earliestPublishedAt: { type: ["string", "null"] }
+        topCategories:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryCount" }
+        topTags:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryCount" }
+        sync:
+          type: array
+          items: { $ref: "#/components/schemas/SyncStatus" }
+    RefreshSourceResult:
+      type: object
+      required: [status, itemsSeen, itemsUpserted]
+      properties:
+        status: { type: string }
+        itemsSeen: { type: integer }
+        itemsUpserted: { type: integer }
+        error: { type: ["string", "null"] }
+    RefreshSummary:
+      type: object
+      required: [wordpress, youtube]
+      properties:
+        wordpress: { $ref: "#/components/schemas/RefreshSourceResult" }
+        youtube: { $ref: "#/components/schemas/RefreshSourceResult" }

@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface MonthBucket {
-  month: string;
+export interface KindCount {
+  kind: string;
   count: number;
 }

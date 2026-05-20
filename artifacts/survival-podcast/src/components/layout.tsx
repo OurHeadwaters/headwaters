@@ -9,6 +9,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { href: "/", label: "Home" },
+    { href: "/library", label: "Library", isNew: true },
     { href: "/episodes", label: "Archive" },
     { href: "/categories", label: "Categories" },
     { href: "/about", label: "About" },
@@ -31,13 +32,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
+                className={`relative text-sm font-medium transition-colors hover:text-primary flex items-center ${
                   location === link.href || (link.href !== '/' && location.startsWith(link.href)) 
                     ? "text-primary border-b-2 border-primary py-5 -mb-[22px]" 
                     : "text-muted-foreground"
                 }`}
               >
                 {link.label}
+                {link.isNew && (
+                  <span className="absolute -top-1 -right-4 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
@@ -57,14 +64,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-base font-medium px-2 py-2 rounded-md ${
+                className={`text-base font-medium px-2 py-2 rounded-md flex items-center justify-between ${
                   location === link.href || (link.href !== '/' && location.startsWith(link.href)) 
                     ? "bg-primary/10 text-primary" 
                     : "text-muted-foreground"
                 }`}
                 onClick={() => setMenuOpen(false)}
               >
-                {link.label}
+                <div className="flex items-center">
+                  {link.label}
+                  {link.isNew && (
+                    <span className="ml-2 bg-accent text-accent-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
+                      New
+                    </span>
+                  )}
+                </div>
               </Link>
             ))}
           </div>

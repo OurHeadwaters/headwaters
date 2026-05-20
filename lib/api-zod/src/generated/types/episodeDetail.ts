@@ -8,6 +8,5 @@
 import type { Episode } from './episode';
 
 export type EpisodeDetail = Episode & {
-  /** Full episode description as sanitized HTML. */
   descriptionHtml: string;
 };

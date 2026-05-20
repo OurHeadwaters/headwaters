@@ -8,6 +8,8 @@ import { Archive } from "@/pages/archive";
 import { EpisodeDetail } from "@/pages/episode";
 import { Categories } from "@/pages/categories";
 import { About } from "@/pages/about";
+import { Library } from "@/pages/library";
+import { LibraryItemDetail } from "@/pages/library-item";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -17,6 +19,8 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/library" component={Library} />
+        <Route path="/library/:slug" component={LibraryItemDetail} />
         <Route path="/episodes" component={Archive} />
         <Route path="/episodes/:slug" component={EpisodeDetail} />
         <Route path="/categories" component={Categories} />

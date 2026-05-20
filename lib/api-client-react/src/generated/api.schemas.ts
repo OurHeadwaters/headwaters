@@ -24,34 +24,20 @@ export interface Feed {
   /** @nullable */
   language?: string | null;
   totalEpisodes: number;
-  /**
-     * ISO-8601 timestamp of the newest episode.
-     * @nullable
-     */
+  /** @nullable */
   latestPubDate?: string | null;
-  /**
-     * URL where listeners can tip the host.
-     * @nullable
-     */
+  /** @nullable */
   tipUrl?: string | null;
 }
 
 export interface Episode {
-  /** URL-safe slug derived from the episode link. */
   slug: string;
   guid: string;
-  /**
-     * Parsed episode number (e.g. 3848) when present in the title.
-     * @nullable
-     */
+  /** @nullable */
   episodeNumber: number | null;
-  /** Episode title with the episode-number suffix stripped. */
   title: string;
-  /** Canonical link to the episode page on thesurvivalpodcast.com. */
   link: string;
-  /** ISO-8601 publish date. */
   pubDate: string;
-  /** Short, plain-text summary (HTML stripped, ~280 chars). */
   summary: string;
   /** @nullable */
   durationSeconds?: number | null;
@@ -65,7 +51,6 @@ export interface Episode {
 }
 
 export type EpisodeDetail = Episode & {
-  /** Full episode description as sanitized HTML. */
   descriptionHtml: string;
 };
 
@@ -82,7 +67,6 @@ export interface CategoryCount {
 }
 
 export interface MonthBucket {
-  /** Year-month label, e.g. "2026-05". */
   month: string;
   count: number;
 }
@@ -100,6 +84,90 @@ export interface EpisodeStats {
   publishHistogram: MonthBucket[];
 }
 
+export interface LibraryItem {
+  id: number;
+  /** wordpress | youtube */
+  source: string;
+  /** audio | article | video */
+  kind: string;
+  slug: string;
+  title: string;
+  link: string;
+  summary: string;
+  publishedAt: string;
+  /** @nullable */
+  episodeNumber?: number | null;
+  /** @nullable */
+  durationSeconds?: number | null;
+  /** @nullable */
+  audioUrl?: string | null;
+  /** @nullable */
+  audioType?: string | null;
+  /** @nullable */
+  videoUrl?: string | null;
+  /** @nullable */
+  videoId?: string | null;
+  /** @nullable */
+  artworkUrl?: string | null;
+  categories: string[];
+  tags: string[];
+}
+
+export type LibraryItemDetail = LibraryItem & {
+  bodyHtml: string;
+  related?: LibraryItem[];
+};
+
+export interface LibraryPage {
+  items: LibraryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface KindCount {
+  kind: string;
+  count: number;
+}
+
+export interface SyncStatus {
+  source: string;
+  status: string;
+  /** @nullable */
+  finishedAt?: string | null;
+  /** @nullable */
+  itemsSeen?: number | null;
+  /** @nullable */
+  itemsUpserted?: number | null;
+  /** @nullable */
+  errorMessage?: string | null;
+}
+
+export interface LibraryStats {
+  totalItems: number;
+  byKind: KindCount[];
+  /** @nullable */
+  latestPublishedAt?: string | null;
+  /** @nullable */
+  earliestPublishedAt?: string | null;
+  topCategories: CategoryCount[];
+  topTags: CategoryCount[];
+  sync: SyncStatus[];
+}
+
+export interface RefreshSourceResult {
+  status: string;
+  itemsSeen: number;
+  itemsUpserted: number;
+  /** @nullable */
+  error?: string | null;
+}
+
+export interface RefreshSummary {
+  wordpress: RefreshSourceResult;
+  youtube: RefreshSourceResult;
+}
+
 export type ListEpisodesParams = {
 /**
  * @minimum 1
@@ -110,13 +178,48 @@ limit?: number;
  * @minimum 0
  */
 offset?: number;
-/**
- * Full-text search across title, description and categories.
- */
+q?: string;
+category?: string;
+};
+
+export type SearchLibraryParams = {
 q?: string;
 /**
- * Filter by exact category label.
+ * Comma-separated subset of audio,article,video
  */
+kind?: string;
+tag?: string;
 category?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+sort?: SearchLibrarySort;
+};
+
+export type SearchLibrarySort = typeof SearchLibrarySort[keyof typeof SearchLibrarySort];
+
+
+export const SearchLibrarySort = {
+  newest: 'newest',
+  oldest: 'oldest',
+  relevance: 'relevance',
+} as const;
+
+export type ListLibraryTagsParams = {
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+limit?: number;
+};
+
+export type RefreshLibraryParams = {
+force?: boolean;
 };
 

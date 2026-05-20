@@ -6,11 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -24,7 +28,14 @@ import type {
   EpisodeStats,
   Feed,
   HealthStatus,
-  ListEpisodesParams
+  LibraryItemDetail,
+  LibraryPage,
+  LibraryStats,
+  ListEpisodesParams,
+  ListLibraryTagsParams,
+  RefreshLibraryParams,
+  RefreshSummary,
+  SearchLibraryParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -48,7 +59,6 @@ export const getHealthCheckUrl = () => {
 }
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const healthCheck = async ( options?: RequestInit): Promise<HealthStatus> => {
@@ -126,7 +136,6 @@ export const getGetFeedUrl = () => {
 }
 
 /**
- * Returns the podcast's title, description, artwork, host, and aggregate stats from the RSS feed.
  * @summary Get podcast channel information
  */
 export const getFeed = async ( options?: RequestInit): Promise<Feed> => {
@@ -211,7 +220,7 @@ export const getListEpisodesUrl = (params?: ListEpisodesParams,) => {
 }
 
 /**
- * Returns paginated episodes, newest first. Supports full-text search and category filtering.
+ * Paginated, newest-first podcast episodes from the live RSS feed. For the full archive (3,800+ episodes including written posts and videos), use /library/search.
  * @summary List episodes
  */
 export const listEpisodes = async (params?: ListEpisodesParams, options?: RequestInit): Promise<EpisodePage> => {
@@ -289,7 +298,6 @@ export const getGetFeaturedEpisodesUrl = () => {
 }
 
 /**
- * Returns the most recent episodes hand-picked for the hero rail (5 items).
  * @summary Get featured episodes
  */
 export const getFeaturedEpisodes = async ( options?: RequestInit): Promise<Episode[]> => {
@@ -367,7 +375,6 @@ export const getGetEpisodeStatsUrl = () => {
 }
 
 /**
- * Totals, latest publish date, top categories, and a 12-month publish histogram.
  * @summary Aggregate episode stats
  */
 export const getEpisodeStats = async ( options?: RequestInit): Promise<EpisodeStats> => {
@@ -522,8 +529,7 @@ export const getListCategoriesUrl = () => {
 }
 
 /**
- * Returns every category seen in the feed with the number of episodes that reference it, newest first.
- * @summary List categories with counts
+ * @summary List categories with counts (from RSS feed)
  */
 export const listCategories = async ( options?: RequestInit): Promise<CategoryCount[]> => {
 
@@ -570,7 +576,7 @@ export type ListCategoriesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List categories with counts
+ * @summary List categories with counts (from RSS feed)
  */
 
 export function useListCategories<TData = Awaited<ReturnType<typeof listCategories>>, TError = ErrorType<unknown>>(
@@ -590,4 +596,405 @@ export function useListCategories<TData = Awaited<ReturnType<typeof listCategori
 
 
 
+
+export const getSearchLibraryUrl = (params?: SearchLibraryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/library/search?${stringifiedParams}` : `/api/library/search`
+}
+
+/**
+ * Full-text search across audio episodes, written articles, and YouTube videos. Filter by kind, tag, or category.
+ * @summary Search the unified library
+ */
+export const searchLibrary = async (params?: SearchLibraryParams, options?: RequestInit): Promise<LibraryPage> => {
+
+  return customFetch<LibraryPage>(getSearchLibraryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchLibraryQueryKey = (params?: SearchLibraryParams,) => {
+    return [
+    `/api/library/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchLibraryQueryOptions = <TData = Awaited<ReturnType<typeof searchLibrary>>, TError = ErrorType<unknown>>(params?: SearchLibraryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchLibrary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchLibraryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchLibrary>>> = ({ signal }) => searchLibrary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchLibrary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchLibraryQueryResult = NonNullable<Awaited<ReturnType<typeof searchLibrary>>>
+export type SearchLibraryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search the unified library
+ */
+
+export function useSearchLibrary<TData = Awaited<ReturnType<typeof searchLibrary>>, TError = ErrorType<unknown>>(
+ params?: SearchLibraryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchLibrary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchLibraryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetLibraryStatsUrl = () => {
+
+
+
+
+  return `/api/library/stats`
+}
+
+/**
+ * @summary Library counts and sync status
+ */
+export const getLibraryStats = async ( options?: RequestInit): Promise<LibraryStats> => {
+
+  return customFetch<LibraryStats>(getGetLibraryStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLibraryStatsQueryKey = () => {
+    return [
+    `/api/library/stats`
+    ] as const;
+    }
+
+
+export const getGetLibraryStatsQueryOptions = <TData = Awaited<ReturnType<typeof getLibraryStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLibraryStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLibraryStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLibraryStats>>> = ({ signal }) => getLibraryStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLibraryStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLibraryStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getLibraryStats>>>
+export type GetLibraryStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Library counts and sync status
+ */
+
+export function useGetLibraryStats<TData = Awaited<ReturnType<typeof getLibraryStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLibraryStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLibraryStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListLibraryTagsUrl = (params?: ListLibraryTagsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/library/tags?${stringifiedParams}` : `/api/library/tags`
+}
+
+/**
+ * @summary Top tags across the library
+ */
+export const listLibraryTags = async (params?: ListLibraryTagsParams, options?: RequestInit): Promise<CategoryCount[]> => {
+
+  return customFetch<CategoryCount[]>(getListLibraryTagsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLibraryTagsQueryKey = (params?: ListLibraryTagsParams,) => {
+    return [
+    `/api/library/tags`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListLibraryTagsQueryOptions = <TData = Awaited<ReturnType<typeof listLibraryTags>>, TError = ErrorType<unknown>>(params?: ListLibraryTagsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLibraryTags>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLibraryTagsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLibraryTags>>> = ({ signal }) => listLibraryTags(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLibraryTags>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLibraryTagsQueryResult = NonNullable<Awaited<ReturnType<typeof listLibraryTags>>>
+export type ListLibraryTagsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Top tags across the library
+ */
+
+export function useListLibraryTags<TData = Awaited<ReturnType<typeof listLibraryTags>>, TError = ErrorType<unknown>>(
+ params?: ListLibraryTagsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLibraryTags>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLibraryTagsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetLibraryItemUrl = (slug: string,) => {
+
+
+
+
+  return `/api/library/items/${slug}`
+}
+
+/**
+ * @summary Fetch a single library item by slug
+ */
+export const getLibraryItem = async (slug: string, options?: RequestInit): Promise<LibraryItemDetail> => {
+
+  return customFetch<LibraryItemDetail>(getGetLibraryItemUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLibraryItemQueryKey = (slug: string,) => {
+    return [
+    `/api/library/items/${slug}`
+    ] as const;
+    }
+
+
+export const getGetLibraryItemQueryOptions = <TData = Awaited<ReturnType<typeof getLibraryItem>>, TError = ErrorType<ApiError>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLibraryItem>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLibraryItemQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLibraryItem>>> = ({ signal }) => getLibraryItem(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLibraryItem>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLibraryItemQueryResult = NonNullable<Awaited<ReturnType<typeof getLibraryItem>>>
+export type GetLibraryItemQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Fetch a single library item by slug
+ */
+
+export function useGetLibraryItem<TData = Awaited<ReturnType<typeof getLibraryItem>>, TError = ErrorType<ApiError>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLibraryItem>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLibraryItemQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getRefreshLibraryUrl = (params?: RefreshLibraryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/library/refresh?${stringifiedParams}` : `/api/library/refresh`
+}
+
+/**
+ * Re-syncs all sources from upstream. Throttled to once every 6 hours unless force=true.
+ * @summary Trigger a library refresh
+ */
+export const refreshLibrary = async (params?: RefreshLibraryParams, options?: RequestInit): Promise<RefreshSummary> => {
+
+  return customFetch<RefreshSummary>(getRefreshLibraryUrl(params),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRefreshLibraryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshLibrary>>, TError,{params?: RefreshLibraryParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refreshLibrary>>, TError,{params?: RefreshLibraryParams}, TContext> => {
+
+const mutationKey = ['refreshLibrary'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refreshLibrary>>, {params?: RefreshLibraryParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  refreshLibrary(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefreshLibraryMutationResult = NonNullable<Awaited<ReturnType<typeof refreshLibrary>>>
+
+    export type RefreshLibraryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Trigger a library refresh
+ */
+export const useRefreshLibrary = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshLibrary>>, TError,{params?: RefreshLibraryParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refreshLibrary>>,
+        TError,
+        {params?: RefreshLibraryParams},
+        TContext
+      > => {
+      return useMutation(getRefreshLibraryMutationOptions(options));
+    }
 

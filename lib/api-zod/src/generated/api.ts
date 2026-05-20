@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -18,7 +17,6 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Returns the podcast's title, description, artwork, host, and aggregate stats from the RSS feed.
  * @summary Get podcast channel information
  */
 export const GetFeedResponse = zod.object({
@@ -30,13 +28,13 @@ export const GetFeedResponse = zod.object({
   "copyright": zod.string().nullish(),
   "language": zod.string().nullish(),
   "totalEpisodes": zod.number(),
-  "latestPubDate": zod.string().nullish().describe('ISO-8601 timestamp of the newest episode.'),
-  "tipUrl": zod.string().nullish().describe('URL where listeners can tip the host.')
+  "latestPubDate": zod.string().nullish(),
+  "tipUrl": zod.string().nullish()
 })
 
 
 /**
- * Returns paginated episodes, newest first. Supports full-text search and category filtering.
+ * Paginated, newest-first podcast episodes from the live RSS feed. For the full archive (3,800+ episodes including written posts and videos), use /library/search.
  * @summary List episodes
  */
 export const listEpisodesQueryLimitDefault = 20;
@@ -50,19 +48,19 @@ export const listEpisodesQueryOffsetMin = 0;
 export const ListEpisodesQueryParams = zod.object({
   "limit": zod.coerce.number().min(1).max(listEpisodesQueryLimitMax).default(listEpisodesQueryLimitDefault),
   "offset": zod.coerce.number().min(listEpisodesQueryOffsetMin).default(listEpisodesQueryOffsetDefault),
-  "q": zod.coerce.string().optional().describe('Full-text search across title, description and categories.'),
-  "category": zod.coerce.string().optional().describe('Filter by exact category label.')
+  "q": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional()
 })
 
 export const ListEpisodesResponse = zod.object({
   "items": zod.array(zod.object({
-  "slug": zod.string().describe('URL-safe slug derived from the episode link.'),
+  "slug": zod.string(),
   "guid": zod.string(),
-  "episodeNumber": zod.number().nullable().describe('Parsed episode number (e.g. 3848) when present in the title.'),
-  "title": zod.string().describe('Episode title with the episode-number suffix stripped.'),
-  "link": zod.string().describe('Canonical link to the episode page on thesurvivalpodcast.com.'),
-  "pubDate": zod.string().describe('ISO-8601 publish date.'),
-  "summary": zod.string().describe('Short, plain-text summary (HTML stripped, ~280 chars).'),
+  "episodeNumber": zod.number().nullable(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "pubDate": zod.string(),
+  "summary": zod.string(),
   "durationSeconds": zod.number().nullish(),
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
@@ -76,17 +74,16 @@ export const ListEpisodesResponse = zod.object({
 
 
 /**
- * Returns the most recent episodes hand-picked for the hero rail (5 items).
  * @summary Get featured episodes
  */
 export const GetFeaturedEpisodesResponseItem = zod.object({
-  "slug": zod.string().describe('URL-safe slug derived from the episode link.'),
+  "slug": zod.string(),
   "guid": zod.string(),
-  "episodeNumber": zod.number().nullable().describe('Parsed episode number (e.g. 3848) when present in the title.'),
-  "title": zod.string().describe('Episode title with the episode-number suffix stripped.'),
-  "link": zod.string().describe('Canonical link to the episode page on thesurvivalpodcast.com.'),
-  "pubDate": zod.string().describe('ISO-8601 publish date.'),
-  "summary": zod.string().describe('Short, plain-text summary (HTML stripped, ~280 chars).'),
+  "episodeNumber": zod.number().nullable(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "pubDate": zod.string(),
+  "summary": zod.string(),
   "durationSeconds": zod.number().nullish(),
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
@@ -97,7 +94,6 @@ export const GetFeaturedEpisodesResponse = zod.array(GetFeaturedEpisodesResponse
 
 
 /**
- * Totals, latest publish date, top categories, and a 12-month publish histogram.
  * @summary Aggregate episode stats
  */
 export const GetEpisodeStatsResponse = zod.object({
@@ -111,7 +107,7 @@ export const GetEpisodeStatsResponse = zod.object({
   "count": zod.number()
 })),
   "publishHistogram": zod.array(zod.object({
-  "month": zod.string().describe('Year-month label, e.g. \"2026-05\".'),
+  "month": zod.string(),
   "count": zod.number()
 }))
 })
@@ -125,31 +121,202 @@ export const GetEpisodeParams = zod.object({
 })
 
 export const GetEpisodeResponse = zod.object({
-  "slug": zod.string().describe('URL-safe slug derived from the episode link.'),
+  "slug": zod.string(),
   "guid": zod.string(),
-  "episodeNumber": zod.number().nullable().describe('Parsed episode number (e.g. 3848) when present in the title.'),
-  "title": zod.string().describe('Episode title with the episode-number suffix stripped.'),
-  "link": zod.string().describe('Canonical link to the episode page on thesurvivalpodcast.com.'),
-  "pubDate": zod.string().describe('ISO-8601 publish date.'),
-  "summary": zod.string().describe('Short, plain-text summary (HTML stripped, ~280 chars).'),
+  "episodeNumber": zod.number().nullable(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "pubDate": zod.string(),
+  "summary": zod.string(),
   "durationSeconds": zod.number().nullish(),
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
   "artworkUrl": zod.string().nullish(),
   "categories": zod.array(zod.string())
 }).and(zod.object({
-  "descriptionHtml": zod.string().describe('Full episode description as sanitized HTML.')
+  "descriptionHtml": zod.string()
 }))
 
 
 /**
- * Returns every category seen in the feed with the number of episodes that reference it, newest first.
- * @summary List categories with counts
+ * @summary List categories with counts (from RSS feed)
  */
 export const ListCategoriesResponseItem = zod.object({
   "name": zod.string(),
   "count": zod.number()
 })
 export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
+
+
+/**
+ * Full-text search across audio episodes, written articles, and YouTube videos. Filter by kind, tag, or category.
+ * @summary Search the unified library
+ */
+export const searchLibraryQueryLimitDefault = 20;
+export const searchLibraryQueryLimitMax = 100;
+
+export const searchLibraryQueryOffsetDefault = 0;
+export const searchLibraryQueryOffsetMin = 0;
+
+export const searchLibraryQuerySortDefault = `newest`;
+
+export const SearchLibraryQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "kind": zod.coerce.string().optional().describe('Comma-separated subset of audio,article,video'),
+  "tag": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().min(1).max(searchLibraryQueryLimitMax).default(searchLibraryQueryLimitDefault),
+  "offset": zod.coerce.number().min(searchLibraryQueryOffsetMin).default(searchLibraryQueryOffsetDefault),
+  "sort": zod.enum(['newest', 'oldest', 'relevance']).default(searchLibraryQuerySortDefault)
+})
+
+export const SearchLibraryResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "source": zod.string().describe('wordpress | youtube'),
+  "kind": zod.string().describe('audio | article | video'),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "summary": zod.string(),
+  "publishedAt": zod.string(),
+  "episodeNumber": zod.number().nullish(),
+  "durationSeconds": zod.number().nullish(),
+  "audioUrl": zod.string().nullish(),
+  "audioType": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "videoId": zod.string().nullish(),
+  "artworkUrl": zod.string().nullish(),
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string())
+})),
+  "total": zod.number(),
+  "limit": zod.number(),
+  "offset": zod.number()
+})
+
+
+/**
+ * @summary Library counts and sync status
+ */
+export const GetLibraryStatsResponse = zod.object({
+  "totalItems": zod.number(),
+  "byKind": zod.array(zod.object({
+  "kind": zod.string(),
+  "count": zod.number()
+})),
+  "latestPublishedAt": zod.string().nullish(),
+  "earliestPublishedAt": zod.string().nullish(),
+  "topCategories": zod.array(zod.object({
+  "name": zod.string(),
+  "count": zod.number()
+})),
+  "topTags": zod.array(zod.object({
+  "name": zod.string(),
+  "count": zod.number()
+})),
+  "sync": zod.array(zod.object({
+  "source": zod.string(),
+  "status": zod.string(),
+  "finishedAt": zod.string().nullish(),
+  "itemsSeen": zod.number().nullish(),
+  "itemsUpserted": zod.number().nullish(),
+  "errorMessage": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Top tags across the library
+ */
+export const listLibraryTagsQueryLimitDefault = 100;
+export const listLibraryTagsQueryLimitMax = 500;
+
+
+
+export const ListLibraryTagsQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(listLibraryTagsQueryLimitMax).default(listLibraryTagsQueryLimitDefault)
+})
+
+export const ListLibraryTagsResponseItem = zod.object({
+  "name": zod.string(),
+  "count": zod.number()
+})
+export const ListLibraryTagsResponse = zod.array(ListLibraryTagsResponseItem)
+
+
+/**
+ * @summary Fetch a single library item by slug
+ */
+export const GetLibraryItemParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetLibraryItemResponse = zod.object({
+  "id": zod.number(),
+  "source": zod.string().describe('wordpress | youtube'),
+  "kind": zod.string().describe('audio | article | video'),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "summary": zod.string(),
+  "publishedAt": zod.string(),
+  "episodeNumber": zod.number().nullish(),
+  "durationSeconds": zod.number().nullish(),
+  "audioUrl": zod.string().nullish(),
+  "audioType": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "videoId": zod.string().nullish(),
+  "artworkUrl": zod.string().nullish(),
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string())
+}).and(zod.object({
+  "bodyHtml": zod.string(),
+  "related": zod.array(zod.object({
+  "id": zod.number(),
+  "source": zod.string().describe('wordpress | youtube'),
+  "kind": zod.string().describe('audio | article | video'),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "summary": zod.string(),
+  "publishedAt": zod.string(),
+  "episodeNumber": zod.number().nullish(),
+  "durationSeconds": zod.number().nullish(),
+  "audioUrl": zod.string().nullish(),
+  "audioType": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "videoId": zod.string().nullish(),
+  "artworkUrl": zod.string().nullish(),
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string())
+})).optional()
+}))
+
+
+/**
+ * Re-syncs all sources from upstream. Throttled to once every 6 hours unless force=true.
+ * @summary Trigger a library refresh
+ */
+export const refreshLibraryQueryForceDefault = false;
+
+export const RefreshLibraryQueryParams = zod.object({
+  "force": zod.coerce.boolean().default(refreshLibraryQueryForceDefault)
+})
+
+export const RefreshLibraryResponse = zod.object({
+  "wordpress": zod.object({
+  "status": zod.string(),
+  "itemsSeen": zod.number(),
+  "itemsUpserted": zod.number(),
+  "error": zod.string().nullish()
+}),
+  "youtube": zod.object({
+  "status": zod.string(),
+  "itemsSeen": zod.number(),
+  "itemsUpserted": zod.number(),
+  "error": zod.string().nullish()
+})
+})
 
 
