@@ -103,6 +103,23 @@ async function fetchTrackNextUndone(
   return res.json();
 }
 
+export async function fetchAllTrackEpisodes(slug: string): Promise<TrackItem[]> {
+  const BATCH = 200;
+  const first = await fetchTrackEpisodes(slug, { limit: BATCH, offset: 0 });
+  const total = first.total;
+  if (total <= BATCH) return first.items;
+  const remaining: TrackItem[][] = [first.items];
+  const batches = Math.ceil((total - BATCH) / BATCH);
+  await Promise.all(
+    Array.from({ length: batches }, (_, i) =>
+      fetchTrackEpisodes(slug, { limit: BATCH, offset: BATCH + i * BATCH }).then((p) =>
+        remaining.push(p.items),
+      ),
+    ),
+  );
+  return remaining.flat();
+}
+
 export function useGetTrackNextUndone(
   slug: string | null,
   doneIds: Set<number>,

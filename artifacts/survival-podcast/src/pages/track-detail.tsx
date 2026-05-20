@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { useGetTrackEpisodes } from "@/hooks/use-tracks";
+import { useGetTrackEpisodes, fetchAllTrackEpisodes } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -290,6 +290,149 @@ function ShareProgressButton({ slug, doneIds, doneCount, total }: ShareButtonPro
         <>
           <Share2 className="w-4 h-4" />
           Share my progress ({doneCount}/{total})
+        </>
+      )}
+    </button>
+  );
+}
+
+type ExportPdfButtonProps = {
+  slug: string;
+  trackTitle: string;
+  trackSubtitle: string;
+  trackIcon: string;
+  trackColor: string;
+  zoneLabel: string;
+  doneIds: Set<number>;
+  doneCount: number;
+  total: number;
+};
+
+function ExportPdfButton({
+  slug,
+  trackTitle,
+  trackSubtitle,
+  trackIcon,
+  trackColor,
+  zoneLabel,
+  doneIds,
+  doneCount,
+  total,
+}: ExportPdfButtonProps) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleExport() {
+    setLoading(true);
+    try {
+      const allItems = await fetchAllTrackEpisodes(slug);
+      const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+      const isComplete = doneCount >= total && total > 0;
+      const dateStr = format(new Date(), "MMMM d, yyyy");
+
+      const rows = allItems
+        .map((item, i) => {
+          const done = doneIds.has(item.id);
+          const ep = item.episodeNumber ? ` · Ep ${item.episodeNumber}` : "";
+          const pub = format(parseISO(item.publishedAt), "MMM d, yyyy");
+          const rowBg = done ? "#f0fdf4" : i % 2 === 0 ? "#ffffff" : "#f9fafb";
+          const checkCell = done
+            ? `<td style="width:28px;padding:6px 8px;text-align:center;font-size:16px;color:#16a34a;">&#10003;</td>`
+            : `<td style="width:28px;padding:6px 8px;text-align:center;font-size:14px;color:#d1d5db;">&#9675;</td>`;
+          const titleStyle = done
+            ? "font-size:12px;color:#6b7280;text-decoration:line-through;"
+            : "font-size:12px;color:#111827;font-weight:500;";
+          return `<tr style="background:${rowBg};border-bottom:1px solid #f3f4f6;">
+            ${checkCell}
+            <td style="padding:6px 8px;width:28px;font-size:11px;color:#9ca3af;text-align:right;">${i + 1}</td>
+            <td style="padding:6px 10px;">
+              <div style="${titleStyle}">${item.title.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:1px;">${pub}${ep}</div>
+            </td>
+          </tr>`;
+        })
+        .join("");
+
+      const statusColor = isComplete ? "#16a34a" : trackColor;
+      const statusText = isComplete
+        ? "Track complete!"
+        : `${doneCount.toLocaleString()} of ${total.toLocaleString()} done · ${pct}% complete`;
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>${trackTitle} — Progress Checklist</title>
+<style>
+  @media print {
+    @page { margin: 0.6in 0.5in; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  body { font-family: Georgia, 'Times New Roman', serif; margin: 0; padding: 0; color: #111827; background: #fff; }
+  .header { padding: 24px 0 16px; border-bottom: 2px solid ${trackColor}; margin-bottom: 16px; }
+  .zone-badge { display: inline-block; font-family: sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${statusColor}; border: 1.5px solid ${statusColor}; border-radius: 100px; padding: 3px 10px; margin-bottom: 10px; }
+  h1 { font-size: 26px; margin: 0 0 4px; color: #111827; font-weight: 700; }
+  .subtitle { font-size: 13px; color: #6b7280; margin: 0 0 12px; font-family: sans-serif; }
+  .progress-bar-wrap { background: #f3f4f6; border-radius: 100px; height: 8px; margin-bottom: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 8px; border-radius: 100px; background: ${statusColor}; width: ${pct}%; }
+  .status-row { font-family: sans-serif; font-size: 12px; font-weight: 600; color: ${statusColor}; margin-bottom: 4px; }
+  .meta-row { font-family: sans-serif; font-size: 11px; color: #9ca3af; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
+  thead tr { background: ${trackColor}18; }
+  thead th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: ${trackColor}; padding: 7px 8px; text-align: left; border-bottom: 1px solid ${trackColor}40; }
+  .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-family: sans-serif; font-size: 10px; color: #9ca3af; text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="zone-badge">${zoneLabel} · Learning Track</div>
+  <h1>${trackIcon} ${trackTitle.replace(/</g, "&lt;")}</h1>
+  <p class="subtitle">${trackSubtitle.replace(/</g, "&lt;")}</p>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill"></div></div>
+  <div class="status-row">${statusText}</div>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:28px;">&#10003;</th>
+      <th style="width:28px;">#</th>
+      <th>Episode / Resource</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="footer">Exported ${dateStr} · The Survival Podcast Learning Tracks</div>
+</body>
+</html>`;
+
+      const win = window.open("", "_blank");
+      if (!win) return;
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        win.print();
+      }, 400);
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleExport}
+      disabled={loading}
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 bg-background border-border hover:border-primary/40 hover:bg-primary/5 text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      {loading ? (
+        <>
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          Building PDF…
+        </>
+      ) : (
+        <>
+          <Download className="w-4 h-4" />
+          Export as PDF
         </>
       )}
     </button>
@@ -603,11 +746,22 @@ export default function TrackDetailPage() {
             <ProgressBar doneCount={displayDoneCount} total={total} color={track.color} />
           </div>
 
-          {/* Share button — only shown when user has their own progress */}
+          {/* Share + Export buttons — only shown when user has their own progress */}
           {!isSharedView && (
-            <div className="print:hidden mt-4">
+            <div className="print:hidden mt-4 flex items-center gap-3 flex-wrap">
               <ShareProgressButton
                 slug={slug}
+                doneIds={progress.doneIds}
+                doneCount={progress.doneCount}
+                total={total}
+              />
+              <ExportPdfButton
+                slug={slug}
+                trackTitle={track.title}
+                trackSubtitle={track.subtitle}
+                trackIcon={track.icon}
+                trackColor={track.color}
+                zoneLabel={ZONE_LABELS[track.zoneNumber]}
                 doneIds={progress.doneIds}
                 doneCount={progress.doneCount}
                 total={total}
