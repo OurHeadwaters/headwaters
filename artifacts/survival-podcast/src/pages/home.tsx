@@ -7,6 +7,7 @@ import { ThisDayInHistory } from "@/components/this-day-in-history";
 import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout, ArrowRight } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { getSeriesTheme } from "@/lib/seriesTheme";
+import { getCategoryDescription } from "@/data/category-descriptions";
 
 const ZONE_CHIP_COLORS = [
   "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100",
@@ -518,18 +519,28 @@ export function Home() {
               {categoriesLoading ? (
                  <div className="h-32 bg-muted rounded-md animate-pulse" />
               ) : (
-                categories?.slice(0, 8).map(cat => (
-                  <Link 
-                    key={cat.name} 
-                    href={`/episodes?category=${encodeURIComponent(cat.name)}`}
-                    className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors group"
-                  >
-                    <span className="font-medium text-foreground group-hover:text-primary transition-colors">{cat.name}</span>
-                    <span className="text-xs font-semibold text-muted-foreground bg-background border border-border px-2 py-0.5 rounded-full">
-                      {cat.count}
-                    </span>
-                  </Link>
-                ))
+                categories?.slice(0, 8).map(cat => {
+                  const desc = cat.description ?? getCategoryDescription(cat.name);
+                  return (
+                    <Link
+                      key={cat.name}
+                      href={`/episodes?category=${encodeURIComponent(cat.name)}`}
+                      className="flex flex-col gap-0.5 py-2 px-3 rounded-md hover:bg-muted transition-colors group"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground group-hover:text-primary transition-colors">{cat.name}</span>
+                        <span className="text-xs font-semibold text-muted-foreground bg-background border border-border px-2 py-0.5 rounded-full shrink-0">
+                          {cat.count}
+                        </span>
+                      </div>
+                      {desc && (
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                          {desc}
+                        </p>
+                      )}
+                    </Link>
+                  );
+                })
               )}
             </div>
             <Link href="/categories" className="inline-flex mt-4 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
