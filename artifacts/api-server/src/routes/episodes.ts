@@ -7,7 +7,7 @@ import { getFeedCached, type RssEpisode } from "../lib/rss";
 import { logger } from "../lib/logger";
 import { getCuratedDescription } from "../lib/category-descriptions";
 import { extractHistoryTimestamp } from "../lib/history-detection";
-import { sql } from "drizzle-orm";
+import { sql, or, and } from "drizzle-orm";
 import { db, contentItemsTable } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -38,6 +38,8 @@ router.get("/feed", async (_req, res) => {
   }
 });
 
+type EpisodeSummary = Omit<RssEpisode, "descriptionHtml">;
+
 router.get("/episodes", async (req, res) => {
   try {
     const rawTags = req.query["tags[]"] ?? req.query.tags;
@@ -61,18 +63,87 @@ router.get("/episodes", async (req, res) => {
     }
     const { limit = 20, offset = 0, q, category, tags } = parsed.data;
     const feed = await getFeedCached();
-    let items = feed.episodes;
+
+    // Apply tag / category filter on RSS episodes, then strip descriptionHtml
+    let rssItems = feed.episodes;
     if (tags && tags.length > 0) {
       const normalizedTags = tags.map((t) => t.toLowerCase());
-      items = items.filter((e) =>
+      rssItems = rssItems.filter((e) =>
         e.categories.some((c) => normalizedTags.includes(c.toLowerCase())),
       );
     } else if (category) {
       const cat = category.toLowerCase();
-      items = items.filter((e) =>
+      rssItems = rssItems.filter((e) =>
         e.categories.some((c) => c.toLowerCase() === cat),
       );
     }
+
+    let items: EpisodeSummary[] = rssItems.map(toEpisodeSummary);
+
+    // When a tags filter is active, also pull matching episodes from the full
+    // DB library (3 800+ episodes) so historical content is included.
+    if (tags && tags.length > 0) {
+      try {
+        const normalizedTags = tags.map((t) => t.toLowerCase());
+        // Match any audio item whose `tags` OR `categories` JSONB column
+        // contains at least one of the requested tag values.
+        // Uses the proven `@>` containment operator (same as library.ts search).
+        // One condition per tag, all OR'd together for both columns.
+        const tagOrConditions = normalizedTags.flatMap((tag) => [
+          sql`${contentItemsTable.tags} @> ${JSON.stringify([tag])}::jsonb`,
+          sql`${contentItemsTable.categories} @> ${JSON.stringify([tag])}::jsonb`,
+        ]);
+        const dbRows = await db
+          .select()
+          .from(contentItemsTable)
+          .where(
+            and(
+              sql`${contentItemsTable.kind} = 'audio'`,
+              or(...tagOrConditions),
+            ),
+          )
+          .orderBy(sql`${contentItemsTable.publishedAt} DESC`)
+          .limit(2000);
+
+        // Deduplicate against what RSS already returned
+        const rssSlugSet = new Set(items.map((e) => e.slug));
+        const rssEpNumSet = new Set(
+          items
+            .map((e) => e.episodeNumber)
+            .filter((n): n is number => n != null),
+        );
+
+        for (const row of dbRows) {
+          if (rssSlugSet.has(row.slug)) continue;
+          if (row.episodeNumber != null && rssEpNumSet.has(row.episodeNumber))
+            continue;
+
+          items.push({
+            slug: row.slug,
+            guid: row.sourceId,
+            episodeNumber: row.episodeNumber,
+            title: row.title,
+            link: row.link,
+            pubDate: row.publishedAt.toISOString(),
+            summary: row.summary,
+            durationSeconds: row.durationSeconds,
+            audioUrl: row.audioUrl,
+            audioType: row.audioType,
+            artworkUrl: row.artworkUrl,
+            categories: row.categories,
+          });
+        }
+
+        // Re-sort the merged list by most recent first
+        items.sort((a, b) => b.pubDate.localeCompare(a.pubDate));
+      } catch (dbErr) {
+        logger.warn(
+          { err: dbErr },
+          "episodes: DB tags query failed, serving RSS-only results",
+        );
+      }
+    }
+
     if (q && q.trim()) {
       const needle = q.trim().toLowerCase();
       items = items.filter((e) => {
@@ -83,8 +154,9 @@ router.get("/episodes", async (req, res) => {
         );
       });
     }
+
     const total = items.length;
-    const page = items.slice(offset, offset + limit).map(toEpisodeSummary);
+    const page = items.slice(offset, offset + limit);
     res.json({ items: page, total, limit, offset });
   } catch (err) {
     logger.error({ err }, "Failed to list episodes");
