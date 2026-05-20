@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import { useGetFeaturedEpisodes, useGetFeed, useListEpisodes, useGetThisDayEpisodes } from "@workspace/api-client-react";
 import type { Episode, ThisDayEpisode } from "@workspace/api-client-react";
 import React, { useState, useRef } from "react";
+import { useHistory } from "@/context/HistoryContext";
+import type { PlaybackRecord } from "@/context/HistoryContext";
 import {
   ActivityIndicator,
   FlatList,
@@ -222,6 +224,86 @@ function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
   );
 }
 
+function formatProgress(positionMs: number, durationSeconds?: number | null): string {
+  const totalSec = Math.floor(positionMs / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pos = h > 0
+    ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+    : `${m}:${String(s).padStart(2, "0")}`;
+  return pos;
+}
+
+function ContinueListeningCard({ record }: { record: PlaybackRecord }) {
+  const colors = useColors();
+  const { play } = usePlayer();
+
+  const progress = record.durationSeconds && record.durationSeconds > 0
+    ? Math.min(1, record.positionMs / (record.durationSeconds * 1000))
+    : 0;
+
+  const handlePress = () => {
+    router.push(`/episode/${record.slug}`);
+  };
+
+  const handleResume = async () => {
+    await play({
+      slug: record.slug,
+      title: record.title,
+      audioUrl: record.audioUrl,
+      artworkUrl: record.artworkUrl,
+      durationSeconds: record.durationSeconds,
+      episodeNumber: record.episodeNumber,
+    });
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [
+        styles.continueCard,
+        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
+      {record.artworkUrl ? (
+        <Image source={{ uri: record.artworkUrl }} style={styles.continueArt} contentFit="cover" />
+      ) : (
+        <View style={[styles.continueArt, { backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }]}>
+          <Ionicons name="radio" size={20} color={colors.mutedForeground} />
+        </View>
+      )}
+      <View style={styles.continueInfo}>
+        {record.episodeNumber != null && (
+          <Text style={[styles.continueEpNum, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
+            EP {record.episodeNumber}
+          </Text>
+        )}
+        <Text style={[styles.continueTitle, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]} numberOfLines={2}>
+          {record.title}
+        </Text>
+        <View style={[styles.continueProgressTrack, { backgroundColor: colors.muted }]}>
+          <View
+            style={[styles.continueProgressFill, { width: `${progress * 100}%`, backgroundColor: colors.primary }]}
+          />
+        </View>
+        <Text style={[styles.continueTime, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+          {record.durationSeconds && record.durationSeconds > 0
+            ? `${formatProgress(Math.max(0, record.durationSeconds * 1000 - record.positionMs))} left`
+            : `${formatProgress(record.positionMs)} played`}
+        </Text>
+      </View>
+      <Pressable
+        onPress={handleResume}
+        style={[styles.continuePlayBtn, { backgroundColor: colors.primary }]}
+        hitSlop={8}
+      >
+        <Ionicons name="play" size={14} color="#fff" />
+      </Pressable>
+    </Pressable>
+  );
+}
+
 function FeaturedCard({ episode }: { episode: Episode }) {
   const colors = useColors();
 
@@ -271,6 +353,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { currentEpisode } = usePlayer();
+  const { continueListening } = useHistory();
   const [page, setPage] = useState(0);
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -433,6 +516,17 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
+
+      {continueListening.length > 0 && (
+        <View style={[styles.section, { paddingHorizontal: 16 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+            Continue Listening
+          </Text>
+          {continueListening.map((record) => (
+            <ContinueListeningCard key={record.slug} record={record} />
+          ))}
+        </View>
+      )}
 
       {featured && featured.length > 0 && (
         <View style={styles.section}>
@@ -763,6 +857,59 @@ const styles = StyleSheet.create({
   },
   featuredPlayText: {
     fontSize: 11,
+  },
+  continueCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 8,
+  },
+  continueArt: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  continueInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  continueEpNum: {
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  continueTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+  },
+  continueProgressTrack: {
+    height: 3,
+    borderRadius: 2,
+    marginTop: 4,
+    overflow: "hidden",
+  },
+  continueProgressFill: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    borderRadius: 2,
+  },
+  continueTime: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  continuePlayBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   center: {
     padding: 40,

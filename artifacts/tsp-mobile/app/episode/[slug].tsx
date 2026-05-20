@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useHistory } from "@/context/HistoryContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -64,6 +65,7 @@ export default function EpisodeDetailScreen() {
   const progressBarWidth = useRef(0);
 
   const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek } = usePlayer();
+  const { isBookmarked, toggleBookmark } = useHistory();
 
   const { data: episode, isLoading: epLoading, error } = useGetEpisode(slug ?? "");
 
@@ -71,6 +73,7 @@ export default function EpisodeDetailScreen() {
   const activePositionMs = isThisEpisode ? positionMs : 0;
   const activeDurationMs = isThisEpisode ? durationMs : (episode?.durationSeconds ? episode.durationSeconds * 1000 : 0);
   const progress = activeDurationMs > 0 ? activePositionMs / activeDurationMs : 0;
+  const bookmarked = isBookmarked(slug ?? "");
 
   const handlePlayPause = useCallback(async () => {
     if (!episode) return;
@@ -96,17 +99,33 @@ export default function EpisodeDetailScreen() {
     await seek(newPos);
   };
 
-  const handleProgressPress = useCallback(async (e: GestureResponderEvent) => {
-    if (progressBarWidth.current === 0) return;
-    const { locationX } = e.nativeEvent;
-    const ratio = Math.max(0, Math.min(1, locationX / progressBarWidth.current));
-    const newPos = ratio * activeDurationMs;
-    await seek(newPos);
-  }, [activeDurationMs, seek]);
+  const handleProgressPress = useCallback(
+    async (e: GestureResponderEvent) => {
+      if (progressBarWidth.current === 0) return;
+      const { locationX } = e.nativeEvent;
+      const ratio = Math.max(0, Math.min(1, locationX / progressBarWidth.current));
+      const newPos = ratio * activeDurationMs;
+      await seek(newPos);
+    },
+    [activeDurationMs, seek],
+  );
 
   const handleProgressLayout = useCallback((e: LayoutChangeEvent) => {
     progressBarWidth.current = e.nativeEvent.layout.width;
   }, []);
+
+  const handleToggleBookmark = useCallback(async () => {
+    if (!episode) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await toggleBookmark({
+      slug: episode.slug,
+      title: episode.title,
+      artworkUrl: episode.artworkUrl,
+      durationSeconds: episode.durationSeconds,
+      episodeNumber: episode.episodeNumber,
+      pubDate: episode.pubDate,
+    });
+  }, [episode, toggleBookmark]);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
 
@@ -164,10 +183,19 @@ export default function EpisodeDetailScreen() {
             <Pressable onPress={() => router.back()} style={styles.backBtn} testID="episode-back-btn">
               <Ionicons name="chevron-back" size={24} color={colors.primaryForeground} />
             </Pressable>
-            <Text style={[styles.topBarTitle, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]} numberOfLines={1}>
+            <Text
+              style={[styles.topBarTitle, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}
+              numberOfLines={1}
+            >
               Episode
             </Text>
-            <View style={styles.backBtn} />
+            <Pressable onPress={handleToggleBookmark} style={styles.backBtn} testID="episode-bookmark-btn">
+              <Ionicons
+                name={bookmarked ? "bookmark" : "bookmark-outline"}
+                size={22}
+                color={bookmarked ? "#fbbf24" : colors.primaryForeground}
+              />
+            </Pressable>
           </View>
 
           <View style={styles.artworkContainer}>
@@ -205,7 +233,7 @@ export default function EpisodeDetailScreen() {
 
           {episode.categories && episode.categories.length > 0 && (
             <View style={styles.categoriesRow}>
-              {episode.categories.slice(0, 3).map(cat => (
+              {episode.categories.slice(0, 3).map((cat) => (
                 <View key={cat} style={[styles.catBadge, { backgroundColor: colors.muted }]}>
                   <Text style={[styles.catText, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
                     {cat}
@@ -247,11 +275,7 @@ export default function EpisodeDetailScreen() {
           </View>
 
           <View style={styles.controls}>
-            <Pressable
-              onPress={() => handleSkip(-30000)}
-              style={styles.skipBtn}
-              testID="episode-skip-back"
-            >
+            <Pressable onPress={() => handleSkip(-30000)} style={styles.skipBtn} testID="episode-skip-back">
               <Ionicons name="play-back" size={26} color={colors.foreground} />
               <Text style={[styles.skipLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                 30
@@ -275,11 +299,7 @@ export default function EpisodeDetailScreen() {
               )}
             </Pressable>
 
-            <Pressable
-              onPress={() => handleSkip(30000)}
-              style={styles.skipBtn}
-              testID="episode-skip-forward"
-            >
+            <Pressable onPress={() => handleSkip(30000)} style={styles.skipBtn} testID="episode-skip-forward">
               <Ionicons name="play-forward" size={26} color={colors.foreground} />
               <Text style={[styles.skipLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                 30

@@ -15,6 +15,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { HistoryProvider } from "@/context/HistoryContext";
 import { PlayerProvider } from "@/context/PlayerContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
@@ -61,9 +62,11 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <PlayerProvider>
-                <RootLayoutNav />
-              </PlayerProvider>
+              <HistoryProvider>
+                <PlayerProvider>
+                  <RootLayoutNav />
+                </PlayerProvider>
+              </HistoryProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
