@@ -59,6 +59,8 @@ router.get("/library/search", async (req, res) => {
     const category =
       typeof req.query.category === "string" ? req.query.category.trim() : "";
     const tag = typeof req.query.tag === "string" ? req.query.tag.trim() : "";
+    const source =
+      typeof req.query.source === "string" ? req.query.source.trim() : "";
     const seriesSlug =
       typeof req.query.series === "string" ? req.query.series.trim() : "";
     const sort =
@@ -69,6 +71,9 @@ router.get("/library/search", async (req, res) => {
     const conditions: SQL<unknown>[] = [];
     if (kinds && kinds.length > 0) {
       conditions.push(inArray(contentItemsTable.kind, kinds));
+    }
+    if (source) {
+      conditions.push(eq(contentItemsTable.source, source));
     }
     if (category) {
       conditions.push(sql`${contentItemsTable.categories} @> ${JSON.stringify([category])}::jsonb`);
