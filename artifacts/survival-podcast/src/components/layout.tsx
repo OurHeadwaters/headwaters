@@ -1,14 +1,16 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { MiniPlayer } from "./mini-player";
 import { usePlayer } from "@/context/player-context";
+import { useAuth } from "@workspace/replit-auth-web";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { episode } = usePlayer();
+  const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -57,6 +59,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+
+            {/* Auth button */}
+            {!authLoading && (
+              isAuthenticated ? (
+                <div className="flex items-center gap-2 ml-1">
+                  {user?.profileImageUrl ? (
+                    <img
+                      src={user.profileImageUrl}
+                      alt="Profile"
+                      className="w-7 h-7 rounded-full border border-white/30 object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 text-white/70" />
+                  )}
+                  <button
+                    onClick={logout}
+                    className="flex items-center gap-1 text-sm text-white/65 hover:text-white transition-colors"
+                    title="Log out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span className="text-xs">Log out</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={login}
+                  className="flex items-center gap-1.5 text-sm text-white/65 hover:text-white transition-colors ml-1"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Log in</span>
+                </button>
+              )
+            )}
           </nav>
 
           <button
@@ -92,6 +127,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+
+            {/* Mobile auth */}
+            {!authLoading && (
+              <div className="mt-2 pt-2 border-t border-white/10">
+                {isAuthenticated ? (
+                  <button
+                    onClick={() => { setMenuOpen(false); logout(); }}
+                    className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-md w-full"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log out
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { setMenuOpen(false); login(); }}
+                    className="flex items-center gap-2 px-3 py-2.5 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-md w-full"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Log in
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </header>

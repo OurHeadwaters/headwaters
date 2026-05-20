@@ -1,0 +1,64 @@
+import { Router, type IRouter, type Request, type Response } from "express";
+import { db, userTrackProgressTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+
+const router: IRouter = Router();
+
+router.get("/track-progress/:slug", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { slug } = req.params;
+  const userId = req.user.id;
+
+  const rows = await db
+    .select({ episodeId: userTrackProgressTable.episodeId })
+    .from(userTrackProgressTable)
+    .where(
+      and(
+        eq(userTrackProgressTable.userId, userId),
+        eq(userTrackProgressTable.trackSlug, slug),
+      ),
+    );
+
+  res.json({ doneIds: rows.map((r) => r.episodeId) });
+});
+
+router.patch("/track-progress/:slug", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { slug } = req.params;
+  const userId = req.user.id;
+  const { episodeId, done } = req.body as { episodeId: number; done: boolean };
+
+  if (typeof episodeId !== "number" || typeof done !== "boolean") {
+    res.status(400).json({ error: "episodeId (number) and done (boolean) are required" });
+    return;
+  }
+
+  if (done) {
+    await db
+      .insert(userTrackProgressTable)
+      .values({ userId, trackSlug: slug, episodeId })
+      .onConflictDoNothing();
+  } else {
+    await db
+      .delete(userTrackProgressTable)
+      .where(
+        and(
+          eq(userTrackProgressTable.userId, userId),
+          eq(userTrackProgressTable.trackSlug, slug),
+          eq(userTrackProgressTable.episodeId, episodeId),
+        ),
+      );
+  }
+
+  res.json({ success: true });
+});
+
+export default router;

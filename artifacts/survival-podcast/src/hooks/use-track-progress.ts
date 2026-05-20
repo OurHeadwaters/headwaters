@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "@workspace/replit-auth-web";
 
 const storageKey = (slug: string) => `tsp_track_progress_${slug}`;
 const LAST_ACTIVE_KEY = "tsp_track_last_active";
@@ -76,6 +77,35 @@ export function buildShareUrl(slug: string, ids: Set<number>): string {
   return `${base}?shared=${encodeURIComponent(encoded)}`;
 }
 
+async function fetchServerProgress(slug: string): Promise<number[] | null> {
+  try {
+    const res = await fetch(`/api/track-progress/${encodeURIComponent(slug)}`, {
+      credentials: "include",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { doneIds: number[] };
+    return data.doneIds;
+  } catch {
+    return null;
+  }
+}
+
+async function syncToggleToServer(
+  slug: string,
+  episodeId: number,
+  done: boolean,
+): Promise<void> {
+  try {
+    await fetch(`/api/track-progress/${encodeURIComponent(slug)}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ episodeId, done }),
+    });
+  } catch {
+  }
+}
+
 export type TrackProgress = {
   doneIds: Set<number>;
   doneCount: number;
@@ -86,44 +116,80 @@ export type TrackProgress = {
 };
 
 export function useTrackProgress(slug: string): TrackProgress {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [doneIds, setDoneIds] = useState<Set<number>>(() => loadDoneIds(slug));
+  const serverLoadedRef = useRef(false);
 
   useEffect(() => {
     setDoneIds(loadDoneIds(slug));
+    serverLoadedRef.current = false;
   }, [slug]);
 
   useEffect(() => {
-    saveDoneIds(slug, doneIds);
-  }, [slug, doneIds]);
+    if (authLoading) return;
+
+    if (isAuthenticated) {
+      fetchServerProgress(slug).then((ids) => {
+        if (ids !== null) {
+          const serverSet = new Set(ids);
+          setDoneIds(serverSet);
+          saveDoneIds(slug, serverSet);
+          serverLoadedRef.current = true;
+        }
+      });
+    }
+  }, [slug, isAuthenticated, authLoading]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      saveDoneIds(slug, doneIds);
+    }
+  }, [slug, doneIds, isAuthenticated]);
 
   const isDone = useCallback((id: number) => doneIds.has(id), [doneIds]);
 
-  const toggleDone = useCallback((id: number) => {
-    setDoneIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
+  const toggleDone = useCallback(
+    (id: number) => {
+      setDoneIds((prev) => {
+        const next = new Set(prev);
+        const nowDone = !next.has(id);
+        if (nowDone) {
+          next.add(id);
+          recordLastActive(slug);
+        } else {
+          next.delete(id);
+        }
+        saveDoneIds(slug, next);
+        if (isAuthenticated) {
+          syncToggleToServer(slug, id, nowDone);
+        }
+        return next;
+      });
+    },
+    [slug, isAuthenticated],
+  );
+
+  const markDone = useCallback(
+    (id: number) => {
+      setDoneIds((prev) => {
+        if (prev.has(id)) return prev;
+        const next = new Set(prev);
         next.add(id);
         recordLastActive(slug);
-      }
-      return next;
-    });
-  }, [slug]);
-
-  const markDone = useCallback((id: number) => {
-    setDoneIds((prev) => {
-      if (prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.add(id);
-      recordLastActive(slug);
-      return next;
-    });
-  }, [slug]);
+        saveDoneIds(slug, next);
+        if (isAuthenticated) {
+          syncToggleToServer(slug, id, true);
+        }
+        return next;
+      });
+    },
+    [slug, isAuthenticated],
+  );
 
   const resetProgress = useCallback(() => {
     setDoneIds(new Set());
-  }, []);
+    saveDoneIds(slug, new Set());
+  }, [slug]);
 
   return {
     doneIds,
