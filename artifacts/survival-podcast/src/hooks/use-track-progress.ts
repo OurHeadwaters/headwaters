@@ -220,16 +220,32 @@ export function useTrackProgress(slug: string): TrackProgress {
 
 export type AllTracksSummary = Record<string, number>;
 
+function buildSummary(slugs: string[]): AllTracksSummary {
+  const result: AllTracksSummary = {};
+  for (const slug of slugs) {
+    result[slug] = loadDoneIds(slug).size;
+  }
+  return result;
+}
+
 export function useAllTracksProgress(slugs: string[]): AllTracksSummary {
-  const [summary, setSummary] = useState<AllTracksSummary>({});
+  const slugKey = slugs.join(",");
+  const [summary, setSummary] = useState<AllTracksSummary>(() => buildSummary(slugs));
 
   useEffect(() => {
-    const result: AllTracksSummary = {};
-    for (const slug of slugs) {
-      result[slug] = loadDoneIds(slug).size;
+    setSummary(buildSummary(slugs));
+
+    function refresh() {
+      setSummary(buildSummary(slugs));
     }
-    setSummary(result);
-  }, [slugs.join(",")]);
+
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [slugKey]);
 
   return summary;
 }
