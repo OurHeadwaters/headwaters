@@ -1,9 +1,10 @@
 import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, getListSeriesQueryKey, useListZones, ZoneSummary } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
 import { ThisDayInHistory } from "@/components/this-day-in-history";
-import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout, ArrowRight } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 const SERIES_COLORS: Record<string, string> = {
@@ -28,6 +29,121 @@ const ZONE_CHIP_COLORS = [
   "border-emerald-700 text-emerald-900 bg-emerald-50 hover:bg-emerald-100",
   "border-stone-600 text-stone-700 bg-stone-100 hover:bg-stone-200",
 ];
+
+type TransformationDef = {
+  slug: string;
+  from: string;
+  to: string;
+  description: string;
+  color: string;
+  icon: string;
+};
+
+function useTransformations() {
+  return useQuery<TransformationDef[]>({
+    queryKey: ["transformations"],
+    queryFn: async () => {
+      const res = await fetch(
+        `${import.meta.env.BASE_URL}api/transformations`.replace(/\/+/g, "/").replace(":/", "://"),
+      );
+      if (!res.ok) throw new Error("Failed to load transformations");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+function TransformationPathsTeaser() {
+  const { data: transformations } = useTransformations();
+
+  if (!transformations || transformations.length === 0) return null;
+
+  const featured = transformations.slice(0, 3);
+
+  return (
+    <section>
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            <Compass className="w-4 h-4" />
+            <span>Codetry · Transformation Paths</span>
+          </div>
+          <h2 className="text-3xl font-serif font-bold text-foreground">What's your transformation?</h2>
+          <p className="text-muted-foreground mt-1">Name the journey you're on and find the episodes that matter most.</p>
+        </div>
+        <Link
+          href="/transform"
+          className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+        >
+          All six paths <ChevronRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Featured cards — 3 on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+        {featured.map((t) => (
+          <Link
+            key={t.slug}
+            href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+            className="group flex flex-col rounded-xl border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+            style={{ borderColor: t.color + "33", background: t.color + "08" }}
+          >
+            <div
+              className="px-5 py-4 flex items-start gap-3"
+              style={{ borderBottom: `1px solid ${t.color}22` }}
+            >
+              <span className="text-2xl leading-none mt-0.5 shrink-0">{t.icon}</span>
+              <div className="min-w-0">
+                <div
+                  className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                  style={{ color: t.color }}
+                >
+                  Transformation Path
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-serif text-base font-bold text-foreground leading-tight">{t.from}</span>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" style={{ color: t.color }} />
+                  <span className="font-serif text-base font-bold leading-tight" style={{ color: t.color }}>{t.to}</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between gap-2 mt-auto">
+              <span className="text-xs text-muted-foreground line-clamp-2 leading-relaxed flex-1">
+                {t.description.split(".")[0]}.
+              </span>
+              <ArrowRight
+                className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ color: t.color }}
+              />
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* All-six chip row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">All paths:</span>
+        {transformations.map((t) => (
+          <Link
+            key={t.slug}
+            href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors hover:opacity-80"
+            style={{ color: t.color, borderColor: t.color + "44", background: t.color + "10" }}
+          >
+            <span>{t.icon}</span>
+            <span>{t.from} → {t.to}</span>
+          </Link>
+        ))}
+        <Link
+          href="/transform"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors ml-1"
+        >
+          See all <ChevronRight className="w-3 h-3" />
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 function ExploreByZoneStrip({ zones }: { zones: ZoneSummary[] }) {
   return (
@@ -232,6 +348,9 @@ export function Home() {
               Browse the full archive
             </Link>
           </section>
+
+          {/* Transformation Paths teaser */}
+          <TransformationPathsTeaser />
 
           {/* Learning Tracks teaser */}
           <section>
