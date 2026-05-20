@@ -3,6 +3,7 @@ import { sql, and, eq, desc, asc, ne, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db, contentItemsTable } from "@workspace/db";
 import { refreshAll, getSyncStatus } from "../lib/library";
+import { invalidateTagQueryCache } from "./episodes";
 import { SERIES_REGISTRY } from "../lib/series";
 import { logger } from "../lib/logger";
 
@@ -252,6 +253,7 @@ router.post("/library/refresh", async (req, res) => {
   try {
     const force = req.query.force === "true";
     const summary = await refreshAll({ force });
+    invalidateTagQueryCache();
     res.json(summary);
   } catch (err) {
     logger.error({ err }, "library refresh failed");

@@ -17,6 +17,24 @@ import {
 
 const router: IRouter = Router();
 
+const TAG_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type TagCacheEntry = {
+  fetchedAt: number;
+  items: EpisodeSummary[];
+};
+
+const tagQueryCache = new Map<string, TagCacheEntry>();
+
+function tagCacheKey(normalizedTags: string[]): string {
+  return [...normalizedTags].sort().join("|");
+}
+
+export function invalidateTagQueryCache(): void {
+  tagQueryCache.clear();
+  logger.info("Tag query cache invalidated");
+}
+
 function toEpisodeSummary(e: RssEpisode) {
   const { descriptionHtml: _unused, ...rest } = e;
   return rest;
@@ -87,65 +105,79 @@ router.get("/episodes", async (req, res) => {
 
     // When a tags filter is active, also pull matching episodes from the full
     // DB library (3 800+ episodes) so historical content is included.
+    // Results are cached in-memory for TAG_CACHE_TTL_MS to avoid repeated
+    // heavy JSONB queries on every page change.
     if (tags && tags.length > 0) {
-      try {
-        const normalizedTags = tags.map((t) => t.toLowerCase());
-        // Match any audio item whose `tags` OR `categories` JSONB column
-        // contains at least one of the requested tag values.
-        // Uses the proven `@>` containment operator (same as library.ts search).
-        // One condition per tag, all OR'd together for both columns.
-        const tagOrConditions = normalizedTags.flatMap((tag) => [
-          sql`${contentItemsTable.tags} @> ${JSON.stringify([tag])}::jsonb`,
-          sql`${contentItemsTable.categories} @> ${JSON.stringify([tag])}::jsonb`,
-        ]);
-        const dbRows = await db
-          .select()
-          .from(contentItemsTable)
-          .where(
-            and(
-              sql`${contentItemsTable.kind} = 'audio'`,
-              or(...tagOrConditions),
-            ),
-          )
-          .orderBy(sql`${contentItemsTable.publishedAt} DESC`)
-          .limit(2000);
+      const normalizedTags = tags.map((t) => t.toLowerCase());
+      const cacheKey = tagCacheKey(normalizedTags);
+      const now = Date.now();
+      const cached = tagQueryCache.get(cacheKey);
 
-        // Deduplicate against what RSS already returned
-        const rssSlugSet = new Set(items.map((e) => e.slug));
-        const rssEpNumSet = new Set(
-          items
-            .map((e) => e.episodeNumber)
-            .filter((n): n is number => n != null),
-        );
+      if (cached && now - cached.fetchedAt < TAG_CACHE_TTL_MS) {
+        items = cached.items;
+        logger.debug({ cacheKey }, "episodes: serving merged tag results from cache");
+      } else {
+        try {
+          // Match any audio item whose `tags` OR `categories` JSONB column
+          // contains at least one of the requested tag values.
+          // Uses the proven `@>` containment operator (same as library.ts search).
+          // One condition per tag, all OR'd together for both columns.
+          const tagOrConditions = normalizedTags.flatMap((tag) => [
+            sql`${contentItemsTable.tags} @> ${JSON.stringify([tag])}::jsonb`,
+            sql`${contentItemsTable.categories} @> ${JSON.stringify([tag])}::jsonb`,
+          ]);
+          const dbRows = await db
+            .select()
+            .from(contentItemsTable)
+            .where(
+              and(
+                sql`${contentItemsTable.kind} = 'audio'`,
+                or(...tagOrConditions),
+              ),
+            )
+            .orderBy(sql`${contentItemsTable.publishedAt} DESC`)
+            .limit(2000);
 
-        for (const row of dbRows) {
-          if (rssSlugSet.has(row.slug)) continue;
-          if (row.episodeNumber != null && rssEpNumSet.has(row.episodeNumber))
-            continue;
+          // Deduplicate against what RSS already returned
+          const rssSlugSet = new Set(items.map((e) => e.slug));
+          const rssEpNumSet = new Set(
+            items
+              .map((e) => e.episodeNumber)
+              .filter((n): n is number => n != null),
+          );
 
-          items.push({
-            slug: row.slug,
-            guid: row.sourceId,
-            episodeNumber: row.episodeNumber,
-            title: row.title,
-            link: row.link,
-            pubDate: row.publishedAt.toISOString(),
-            summary: row.summary,
-            durationSeconds: row.durationSeconds,
-            audioUrl: row.audioUrl,
-            audioType: row.audioType,
-            artworkUrl: row.artworkUrl,
-            categories: row.categories,
-          });
+          for (const row of dbRows) {
+            if (rssSlugSet.has(row.slug)) continue;
+            if (row.episodeNumber != null && rssEpNumSet.has(row.episodeNumber))
+              continue;
+
+            items.push({
+              slug: row.slug,
+              guid: row.sourceId,
+              episodeNumber: row.episodeNumber,
+              title: row.title,
+              link: row.link,
+              pubDate: row.publishedAt.toISOString(),
+              summary: row.summary,
+              durationSeconds: row.durationSeconds,
+              audioUrl: row.audioUrl,
+              audioType: row.audioType,
+              artworkUrl: row.artworkUrl,
+              categories: row.categories,
+            });
+          }
+
+          // Re-sort the merged list by most recent first
+          items.sort((a, b) => b.pubDate.localeCompare(a.pubDate));
+
+          tagQueryCache.set(cacheKey, { fetchedAt: now, items });
+          logger.debug({ cacheKey, total: items.length }, "episodes: tag query result cached");
+        } catch (dbErr) {
+          logger.warn(
+            { err: dbErr },
+            "episodes: DB tags query failed, serving RSS-only results",
+          );
         }
-
-        // Re-sort the merged list by most recent first
-        items.sort((a, b) => b.pubDate.localeCompare(a.pubDate));
-      } catch (dbErr) {
-        logger.warn(
-          { err: dbErr },
-          "episodes: DB tags query failed, serving RSS-only results",
-        );
       }
     }
 
