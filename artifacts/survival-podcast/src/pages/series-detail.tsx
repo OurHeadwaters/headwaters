@@ -266,6 +266,7 @@ export function SeriesDetail() {
                       episode={ep}
                       seriesPosition={position}
                       seriesTotal={total}
+                      seriesSlug={slug}
                     />
                   </div>
                 </div>

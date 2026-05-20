@@ -29,12 +29,13 @@ interface EpisodeCardProps {
   seriesPosition?: number;
   seriesTotal?: number;
   transformation?: TransformationBadgeInfo | null;
+  seriesSlug?: string;
 }
 
-export function EpisodeCard({ episode, featured = false, seriesPosition, seriesTotal, transformation }: EpisodeCardProps) {
+export function EpisodeCard({ episode, featured = false, seriesPosition, seriesTotal, transformation, seriesSlug: seriesSlugProp }: EpisodeCardProps) {
   const isRecent = new Date().getTime() - new Date(episode.pubDate).getTime() < 7 * 24 * 60 * 60 * 1000;
 
-  const seriesSlug = detectSeriesSlug(episode);
+  const seriesSlug = seriesSlugProp ?? detectSeriesSlug(episode);
   const seriesMeta = seriesSlug ? getSeriesMeta(seriesSlug) : null;
   const seriesTheme = seriesSlug ? getSeriesTheme(seriesSlug) : null;
 
