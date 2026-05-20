@@ -12,6 +12,8 @@ import { Library } from "@/pages/library";
 import { LibraryItemDetail } from "@/pages/library-item";
 import { SeriesIndex } from "@/pages/series-index";
 import { SeriesDetail } from "@/pages/series-detail";
+import ZonesPage from "@/pages/zones";
+import ZoneDetailPage from "@/pages/zone-detail";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,8 @@ function Router() {
         <Route path="/episodes/:slug" component={EpisodeDetail} />
         <Route path="/series" component={SeriesIndex} />
         <Route path="/series/:slug" component={SeriesDetail} />
+        <Route path="/zones" component={ZonesPage} />
+        <Route path="/zones/:slug" component={ZoneDetailPage} />
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
         <Route component={NotFound} />

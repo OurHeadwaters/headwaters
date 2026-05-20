@@ -28,6 +28,7 @@ import type {
   EpisodeStats,
   Feed,
   GetSeriesEpisodesParams,
+  GetZoneEpisodesParams,
   HealthStatus,
   LibraryItemDetail,
   LibraryPage,
@@ -38,7 +39,9 @@ import type {
   RefreshSummary,
   SearchLibraryParams,
   SeriesEpisodePage,
-  SeriesSummary
+  SeriesSummary,
+  ZoneEpisodePage,
+  ZoneSummary
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1077,6 +1080,172 @@ export function useGetSeriesEpisodes<TData = Awaited<ReturnType<typeof getSeries
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetSeriesEpisodesQueryOptions(slug,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListZonesUrl = () => {
+
+
+
+
+  return `/api/zones`
+}
+
+/**
+ * @summary List all permaculture zones with item counts and embedded series
+ */
+export const listZones = async ( options?: RequestInit): Promise<ZoneSummary[]> => {
+
+  return customFetch<ZoneSummary[]>(getListZonesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListZonesQueryKey = () => {
+    return [
+    `/api/zones`
+    ] as const;
+    }
+
+
+export const getListZonesQueryOptions = <TData = Awaited<ReturnType<typeof listZones>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listZones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListZonesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listZones>>> = ({ signal }) => listZones({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listZones>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListZonesQueryResult = NonNullable<Awaited<ReturnType<typeof listZones>>>
+export type ListZonesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all permaculture zones with item counts and embedded series
+ */
+
+export function useListZones<TData = Awaited<ReturnType<typeof listZones>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listZones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListZonesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetZoneEpisodesUrl = (slug: string,
+    params?: GetZoneEpisodesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/zones/${slug}/episodes?${stringifiedParams}` : `/api/zones/${slug}/episodes`
+}
+
+/**
+ * @summary Get episodes for a zone, ordered by zone-tag relevance
+ */
+export const getZoneEpisodes = async (slug: string,
+    params?: GetZoneEpisodesParams, options?: RequestInit): Promise<ZoneEpisodePage> => {
+
+  return customFetch<ZoneEpisodePage>(getGetZoneEpisodesUrl(slug,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetZoneEpisodesQueryKey = (slug: string,
+    params?: GetZoneEpisodesParams,) => {
+    return [
+    `/api/zones/${slug}/episodes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetZoneEpisodesQueryOptions = <TData = Awaited<ReturnType<typeof getZoneEpisodes>>, TError = ErrorType<ApiError>>(slug: string,
+    params?: GetZoneEpisodesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getZoneEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetZoneEpisodesQueryKey(slug,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getZoneEpisodes>>> = ({ signal }) => getZoneEpisodes(slug,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getZoneEpisodes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetZoneEpisodesQueryResult = NonNullable<Awaited<ReturnType<typeof getZoneEpisodes>>>
+export type GetZoneEpisodesQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get episodes for a zone, ordered by zone-tag relevance
+ */
+
+export function useGetZoneEpisodes<TData = Awaited<ReturnType<typeof getZoneEpisodes>>, TError = ErrorType<ApiError>>(
+ slug: string,
+    params?: GetZoneEpisodesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getZoneEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetZoneEpisodesQueryOptions(slug,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

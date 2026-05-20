@@ -18,6 +18,8 @@ tags:
     description: Unified library across audio, articles, and video
   - name: series
     description: Recurring episode series
+  - name: zones
+    description: Permaculture zone 0–5 content organization
 paths:
   /healthz:
     get:
@@ -222,6 +224,43 @@ paths:
                 $ref: "#/components/schemas/SeriesEpisodePage"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /zones:
+    get:
+      operationId: listZones
+      tags: [zones]
+      summary: List all permaculture zones with item counts and embedded series
+      responses:
+        "200":
+          description: Zone list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ZoneSummary"
+  /zones/{slug}/episodes:
+    get:
+      operationId: getZoneEpisodes
+      tags: [zones]
+      summary: Get episodes for a zone, ordered by zone-tag relevance
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: excludeSeries, in: query, required: false, schema: { type: boolean, default: true } }
+      responses:
+        "200":
+          description: Zone episodes page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ZoneEpisodePage"
+        "404":
+          description: Zone not found
           content:
             application/json:
               schema:
@@ -437,6 +476,83 @@ components:
       properties:
         wordpress: { $ref: "#/components/schemas/RefreshSourceResult" }
         youtube: { $ref: "#/components/schemas/RefreshSourceResult" }
+    ZoneSeriesSummary:
+      type: object
+      required: [slug, title, description, iconEmoji, episodeCount]
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        iconEmoji: { type: string }
+        episodeCount: { type: integer }
+        sampleArtworkUrl: { type: ["string", "null"] }
+    ZoneSummary:
+      type: object
+      required: [number, slug, name, subtitle, description, philosophy, color, itemCount, sampleArtwork, series]
+      properties:
+        number: { type: integer }
+        slug: { type: string }
+        name: { type: string }
+        subtitle: { type: string }
+        description: { type: string }
+        philosophy: { type: string }
+        color: { type: string }
+        itemCount: { type: integer }
+        sampleArtwork:
+          type: array
+          items: { type: string }
+        series:
+          type: array
+          items: { $ref: "#/components/schemas/ZoneSeriesSummary" }
+    ZoneInfo:
+      type: object
+      required: [number, slug, name, subtitle, description, philosophy, color]
+      properties:
+        number: { type: integer }
+        slug: { type: string }
+        name: { type: string }
+        subtitle: { type: string }
+        description: { type: string }
+        philosophy: { type: string }
+        color: { type: string }
+    ZoneLibraryItem:
+      type: object
+      required: [id, source, kind, slug, title, link, publishedAt, categories, tags]
+      properties:
+        id: { type: integer }
+        source: { type: string }
+        kind: { type: string }
+        slug: { type: string }
+        title: { type: string }
+        link: { type: string }
+        summary: { type: ["string", "null"] }
+        publishedAt: { type: string, format: date-time }
+        episodeNumber: { type: ["integer", "null"] }
+        durationSeconds: { type: ["integer", "null"] }
+        audioUrl: { type: ["string", "null"] }
+        audioType: { type: ["string", "null"] }
+        videoUrl: { type: ["string", "null"] }
+        videoId: { type: ["string", "null"] }
+        artworkUrl: { type: ["string", "null"] }
+        categories:
+          type: array
+          items: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        zoneScore: { type: integer }
+    ZoneEpisodePage:
+      type: object
+      required: [zone, items, total, limit, offset]
+      properties:
+        zone:
+          $ref: "#/components/schemas/ZoneInfo"
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ZoneLibraryItem" }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
     SeriesSummary:
       type: object
       required: [slug, title, description, iconEmoji, episodeCount]

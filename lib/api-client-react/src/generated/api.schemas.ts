@@ -168,6 +168,76 @@ export interface RefreshSummary {
   youtube: RefreshSourceResult;
 }
 
+export interface ZoneSeriesSummary {
+  slug: string;
+  title: string;
+  description: string;
+  iconEmoji: string;
+  episodeCount: number;
+  /** @nullable */
+  sampleArtworkUrl?: string | null;
+}
+
+export interface ZoneSummary {
+  number: number;
+  slug: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  philosophy: string;
+  color: string;
+  itemCount: number;
+  sampleArtwork: string[];
+  series: ZoneSeriesSummary[];
+}
+
+export interface ZoneInfo {
+  number: number;
+  slug: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  philosophy: string;
+  color: string;
+}
+
+export interface ZoneLibraryItem {
+  id: number;
+  source: string;
+  kind: string;
+  slug: string;
+  title: string;
+  link: string;
+  /** @nullable */
+  summary?: string | null;
+  publishedAt: string;
+  /** @nullable */
+  episodeNumber?: number | null;
+  /** @nullable */
+  durationSeconds?: number | null;
+  /** @nullable */
+  audioUrl?: string | null;
+  /** @nullable */
+  audioType?: string | null;
+  /** @nullable */
+  videoUrl?: string | null;
+  /** @nullable */
+  videoId?: string | null;
+  /** @nullable */
+  artworkUrl?: string | null;
+  categories: string[];
+  tags: string[];
+  zoneScore?: number;
+}
+
+export interface ZoneEpisodePage {
+  zone: ZoneInfo;
+  items: ZoneLibraryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface SeriesSummary {
   slug: string;
   title: string;
@@ -249,6 +319,19 @@ limit?: number;
  * @minimum 0
  */
 offset?: number;
+};
+
+export type GetZoneEpisodesParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+excludeSeries?: boolean;
 };
 
 export type RefreshLibraryParams = {

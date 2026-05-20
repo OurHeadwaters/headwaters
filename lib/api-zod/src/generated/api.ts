@@ -360,6 +360,88 @@ export const GetSeriesEpisodesResponse = zod.object({
 
 
 /**
+ * @summary List all permaculture zones with item counts and embedded series
+ */
+export const ListZonesResponseItem = zod.object({
+  "number": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "subtitle": zod.string(),
+  "description": zod.string(),
+  "philosophy": zod.string(),
+  "color": zod.string(),
+  "itemCount": zod.number(),
+  "sampleArtwork": zod.array(zod.string()),
+  "series": zod.array(zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "iconEmoji": zod.string(),
+  "episodeCount": zod.number(),
+  "sampleArtworkUrl": zod.string().nullish()
+}))
+})
+export const ListZonesResponse = zod.array(ListZonesResponseItem)
+
+
+/**
+ * @summary Get episodes for a zone, ordered by zone-tag relevance
+ */
+export const GetZoneEpisodesParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const getZoneEpisodesQueryLimitDefault = 20;
+export const getZoneEpisodesQueryLimitMax = 100;
+
+export const getZoneEpisodesQueryOffsetDefault = 0;
+export const getZoneEpisodesQueryOffsetMin = 0;
+
+export const getZoneEpisodesQueryExcludeSeriesDefault = true;
+
+export const GetZoneEpisodesQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(getZoneEpisodesQueryLimitMax).default(getZoneEpisodesQueryLimitDefault),
+  "offset": zod.coerce.number().min(getZoneEpisodesQueryOffsetMin).default(getZoneEpisodesQueryOffsetDefault),
+  "excludeSeries": zod.coerce.boolean().default(getZoneEpisodesQueryExcludeSeriesDefault)
+})
+
+export const GetZoneEpisodesResponse = zod.object({
+  "zone": zod.object({
+  "number": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "subtitle": zod.string(),
+  "description": zod.string(),
+  "philosophy": zod.string(),
+  "color": zod.string()
+}),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "source": zod.string(),
+  "kind": zod.string(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "link": zod.string(),
+  "summary": zod.string().nullish(),
+  "publishedAt": zod.coerce.date(),
+  "episodeNumber": zod.number().nullish(),
+  "durationSeconds": zod.number().nullish(),
+  "audioUrl": zod.string().nullish(),
+  "audioType": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "videoId": zod.string().nullish(),
+  "artworkUrl": zod.string().nullish(),
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string()),
+  "zoneScore": zod.number().optional()
+})),
+  "total": zod.number(),
+  "limit": zod.number(),
+  "offset": zod.number()
+})
+
+
+/**
  * Re-syncs all sources from upstream. Throttled to once every 6 hours unless force=true.
  * @summary Trigger a library refresh
  */
