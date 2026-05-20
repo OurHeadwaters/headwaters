@@ -1,0 +1,105 @@
+Prompt: Recreate "The Clearing and the Lodge — Family Privacy Guide"
+Live reference: https://40d0e641-2407-4acf-ab27-cb20127d03a0-00-3nbvehg76dioh.janeway.replit.dev/brief/family-handbook
+
+You can open that URL to see exactly what this looks like rendered. It is a letter-size (816×1056px) print-ready one-pager. All widths are fixed px — no percentages. It must fit exactly within those dimensions.
+
+What this document is
+A plain-language privacy guide for families in a small homeschool community (~60 families). The community uses two tools: Sandbox (a private weekly community bulletin board — called "The Clearing") and Saltbox (a local-only homeschool day companion on each family's own device — called "The Lodge"). This guide explains how both tools work, where data lives, and gives families practical privacy habits in plain homestead language — no tech jargon.
+
+There is one editable field: the community name, typed in the top-right corner. It persists in localStorage between visits (sandbox-handbook-community-name).
+
+Design system
+Background: #FAF6F0 (warm cream)
+Primary text: #2E2620 (deep charcoal)
+Accent 1 (terracotta): #C7613B — used for section headers on left column, right column labels, footer text
+Accent 2 (moss): #4A6741 — used for alternate left-column section labels
+Muted text: #7A6C5D
+Subtle text / table borders: #DDD5C8, #E8DDD5
+Tint backgrounds: #F2EDE5
+Headings font: Fraunces (Google Fonts, serif)
+Body font: Inter (Google Fonts, sans-serif)
+Layout: two columns. Left column 416px wide, right column 264px wide, 20px gap between them. Outer padding: 34px top/bottom, 58px left/right.
+Header: terracotta 2.5px solid bottom border, title left-aligned, community name field right-aligned.
+Footer: light 1px solid #DDD5C8 top border, disclaimer text left, "Codetry · Sandbox Privacy Guide · 2025" italic Fraunces right.
+Left column — full content (narrative guide)
+Each section has: a small-caps Fraunces label (8.5px, letter-spacing 0.08em, uppercase) + a 24×1.5px colour rule beneath it, then body text at 9.5px/1.58 line height.
+
+Section 1 — "The Clearing" (terracotta label)
+
+The Clearing is the bounded gathering place your community keeps together — the Sandbox board. It holds this week's park days, field trips, asks, meetups, and the small news of the neighbourhood. Invitations are single-use. Posts reset each Sunday at midnight. The organizer can see everything on the board. No one outside your community can.
+
+Section 2 — "The Lodge" (moss label)
+
+The Lodge is your private home — Saltbox, on your own device. Portfolios, day notes, curricula, and family records live entirely on your device. Nothing leaves unless you open the door yourself. The Eave is the line between the Lodge and the Clearing: what stays below the Eave stays private.
+
+Section 3 — "The key on the hook — sessions" (moss label)
+
+Signing in hangs a key on the hook. It stays there for 30 days. If a device is lost or handed to someone outside the household, go to Settings and choose Sign out all devices — this changes the lock immediately. Every active session stops working. Then sign in fresh from your own device.
+
+Section 4 — "The mailbox — Sunday digest" (moss label)
+
+Your email address has your name on it and sits at the edge of the property — visible from the road. Add it in Settings to receive a warm summary each Sunday when the fresh board opens. Remove it any time. Removed means gone: it won't appear in the next digest. Your email is stored encrypted on the server.
+
+Section 5 — "Three simple habits" (moss label)
+
+Lock your screen when you set your device down. Sign out before passing your phone to someone outside your household. If you notice unfamiliar posts or activity, tell your organizer the same day.
+
+Section 6 — "Zone identity and address hygiene" (terracotta label)
+
+When you set up a zone identity in your settings, the tooling handles address rotation automatically — a fresh derived address is used for every send and every receive, so the same address never appears twice on-chain. Resting and standby are two states of the same master key root: you cannot have two separate zone identities, one for resting and one for participating. Your master key never leaves the device — it is encrypted with your passphrase and stored only locally.
+
+Section 7 — "The covered wagon route — VPNs" (moss label)
+
+A VPN changes the road, not the destination. Your internet provider (Rogers, Bell, Cogeco) sees you connect to the VPN — not where you went after. Sites you visit see the VPN's address, not yours. The VPN provider itself sees everything. They are your new road.
+
+What a VPN does not do: protect a device that is already compromised at the OS level — spyware reads your data before it is encrypted, before it leaves. Prevent tracking once you log into an account. Make free services private — free VPNs have a business model, and it is usually your data.
+
+Canada is a Five Eyes country (intelligence sharing with the US, UK, Australia, New Zealand). VPN providers in Five Eyes jurisdictions can be served legal orders requiring them to log and hand over your traffic. Many have. Providers in Switzerland or with independently verified no-logs audits are a meaningfully safer choice.
+
+Section 8 — "The Canadian legal landscape" (moss label, no bottom margin — last section)
+
+VPNs are currently legal in Canada. Bill C-26 (An Act respecting cybersecurity), introduced 2022 and still in Senate review as of 2025, gives the federal government broad authority to compel telecommunications providers to take "security-related" actions — including blocking specific services. No VPN ban has been enacted. The power exists in draft form.
+
+What this means: using a VPN reduces what your ISP can see. It does not reduce what your device can see, what the VPN provider can see, or what websites collect once you're logged in. It is a useful layer for specific threats — not a complete answer. This summary is for awareness, not legal advice.
+
+Right column — full content (quick-reference panels)
+Panel 1: "What's stored where" (terracotta header)
+A 4-column table. Columns: (blank), The Clearing (terracotta header), The Lodge (moss header), The Mailbox (brown #7A5C3E header). Row labels in left column are Fraunces bold 7.5px.
+
+The Clearing	The Lodge	The Mailbox
+What	Board posts, events, sections	Curricula, portfolios, notes	Your email address
+Who holds it	Your community	Your device	Server, encrypted
+Who can see	Members only	Your household	Organizer (digest only)
+Reset?	Every Sunday	You control	Remove in Settings
+Panel 2: "VPN provider comparison" (terracotta header)
+A 4-column table. Columns: Provider, Based, No-logs audit, Free tier. Provider name in Fraunces bold; good rows in moss green #3E5C3E.
+
+Provider	Based	No-logs audit	Free tier
+ProtonVPN	Switzerland	Independent	Yes
+Mullvad	Sweden	Independent	No (cash OK)
+Free VPNs	Various	Often none	Yes
+Footnote (7.5px italic #7A6C5D): Switzerland and Sweden are not Five Eyes members. An independently verified no-logs policy means the provider cannot hand over browsing history even if ordered to. Avoid any VPN whose business model is unclear.
+
+Panel 3: "Metaphor key" (terracotta header)
+Six entries. Each: Fraunces bold 8px term — em-dash — plain 8px definition.
+
+The Clearing — Sandbox — the community board
+The Lodge — Saltbox — your private device
+The Eave — Privacy boundary between household and community
+The key on the hook — Your session — 30 days, or changed by Sign out all devices
+The mailbox — Your email — at the edge, visible from the road
+The covered wagon route — A VPN — changes the road, not the destination
+Panel 4: "Questions?" box (at the bottom of right column, marginTop: auto)
+Tinted cream box (#F2EDE5), border 1.5px solid #DDD5C8, border-radius 5px, padding 8px 10px.
+
+Header: QUESTIONS? in terracotta Fraunces small-caps 8.5px.
+
+Body (8.5px #5A4E42): Ask your community organizer. They hold the invite keys and can help you understand anything in this guide. There are no dumb questions about privacy — only habits that haven't formed yet.
+
+Technical constraints for rebuilding
+Fixed 816×1056px canvas. overflow: hidden. No scrolling.
+All widths in px — never %.
+Fonts loaded from Google Fonts: Fraunces (serif, headings + labels) and Inter (sans, body).
+The community name field is an <input> with transparent background, no border except a dashed bottom line, right-aligned, 130px wide. Persists to localStorage key sandbox-handbook-community-name on every change.
+The page should be printable/downloadable as PDF directly from the browser — no extra tooling.
+No emojis anywhere. No red colours — amber/terracotta only for any warning tones.
