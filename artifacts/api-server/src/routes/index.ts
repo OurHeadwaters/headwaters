@@ -13,6 +13,7 @@ import trackProgressRouter from "./track-progress";
 import adminCouncilRouter from "./admin-council";
 import wishingWellRouter from "./wishing-well";
 import v4vRouter from "./v4v";
+import ogRouter from "./og";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(trackProgressRouter);
 router.use(adminCouncilRouter);
 router.use(wishingWellRouter);
 router.use(v4vRouter);
+router.use(ogRouter);
 
 export default router;
