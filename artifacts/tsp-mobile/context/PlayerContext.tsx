@@ -1,7 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio, AVPlaybackStatus } from "expo-av";
-import React, { createContext, useCallback, useContext, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useHistory } from "./HistoryContext";
+
+const QUEUE_STORAGE_KEY = "@tsp_player_queue";
 
 export interface PlayableEpisode {
   slug: string;
@@ -51,6 +54,23 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const [queue, setQueue] = useState<PlayableEpisode[]>([]);
   const queueRef = useRef<PlayableEpisode[]>([]);
+
+  useEffect(() => {
+    AsyncStorage.getItem(QUEUE_STORAGE_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const restored: PlayableEpisode[] = JSON.parse(raw);
+        if (Array.isArray(restored) && restored.length > 0) {
+          queueRef.current = restored;
+          setQueue(restored);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue)).catch(() => {});
+  }, [queue]);
 
   const onEpisodeFinishedRef = useRef<((slug: string) => void) | null>(null);
   const onPlaybackMinuteRef = useRef<((slug: string, minuteCount: number) => void) | null>(null);
