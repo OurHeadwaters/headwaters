@@ -59,9 +59,9 @@ export function Archive() {
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
         <div>
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-2">The Archive</h1>
+          <h1 className="font-serif text-4xl font-bold text-foreground mb-2">Episode Archive</h1>
           <p className="text-muted-foreground max-w-2xl">
-            Browse years of survival, homesteading, and independence strategies.
+            Thousands of conversations on skills, strategy, and self-reliance. Search by topic or browse straight through.
           </p>
         </div>
         
@@ -70,7 +70,7 @@ export function Archive() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search episodes..."
+              placeholder="Search by title, topic, or keyword..."
               className="w-full sm:w-64 pl-9 pr-4 py-2 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -95,7 +95,7 @@ export function Archive() {
 
       {(debouncedSearch || initialCategory) && !isLoading && episodePage && (
         <div className="text-sm font-medium text-muted-foreground pb-4 border-b border-border/50">
-          Found <span className="text-foreground">{episodePage.total}</span> episode{episodePage.total !== 1 ? 's' : ''} 
+          <span className="text-foreground">{episodePage.total}</span> episode{episodePage.total !== 1 ? 's' : ''} found
           {debouncedSearch && <span> matching "<span className="text-foreground">{debouncedSearch}</span>"</span>}
           {initialCategory && <span> in <span className="text-foreground">{initialCategory}</span></span>}
         </div>
@@ -109,14 +109,14 @@ export function Archive() {
         </div>
       ) : isError ? (
         <div className="py-20 text-center bg-card border border-border rounded-xl">
-          <p className="text-destructive font-semibold">Failed to load episodes. Please try again.</p>
+          <p className="text-destructive font-semibold">Couldn't reach the archive right now. Give it a moment and try again.</p>
         </div>
       ) : episodePage?.items.length === 0 ? (
         <div className="py-24 text-center bg-card border border-border rounded-xl flex flex-col items-center justify-center">
           <Search className="w-12 h-12 text-muted-foreground/30 mb-4" />
-          <h3 className="font-serif text-xl font-bold text-foreground mb-2">No episodes found</h3>
+          <h3 className="font-serif text-xl font-bold text-foreground mb-2">Nothing matched that search</h3>
           <p className="text-muted-foreground mb-6">
-            We couldn't find any episodes matching your current filters.
+            Try a broader term, or clear the filters and browse what's in the archive.
           </p>
           <button 
             onClick={clearFilters}

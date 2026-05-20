@@ -9,9 +9,9 @@ export function Categories() {
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="max-w-4xl mx-auto">
         <header className="mb-12 text-center md:text-left">
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-4">Topics & Categories</h1>
+          <h1 className="font-serif text-4xl font-bold text-foreground mb-4">Browse by Topic</h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            Explore the vast archive of The Survival Podcast organized by subject. From permaculture to crypto, find exactly what you're looking for.
+            TSP covers a lot of ground — permaculture, firearms, small business, investing, homesteading, natural health, and more. Pick a topic and go deep.
           </p>
         </header>
 
@@ -23,7 +23,7 @@ export function Categories() {
           </div>
         ) : isError ? (
           <div className="py-20 text-center bg-card border border-border rounded-xl">
-            <p className="text-destructive font-semibold">Failed to load categories.</p>
+            <p className="text-destructive font-semibold">Couldn't load the topic list right now. Try refreshing the page.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

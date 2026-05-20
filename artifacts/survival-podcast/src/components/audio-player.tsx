@@ -87,7 +87,7 @@ export function AudioPlayer({ src, title }: { src: string; title: string }) {
           <button 
             onClick={() => skipTime(-15)}
             className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted"
-            title="Rewind 15 seconds"
+            title="Back 15 seconds"
           >
             <SkipBack className="w-5 h-5" />
           </button>
@@ -106,7 +106,7 @@ export function AudioPlayer({ src, title }: { src: string; title: string }) {
           <button 
             onClick={() => skipTime(30)}
             className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted"
-            title="Skip 30 seconds"
+            title="Forward 30 seconds"
           >
             <SkipForward className="w-5 h-5" />
           </button>

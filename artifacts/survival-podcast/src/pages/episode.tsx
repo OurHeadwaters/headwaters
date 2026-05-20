@@ -43,9 +43,9 @@ export function EpisodeDetail() {
     return (
       <div className="container mx-auto px-4 md:px-6 py-24 text-center">
         <h2 className="font-serif text-3xl font-bold text-foreground mb-4">Episode Not Found</h2>
-        <p className="text-muted-foreground mb-8">This dispatch may have been lost in the ether.</p>
+        <p className="text-muted-foreground mb-8">That one may have moved or never existed. There's still plenty in the archive worth digging into.</p>
         <Link href="/episodes" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
-          <ChevronLeft className="w-4 h-4" /> Back to Archive
+          <ChevronLeft className="w-4 h-4" /> Back to the archive
         </Link>
       </div>
     );
@@ -54,7 +54,7 @@ export function EpisodeDetail() {
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 md:py-16">
       <Link href="/episodes" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors mb-8">
-        <ChevronLeft className="w-4 h-4" /> Back to Archive
+        <ChevronLeft className="w-4 h-4" /> Back to the archive
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">

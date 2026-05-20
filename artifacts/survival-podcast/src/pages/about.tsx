@@ -19,7 +19,7 @@ export function About() {
             {feed?.title || "The Survival Podcast"}
           </h1>
           <p className="text-xl text-muted-foreground font-medium max-w-xl text-balance">
-            Helping you live a better life, if times get tough or even if they don't.
+            "Helping you live a better life, if times get tough or even if they don't."
           </p>
         </div>
 
@@ -45,7 +45,7 @@ export function About() {
             </div>
             <div>
               <h3 className="font-bold text-lg mb-1 text-foreground">Support the Show</h3>
-              <p className="text-sm text-muted-foreground mb-4">Keep the digital homestead running and independent.</p>
+              <p className="text-sm text-muted-foreground mb-4">Keep TSP independent, ad-free, and running on its own terms.</p>
             </div>
             {feed?.tipUrl ? (
               <a 
@@ -69,7 +69,7 @@ export function About() {
             </div>
             <div>
               <h3 className="font-bold text-lg mb-1 text-foreground">Official Website</h3>
-              <p className="text-sm text-muted-foreground mb-4">Visit Jack's original site for forums and merch.</p>
+              <p className="text-sm text-muted-foreground mb-4">Jack's main hub — forums, community resources, and more.</p>
             </div>
             <a 
               href={feed?.link || "https://thesurvivalpodcast.com"} 

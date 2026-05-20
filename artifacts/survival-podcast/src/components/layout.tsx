@@ -102,7 +102,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="mt-8 pt-8 border-t border-border/50 text-xs text-muted-foreground/70 flex flex-col md:flex-row justify-between items-center gap-4">
             <span>&copy; {new Date().getFullYear()} The Survival Podcast. All rights reserved.</span>
-            <span className="italic">Built for the digital homesteader.</span>
+            <span className="italic">Built for people building a life worth defending.</span>
           </div>
         </div>
       </footer>

@@ -32,7 +32,7 @@ export function Home() {
             </h1>
             
             <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 max-w-2xl font-medium leading-relaxed">
-              Helping you live a better life, if times get tough or even if they don't.
+              Practical skills, honest conversations, and a community building resilient lives — whether the headlines are scary or not.
             </p>
             
             <div className="flex flex-wrap items-center gap-4">
@@ -41,13 +41,13 @@ export function Home() {
                 className="bg-accent text-accent-foreground px-8 py-3.5 rounded-md font-semibold hover:bg-accent/90 transition-colors shadow-sm flex items-center gap-2"
               >
                 <Compass className="w-5 h-5" />
-                Browse the Archive
+                Start Listening
               </Link>
               <Link 
                 href="/about" 
                 className="bg-primary-foreground/10 text-primary-foreground border border-primary-foreground/20 px-8 py-3.5 rounded-md font-semibold hover:bg-primary-foreground/20 transition-colors backdrop-blur-sm"
               >
-                About the Show
+                How It Started
               </Link>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function Home() {
               <div className="text-3xl font-serif font-bold text-foreground">
                 {yearsOnAir}
               </div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Years Running</div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Years Strong</div>
             </div>
           </div>
         </div>
@@ -100,9 +100,9 @@ export function Home() {
                 <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
                 New Feature
               </div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">Dig into the full library</h2>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">Fifteen years in one place</h2>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                We've indexed over 15 years of content. Search across thousands of audio episodes, written articles, and YouTube videos in one place.
+                Every audio episode, written article, and YouTube video — indexed and searchable. If Jack covered it, you can find it.
               </p>
               
               {libraryStats && libraryStats.totalItems > 100 && (
@@ -134,11 +134,11 @@ export function Home() {
           <section>
             <div className="flex items-end justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Latest Dispatches</h2>
-                <p className="text-muted-foreground">Fresh from the digital homestead.</p>
+                <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Latest Episodes</h2>
+                <p className="text-muted-foreground">What Jack's been covering this week.</p>
               </div>
               <Link href="/episodes" className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
-                View all <ChevronRight className="w-4 h-4" />
+                Full archive <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
             
@@ -155,7 +155,7 @@ export function Home() {
             </div>
             
             <Link href="/episodes" className="sm:hidden mt-6 flex items-center justify-center w-full py-3 bg-secondary text-secondary-foreground rounded-md font-semibold">
-              View all episodes
+              Browse the full archive
             </Link>
           </section>
         </div>
@@ -169,13 +169,13 @@ export function Home() {
               New to the show?
             </h3>
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              The Survival Podcast isn't just about beans, bullets, and bunkers. It's about modern survivalism: building a life that is resilient, independent, and joyful, no matter what happens in the world.
+              Forget the bunker stereotype. TSP is about modern survivalism — building a life that's productive, independent, and genuinely good, so that when things get hard, you're ready. And when they don't, you're already winning.
             </p>
             <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-              Whether you're interested in permaculture, entrepreneurship, investing, or homesteading, there's something here for you.
+              Jack covers permaculture, food production, financial independence, small business, natural medicine, firearms, investing, and a dozen other topics that actually matter to people building real lives.
             </p>
             <Link href="/about" className="inline-block border-b border-primary text-primary font-semibold text-sm pb-0.5 hover:text-primary/80 transition-colors">
-              Read Jack's story
+              Hear how it started
             </Link>
           </div>
 
@@ -183,7 +183,7 @@ export function Home() {
           <div>
             <h3 className="font-serif font-bold text-xl mb-4 flex items-center gap-2 text-foreground">
               <Users className="w-5 h-5 text-primary" />
-              Explore by Topic
+              Find Your Starting Point
             </h3>
             <div className="flex flex-col gap-2">
               {categoriesLoading ? (
