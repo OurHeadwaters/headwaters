@@ -1,4 +1,4 @@
-import { sql, eq, and, desc, lt, gte } from "drizzle-orm";
+import { sql, eq, and, desc, lt, gte, inArray } from "drizzle-orm";
 import { db, contentItemsTable, syncRunsTable } from "@workspace/db";
 import type { InsertContentItem, SyncRun } from "@workspace/db";
 import { logger } from "./logger";
@@ -37,7 +37,7 @@ async function upsertBatch(items: InsertContentItem[]): Promise<number> {
           episodeNumber: sql`excluded.episode_number`,
           categories: sql`excluded.categories`,
           tags: sql`excluded.tags`,
-          extra: sql`excluded.extra`,
+          extra: sql`${contentItemsTable.extra} || excluded.extra`,
           updatedAt: sql`now()`,
         },
       });
@@ -83,6 +83,24 @@ async function recordRun(
 async function syncWordPress(): Promise<{ itemsSeen: number; itemsUpserted: number }> {
   const { itemsSeen, itemsUpserted, failedPages } = await syncWordPressArchive({
     upsertPage: (items) => upsertBatch(items),
+    getExistingExtras: async (sourceIds) => {
+      if (sourceIds.length === 0) return new Map();
+      const rows = await db
+        .select({
+          sourceId: contentItemsTable.sourceId,
+          extra: contentItemsTable.extra,
+        })
+        .from(contentItemsTable)
+        .where(
+          and(
+            eq(contentItemsTable.source, "wordpress"),
+            inArray(contentItemsTable.sourceId, sourceIds),
+          ),
+        );
+      return new Map(
+        rows.map((r) => [r.sourceId, (r.extra ?? {}) as Record<string, unknown>]),
+      );
+    },
   });
   if (failedPages.length > 0) {
     logger.warn({ failedPages }, "WP sync completed with failed pages");

@@ -1,5 +1,6 @@
 import sanitizeHtmlLib from "sanitize-html";
 import { logger } from "../logger";
+import { fetchAudioChapters, extractChapterHistoryTimestamp, pMap } from "../id3-chapters";
 import type { InsertContentItem } from "@workspace/db";
 
 const WP_BASE = "https://www.thesurvivalpodcast.com/wp-json/wp/v2";
@@ -279,6 +280,54 @@ function postToInsert(
   };
 }
 
+const CHAPTER_FETCH_CONCURRENCY = 8;
+
+/**
+ * For each insert item that has an audioUrl and hasn't already had its chapters
+ * checked (indicated by `extra.historyTimestampChecked` in the existing DB
+ * record), fetch ID3/podcast:chapters and write `historyTimestamp` +
+ * `historyTimestampChecked` into the item's `extra` field.
+ *
+ * Items that are already marked checked keep their existing values; `extra` is
+ * left untouched so the JSONB-merge upsert in library.ts can preserve them.
+ */
+async function enrichWithChapterTimestamps(
+  inserts: InsertContentItem[],
+  existingExtras: Map<string, Record<string, unknown>>,
+): Promise<void> {
+  const toEnrich = inserts.filter((item) => {
+    if (!item.audioUrl) return false;
+    const existing = existingExtras.get(item.sourceId);
+    // Skip if we've already checked this episode in a previous sync
+    return !existing?.historyTimestampChecked;
+  });
+
+  if (toEnrich.length === 0) return;
+
+  logger.debug({ count: toEnrich.length }, "Fetching chapters for unchecked episodes");
+
+  await pMap(
+    toEnrich,
+    async (item) => {
+      const chaptersJsonUrl =
+        (item.extra as Record<string, unknown> | undefined)?.chaptersJsonUrl as
+          | string
+          | undefined;
+      const chapters = await fetchAudioChapters(
+        item.audioUrl!,
+        chaptersJsonUrl ?? null,
+      );
+      const historyTimestamp = extractChapterHistoryTimestamp(chapters);
+      item.extra = {
+        ...(item.extra as Record<string, unknown>),
+        historyTimestamp,
+        historyTimestampChecked: true,
+      };
+    },
+    CHAPTER_FETCH_CONCURRENCY,
+  );
+}
+
 export type WordPressSyncResult = {
   itemsSeen: number;
   itemsUpserted: number;
@@ -289,12 +338,20 @@ export type WordPressSyncResult = {
  * Page through the entire WordPress archive, upserting per-page so partial
  * progress is preserved if his shaky WordPress instance 500s deep in the
  * archive. Failed pages are logged and retried on the next refresh cycle.
+ *
+ * `getExistingExtras` (optional) is called once per page with the source IDs
+ * of the posts on that page; it should return a map of sourceId → existing
+ * `extra` record from the DB so that already-checked episodes can skip the
+ * audio chapter fetch.
  */
 export async function syncWordPressArchive(options: {
   signal?: AbortSignal;
   upsertPage: (items: InsertContentItem[]) => Promise<number>;
+  getExistingExtras?: (
+    sourceIds: string[],
+  ) => Promise<Map<string, Record<string, unknown>>>;
 }): Promise<WordPressSyncResult> {
-  const { signal, upsertPage } = options;
+  const { signal, upsertPage, getExistingExtras } = options;
   const [categories, tags] = await Promise.all([
     fetchAllTerms("categories", signal),
     fetchAllTerms("tags", signal),
@@ -314,6 +371,18 @@ export async function syncWordPressArchive(options: {
       const { data, headers } = await fetchJson<WPPost[]>(url, signal);
       totalPages = Number(headers.get("x-wp-totalpages") ?? totalPages.toString());
       const inserts = data.map((p) => postToInsert(p, categories, tags));
+
+      // Fetch existing extras so already-checked episodes skip audio fetching
+      let existingExtras = new Map<string, Record<string, unknown>>();
+      if (getExistingExtras) {
+        try {
+          existingExtras = await getExistingExtras(inserts.map((i) => i.sourceId));
+        } catch (err) {
+          logger.warn({ err }, "WP sync: getExistingExtras failed; will re-check chapters");
+        }
+      }
+
+      await enrichWithChapterTimestamps(inserts, existingExtras);
       const written = await upsertPage(inserts);
       itemsSeen += data.length;
       itemsUpserted += written;
