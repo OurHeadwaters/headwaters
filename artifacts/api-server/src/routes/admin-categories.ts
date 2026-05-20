@@ -3,8 +3,11 @@ import { db, categoryDescriptionsTable } from "@workspace/db";
 import { sql, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { seedCategoryDescriptions } from "../lib/seed-category-descriptions";
+import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
+
+router.use(requireEditor);
 
 let seeded = false;
 
