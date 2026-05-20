@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useHistory } from "@/context/HistoryContext";
+import { useDownloads } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -66,6 +67,7 @@ export default function EpisodeDetailScreen() {
 
   const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek } = usePlayer();
   const { isBookmarked, toggleBookmark } = useHistory();
+  const { isDownloaded, isDownloading, downloadEpisode, deleteDownload, getLocalUri, progress: downloadProgress } = useDownloads();
 
   const { data: episode, isLoading: epLoading, error } = useGetEpisode(slug ?? "");
 
@@ -74,6 +76,9 @@ export default function EpisodeDetailScreen() {
   const activeDurationMs = isThisEpisode ? durationMs : (episode?.durationSeconds ? episode.durationSeconds * 1000 : 0);
   const progress = activeDurationMs > 0 ? activePositionMs / activeDurationMs : 0;
   const bookmarked = isBookmarked(slug ?? "");
+  const dlProgress = slug ? (downloadProgress[slug] ?? null) : null;
+  const downloaded = slug ? isDownloaded(slug) : false;
+  const downloading = slug ? isDownloading(slug) : false;
 
   const handlePlayPause = useCallback(async () => {
     if (!episode) return;
@@ -82,16 +87,34 @@ export default function EpisodeDetailScreen() {
       if (isPlaying) await pause();
       else await resume();
     } else {
+      const localUri = slug ? getLocalUri(slug) : null;
       await play({
         slug: episode.slug,
         title: episode.title,
-        audioUrl: episode.audioUrl ?? undefined,
+        audioUrl: localUri ?? episode.audioUrl ?? undefined,
         artworkUrl: episode.artworkUrl ?? undefined,
         durationSeconds: episode.durationSeconds ?? undefined,
         episodeNumber: episode.episodeNumber ?? undefined,
       });
     }
-  }, [episode, isThisEpisode, isPlaying, play, pause, resume]);
+  }, [episode, isThisEpisode, isPlaying, play, pause, resume, slug, getLocalUri]);
+
+  const handleDownload = useCallback(async () => {
+    if (!episode || !slug) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isDownloaded(slug)) {
+      deleteDownload(slug);
+    } else if (!isDownloading(slug) && episode.audioUrl) {
+      await downloadEpisode({
+        slug: episode.slug,
+        title: episode.title,
+        audioUrl: episode.audioUrl,
+        artworkUrl: episode.artworkUrl ?? undefined,
+        episodeNumber: episode.episodeNumber ?? undefined,
+        durationSeconds: episode.durationSeconds ?? undefined,
+      });
+    }
+  }, [episode, slug, isDownloaded, isDownloading, downloadEpisode, deleteDownload]);
 
   const handleSkip = async (deltaMs: number) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -306,6 +329,51 @@ export default function EpisodeDetailScreen() {
               </Text>
             </Pressable>
           </View>
+
+          {episode.audioUrl && Platform.OS !== "web" && (
+            <View style={styles.downloadRow}>
+              <Pressable
+                onPress={handleDownload}
+                style={[
+                  styles.downloadBtn,
+                  {
+                    backgroundColor: downloaded ? colors.muted : colors.background,
+                    borderColor: downloaded ? colors.primary : colors.border,
+                  },
+                ]}
+                testID="episode-download-btn"
+              >
+                {downloading ? (
+                  <>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.downloadText, { color: colors.primary, fontFamily: "DMSans_500Medium" }]}>
+                      {dlProgress != null ? `${Math.round(dlProgress * 100)}%` : "Downloading…"}
+                    </Text>
+                  </>
+                ) : downloaded ? (
+                  <>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                    <Text style={[styles.downloadText, { color: colors.primary, fontFamily: "DMSans_500Medium" }]}>
+                      Downloaded
+                    </Text>
+                    <Ionicons name="trash-outline" size={16} color={colors.mutedForeground} style={{ marginLeft: 4 }} />
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="cloud-download-outline" size={18} color={colors.foreground} />
+                    <Text style={[styles.downloadText, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]}>
+                      Download
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+              {downloading && dlProgress != null && (
+                <View style={[styles.dlProgressTrack, { backgroundColor: colors.muted }]}>
+                  <View style={[styles.dlProgressFill, { width: `${dlProgress * 100}%`, backgroundColor: colors.primary }]} />
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         {showNotes && (
@@ -463,6 +531,31 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
+  },
+  downloadRow: {
+    gap: 8,
+  },
+  downloadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  downloadText: {
+    fontSize: 14,
+  },
+  dlProgressTrack: {
+    height: 3,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  dlProgressFill: {
+    height: 3,
+    borderRadius: 2,
   },
   notesSection: {
     margin: 20,

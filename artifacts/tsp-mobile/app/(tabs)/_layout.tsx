@@ -24,6 +24,10 @@ function NativeTabLayout() {
           <Icon sf={{ default: "list.bullet", selected: "list.bullet" }} />
           <Label>Archive</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="downloads">
+          <Icon sf={{ default: "arrow.down.circle", selected: "arrow.down.circle.fill" }} />
+          <Label>Downloads</Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
       {currentEpisode && <MiniPlayer />}
     </View>
@@ -91,6 +95,18 @@ function ClassicTabLayout() {
                 <SymbolView name="list.bullet" tintColor={color} size={22} />
               ) : (
                 <Feather name="list" size={22} color={color} />
+              ),
+          }}
+        />
+        <Tabs.Screen
+          name="downloads"
+          options={{
+            title: "Downloads",
+            tabBarIcon: ({ color }) =>
+              isIOS ? (
+                <SymbolView name="arrow.down.circle" tintColor={color} size={24} />
+              ) : (
+                <Feather name="download" size={22} color={color} />
               ),
           }}
         />

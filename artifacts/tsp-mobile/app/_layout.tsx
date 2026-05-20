@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HistoryProvider } from "@/context/HistoryContext";
+import { DownloadProvider } from "@/context/DownloadContext";
 import { PlayerProvider } from "@/context/PlayerContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
@@ -62,11 +63,13 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <HistoryProvider>
-                <PlayerProvider>
-                  <RootLayoutNav />
-                </PlayerProvider>
-              </HistoryProvider>
+              <DownloadProvider>
+                <HistoryProvider>
+                  <PlayerProvider>
+                    <RootLayoutNav />
+                  </PlayerProvider>
+                </HistoryProvider>
+              </DownloadProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
