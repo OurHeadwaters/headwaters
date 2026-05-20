@@ -1,0 +1,59 @@
+You are now building the final visual polish for The Survival Podcast redesign at https://xrpl-design-hub.replit.app/
+
+**MANDATORY DESIGN SYSTEM (do not deviate):**
+
+**Colors:**
+- Primary/Header: #2C4A36 (Deep Forest Green)
+- Background: #FDFBF7 (Weathered Paper) — add very subtle paper texture via CSS
+- Text: #2B2825 (Deep Charcoal)
+- Card/Border: #E3D9CC (Leather Brown)
+- Accent: #D9A066 (Warm Amber / Walnut)
+- Rust accent: #A64B36
+
+**Fonts:**
+- Headings: Fraunces (import from Google Fonts) — use for logo, titles, series names
+- Body/UI: DM Sans
+
+**Aesthetic Rules:**
+- Subtle paper or light linen texture on main background
+- Cards should have soft leather-like borders + slight inner shadow (page edge feel)
+- Warm amber play buttons and accents
+- High contrast, low eye strain, very readable
+- Organic but polished — think 15-year-old trusted homestead journal
+
+**Immediate Priorities — Update These First:**
+
+1. **Homepage**
+   - Full-width hero with beautiful homestead photo (golden hour garden or Back Forty)
+   - Large Fraunces tagline: "Helping you live a better life, if times get tough or even if they don't."
+   - Featured Series grid (3–4 cards) with leather styling, thumbnails, and play buttons
+   - "Starter Episodes" and "Zones" sections below
+
+2. **Persistent Mini-Player**
+   - Fixed bottom bar on every page (mobile + desktop)
+   - Episode title, progress bar (amber), play/pause, skip, close
+   - Make it beautiful and functional with HTML5 audio
+
+3. **Global Navigation**
+   - Top bar in Deep Forest Green with Fraunces logo
+   - Links: Home, Library, Series, Zones, About Jack
+
+4. **Library Page**
+   - Strong search bar at top
+   - Filter chips (Permaculture, Off-Grid, Business, etc.)
+   - Responsive episode grid with leather cards
+
+**Technical Tasks:**
+- Add Google Fonts (Fraunces + DM Sans)
+- Create CSS variables for the entire palette
+- Add background texture (CSS or base64/small image)
+- Improve card hover states (lift + warm shadow)
+- Make sure mobile experience is excellent (thumb-friendly)
+
+**Next Steps for You:**
+After applying this, show me:
+1. Updated homepage
+2. Working mini-player
+3. Library page with filters
+
+Then we’ll move to Series detail pages and episode pages.

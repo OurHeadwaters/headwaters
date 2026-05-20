@@ -19,7 +19,7 @@ export function EpisodeCard({ episode, featured = false }: { episode: Episode; f
   return (
     <Link 
       href={`/episodes/${episode.slug}`}
-      className={`group flex flex-col bg-card rounded-lg border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/30 ${featured ? 'md:flex-row' : ''}`}
+      className={`group flex flex-col bg-card rounded-lg border border-border overflow-hidden card-lift hover:border-primary/30 ${featured ? 'md:flex-row' : ''}`}
     >
       <div className={`relative bg-muted ${featured ? 'md:w-1/3 shrink-0' : 'w-full aspect-video'}`}>
         <img 
