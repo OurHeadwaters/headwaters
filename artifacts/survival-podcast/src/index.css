@@ -274,6 +274,64 @@
   }
 }
 
+@media print {
+  body {
+    background-image: none !important;
+    background-color: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+
+  /* Remove decorative gradients/backgrounds from the hero section */
+  [style*="background-color"] {
+    background-color: transparent !important;
+  }
+  [style*="background-image"] {
+    background-image: none !important;
+  }
+
+  /* Make cards appear as clean rows */
+  .group.flex.gap-4.p-4.rounded-lg.border {
+    border: none !important;
+    border-bottom: 1px solid #ddd !important;
+    border-radius: 0 !important;
+    padding: 6pt 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    break-inside: avoid;
+  }
+
+  /* Episode title always visible (no strikethrough, normal color) */
+  h3 {
+    text-decoration: none !important;
+    color: black !important;
+  }
+
+  /* Episode summary visible in print */
+  .line-clamp-2 {
+    -webkit-line-clamp: unset !important;
+    overflow: visible !important;
+  }
+
+  /* No box shadows anywhere */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Hero section: remove overflow hidden so content flows */
+  .border-b.border-border.relative.overflow-hidden {
+    overflow: visible !important;
+    border-bottom: 2px solid #333 !important;
+    padding-bottom: 12pt !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 0.75in;
+    size: letter portrait;
+  }
+}
+
 @layer utilities {
   .card-lift {
     @apply transition-all duration-200;

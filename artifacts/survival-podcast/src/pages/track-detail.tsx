@@ -21,6 +21,7 @@ import {
   X,
   Check,
   ClipboardCopy,
+  Printer,
 } from "lucide-react";
 import { formatDuration } from "@/components/episode-card";
 
@@ -106,7 +107,7 @@ function TrackItemCard({
           e.stopPropagation();
           if (!isSharedView) onToggleDone(item.id);
         }}
-        className={`shrink-0 mt-0.5 transition-colors ${isSharedView ? "cursor-default" : ""}`}
+        className={`print:hidden shrink-0 mt-0.5 transition-colors ${isSharedView ? "cursor-default" : ""}`}
         aria-label={isDone ? "Mark as not done" : "Mark as done"}
         title={isSharedView ? (isDone ? "Done in shared progress" : "Not done in shared progress") : (isDone ? "Mark as not done" : "Mark as done")}
         disabled={isSharedView}
@@ -131,7 +132,7 @@ function TrackItemCard({
       </div>
 
       {/* Artwork */}
-      <Link href={href} className="shrink-0">
+      <Link href={href} className="print:hidden shrink-0">
         {item.artworkUrl ? (
           <img
             src={item.artworkUrl}
@@ -553,7 +554,7 @@ export default function TrackDetailPage() {
         <div className="max-w-4xl mx-auto px-6 py-12 relative">
           <Link
             href="/tracks"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+            className="print:hidden inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             All Learning Tracks
@@ -598,11 +599,13 @@ export default function TrackDetailPage() {
           </div>
 
           {/* Progress bar */}
-          <ProgressBar doneCount={displayDoneCount} total={total} color={track.color} />
+          <div className="print:hidden">
+            <ProgressBar doneCount={displayDoneCount} total={total} color={track.color} />
+          </div>
 
           {/* Share button — only shown when user has their own progress */}
           {!isSharedView && (
-            <div className="mt-4">
+            <div className="print:hidden mt-4">
               <ShareProgressButton
                 slug={slug}
                 doneIds={progress.doneIds}
@@ -612,7 +615,7 @@ export default function TrackDetailPage() {
             </div>
           )}
 
-          <div className="mt-6 flex items-center gap-4 flex-wrap">
+          <div className="print:hidden mt-6 flex items-center gap-4 flex-wrap">
             {isFiltering ? (
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
@@ -693,11 +696,27 @@ export default function TrackDetailPage() {
               )}
             </button>
           </div>
+
+          {/* Print overview button */}
+          <div className="print:hidden mt-6">
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 text-foreground transition-all duration-200"
+            >
+              <Printer className="w-4 h-4" />
+              Print overview
+            </button>
+          </div>
+
+          {/* Print-only: track URL footer note */}
+          <div className="hidden print:block mt-4 text-xs text-gray-500">
+            {trackUrl}
+          </div>
         </div>
       </div>
 
       {/* Search + tag filter bar */}
-      <div className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="print:hidden border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex flex-col gap-3">
           {/* Search input */}
           <div className="relative">
@@ -761,12 +780,14 @@ export default function TrackDetailPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Shared progress banner */}
         {isSharedView && sharedIds && !sharedDismissed && (
-          <SharedProgressBanner
-            sharedDoneCount={sharedIds.size}
-            total={total}
-            onImport={importSharedProgress}
-            onDismiss={dismissShared}
-          />
+          <div className="print:hidden">
+            <SharedProgressBanner
+              sharedDoneCount={sharedIds.size}
+              total={total}
+              onImport={importSharedProgress}
+              onDismiss={dismissShared}
+            />
+          </div>
         )}
 
         <div className="flex items-center justify-between mb-6">
@@ -813,7 +834,7 @@ export default function TrackDetailPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-10">
+          <div className="print:hidden flex items-center justify-center gap-3 mt-10">
             <button
               onClick={() => navigate(page - 1)}
               disabled={page <= 1}
@@ -838,7 +859,7 @@ export default function TrackDetailPage() {
 
         {/* Odyssey bridge — shown at the end of the last page */}
         {!isFiltering && (isLastPage || totalPages === 0) && (
-          <div className="mt-12 pt-10 border-t border-border">
+          <div className="print:hidden mt-12 pt-10 border-t border-border">
             <div className="mb-5">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
                 You've reached the end of this track
@@ -853,10 +874,16 @@ export default function TrackDetailPage() {
 
         {/* Always-visible compact bridge for deeper pages */}
         {!isFiltering && !isLastPage && totalPages > 1 && (
-          <div className="mt-10 pt-8 border-t border-border">
+          <div className="print:hidden mt-10 pt-8 border-t border-border">
             <OdysseyBridge variant="compact" />
           </div>
         )}
+
+        {/* Print-only footer */}
+        <div className="hidden print:block mt-8 pt-6 border-t border-gray-300 text-xs text-gray-500">
+          <p>Printed from The Survival Podcast · thesurvivialpodcast.com</p>
+          <p className="mt-0.5">Episodes shown: page {page} of {totalPages} (up to {PAGE_SIZE} per page)</p>
+        </div>
       </div>
     </div>
   );
