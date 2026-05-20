@@ -8,6 +8,8 @@ import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, ArrowRight } f
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
+import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
+import { getSeriesTheme } from "@/lib/seriesTheme";
 
 type Transformation = {
   slug: string;
@@ -42,37 +44,6 @@ function matchTransformations(
     const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
     return lowerCats.some((c) => tLower.includes(c));
   });
-}
-
-type EpisodeLike = { title: string; categories: string[]; descriptionHtml?: string };
-
-function detectSeriesSlug(ep: EpisodeLike): string | null {
-  const t = ep.title;
-  const cats = ep.categories;
-  if (/unloose\s+the\s+goose/i.test(t) || cats.some((c) => /unloose/i.test(c))) {
-    return "unloose-the-goose";
-  }
-  if (/13\s+stomps?/i.test(t) || cats.some((c) => /13\s+stomps?/i.test(c))) {
-    return "13-stomps";
-  }
-  if (/tuesday\s+chat/i.test(t) || cats.some((c) => /tuesday\s+chat/i.test(c))) {
-    return "tuesday-chats";
-  }
-  const tl = t.toLowerCase();
-  const showNotesHaveHistory =
-    !!ep.descriptionHtml &&
-    /this\s+day\s+in\s+history|today\s+in\s+history|on\s+this\s+day/i.test(ep.descriptionHtml);
-  if (
-    showNotesHaveHistory ||
-    /history\s+with\s+jack/i.test(t) ||
-    /history\s+of\s+/i.test(t) ||
-    /\bhistory\b.*\b(episode|epi)\b/i.test(t) ||
-    (cats.some((c) => /\bhistory\b/i.test(c) && !/natural history/i.test(c))) ||
-    /\b(ancient|medieval|world war|civil war|revolutionary|colonial|roman|greek|viking|renaissance|ottoman|mongol|byzantine|empire)\b/i.test(tl)
-  ) {
-    return "history";
-  }
-  return null;
 }
 
 export function EpisodeDetail() {
@@ -362,15 +333,27 @@ export function EpisodeDetail() {
                 More in {primaryCategory}
               </h3>
               <div className="flex flex-col gap-4">
-                {relatedEpisodes.items.filter(ep => ep.slug !== episode.slug).slice(0, 3).map(ep => (
-                  <Link key={ep.guid} href={`/episodes/${ep.slug}`} className="group flex gap-3 items-start p-3 bg-card border border-border rounded-lg hover:border-primary/50 transition-colors">
-                    <img src={ep.artworkUrl || tspLogo} alt="" className="w-16 h-16 rounded object-cover border border-border/50 shrink-0" />
-                    <div>
-                      <h4 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1">{ep.title}</h4>
-                      <div className="text-xs text-muted-foreground">{format(parseISO(ep.pubDate), "MMM d, yyyy")}</div>
-                    </div>
-                  </Link>
-                ))}
+                {relatedEpisodes.items.filter(ep => ep.slug !== episode.slug).slice(0, 3).map(ep => {
+                  const relSeriesSlug = detectSeriesSlug(ep);
+                  const relSeriesMeta = relSeriesSlug ? getSeriesMeta(relSeriesSlug) : null;
+                  const relSeriesTheme = relSeriesSlug ? getSeriesTheme(relSeriesSlug) : null;
+                  return (
+                    <Link key={ep.guid} href={`/episodes/${ep.slug}`} className="group flex gap-3 items-start p-3 bg-card border border-border rounded-lg hover:border-primary/50 transition-colors">
+                      <img src={ep.artworkUrl || tspLogo} alt="" className="w-16 h-16 rounded object-cover border border-border/50 shrink-0" />
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <h4 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{ep.title}</h4>
+                        <div className="text-xs text-muted-foreground">{format(parseISO(ep.pubDate), "MMM d, yyyy")}</div>
+                        {relSeriesMeta && relSeriesTheme && (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider border px-1.5 py-0.5 rounded-sm w-fit ${relSeriesTheme.badge}`}>
+                            <Layers className="w-2.5 h-2.5 shrink-0" />
+                            <span>{relSeriesMeta.emoji}</span>
+                            <span>{relSeriesMeta.name}</span>
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -1,8 +1,10 @@
 import { Episode } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
-import { PlayCircle, Clock, Calendar, Hash } from "lucide-react";
+import { PlayCircle, Clock, Calendar, Layers } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
+import { getSeriesTheme } from "@/lib/seriesTheme";
 
 export function formatDuration(seconds?: number | null) {
   if (!seconds) return null;
@@ -13,9 +15,20 @@ export function formatDuration(seconds?: number | null) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function EpisodeCard({ episode, featured = false }: { episode: Episode; featured?: boolean }) {
+interface EpisodeCardProps {
+  episode: Episode;
+  featured?: boolean;
+  seriesPosition?: number;
+  seriesTotal?: number;
+}
+
+export function EpisodeCard({ episode, featured = false, seriesPosition, seriesTotal }: EpisodeCardProps) {
   const isRecent = new Date().getTime() - new Date(episode.pubDate).getTime() < 7 * 24 * 60 * 60 * 1000;
-  
+
+  const seriesSlug = detectSeriesSlug(episode);
+  const seriesMeta = seriesSlug ? getSeriesMeta(seriesSlug) : null;
+  const seriesTheme = seriesSlug ? getSeriesTheme(seriesSlug) : null;
+
   return (
     <Link 
       href={`/episodes/${episode.slug}`}
@@ -64,8 +77,21 @@ export function EpisodeCard({ episode, featured = false }: { episode: Episode; f
         <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
           {episode.summary}
         </p>
-        
-        {episode.categories && episode.categories.length > 0 && (
+
+        {seriesMeta && seriesTheme && (
+          <div className="mt-auto pt-3 border-t border-border/50">
+            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border px-2 py-1 rounded-sm ${seriesTheme.badge}`}>
+              <Layers className="w-3 h-3 shrink-0" />
+              <span>{seriesMeta.emoji}</span>
+              <span>{seriesMeta.name}</span>
+              {seriesPosition && seriesTotal ? (
+                <span className="opacity-70 font-medium normal-case tracking-normal">· {seriesPosition} of {seriesTotal}</span>
+              ) : null}
+            </span>
+          </div>
+        )}
+
+        {!seriesMeta && episode.categories && episode.categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-border/50">
             {episode.categories.slice(0, 3).map(cat => (
               <span key={cat} className="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-primary/80 bg-primary/5 px-2 py-1 rounded-sm">
@@ -75,6 +101,21 @@ export function EpisodeCard({ episode, featured = false }: { episode: Episode; f
             {episode.categories.length > 3 && (
               <span className="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-sm">
                 +{episode.categories.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
+        {seriesMeta && episode.categories && episode.categories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {episode.categories.slice(0, 2).map(cat => (
+              <span key={cat} className="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-primary/80 bg-primary/5 px-2 py-1 rounded-sm">
+                {cat}
+              </span>
+            ))}
+            {episode.categories.length > 2 && (
+              <span className="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-sm">
+                +{episode.categories.length - 2}
               </span>
             )}
           </div>

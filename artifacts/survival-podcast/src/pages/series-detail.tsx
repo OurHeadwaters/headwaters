@@ -241,14 +241,12 @@ export function SeriesDetail() {
               return (
                 <div key={ep.guid} className="relative">
                   {isContinue && <ContinueBadge slug={ep.slug} />}
-                  <div
-                    className={`absolute z-10 flex items-center gap-1.5 bg-background/90 backdrop-blur-sm border border-border/60 rounded-md px-2 py-1 shadow-sm pointer-events-none ${isContinue ? "top-10 left-3" : "top-3 left-3"}`}
-                  >
-                    <span className="text-xs font-bold text-foreground tabular-nums">{position}</span>
-                    <span className="text-[10px] text-muted-foreground font-medium">/ {total}</span>
-                  </div>
                   <div className={isContinue ? "ring-2 ring-primary/30 rounded-xl" : ""}>
-                    <EpisodeCard episode={ep} />
+                    <EpisodeCard
+                      episode={ep}
+                      seriesPosition={position}
+                      seriesTotal={total}
+                    />
                   </div>
                 </div>
               );
