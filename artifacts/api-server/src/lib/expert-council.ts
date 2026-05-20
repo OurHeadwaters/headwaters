@@ -9,11 +9,14 @@ import { asc } from "drizzle-orm";
 
 export type ExpertCouncilMember = {
   id: string;
+  slug: string;
   name: string;
   role: string;
   description: string;
   url: string;
   zones: string[];
+  podcastFeedUrl: string | null;
+  rssSlug: string | null;
 };
 
 export type UlgBusiness = {
@@ -32,11 +35,14 @@ export async function getAllExperts(): Promise<ExpertCouncilMember[]> {
     .orderBy(asc(expertCouncilTable.sortOrder), asc(expertCouncilTable.name));
   return rows.map((r) => ({
     id: r.slug,
+    slug: r.slug,
     name: r.name,
     role: r.role,
     description: r.description,
     url: r.url,
     zones: r.zones,
+    podcastFeedUrl: r.podcastFeedUrl ?? null,
+    rssSlug: r.rssSlug ?? null,
   }));
 }
 

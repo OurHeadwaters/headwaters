@@ -1,8 +1,26 @@
 import { Router, type IRouter } from "express";
 import { getAllExperts, getAllBusinesses } from "../lib/expert-council";
+import { db, contentItemsTable, expertCouncilTable } from "@workspace/db";
+import { eq, and, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { seedExpertCouncil, seedUlgBusinesses } from "../lib/seed-expert-council";
 
 const router: IRouter = Router();
+
+let seeded = false;
+async function ensureSeeded() {
+  if (seeded) return;
+  try {
+    const [ecCount] = await db.select({ id: expertCouncilTable.id }).from(expertCouncilTable).limit(1);
+    if (!ecCount) {
+      await seedExpertCouncil();
+      await seedUlgBusinesses();
+    }
+    seeded = true;
+  } catch (err) {
+    logger.warn({ err }, "experts route: seed check failed");
+  }
+}
 
 function normalize(s: string) {
   return s.toLowerCase();
@@ -25,6 +43,7 @@ function matchesQuery(fields: string[], q: string): boolean {
  */
 router.get("/experts", async (req, res) => {
   try {
+    await ensureSeeded();
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
 
     const [allExperts, allBusinesses] = await Promise.all([
@@ -48,6 +67,56 @@ router.get("/experts", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "experts search failed");
     res.status(500).json({ error: "Failed to load experts" });
+  }
+});
+
+router.get("/experts/:slug", async (req, res) => {
+  try {
+    await ensureSeeded();
+    const { slug } = req.params;
+    const allExperts = await getAllExperts();
+    const expert = allExperts.find((e) => e.slug === slug);
+    if (!expert) {
+      res.status(404).json({ error: "Expert not found" });
+      return;
+    }
+
+    const source = `council-${slug}`;
+    const [ownEpisodes, tspAppearances] = await Promise.all([
+      db
+        .select()
+        .from(contentItemsTable)
+        .where(eq(contentItemsTable.source, source))
+        .orderBy(desc(contentItemsTable.publishedAt))
+        .limit(50),
+      db
+        .select()
+        .from(contentItemsTable)
+        .where(
+          and(
+            eq(contentItemsTable.source, "wordpress"),
+            eq(contentItemsTable.kind, "audio"),
+          ),
+        )
+        .orderBy(desc(contentItemsTable.publishedAt))
+        .limit(200),
+    ]);
+
+    const nameLower = expert.name.toLowerCase();
+    const filteredAppearances = tspAppearances.filter((ep) => {
+      const title = (ep.title ?? "").toLowerCase();
+      const summary = (ep.summary ?? "").toLowerCase();
+      return title.includes(nameLower) || summary.includes(nameLower);
+    });
+
+    res.json({
+      expert,
+      ownEpisodes,
+      tspAppearances: filteredAppearances.slice(0, 50),
+    });
+  } catch (err) {
+    logger.error({ err }, "expert profile fetch failed");
+    res.status(500).json({ error: "Failed to load expert profile" });
   }
 });
 

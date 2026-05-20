@@ -18,6 +18,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/tracks", label: "Tracks" },
     { href: "/zones", label: "Zones" },
     { href: "/transform", label: "Transform" },
+    { href: "/council", label: "Creators" },
     { href: "/wishing-well", label: "🪙 Well" },
     { href: "/episodes", label: "Archive" },
     { href: "/series", label: "Series" },
@@ -32,8 +33,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-3">
             <img src={tspLogo} alt="TSP Logo" className="w-10 h-10 rounded-md object-cover border-2 border-white/20" />
             <div className="flex flex-col">
-              <span className="font-serif font-bold text-lg leading-tight tracking-tight text-white">The Survival Podcast</span>
-              <span className="text-[10px] uppercase tracking-wider text-white/50 font-semibold leading-none">with Jack Spirko</span>
+              <span className="font-serif font-bold text-lg leading-tight tracking-tight text-white">The Stomping Path</span>
+              <span className="text-[10px] uppercase tracking-wider text-white/50 font-semibold leading-none">TSP Community</span>
             </div>
           </Link>
 
@@ -164,14 +165,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
               <img src={tspLogo} alt="TSP Logo" className="w-8 h-8 rounded-sm opacity-80" />
-              <span className="font-serif font-semibold text-white/80">The Survival Podcast</span>
+              <span className="font-serif font-semibold text-white/80">The Stomping Path</span>
             </div>
             <p className="text-sm text-white/60 text-center md:text-right max-w-sm italic">
               "Helping you live a better life, if times get tough or even if they don't."
             </p>
           </div>
           <div className="mt-8 pt-8 border-t border-white/10 text-xs text-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
-            <span>&copy; {new Date().getFullYear()} The Survival Podcast. All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} The Stomping Path. All rights reserved.</span>
             <div className="flex items-center gap-4">
               <Link href="/admin/categories" className="hover:text-white/70 transition-colors">
                 Category Descriptions Editor

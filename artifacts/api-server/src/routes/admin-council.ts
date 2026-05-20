@@ -54,9 +54,10 @@ router.get("/admin/council/experts", async (_req, res) => {
 
 router.post("/admin/council/experts", async (req, res) => {
   try {
-    const { slug, name, role, description, url, zones, sortOrder } = req.body as {
+    const { slug, name, role, description, url, zones, sortOrder, podcastFeedUrl, rssSlug } = req.body as {
       slug?: string; name?: string; role?: string;
       description?: string; url?: string; zones?: unknown; sortOrder?: number;
+      podcastFeedUrl?: string; rssSlug?: string;
     };
     if (!slug?.trim() || !name?.trim() || !role?.trim() || !description?.trim() || !url?.trim()) {
       res.status(400).json({ error: "slug, name, role, description, and url are required" });
@@ -71,6 +72,8 @@ router.post("/admin/council/experts", async (req, res) => {
         description: description.trim(),
         url: url.trim(),
         zones: parseZones(zones),
+        podcastFeedUrl: podcastFeedUrl?.trim() || null,
+        rssSlug: rssSlug?.trim() || null,
         sortOrder: typeof sortOrder === "number" ? sortOrder : 999,
         updatedAt: new Date(),
       })
@@ -89,9 +92,10 @@ router.post("/admin/council/experts", async (req, res) => {
 router.put("/admin/council/experts/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
-    const { name, role, description, url, zones, sortOrder } = req.body as {
+    const { name, role, description, url, zones, sortOrder, podcastFeedUrl, rssSlug } = req.body as {
       name?: string; role?: string; description?: string;
       url?: string; zones?: unknown; sortOrder?: number;
+      podcastFeedUrl?: string; rssSlug?: string;
     };
     if (!name?.trim() || !role?.trim() || !description?.trim() || !url?.trim()) {
       res.status(400).json({ error: "name, role, description, and url are required" });
@@ -105,6 +109,8 @@ router.put("/admin/council/experts/:slug", async (req, res) => {
         description: description.trim(),
         url: url.trim(),
         zones: parseZones(zones),
+        podcastFeedUrl: podcastFeedUrl?.trim() || null,
+        rssSlug: rssSlug?.trim() || null,
         sortOrder: typeof sortOrder === "number" ? sortOrder : 999,
         updatedAt: new Date(),
       })

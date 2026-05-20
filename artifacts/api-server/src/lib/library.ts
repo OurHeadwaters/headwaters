@@ -1,10 +1,11 @@
 import { sql, eq, and, desc, lt, gte, inArray } from "drizzle-orm";
-import { db, contentItemsTable, syncRunsTable } from "@workspace/db";
+import { db, contentItemsTable, syncRunsTable, expertCouncilTable } from "@workspace/db";
 import type { InsertContentItem, SyncRun } from "@workspace/db";
 import { logger } from "./logger";
 import { syncWordPressArchive } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
 import { syncUlg, correctUlgDiscoveredDates } from "./sources/ulg";
+import { parseChannel } from "./rss";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
 const BATCH_SIZE = 200;
@@ -137,13 +138,80 @@ async function syncUlgSource(): Promise<{ itemsSeen: number; itemsUpserted: numb
   return result;
 }
 
+async function syncCouncilFeed(slug: string, feedUrl: string): Promise<{ itemsSeen: number; itemsUpserted: number }> {
+  const source = `council-${slug}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const res = await fetch(feedUrl, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "TSP-StompingPath/1.0 (+replit)",
+        Accept: "application/rss+xml, application/xml, text/xml",
+      },
+    });
+    if (!res.ok) throw new Error(`Feed fetch failed: ${res.status}`);
+    const xml = await res.text();
+    const feed = parseChannel(xml);
+    const items: InsertContentItem[] = feed.episodes.map((ep) => ({
+      source,
+      sourceId: ep.guid,
+      kind: "audio" as const,
+      slug: `${slug}-${ep.slug}`,
+      title: ep.title,
+      link: ep.link,
+      summary: ep.summary,
+      bodyHtml: ep.descriptionHtml,
+      bodyText: null,
+      publishedAt: ep.pubDate ? new Date(ep.pubDate) : new Date(0),
+      durationSeconds: ep.durationSeconds,
+      audioUrl: ep.audioUrl,
+      audioType: ep.audioType,
+      videoUrl: null,
+      videoId: null,
+      artworkUrl: ep.artworkUrl,
+      episodeNumber: ep.episodeNumber,
+      categories: ep.categories,
+      tags: [],
+      extra: {},
+    }));
+    const itemsUpserted = await upsertBatch(items);
+    return { itemsSeen: items.length, itemsUpserted };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function syncAllCouncilFeeds(): Promise<{ itemsSeen: number; itemsUpserted: number }> {
+  const members = await db
+    .select({ slug: expertCouncilTable.slug, podcastFeedUrl: expertCouncilTable.podcastFeedUrl })
+    .from(expertCouncilTable)
+    .where(sql`${expertCouncilTable.podcastFeedUrl} is not null`);
+
+  let totalSeen = 0;
+  let totalUpserted = 0;
+  for (const member of members) {
+    if (!member.podcastFeedUrl) continue;
+    try {
+      const { itemsSeen, itemsUpserted } = await syncCouncilFeed(member.slug, member.podcastFeedUrl);
+      totalSeen += itemsSeen;
+      totalUpserted += itemsUpserted;
+      logger.info({ slug: member.slug, itemsSeen, itemsUpserted }, "Council feed synced");
+    } catch (err) {
+      logger.warn({ err, slug: member.slug }, "Council feed sync failed");
+    }
+  }
+  return { itemsSeen: totalSeen, itemsUpserted: totalUpserted };
+}
+
 export type RefreshSummary = {
   wordpress: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   youtube: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   ulg: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
+  council: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
 };
 
-const ALL_SOURCES = ["wordpress", "youtube", "ulg"] as const;
+const ALL_SOURCES = ["wordpress", "youtube", "ulg", "council"] as const;
 
 let inflight: Promise<RefreshSummary> | null = null;
 
@@ -167,18 +235,20 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
         wordpress: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
         youtube: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
         ulg: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
+        council: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
       };
     }
   }
   inflight = (async () => {
     logger.info("Library refresh starting");
-    const [wp, yt, ulg] = await Promise.all([
+    const [wp, yt, ulg, council] = await Promise.all([
       recordRun("wordpress", syncWordPress),
       recordRun("youtube", syncYouTube),
       recordRun("ulg", syncUlgSource),
+      recordRun("council", syncAllCouncilFeeds),
     ]);
-    logger.info({ wp, yt, ulg }, "Library refresh complete");
-    return { wordpress: wp, youtube: yt, ulg };
+    logger.info({ wp, yt, ulg, council }, "Library refresh complete");
+    return { wordpress: wp, youtube: yt, ulg, council };
   })();
   try {
     return await inflight;
@@ -204,7 +274,7 @@ export function startBackgroundRefresh(): void {
 }
 
 export async function getSyncStatus(): Promise<{ source: string; lastRun: SyncRun | null }[]> {
-  const sources = ["wordpress", "youtube", "ulg"];
+  const sources = ["wordpress", "youtube", "ulg", "council"];
   const results: { source: string; lastRun: SyncRun | null }[] = [];
   for (const source of sources) {
     const [last] = await db

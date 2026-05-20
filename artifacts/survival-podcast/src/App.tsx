@@ -25,6 +25,8 @@ import { UlgPage } from "@/pages/ulg";
 import { WishingWell } from "@/pages/wishing-well";
 import { AdminWishingWell } from "@/pages/admin-wishing-well";
 import { AdminSeriesHealth } from "@/pages/admin-series-health";
+import { CouncilPage } from "@/pages/council";
+import { CouncilMemberPage } from "@/pages/council-member";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -52,6 +54,8 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/admin/categories" component={AdminCategories} />
         <Route path="/admin/council" component={AdminCouncil} />
+        <Route path="/council" component={CouncilPage} />
+        <Route path="/council/:slug" component={CouncilMemberPage} />
         <Route path="/admin/wishing-well" component={AdminWishingWell} />
         <Route path="/admin/series-health" component={AdminSeriesHealth} />
         <Route path="/wishing-well" component={WishingWell} />

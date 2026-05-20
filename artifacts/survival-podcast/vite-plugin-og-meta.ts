@@ -20,7 +20,7 @@ function buildOgHtml(opts: {
   url: string;
   siteName?: string;
 }): string {
-  const { title, description, image, url, siteName = "The Survival Podcast" } = opts;
+  const { title, description, image, url, siteName = "The Stomping Path" } = opts;
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeImage = image ? escapeHtml(image) : "";
@@ -40,7 +40,7 @@ function buildOgHtml(opts: {
   <meta property="og:url" content="${safeUrl}" />
   ${safeImage ? `<meta property="og:image" content="${safeImage}" />` : ""}
   <meta name="twitter:card" content="${safeImage ? "summary_large_image" : "summary"}" />
-  <meta name="twitter:site" content="@jack_spirko" />
+  <meta name="twitter:site" content="@survivalpodcast" />
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
   ${safeImage ? `<meta name="twitter:image" content="${safeImage}" />` : ""}
@@ -139,8 +139,8 @@ function buildOgMiddleware(base: string): Connect.NextHandleFunction {
         const epLabel = ep.episodeNumber ? `Episode ${ep.episodeNumber}` : "Episode";
 
         const html = buildOgHtml({
-          title: `${ep.title} — The Survival Podcast`,
-          description: ep.summary || `${epLabel} of The Survival Podcast`,
+          title: `${ep.title} — The Stomping Path`,
+          description: ep.summary || `${epLabel} of The Stomping Path`,
           image: ep.artworkUrl ?? undefined,
           url: pageUrl,
         });

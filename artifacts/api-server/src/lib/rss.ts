@@ -163,7 +163,7 @@ function parsePubDate(raw: string): string {
   return d.toISOString();
 }
 
-function parseChannel(xml: string): RssFeed {
+export function parseChannel(xml: string): RssFeed {
   const parsed = parser.parse(xml) as Record<string, unknown>;
   const rss = parsed["rss"] as Record<string, unknown> | undefined;
   const channel = rss?.["channel"] as Record<string, unknown> | undefined;

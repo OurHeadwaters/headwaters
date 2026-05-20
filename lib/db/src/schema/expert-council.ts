@@ -22,6 +22,8 @@ export const expertCouncilTable = pgTable(
     description: text("description").notNull(),
     url: text("url").notNull(),
     zones: jsonb("zones").$type<string[]>().notNull().default([]),
+    podcastFeedUrl: text("podcast_feed_url"),
+    rssSlug: text("rss_slug"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

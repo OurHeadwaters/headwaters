@@ -544,11 +544,11 @@ export function Home() {
             </div>
             
             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 text-balance text-[#FDFBF7]">
-              {feed?.title || "The Survival Podcast"}
+              The Stomping Path
             </h1>
             
             <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 max-w-2xl font-medium leading-relaxed">
-              Practical skills, honest conversations, and a community building resilient lives — whether the headlines are scary or not.
+              A community of pragmatic, self-reliant voices — practitioners, teachers, and producers building resilient lives together, whether the headlines are scary or not.
             </p>
             
             <div className="flex flex-wrap items-center gap-4">
@@ -657,7 +657,7 @@ export function Home() {
             <div className="flex items-end justify-between mb-8">
               <div>
                 <h2 className="text-3xl font-serif font-bold text-foreground mb-2">Latest Episodes</h2>
-                <p className="text-muted-foreground">What Jack's been covering this week.</p>
+                <p className="text-muted-foreground">What the community has been covering this week.</p>
               </div>
               <Link href="/episodes" className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
                 Full archive <ChevronRight className="w-4 h-4" />
@@ -841,10 +841,10 @@ export function Home() {
               New to the show?
             </h3>
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              Forget the bunker stereotype. TSP is about modern survivalism — building a life that's productive, independent, and genuinely good, so that when things get hard, you're ready. And when they don't, you're already winning.
+              Forget the bunker stereotype. The Stomping Path is a community of modern survivalists — agorists, libertarians, permaculturists, and self-reliance practitioners building lives that are productive, independent, and genuinely good.
             </p>
             <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-              Jack covers permaculture, food production, financial independence, small business, natural medicine, firearms, investing, and a dozen other topics that actually matter to people building real lives.
+              Jack Spirko and the Expert Council cover permaculture, food production, financial independence, small business, natural medicine, firearms, investing, and the practical knowledge that actually matters to people building real lives.
             </p>
             <Link href="/about" className="inline-block border-b border-primary text-primary font-semibold text-sm pb-0.5 hover:text-primary/80 transition-colors">
               Hear how it started

@@ -27,6 +27,8 @@ interface Expert {
   zones: string[];
   sortOrder: number;
   updatedAt: string;
+  podcastFeedUrl?: string | null;
+  rssSlug?: string | null;
 }
 
 interface Business {
@@ -139,14 +141,16 @@ interface ExpertFormData {
   url: string;
   zones: string[];
   sortOrder: number;
+  podcastFeedUrl: string;
+  rssSlug: string;
 }
 
 const blankExpert = (): ExpertFormData => ({
-  slug: "", name: "", role: "", description: "", url: "", zones: [], sortOrder: 999,
+  slug: "", name: "", role: "", description: "", url: "", zones: [], sortOrder: 999, podcastFeedUrl: "", rssSlug: "",
 });
 
 function expertToForm(e: Expert): ExpertFormData {
-  return { slug: e.slug, name: e.name, role: e.role, description: e.description, url: e.url, zones: e.zones, sortOrder: e.sortOrder };
+  return { slug: e.slug, name: e.name, role: e.role, description: e.description, url: e.url, zones: e.zones, sortOrder: e.sortOrder, podcastFeedUrl: e.podcastFeedUrl ?? "", rssSlug: e.rssSlug ?? "" };
 }
 
 function ExpertForm({
@@ -233,6 +237,25 @@ function ExpertForm({
             className="rounded border border-border bg-background text-sm p-2 focus:outline-none focus:ring-2 focus:ring-primary"
             value={form.sortOrder}
             onChange={(e) => field("sortOrder", parseInt(e.target.value, 10) || 999)}
+          />
+        </div>
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Podcast RSS Feed URL <span className="font-normal normal-case">(optional — enables council feed ingestion)</span></label>
+          <input
+            type="url"
+            className="rounded border border-border bg-background text-sm p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="https://example.com/feed/podcast"
+            value={form.podcastFeedUrl}
+            onChange={(e) => field("podcastFeedUrl", e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">RSS Slug override <span className="font-normal normal-case">(optional)</span></label>
+          <input
+            className="rounded border border-border bg-background text-sm p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="e.g. steven-harris-podcast"
+            value={form.rssSlug}
+            onChange={(e) => field("rssSlug", e.target.value)}
           />
         </div>
       </div>
