@@ -4,6 +4,72 @@ import { logger } from "./logger";
 import { SERIES_REGISTRY } from "./series";
 import type { RssEpisode } from "./rss";
 
+/**
+ * Pre-flight guard: verifies that every SeriesDefinition in SERIES_REGISTRY has a
+ * non-trivially-empty librarySql() predicate.
+ *
+ * A stub predicate — one that returns sql`()`, sql`(true)`, or any expression
+ * whose drizzle queryChunks contain only a single plain-string fragment — will
+ * silently produce wrong episode counts.  This check catches that class of mistake
+ * at startup, before the consistency check runs.
+ *
+ * Detection strategy:
+ *   The drizzle `sql` tagged template stores its pieces in an internal `queryChunks`
+ *   array.  A real predicate always has multiple chunks (alternating string literals
+ *   and column/value references).  A stub like sql`()` or sql`(true)` collapses to a
+ *   single string chunk with no column references.  Checking chunk count > 1 is a
+ *   reliable, low-coupling heuristic.
+ */
+export function validateSeriesRegistry(): void {
+  const stubs: string[] = [];
+
+  for (const series of SERIES_REGISTRY) {
+    let sqlExpr: ReturnType<typeof series.librarySql>;
+    try {
+      sqlExpr = series.librarySql();
+    } catch (err) {
+      stubs.push(series.slug);
+      logger.warn(
+        { series: series.slug, err },
+        "series-preflight: librarySql() threw — predicate is broken or a stub",
+      );
+      continue;
+    }
+
+    // drizzle SQL objects carry their fragments in `queryChunks`.
+    // Access it defensively so this guard survives a drizzle internal-API change.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chunks: unknown[] | undefined = (sqlExpr as any)?.queryChunks;
+
+    const isStub =
+      !chunks ||
+      chunks.length === 0 ||
+      // Single-chunk means only a bare string literal with no column references —
+      // the hallmark of a placeholder like sql`()` or sql`(true)`.
+      (chunks.length === 1 && typeof chunks[0] === "string");
+
+    if (isStub) {
+      stubs.push(series.slug);
+      logger.warn(
+        { series: series.slug },
+        "series-preflight: librarySql() looks like a stub (no column references) — episode counts will be wrong",
+      );
+    }
+  }
+
+  if (stubs.length > 0) {
+    logger.warn(
+      { series: stubs, count: stubs.length },
+      "series-preflight: one or more series definitions are missing a real SQL predicate — fix librarySql() for each listed series",
+    );
+  } else {
+    logger.info(
+      { seriesCount: SERIES_REGISTRY.length },
+      "series-preflight: all series definitions have non-stub SQL predicates — OK",
+    );
+  }
+}
+
 type LibraryRow = typeof contentItemsTable.$inferSelect;
 
 function rowToEpisode(row: LibraryRow): RssEpisode {
