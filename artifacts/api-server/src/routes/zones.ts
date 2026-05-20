@@ -260,8 +260,16 @@ router.get("/zones/:slug/resources", async (req, res) => {
     const experts = expertsForZone(zone.slug);
     const businesses = businessesForZone(zone.slug);
 
+    const rawSource = req.query.source;
+    const sourceFilter =
+      rawSource === "tsp" ? "tsp" :
+      rawSource === "ulg" ? "ulg" :
+      null;
+    const sourceFragment = sourceFilter ? `source = '${esc(sourceFilter)}'` : "true";
+
     const whereFragment = zoneWhereFragment(zone.tags, zone.categories);
     const scoreFragment = zoneScoreFragment(zone.tags);
+    const combinedWhere = `(${whereFragment}) AND ${sourceFragment}`;
 
     const [episodeRows, countRow] = await Promise.all([
       db.execute(sql.raw(`
@@ -271,12 +279,12 @@ router.get("/zones/:slug/resources", async (req, res) => {
           audio_type, artwork_url, categories, tags,
           ${scoreFragment} AS zone_score
         FROM content_items
-        WHERE ${whereFragment}
+        WHERE ${combinedWhere}
         ORDER BY zone_score DESC, published_at DESC
         LIMIT ${episodeLimit}
       `)),
       db.execute(sql.raw(`
-        SELECT count(*)::int AS count FROM content_items WHERE ${whereFragment}
+        SELECT count(*)::int AS count FROM content_items WHERE ${combinedWhere}
       `)),
     ]);
 

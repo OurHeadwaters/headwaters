@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useRoute } from "wouter";
 import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -5,6 +6,8 @@ import {
   Loader2, Headphones, Users, Building2, ExternalLink,
   ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare,
 } from "lucide-react";
+
+type SourceFilter = "all" | "tsp" | "ulg";
 
 const ZONE_RING_COLORS = [
   "border-amber-600",
@@ -184,8 +187,10 @@ function ShelfHeader({
 export default function ZoneDetailPage() {
   const [, params] = useRoute("/zones/:slug");
   const slug = params?.slug ?? "";
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
 
-  const { data, isLoading, isError } = useZoneResources(slug);
+  const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
+  const { data, isLoading, isError } = useZoneResources(slug, apiSource);
 
   if (isLoading) {
     return (
@@ -288,13 +293,34 @@ export default function ZoneDetailPage() {
             count={episodeTotal}
             zoneColor={zone.color}
           />
-          <p className="text-sm text-muted-foreground mb-5 ml-11">
+          <p className="text-sm text-muted-foreground mb-4 ml-11">
             TSP and Unloose the Goose episodes relevant to {zone.name.toLowerCase()}.
           </p>
 
+          {/* Source filter tabs */}
+          <div className="flex items-center gap-1.5 ml-11 mb-5">
+            {(["all", "tsp", "ulg"] as SourceFilter[]).map((f) => {
+              const label = f === "all" ? "All" : f === "tsp" ? "TSP Only" : "ULG Only";
+              const active = sourceFilter === f;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setSourceFilter(f)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    active
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-transparent text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
           {episodes.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              No episodes found for this zone yet.
+              No {sourceFilter === "tsp" ? "TSP" : sourceFilter === "ulg" ? "ULG" : ""} episodes found for this zone yet.
             </p>
           ) : (
             <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">

@@ -55,16 +55,18 @@ export type ZoneResources = {
   businesses: ZoneBusiness[];
 };
 
-async function fetchZoneResources(slug: string): Promise<ZoneResources> {
-  const res = await fetch(`/api/zones/${encodeURIComponent(slug)}/resources`);
+async function fetchZoneResources(slug: string, source?: "tsp" | "ulg"): Promise<ZoneResources> {
+  const url = new URL(`/api/zones/${encodeURIComponent(slug)}/resources`, window.location.origin);
+  if (source) url.searchParams.set("source", source);
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error("Failed to load zone resources");
   return res.json();
 }
 
-export function useZoneResources(slug: string | undefined) {
+export function useZoneResources(slug: string | undefined, source?: "tsp" | "ulg") {
   return useQuery<ZoneResources>({
-    queryKey: ["zones", slug, "resources"],
-    queryFn: () => fetchZoneResources(slug!),
+    queryKey: ["zones", slug, "resources", source ?? "all"],
+    queryFn: () => fetchZoneResources(slug!, source),
     enabled: !!slug,
   });
 }
