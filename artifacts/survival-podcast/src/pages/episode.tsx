@@ -1,12 +1,48 @@
 import { useRoute } from "wouter";
 import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
-import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
+
+type Transformation = {
+  slug: string;
+  from: string;
+  to: string;
+  description: string;
+  tags: string[];
+  categories: string[];
+  color: string;
+  icon: string;
+};
+
+function useTransformations() {
+  return useQuery<Transformation[]>({
+    queryKey: ["transformations"],
+    queryFn: async () => {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/transformations`);
+      if (!res.ok) throw new Error("Failed to load transformations");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+function matchTransformations(
+  episodeCategories: string[],
+  transformations: Transformation[],
+): Transformation[] {
+  const lowerCats = episodeCategories.map((c) => c.toLowerCase());
+  return transformations.filter((t) => {
+    const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
+    return lowerCats.some((c) => tLower.includes(c));
+  });
+}
 
 type EpisodeLike = { title: string; categories: string[]; descriptionHtml?: string };
 
@@ -57,6 +93,13 @@ export function EpisodeDetail() {
   const { data: seriesList } = useListSeries({
     query: { queryKey: getListSeriesQueryKey() }
   });
+
+  const { data: transformations } = useTransformations();
+
+  const matchedTransformations =
+    episode && transformations
+      ? matchTransformations(episode.categories, transformations)
+      : [];
 
   const episodeSeriesSlug = episode ? detectSeriesSlug(episode) : null;
   const episodeSeries = episodeSeriesSlug
@@ -260,6 +303,39 @@ export function EpisodeDetail() {
                   </div>
                   <ChevronLeft className="w-4 h-4 text-primary rotate-180 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
                 </Link>
+              </div>
+            )}
+
+            {matchedTransformations.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  <ArrowRight className="w-3 h-3" />
+                  Transformation Paths
+                </div>
+                <div className="flex flex-col gap-2">
+                  {matchedTransformations.map((t) => (
+                    <Link
+                      key={t.slug}
+                      href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg border transition-colors group hover:border-opacity-60"
+                      style={{
+                        backgroundColor: `${t.color}12`,
+                        borderColor: `${t.color}30`,
+                      }}
+                    >
+                      <span className="text-lg leading-none shrink-0">{t.icon}</span>
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <span className="text-xs font-bold text-foreground leading-tight">
+                          {t.from}
+                          <span className="mx-1 opacity-50">→</span>
+                          {t.to}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-medium">Part of this path</span>
+                      </div>
+                      <ChevronLeft className="w-3.5 h-3.5 rotate-180 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: t.color }} />
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
             
