@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useGetEpisode } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   GestureResponderEvent,
@@ -12,6 +12,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -21,8 +22,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHistory } from "@/context/HistoryContext";
 import { useDownloads } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
+import { useV4V, type ValueSplit } from "@/context/V4VContext";
 import { useColors } from "@/hooks/useColors";
 import { WishingWellModal } from "@/components/WishingWellModal";
+import { BoostSheet } from "@/components/BoostSheet";
 
 type TransformationDef = {
   slug: string;
@@ -95,6 +98,8 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+const STREAMING_SATS_PER_MINUTE = 1;
+
 export default function EpisodeDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const colors = useColors();
@@ -103,12 +108,18 @@ export default function EpisodeDetailScreen() {
   const progressBarWidth = useRef(0);
   const [wishingWellVisible, setWishingWellVisible] = React.useState(false);
 
-  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek } = usePlayer();
+  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek, setOnEpisodeFinished, setOnPlaybackMinute } = usePlayer();
   const { isBookmarked, toggleBookmark } = useHistory();
   const { isDownloaded, isDownloading, downloadEpisode, deleteDownload, getLocalUri, progress: downloadProgress } = useDownloads();
+  const { wallet, streamingSats, addStreamingSats, resetStreamingSats, fetchEpisodeSplits, sendBoost } = useV4V();
 
   const { data: episode, isLoading: epLoading, error } = useGetEpisode(slug ?? "");
   const { data: transformations } = useTransformations();
+
+  const [boostVisible, setBoostVisible] = useState(false);
+  const [boostDefaultAmount, setBoostDefaultAmount] = useState<number | undefined>(undefined);
+  const [splits, setSplits] = useState<ValueSplit[]>([]);
+  const [boostSuccess, setBoostSuccess] = useState<number | null>(null);
 
   const isThisEpisode = currentEpisode?.slug === slug;
   const activePositionMs = isThisEpisode ? positionMs : 0;
@@ -118,6 +129,48 @@ export default function EpisodeDetailScreen() {
   const dlProgress = slug ? (downloadProgress[slug] ?? null) : null;
   const downloaded = slug ? isDownloaded(slug) : false;
   const downloading = slug ? isDownloading(slug) : false;
+
+  // Fetch value splits for this episode
+  useEffect(() => {
+    if (!slug) return;
+    fetchEpisodeSplits(slug).then(setSplits);
+  }, [slug, fetchEpisodeSplits]);
+
+  // Reset streaming counter when changing episodes
+  useEffect(() => {
+    if (isThisEpisode) return;
+    resetStreamingSats();
+  }, [isThisEpisode, resetStreamingSats]);
+
+  // Register per-minute streaming payment callback
+  useEffect(() => {
+    if (!wallet) {
+      setOnPlaybackMinute(null);
+      return;
+    }
+    setOnPlaybackMinute((epSlug: string, minuteCount: number) => {
+      if (epSlug === slug) {
+        addStreamingSats(STREAMING_SATS_PER_MINUTE);
+      }
+    });
+    return () => setOnPlaybackMinute(null);
+  }, [wallet, slug, addStreamingSats, setOnPlaybackMinute]);
+
+  // Register episode-complete callback for auto-boost trigger
+  useEffect(() => {
+    setOnEpisodeFinished((epSlug: string) => {
+      if (epSlug === slug && wallet && splits.length > 0) {
+        // Auto-boost 100 sats on episode complete
+        sendBoost({
+          episodeSlug: epSlug,
+          amountSats: 100,
+          message: "Episode complete — value for value! 🎙️",
+          splits,
+        }).catch(() => {});
+      }
+    });
+    return () => setOnEpisodeFinished(null);
+  }, [slug, wallet, splits, sendBoost, setOnEpisodeFinished]);
 
   const handlePlayPause = useCallback(async () => {
     if (!episode) return;
@@ -188,6 +241,38 @@ export default function EpisodeDetailScreen() {
       pubDate: episode.pubDate,
     });
   }, [episode, toggleBookmark]);
+
+  const handleShare = useCallback(async () => {
+    if (!episode) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Share.share({
+        title: episode.title,
+        message: `${episode.title} — The Survival Podcast\n${episode.link ?? ""}`,
+        url: episode.link ?? undefined,
+      });
+      // Auto-boost 50 sats on share
+      if (wallet && splits.length > 0) {
+        sendBoost({
+          episodeSlug: episode.slug,
+          amountSats: 50,
+          message: "Shared this episode 📢",
+          splits,
+        }).catch(() => {});
+      }
+    } catch {}
+  }, [episode, wallet, splits, sendBoost]);
+
+  const handleBoostPress = useCallback(() => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setBoostDefaultAmount(undefined);
+    setBoostVisible(true);
+  }, []);
+
+  const handleBoostSuccess = useCallback((amountSats: number) => {
+    setBoostSuccess(amountSats);
+    setTimeout(() => setBoostSuccess(null), 3000);
+  }, []);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
 
@@ -260,13 +345,18 @@ export default function EpisodeDetailScreen() {
             >
               Episode
             </Text>
-            <Pressable onPress={handleToggleBookmark} style={styles.backBtn} testID="episode-bookmark-btn">
-              <Ionicons
-                name={bookmarked ? "bookmark" : "bookmark-outline"}
-                size={22}
-                color={bookmarked ? "#fbbf24" : colors.primaryForeground}
-              />
-            </Pressable>
+            <View style={styles.topBarRight}>
+              <Pressable onPress={handleShare} style={styles.iconBtn}>
+                <Ionicons name="share-outline" size={22} color={colors.primaryForeground} />
+              </Pressable>
+              <Pressable onPress={handleToggleBookmark} style={styles.iconBtn} testID="episode-bookmark-btn">
+                <Ionicons
+                  name={bookmarked ? "bookmark" : "bookmark-outline"}
+                  size={22}
+                  color={bookmarked ? "#fbbf24" : colors.primaryForeground}
+                />
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.artworkContainer}>
@@ -367,6 +457,15 @@ export default function EpisodeDetailScreen() {
               <Text style={[styles.timeText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                 {formatDuration(activePositionMs)}
               </Text>
+              {/* Streaming sat counter */}
+              {isThisEpisode && wallet && streamingSats > 0 && (
+                <View style={styles.streamingCounter}>
+                  <Ionicons name="flash" size={10} color="#f59e0b" />
+                  <Text style={[styles.streamingText, { color: "#f59e0b", fontFamily: "DMSans_500Medium" }]}>
+                    {streamingSats} sats flowing
+                  </Text>
+                </View>
+              )}
               <Text style={[styles.timeText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                 -{formatDuration(Math.max(0, activeDurationMs - activePositionMs))}
               </Text>
@@ -402,6 +501,34 @@ export default function EpisodeDetailScreen() {
               <Ionicons name="play-forward" size={26} color={colors.foreground} />
               <Text style={[styles.skipLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                 30
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Boost button row */}
+          <View style={styles.boostRow}>
+            <Pressable
+              onPress={handleBoostPress}
+              style={[
+                styles.boostBtn,
+                {
+                  backgroundColor: wallet ? "#f59e0b15" : colors.muted,
+                  borderColor: wallet ? "#f59e0b55" : colors.border,
+                },
+              ]}
+              testID="episode-boost-btn"
+            >
+              <Ionicons name="flash" size={16} color={wallet ? "#f59e0b" : colors.mutedForeground} />
+              <Text
+                style={[
+                  styles.boostText,
+                  {
+                    color: wallet ? "#f59e0b" : colors.mutedForeground,
+                    fontFamily: "DMSans_600SemiBold",
+                  },
+                ]}
+              >
+                {boostSuccess != null ? `✓ ${boostSuccess.toLocaleString()} sats sent!` : "Boost"}
               </Text>
             </Pressable>
           </View>
@@ -484,6 +611,17 @@ export default function EpisodeDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Boost Sheet */}
+      <BoostSheet
+        visible={boostVisible}
+        episodeSlug={slug ?? ""}
+        episodeTitle={episode.title}
+        splits={splits}
+        defaultAmount={boostDefaultAmount}
+        onClose={() => setBoostVisible(false)}
+        onSuccess={handleBoostSuccess}
+      />
     </View>
   );
 }
@@ -522,9 +660,21 @@ const styles = StyleSheet.create({
   topBarTitle: {
     fontSize: 14,
     opacity: 0.8,
+    flex: 1,
+    textAlign: "center",
+  },
+  topBarRight: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   backBtn: {
     width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconBtn: {
+    width: 40,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
@@ -604,9 +754,18 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   timeText: {
     fontSize: 11,
+  },
+  streamingCounter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  streamingText: {
+    fontSize: 10,
   },
   controls: {
     flexDirection: "row",
@@ -628,6 +787,22 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
+  },
+  boostRow: {
+    alignItems: "center",
+    marginTop: -4,
+  },
+  boostBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  boostText: {
+    fontSize: 14,
   },
   downloadRow: {
     gap: 8,

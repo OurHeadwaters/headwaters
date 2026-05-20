@@ -25,7 +25,7 @@ export type UlgBusiness = {
   zones: string[];
 };
 
-async function getAllExperts(): Promise<ExpertCouncilMember[]> {
+export async function getAllExperts(): Promise<ExpertCouncilMember[]> {
   const rows = await db
     .select()
     .from(expertCouncilTable)
@@ -40,7 +40,7 @@ async function getAllExperts(): Promise<ExpertCouncilMember[]> {
   }));
 }
 
-async function getAllBusinesses(): Promise<UlgBusiness[]> {
+export async function getAllBusinesses(): Promise<UlgBusiness[]> {
   const rows = await db
     .select()
     .from(ulgBusinessesTable)

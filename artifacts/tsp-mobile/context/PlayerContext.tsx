@@ -18,11 +18,16 @@ interface PlayerState {
   isLoading: boolean;
   positionMs: number;
   durationMs: number;
+  playbackMinutes: number;
   play: (episode: PlayableEpisode) => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
   stop: () => Promise<void>;
+  onEpisodeFinished: ((slug: string) => void) | null;
+  setOnEpisodeFinished: (cb: ((slug: string) => void) | null) => void;
+  onPlaybackMinute: ((slug: string, minuteCount: number) => void) | null;
+  setOnPlaybackMinute: (cb: ((slug: string, minuteCount: number) => void) | null) => void;
 }
 
 const PlayerContext = createContext<PlayerState | null>(null);
@@ -35,7 +40,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
+  const [playbackMinutes, setPlaybackMinutes] = useState(0);
   const lastSaveRef = useRef(0);
+  const lastMinuteRef = useRef(0);
+  const playbackMinutesRef = useRef(0);
+
+  const onEpisodeFinishedRef = useRef<((slug: string) => void) | null>(null);
+  const onPlaybackMinuteRef = useRef<((slug: string, minuteCount: number) => void) | null>(null);
+  const [onEpisodeFinished, setOnEpisodeFinishedState] = useState<((slug: string) => void) | null>(null);
+  const [onPlaybackMinute, setOnPlaybackMinuteState] = useState<((slug: string, minuteCount: number) => void) | null>(null);
+
+  const setOnEpisodeFinished = useCallback((cb: ((slug: string) => void) | null) => {
+    onEpisodeFinishedRef.current = cb;
+    setOnEpisodeFinishedState(() => cb);
+  }, []);
+
+  const setOnPlaybackMinute = useCallback((cb: ((slug: string, minuteCount: number) => void) | null) => {
+    onPlaybackMinuteRef.current = cb;
+    setOnPlaybackMinuteState(() => cb);
+  }, []);
 
   const { savePosition, getPositionAsync, markFinished } = useHistory();
 
@@ -49,6 +72,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const ep = currentEpisodeRef.current;
       if (ep && status.positionMillis > 5000) {
         const now = Date.now();
+        // Save position every 5 seconds
         if (now - lastSaveRef.current >= 5000) {
           lastSaveRef.current = now;
           savePosition({
@@ -61,6 +85,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             positionMs: status.positionMillis,
           });
         }
+
+        // Track playback minutes for streaming micropayments
+        if (status.isPlaying) {
+          const minutesSinceStart = Math.floor(status.positionMillis / 60000);
+          if (minutesSinceStart > lastMinuteRef.current) {
+            lastMinuteRef.current = minutesSinceStart;
+            playbackMinutesRef.current = minutesSinceStart;
+            setPlaybackMinutes(minutesSinceStart);
+            if (onPlaybackMinuteRef.current) {
+              onPlaybackMinuteRef.current(ep.slug, minutesSinceStart);
+            }
+          }
+        }
       }
 
       if (status.didJustFinish) {
@@ -68,6 +105,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setPositionMs(0);
         if (ep) {
           markFinished(ep.slug);
+          if (onEpisodeFinishedRef.current) {
+            onEpisodeFinishedRef.current(ep.slug);
+          }
         }
       }
     },
@@ -108,6 +148,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setPositionMs(savedPos);
         setDurationMs(episode.durationSeconds ? episode.durationSeconds * 1000 : 0);
         lastSaveRef.current = 0;
+        lastMinuteRef.current = Math.floor(savedPos / 60000);
+        playbackMinutesRef.current = Math.floor(savedPos / 60000);
+        setPlaybackMinutes(Math.floor(savedPos / 60000));
       } catch (e) {
         console.error("Audio play error:", e);
       } finally {
@@ -145,6 +188,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const seek = useCallback(async (ms: number) => {
     await soundRef.current?.setPositionAsync(ms);
     setPositionMs(ms);
+    lastMinuteRef.current = Math.floor(ms / 60000);
   }, []);
 
   const stop = useCallback(async () => {
@@ -156,11 +200,30 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIsPlaying(false);
     setPositionMs(0);
     setDurationMs(0);
+    setPlaybackMinutes(0);
+    lastMinuteRef.current = 0;
+    playbackMinutesRef.current = 0;
   }, []);
 
   return (
     <PlayerContext.Provider
-      value={{ currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek, stop }}
+      value={{
+        currentEpisode,
+        isPlaying,
+        isLoading,
+        positionMs,
+        durationMs,
+        playbackMinutes,
+        play,
+        pause,
+        resume,
+        seek,
+        stop,
+        onEpisodeFinished,
+        setOnEpisodeFinished,
+        onPlaybackMinute,
+        setOnPlaybackMinute,
+      }}
     >
       {children}
     </PlayerContext.Provider>

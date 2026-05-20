@@ -22,6 +22,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HistoryProvider } from "@/context/HistoryContext";
 import { DownloadProvider } from "@/context/DownloadContext";
 import { PlayerProvider } from "@/context/PlayerContext";
+import { V4VProvider } from "@/context/V4VContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
@@ -76,9 +77,11 @@ export default function RootLayout() {
             <KeyboardProvider>
               <DownloadProvider>
                 <HistoryProvider>
-                  <PlayerProvider>
-                    <RootLayoutNav />
-                  </PlayerProvider>
+                  <V4VProvider>
+                    <PlayerProvider>
+                      <RootLayoutNav />
+                    </PlayerProvider>
+                  </V4VProvider>
                 </HistoryProvider>
               </DownloadProvider>
             </KeyboardProvider>
