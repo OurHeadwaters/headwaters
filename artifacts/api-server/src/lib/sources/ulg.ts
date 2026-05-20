@@ -76,6 +76,65 @@ const WAYBACK_SNAPSHOTS = [
 /** Wayback CDX API endpoint — returns all known snapshots for a URL pattern */
 const WAYBACK_CDX_API = "https://web.archive.org/cdx/search/cdx";
 
+/**
+ * ── MISSING EPISODE GAP DOCUMENTATION (investigation May 2026) ───────────────
+ *
+ * Episode count note: the original backfill task referenced "9 missing episodes"
+ * but listed Ep 62-64, 66-68, 72-74, 76 — which is 10 distinct numbers.
+ * The investigation below covers all 10.
+ *
+ * TARGET EPISODES: 62, 63, 64, 66, 67, 68, 72, 73, 74, 76
+ *
+ * ── VERIFIED (checked directly, May 2026) ────────────────────────────────────
+ *
+ * SOURCE 1 — survivalpodcast.net audio server directory listings (Apache open
+ *   directory; listings are complete and enumerable):
+ *     /audio/goose/2021/  contains: epi-023–epi-061, epi-065, epi-069
+ *                         ABSENT:   epi-062, 063, 064, 066, 067, 068
+ *     /audio/goose/2022/  contains: epi-070, epi-071, epi-075
+ *                         ABSENT:   epi-072, 073, 074, 076
+ *     /audio/goose/2024/  contains: epi-077 only
+ *   The audio files for those 10 episode numbers do not exist on the server.
+ *
+ * SOURCE 2 — Wayback Machine feed snapshot, Jan 2022 (closest capture to when
+ *   Ep 62-68 would have aired):  feed shows Ep 70, 69, 61, 60 … — it jumps
+ *   directly from Ep 61 to Ep 69.  Those 7 episodes were never present in any
+ *   archived feed snapshot.
+ *
+ * SOURCE 3 — Wayback Machine availability API:  queried slug patterns ep-62,
+ *   episode-62, epi-62 (and equivalents for all 10 episode numbers).  No
+ *   archived episode pages were found for any of these patterns.
+ *
+ * ── UNVERIFIED (sources not queryable at investigation time) ──────────────────
+ *
+ * SOURCE 4 — Wayback CDX API:  returned HTTP 503 at investigation time.
+ *   Broader slug-based discovery was not possible.  Note: every intermediate
+ *   snapshot URL in WAYBACK_SNAPSHOTS (Strategy 1 above) already probes those
+ *   time windows; if any episode existed in a feed, Strategy 1 would have found
+ *   it.  CDX would only add value if episodes had dedicated web pages that were
+ *   never in any feed.
+ *
+ * SOURCE 5 — Listen Notes API:  LISTEN_NOTES_API_KEY env var was not set;
+ *   this source could not be queried.  Strategy 3 (fetchEpisodesFromListenNotes)
+ *   runs automatically at each sync when the key is present — check sync logs
+ *   if the key is ever added.  Listen Notes may have metadata even if audio is
+ *   gone from the original server.
+ *
+ * ── WORKING HYPOTHESIS ────────────────────────────────────────────────────────
+ *
+ *   The audio server listings are complete and the Jan 2022 feed snapshot
+ *   independently corroborates the gaps.  These episodes were either never
+ *   publicly released, or their audio was removed from the server after a brief
+ *   publication window.  Status should be treated as "unrecoverable from known
+ *   public sources" until Listen Notes is queried with a valid API key or a
+ *   private backup of the original host surfaces.
+ *
+ * NOTE ON EP 43:  The 2021 directory also has two ep-042 files
+ *   (epi-042-fnords.mp3 and epi-042-gsd-and-btc.mp3) and no epi-043.
+ *   Ep 43 appears to have been intentionally re-released as a second Ep 42.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 /** Listen Notes podcast ID for ULG */
 const LISTEN_NOTES_PODCAST_ID = "ICw3ZMHiJU2";
 
