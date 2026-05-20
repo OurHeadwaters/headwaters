@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
 import { ThisDayInHistory } from "@/components/this-day-in-history";
-import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 const SERIES_COLORS: Record<string, string> = {
@@ -179,6 +179,87 @@ export function Home() {
             <Link href="/episodes" className="sm:hidden mt-6 flex items-center justify-center w-full py-3 bg-secondary text-secondary-foreground rounded-md font-semibold">
               Browse the full archive
             </Link>
+          </section>
+
+          {/* Learning Tracks teaser */}
+          <section>
+            <div
+              className="rounded-2xl overflow-hidden border"
+              style={{
+                background: "linear-gradient(160deg, #1A3218 0%, #0F2010 100%)",
+                borderColor: "#C4622D33",
+              }}
+            >
+              <div className="p-8 md:p-10">
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div>
+                    <div
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest mb-3 px-3 py-1.5 rounded-full"
+                      style={{
+                        color: "#C4622D",
+                        background: "#C4622D18",
+                        border: "1px solid #C4622D33",
+                      }}
+                    >
+                      <BookOpen className="w-3 h-3" />
+                      <span>Learning Tracks</span>
+                    </div>
+                    <h2
+                      className="font-serif text-2xl md:text-3xl font-bold leading-snug"
+                      style={{ color: "#FDFBF7" }}
+                    >
+                      16 years of episodes,<br className="hidden sm:block" /> organized as a curriculum.
+                    </h2>
+                  </div>
+                </div>
+                <p className="text-sm leading-relaxed mb-6 max-w-xl" style={{ color: "#8FA883" }}>
+                  Six tracks following the permaculture zone framework — from mindset and money
+                  through homesteading, wild harvest, and contingency planning. Each track has a
+                  clear arc: orientation → core skills → applied practice.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-8">
+                  {["🧭 Mind & Money", "🏠 Prepared at Home", "🌱 Growing Your Own", "🌾 Working Homestead", "🏹 Wild Harvest", "⚡ When Things Get Hard"].map((label) => (
+                    <span
+                      key={label}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full"
+                      style={{
+                        color: "#C8D4C0",
+                        background: "#FDFBF708",
+                        border: "1px solid #FDFBF715",
+                      }}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/tracks"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5"
+                    style={{
+                      background: "#C4622D",
+                      color: "#FDFBF7",
+                      boxShadow: "0 4px 16px #C4622D44",
+                    }}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    Browse the tracks
+                  </Link>
+                  <Link
+                    href="/start"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all border"
+                    style={{
+                      color: "#FDFBF7",
+                      borderColor: "#FDFBF730",
+                      background: "#FDFBF710",
+                    }}
+                  >
+                    New here? Start here
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Recurring Series */}

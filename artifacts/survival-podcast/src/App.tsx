@@ -15,6 +15,9 @@ import { SeriesIndex } from "@/pages/series-index";
 import { SeriesDetail } from "@/pages/series-detail";
 import ZonesPage from "@/pages/zones";
 import ZoneDetailPage from "@/pages/zone-detail";
+import TracksPage from "@/pages/tracks";
+import TrackDetailPage from "@/pages/track-detail";
+import StartPage from "@/pages/start";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -32,6 +35,9 @@ function Router() {
         <Route path="/series/:slug" component={SeriesDetail} />
         <Route path="/zones" component={ZonesPage} />
         <Route path="/zones/:slug" component={ZoneDetailPage} />
+        <Route path="/tracks" component={TracksPage} />
+        <Route path="/tracks/:slug" component={TrackDetailPage} />
+        <Route path="/start" component={StartPage} />
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
         <Route component={NotFound} />
