@@ -15,6 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/library", label: "Library", isNew: true },
     { href: "/tracks", label: "Tracks" },
     { href: "/zones", label: "Zones" },
+    { href: "/transform", label: "Transform" },
     { href: "/episodes", label: "Archive" },
     { href: "/series", label: "Series" },
     { href: "/about", label: "About" },

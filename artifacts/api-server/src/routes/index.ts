@@ -5,6 +5,7 @@ import libraryRouter from "./library";
 import seriesRouter from "./series";
 import zonesRouter from "./zones";
 import tracksRouter from "./tracks";
+import transformationsRouter from "./transformations";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(libraryRouter);
 router.use(seriesRouter);
 router.use(zonesRouter);
 router.use(tracksRouter);
+router.use(transformationsRouter);
 
 export default router;

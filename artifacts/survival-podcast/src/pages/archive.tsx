@@ -1,45 +1,100 @@
 import { useState, useEffect } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useLocation, useSearch, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useListEpisodes, useListCategories, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import { EpisodeCard } from "@/components/episode-card";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight, Compass, X } from "lucide-react";
+
+type Transformation = {
+  slug: string;
+  from: string;
+  to: string;
+  description: string;
+  tags: string[];
+  categories: string[];
+  color: string;
+  icon: string;
+};
+
+function useTransformations() {
+  return useQuery<Transformation[]>({
+    queryKey: ["transformations"],
+    queryFn: async () => {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/transformations`);
+      if (!res.ok) throw new Error("Failed to load transformations");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 export function Archive() {
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);
-  
+
   const initialCategory = searchParams.get("category") || "";
   const initialQ = searchParams.get("q") || "";
+  const initialTransformation = searchParams.get("transformation") || "";
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
   const limit = 20;
 
   const [searchInput, setSearchInput] = useState(initialQ);
+  const [showTransformPicker, setShowTransformPicker] = useState(false);
   const debouncedSearch = useDebounce(searchInput, 300);
+
+  const { data: transformations } = useTransformations();
+  const activeTransformation = transformations?.find(
+    (t) => t.slug === initialTransformation,
+  ) ?? null;
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("q", debouncedSearch);
     if (initialCategory) params.set("category", initialCategory);
+    if (initialTransformation) params.set("transformation", initialTransformation);
     if (pageParam > 1) params.set("page", pageParam.toString());
-    
+
     const newSearch = params.toString();
     if (newSearch !== searchString && debouncedSearch !== initialQ) {
       setLocation(`${location}?${newSearch}`, { replace: true });
     }
-  }, [debouncedSearch, initialCategory, pageParam, location, searchString, setLocation, initialQ]);
+  }, [debouncedSearch, initialCategory, initialTransformation, pageParam, location, searchString, setLocation, initialQ]);
 
   const offset = (pageParam - 1) * limit;
 
+  // Build query params: transformation filters take priority, user search overlays on top
+  let queryCategory: string | undefined;
+  let queryQ: string | undefined;
+
+  if (activeTransformation) {
+    if (activeTransformation.categories.length > 0) {
+      // Use first category as the primary filter
+      queryCategory = activeTransformation.categories[0];
+    } else if (activeTransformation.tags.length > 0) {
+      // No category mapping — fall back to a tag-based keyword search
+      queryQ = activeTransformation.tags.slice(0, 6).join(" ");
+    }
+    // When the user has typed something, that overrides the tag fallback
+    // (category filter stays active regardless)
+    if (debouncedSearch) {
+      queryQ = debouncedSearch;
+    }
+  } else {
+    queryCategory = initialCategory || undefined;
+    queryQ = debouncedSearch || undefined;
+  }
+
   const { data: episodePage, isLoading, isError } = useListEpisodes(
-    { limit, offset, q: debouncedSearch || undefined, category: initialCategory || undefined },
-    { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: debouncedSearch || undefined, category: initialCategory || undefined }) } }
+    { limit, offset, q: queryQ, category: queryCategory },
+    { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: queryQ, category: queryCategory }) } },
   );
 
   const { data: categoryList } = useListCategories();
   const categoryDescription = initialCategory
-    ? (categoryList?.find(c => c.name.toLowerCase() === initialCategory.toLowerCase())?.description ?? null)
+    ? (categoryList?.find((c) => c.name.toLowerCase() === initialCategory.toLowerCase())?.description ?? null)
     : null;
 
   const totalPages = episodePage ? Math.ceil(episodePage.total / limit) : 0;
@@ -52,19 +107,102 @@ export function Archive() {
       params.delete("page");
     }
     setLocation(`${location}?${params.toString()}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const clearFilters = () => {
     setSearchInput("");
+    setShowTransformPicker(false);
     setLocation(location);
+  };
+
+  const selectTransformation = (slug: string) => {
+    const params = new URLSearchParams();
+    params.set("transformation", slug);
+    setLocation(`${location}?${params.toString()}`);
+    setShowTransformPicker(false);
+  };
+
+  const clearTransformation = () => {
+    const params = new URLSearchParams(searchString);
+    params.delete("transformation");
+    params.delete("page");
+    const newSearch = params.toString();
+    setLocation(newSearch ? `${location}?${newSearch}` : location);
   };
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-8">
+      {/* Transformation banner */}
+      {activeTransformation && (
+        <div
+          className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 rounded-xl border"
+          style={{
+            background: activeTransformation.color + "0D",
+            borderColor: activeTransformation.color + "44",
+          }}
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className="text-2xl leading-none shrink-0">{activeTransformation.icon}</span>
+            <div>
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
+                style={{ color: activeTransformation.color }}
+              >
+                Transformation Path
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-serif text-base font-bold text-foreground">
+                  {activeTransformation.from}
+                </span>
+                <ArrowRight
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{ color: activeTransformation.color }}
+                />
+                <span
+                  className="font-serif text-base font-bold"
+                  style={{ color: activeTransformation.color }}
+                >
+                  {activeTransformation.to}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/transform"
+              className="text-xs font-semibold flex items-center gap-1 transition-colors"
+              style={{ color: activeTransformation.color }}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              All paths
+            </Link>
+            <button
+              onClick={clearTransformation}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Clear transformation filter"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
         <div>
-          {initialCategory ? (
+          {activeTransformation ? (
+            <>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                Episodes for this path
+              </p>
+              <h1 className="font-serif text-4xl font-bold text-foreground mb-2">
+                {activeTransformation.from} → {activeTransformation.to}
+              </h1>
+              <p className="text-muted-foreground max-w-2xl">
+                {activeTransformation.description}
+              </p>
+            </>
+          ) : initialCategory ? (
             <>
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Topic</p>
               <h1 className="font-serif text-4xl font-bold text-foreground mb-2">{initialCategory}</h1>
@@ -76,12 +214,12 @@ export function Archive() {
             <>
               <h1 className="font-serif text-4xl font-bold text-foreground mb-2">Episode Archive</h1>
               <p className="text-muted-foreground max-w-2xl">
-                Thousands of conversations on skills, strategy, and self-reliance. Search by topic or browse straight through.
+                Thousands of conversations on skills, strategy, and self-reliance. Search by topic, browse by transformation, or explore straight through.
               </p>
             </>
           )}
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -93,12 +231,25 @@ export function Archive() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
-          
-          {initialCategory && (
+
+          {/* By Transformation toggle */}
+          <button
+            onClick={() => setShowTransformPicker((v) => !v)}
+            className={`flex items-center gap-2 px-3 py-2 border rounded-md text-sm font-medium transition-all ${
+              showTransformPicker || activeTransformation
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "bg-card border-border text-foreground hover:bg-muted"
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>By Transformation</span>
+          </button>
+
+          {initialCategory && !activeTransformation && (
             <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-md text-sm font-medium">
               <Filter className="w-4 h-4" />
               <span>{initialCategory}</span>
-              <button 
+              <button
                 onClick={clearFilters}
                 className="ml-2 w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/40 transition-colors"
                 aria-label="Clear category"
@@ -110,11 +261,52 @@ export function Archive() {
         </div>
       </div>
 
-      {(debouncedSearch || initialCategory) && !isLoading && episodePage && (
+      {/* Transformation quick-pick */}
+      {showTransformPicker && transformations && (
+        <div className="flex flex-col gap-3 p-4 rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">Browse by Transformation</span>
+            <Link href="/transform" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+              See all paths <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {transformations.map((t) => {
+              const isActive = t.slug === initialTransformation;
+              return (
+                <button
+                  key={t.slug}
+                  onClick={() => selectTransformation(t.slug)}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-full border text-sm font-medium transition-all"
+                  style={{
+                    color: isActive ? "#FDFBF7" : t.color,
+                    background: isActive ? t.color : t.color + "12",
+                    borderColor: isActive ? t.color : t.color + "44",
+                  }}
+                >
+                  <span>{t.icon}</span>
+                  <span>{t.from}</span>
+                  <ArrowRight className="w-3 h-3 opacity-70" />
+                  <span>{t.to}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {(debouncedSearch || initialCategory || activeTransformation) && !isLoading && episodePage && (
         <div className="text-sm font-medium text-muted-foreground pb-4 border-b border-border/50">
-          <span className="text-foreground">{episodePage.total}</span> episode{episodePage.total !== 1 ? 's' : ''} found
-          {debouncedSearch && <span> matching "<span className="text-foreground">{debouncedSearch}</span>"</span>}
-          {initialCategory && <span> in <span className="text-foreground">{initialCategory}</span></span>}
+          <span className="text-foreground">{episodePage.total}</span> episode{episodePage.total !== 1 ? "s" : ""} found
+          {debouncedSearch && (
+            <span> matching "<span className="text-foreground">{debouncedSearch}</span>"</span>
+          )}
+          {activeTransformation && (
+            <span> on the <span className="text-foreground">{activeTransformation.from} → {activeTransformation.to}</span> path</span>
+          )}
+          {initialCategory && !activeTransformation && (
+            <span> in <span className="text-foreground">{initialCategory}</span></span>
+          )}
         </div>
       )}
 
@@ -135,7 +327,7 @@ export function Archive() {
           <p className="text-muted-foreground mb-6">
             Try a broader term, or clear the filters and browse what's in the archive.
           </p>
-          <button 
+          <button
             onClick={clearFilters}
             className="px-6 py-2 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-colors"
           >
@@ -145,7 +337,7 @@ export function Archive() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {episodePage?.items.map(episode => (
+            {episodePage?.items.map((episode) => (
               <EpisodeCard key={episode.guid} episode={episode} />
             ))}
           </div>
@@ -159,12 +351,12 @@ export function Archive() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="flex items-center gap-1 mx-4">
                 <span className="text-sm font-medium text-foreground">Page {pageParam}</span>
                 <span className="text-sm text-muted-foreground">of {totalPages}</span>
               </div>
-              
+
               <button
                 onClick={() => handlePageChange(pageParam + 1)}
                 disabled={pageParam >= totalPages}

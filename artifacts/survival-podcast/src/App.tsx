@@ -18,6 +18,7 @@ import ZoneDetailPage from "@/pages/zone-detail";
 import TracksPage from "@/pages/tracks";
 import TrackDetailPage from "@/pages/track-detail";
 import StartPage from "@/pages/start";
+import TransformPage from "@/pages/transform";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ function Router() {
         <Route path="/tracks" component={TracksPage} />
         <Route path="/tracks/:slug" component={TrackDetailPage} />
         <Route path="/start" component={StartPage} />
+        <Route path="/transform" component={TransformPage} />
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
         <Route component={NotFound} />
