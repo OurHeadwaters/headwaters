@@ -347,6 +347,7 @@ components:
       properties:
         name: { type: string }
         count: { type: integer }
+        description: { type: string }
     MonthBucket:
       type: object
       required: [month, count]

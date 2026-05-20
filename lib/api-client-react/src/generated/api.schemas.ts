@@ -64,6 +64,7 @@ export interface EpisodePage {
 export interface CategoryCount {
   name: string;
   count: number;
+  description?: string;
 }
 
 export interface MonthBucket {

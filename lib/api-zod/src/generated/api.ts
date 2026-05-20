@@ -143,7 +143,8 @@ export const GetEpisodeResponse = zod.object({
  */
 export const ListCategoriesResponseItem = zod.object({
   "name": zod.string(),
-  "count": zod.number()
+  "count": zod.number(),
+  "description": zod.string().optional()
 })
 export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
 

@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
-import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
+import { useListEpisodes, useListCategories, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import { EpisodeCard } from "@/components/episode-card";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
-import { getCategoryDescription } from "@/data/category-descriptions";
 
 export function Archive() {
   const [location, setLocation] = useLocation();
@@ -38,6 +37,11 @@ export function Archive() {
     { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: debouncedSearch || undefined, category: initialCategory || undefined }) } }
   );
 
+  const { data: categoryList } = useListCategories();
+  const categoryDescription = initialCategory
+    ? (categoryList?.find(c => c.name.toLowerCase() === initialCategory.toLowerCase())?.description ?? null)
+    : null;
+
   const totalPages = episodePage ? Math.ceil(episodePage.total / limit) : 0;
 
   const handlePageChange = (newPage: number) => {
@@ -64,15 +68,9 @@ export function Archive() {
             <>
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Topic</p>
               <h1 className="font-serif text-4xl font-bold text-foreground mb-2">{initialCategory}</h1>
-              {getCategoryDescription(initialCategory) ? (
-                <p className="text-muted-foreground max-w-2xl">
-                  {getCategoryDescription(initialCategory)}
-                </p>
-              ) : (
-                <p className="text-muted-foreground max-w-2xl">
-                  Browse every episode tagged under this topic.
-                </p>
-              )}
+              <p className="text-muted-foreground max-w-2xl">
+                {categoryDescription ?? "Browse every episode tagged under this topic."}
+              </p>
             </>
           ) : (
             <>

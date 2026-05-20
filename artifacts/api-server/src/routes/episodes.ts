@@ -5,6 +5,7 @@ import {
 } from "@workspace/api-zod";
 import { getFeedCached, type RssEpisode } from "../lib/rss";
 import { logger } from "../lib/logger";
+import { getCuratedDescription } from "../lib/category-descriptions";
 
 const router: IRouter = Router();
 
@@ -152,14 +153,23 @@ router.get("/categories", async (_req, res) => {
   try {
     const feed = await getFeedCached();
     const counts = new Map<string, number>();
+    const mostRecent = new Map<string, string>();
     for (const e of feed.episodes) {
       for (const c of e.categories) {
         counts.set(c, (counts.get(c) ?? 0) + 1);
+        if (!mostRecent.has(c) && e.summary) {
+          mostRecent.set(c, e.summary);
+        }
       }
     }
     const list = [...counts.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([name, count]) => ({ name, count }));
+      .map(([name, count]) => {
+        const curated = getCuratedDescription(name);
+        const fallback = mostRecent.get(name) ?? null;
+        const description = curated ?? fallback ?? undefined;
+        return { name, count, description };
+      });
     res.json(list);
   } catch (err) {
     logger.error({ err }, "Failed to list categories");
