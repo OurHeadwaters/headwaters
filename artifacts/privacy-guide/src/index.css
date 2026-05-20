@@ -1,0 +1,387 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Inter:wght@400;500&display=swap');
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Color tokens ── */
+:root {
+  --terracotta: #C7613B;
+  --moss: #4A6741;
+  --brown: #7A5C3E;
+  --cream: #FAF6F0;
+  --charcoal: #2E2620;
+  --muted: #7A6C5D;
+  --border-light: #DDD5C8;
+  --tint-moss: rgba(74, 103, 65, 0.08);
+  --tint-panel: #F2EDE5;
+}
+
+/* ── Page canvas ── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: #E8E4DF;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: 'Inter', sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.page-root {
+  width: 816px;
+  height: 1056px;
+  background: var(--cream);
+  color: var(--charcoal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+}
+
+/* ── Header ── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 14px 58px 11px;
+  border-bottom: 2.5px solid var(--terracotta);
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.header-title {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.header-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.community-label {
+  font-family: 'Fraunces', serif;
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: small-caps;
+  color: var(--muted);
+}
+
+.community-input {
+  width: 130px;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px dashed var(--muted);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  color: var(--charcoal);
+  padding: 1px 2px 2px;
+  text-align: right;
+}
+
+.community-input::placeholder {
+  color: var(--border-light);
+  font-style: italic;
+}
+
+/* ── Body ── */
+.page-body {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 14px 58px 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Left column ── */
+.col-left {
+  width: 416px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Sections ── */
+.section {
+  margin-bottom: 9px;
+}
+
+.section-no-margin {
+  margin-bottom: 0;
+}
+
+.section-label {
+  font-family: 'Fraunces', serif;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant: small-caps;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.label-terracotta { color: var(--terracotta); }
+.label-moss { color: var(--moss); }
+
+.section-rule {
+  width: 24px;
+  height: 1.5px;
+  margin-bottom: 5px;
+}
+
+.rule-terracotta { background: var(--terracotta); }
+.rule-moss { background: var(--moss); }
+
+.section-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px;
+  line-height: 1.58;
+  color: var(--charcoal);
+}
+
+.section-body strong {
+  font-weight: 500;
+  color: var(--charcoal);
+}
+
+/* ── Right column ── */
+.col-right {
+  width: 264px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* ── Panels ── */
+.panel {
+  flex-shrink: 0;
+}
+
+.panel-questions {
+  margin-top: auto;
+  background: var(--tint-panel);
+  border: 1.5px solid var(--border-light);
+  border-radius: 5px;
+  padding: 8px 9px 9px;
+}
+
+.panel-heading {
+  font-family: 'Fraunces', serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant: small-caps;
+  margin-bottom: 5px;
+}
+
+.panel-heading.moss { color: var(--moss); }
+
+/* ── Tables ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8px;
+  font-family: 'Inter', sans-serif;
+}
+
+.data-table thead tr {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.data-table th {
+  font-family: 'Fraunces', serif;
+  font-size: 7.5px;
+  font-weight: 700;
+  padding: 3px 4px 3px;
+  text-align: left;
+  letter-spacing: 0.04em;
+}
+
+.th-label { color: var(--muted); width: 95px; }
+.th-terracotta { color: var(--terracotta); width: 55px; }
+.th-moss { color: var(--moss); width: 55px; }
+.th-brown { color: var(--brown); width: 59px; }
+
+.data-table td {
+  padding: 2.5px 4px;
+  font-size: 8px;
+  line-height: 1.4;
+  color: var(--charcoal);
+  border-bottom: 1px solid #EDE6DC;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.row-label {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 7.5px;
+  color: var(--charcoal);
+  letter-spacing: 0.01em;
+}
+
+.td-check { color: var(--moss); font-weight: 500; }
+.td-no { color: var(--muted); }
+.td-neutral { color: var(--charcoal); }
+.td-opt { color: var(--brown); font-style: italic; }
+
+.row-good td {
+  background: var(--tint-moss);
+}
+
+.panel-note {
+  font-size: 7px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ── Metaphor list ── */
+.metaphor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metaphor-row {
+  display: flex;
+  gap: 0;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.metaphor-row dt {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 8px;
+  color: var(--charcoal);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.metaphor-row dt::after {
+  content: " \2014 ";
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.metaphor-row dd {
+  font-family: 'Inter', sans-serif;
+  color: var(--charcoal);
+  font-size: 8px;
+}
+
+/* ── Questions panel ── */
+.questions-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  line-height: 1.55;
+  color: var(--charcoal);
+  margin-bottom: 5px;
+}
+
+.questions-url {
+  font-family: 'Fraunces', serif;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--moss);
+  letter-spacing: 0.02em;
+}
+
+/* ── Footer ── */
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 7px 58px 10px;
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.footer-disclaimer {
+  font-family: 'Inter', sans-serif;
+  font-size: 6.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  max-width: 500px;
+}
+
+.footer-credit {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 7.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+/* ── Print ── */
+@media print {
+  html, body {
+    background: white;
+    padding: 0;
+    margin: 0;
+    display: block;
+    min-height: auto;
+  }
+
+  #root {
+    display: block;
+  }
+
+  .page-root {
+    width: 816px;
+    height: 1056px;
+    box-shadow: none;
+    page-break-after: avoid;
+    overflow: hidden;
+  }
+
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+}

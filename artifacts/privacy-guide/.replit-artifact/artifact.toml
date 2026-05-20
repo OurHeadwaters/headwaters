@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/privacy-guide/"
+title = "Clearing & Lodge Family Privacy Guide"
+version = "1.0.0"
+id = "artifacts/privacy-guide"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/privacy-guide/" ]
+localPort = 8081
+
+[services.development]
+run = "pnpm --filter @workspace/privacy-guide run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/privacy-guide", "run", "build" ]
+publicDir = "artifacts/privacy-guide/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "8081"
+BASE_PATH = "/privacy-guide/"
