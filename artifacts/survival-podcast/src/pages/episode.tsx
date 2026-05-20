@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
-import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, ArrowRight } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
@@ -174,6 +174,21 @@ export function EpisodeDetail() {
                   Part of: {episodeSeries.title} →
                 </Link>
               )}
+              {matchedTransformations.map((t) => (
+                <Link
+                  key={t.slug}
+                  href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+                  className="inline-flex items-center gap-1.5 border px-2.5 py-1 rounded-full font-bold text-xs uppercase tracking-wider transition-colors hover:opacity-80"
+                  style={{
+                    backgroundColor: `${t.color}18`,
+                    borderColor: `${t.color}40`,
+                    color: t.color,
+                  }}
+                >
+                  <span className="text-sm leading-none">{t.icon}</span>
+                  {t.from} → {t.to}
+                </Link>
+              ))}
             </div>
 
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight text-balance">
@@ -277,39 +292,6 @@ export function EpisodeDetail() {
               </div>
             )}
 
-            {matchedTransformations.length > 0 && (
-              <div className="mb-5">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  <ArrowRight className="w-3 h-3" />
-                  Transformation Paths
-                </div>
-                <div className="flex flex-col gap-2">
-                  {matchedTransformations.map((t) => (
-                    <Link
-                      key={t.slug}
-                      href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
-                      className="flex items-center gap-2.5 p-2.5 rounded-lg border transition-colors group hover:border-opacity-60"
-                      style={{
-                        backgroundColor: `${t.color}12`,
-                        borderColor: `${t.color}30`,
-                      }}
-                    >
-                      <span className="text-lg leading-none shrink-0">{t.icon}</span>
-                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                        <span className="text-xs font-bold text-foreground leading-tight">
-                          {t.from}
-                          <span className="mx-1 opacity-50">→</span>
-                          {t.to}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground font-medium">Part of this path</span>
-                      </div>
-                      <ChevronLeft className="w-3.5 h-3.5 rotate-180 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: t.color }} />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            
             <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" />
               Topics Discussed
