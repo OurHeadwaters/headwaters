@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useLocation, useSearch, Link } from "wouter";
 import { 
   useSearchLibrary, 
   getSearchLibraryQueryKey, 
@@ -8,11 +8,186 @@ import {
   useListSeries,
   SearchLibrarySort
 } from "@workspace/api-client-react";
-import { keepPreviousData } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { LibraryItemCard } from "@/components/library-item-card";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, ChevronLeft, ChevronRight, Tag, RefreshCw } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Tag, RefreshCw, Users, ExternalLink, MapPin, ChevronRight as ChevRight } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
+
+type ExpertResult = {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  url: string;
+  zones: string[];
+};
+
+type BusinessResult = {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  url: string;
+  zones: string[];
+};
+
+function useExpertsSearch(q: string) {
+  return useQuery<{ experts: ExpertResult[]; businesses: BusinessResult[] }>({
+    queryKey: ["experts-search", q],
+    queryFn: async () => {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const params = q ? `?q=${encodeURIComponent(q)}` : "";
+      const res = await fetch(`${base}/api/experts${params}`);
+      if (!res.ok) throw new Error("Failed to load experts");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!q,
+  });
+}
+
+function zoneLabel(slug: string): string {
+  const labels: Record<string, string> = {
+    "zone-0": "Zone 0 — Self",
+    "zone-1": "Zone 1 — Home",
+    "zone-2": "Zone 2 — Garden",
+    "zone-3": "Zone 3 — Homestead",
+    "zone-4": "Zone 4 — Forest",
+    "zone-5": "Zone 5 — Wild",
+  };
+  return labels[slug] ?? slug;
+}
+
+function PeopleAndBusinesses({ q }: { q: string }) {
+  const { data, isLoading } = useExpertsSearch(q);
+
+  const experts = data?.experts ?? [];
+  const businesses = data?.businesses ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-5 animate-pulse">
+        <div className="h-5 w-40 bg-muted rounded mb-4" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[1, 2].map((i) => <div key={i} className="h-24 bg-muted rounded-lg" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (experts.length === 0 && businesses.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-primary/5">
+        <Users className="w-4 h-4 text-primary" />
+        <h2 className="font-serif font-bold text-base text-foreground">
+          People &amp; Businesses
+        </h2>
+        <span className="ml-auto text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+          {experts.length + businesses.length}
+        </span>
+      </div>
+
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {experts.map((expert) => (
+          <div
+            key={expert.id}
+            className="flex flex-col gap-1.5 p-4 rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all bg-background"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">Expert</span>
+                </div>
+                <a
+                  href={expert.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-1 font-semibold text-sm text-foreground hover:text-primary transition-colors"
+                >
+                  {expert.name}
+                  <ExternalLink className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+                </a>
+                <p className="text-xs text-muted-foreground font-medium">{expert.role}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              {expert.description}
+            </p>
+            {expert.zones.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {expert.zones.slice(0, 3).map((z) => (
+                  <Link
+                    key={z}
+                    href={`/zones/${z}`}
+                    className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {zoneLabel(z)}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+
+        {businesses.map((biz) => (
+          <div
+            key={biz.id}
+            className="flex flex-col gap-1.5 p-4 rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all bg-background"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">ULG</span>
+                </div>
+                <a
+                  href={biz.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-1 font-semibold text-sm text-foreground hover:text-primary transition-colors"
+                >
+                  {biz.name}
+                  <ExternalLink className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+                </a>
+                <p className="text-xs text-muted-foreground italic">{biz.tagline}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              {biz.description}
+            </p>
+            {biz.zones.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {biz.zones.slice(0, 3).map((z) => (
+                  <Link
+                    key={z}
+                    href={`/zones/${z}`}
+                    className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {zoneLabel(z)}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="px-5 py-3 border-t border-border bg-muted/30 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Expert Council members and ULG-affiliated businesses
+        </p>
+        <Link
+          href="/zones"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        >
+          Browse all Zones <ChevRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export function Library() {
   const [location, setLocation] = useLocation();
@@ -83,10 +258,8 @@ export function Library() {
     } else {
       params.delete(key);
     }
-    // reset to page 1 on filter change
     params.delete("page");
     
-    // Default back to newest if search is cleared
     if (key === 'q' && !value && params.get("sort") === SearchLibrarySort.relevance) {
        params.set("sort", SearchLibrarySort.newest);
     } else if (key === 'q' && value && !params.get("sort")) {
@@ -270,6 +443,25 @@ export function Library() {
               })}
             </div>
           </div>
+
+          {/* Zone Resources promo */}
+          <Link
+            href="/zones"
+            className="group block bg-card border border-border rounded-xl p-5 shadow-sm hover:border-primary/40 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-4 h-4 text-primary" />
+              <h3 className="font-serif font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                Zone Resources
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+              Browse Expert Council members and ULG businesses organized by permaculture zone — from Zone 0 (Self) to Zone 5 (Wild).
+            </p>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
+              Explore all Zones <ChevRight className="w-3.5 h-3.5" />
+            </span>
+          </Link>
         </aside>
 
         {/* Main Content */}
@@ -283,9 +475,6 @@ export function Library() {
               value={searchInput}
               onChange={(e) => {
                 setSearchInput(e.target.value);
-                if (e.target.value && initialSort !== SearchLibrarySort.relevance) {
-                   // Let debounce handle sort update? Or immediate? Let's rely on updateFilter in debounce
-                }
               }}
             />
             {searchInput && (
@@ -315,6 +504,9 @@ export function Library() {
               </button>
             </div>
           )}
+
+          {/* People & Businesses panel — shown only when there's a search query */}
+          {debouncedSearch && <PeopleAndBusinesses q={debouncedSearch} />}
 
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

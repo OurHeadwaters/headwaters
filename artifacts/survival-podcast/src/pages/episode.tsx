@@ -3,13 +3,14 @@ import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQ
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
-import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
+import { matchZones, type ZoneMeta } from "@/lib/zones";
 
 function matchTransformations(
   episodeCategories: string[],
@@ -46,6 +47,11 @@ export function EpisodeDetail() {
   const matchedTransformations =
     episode && transformations
       ? matchTransformations(episode.categories, transformations)
+      : [];
+
+  const matchedZones: ZoneMeta[] =
+    episode
+      ? matchZones(episode.categories ?? [], episode.categories ?? [])
       : [];
 
   const episodeSeriesSlug = episode?.seriesSlug ?? null;
@@ -267,6 +273,49 @@ export function EpisodeDetail() {
                 </Link>
               </div>
             )}
+
+
+            {matchedZones.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  <MapPin className="w-3 h-3" />
+                  Zone Resources
+                </div>
+                <div className="flex flex-col gap-2">
+                  {matchedZones.map((zone) => (
+                    <Link
+                      key={zone.slug}
+                      href={`/zones/${zone.slug}`}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg border transition-colors group hover:shadow-sm"
+                      style={{
+                        backgroundColor: `${zone.color}10`,
+                        borderColor: `${zone.color}30`,
+                      }}
+                    >
+                      <div
+                        className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 text-xs font-bold"
+                        style={{ background: `${zone.color}25`, color: zone.color }}
+                      >
+                        {zone.number}
+                      </div>
+                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                        <span className="text-xs font-bold text-foreground leading-tight">
+                          Zone {zone.number} — {zone.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          Experts &amp; businesses
+                        </span>
+                      </div>
+                      <ChevronRight
+                        className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity shrink-0"
+                        style={{ color: zone.color }}
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
 
             <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" />
