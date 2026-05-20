@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, RotateCcw } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, RotateCcw, CheckCircle2 } from "lucide-react";
 import { usePlayer, type PlayerEpisode } from "@/context/player-context";
 import { formatDuration } from "./episode-card";
-import { getProgress } from "@/lib/playback-progress";
+import { getProgress, isCompleted, clearCompleted } from "@/lib/playback-progress";
 
 interface AudioPlayerProps {
   episode: PlayerEpisode;
@@ -14,6 +14,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [resumeFrom, setResumeFrom] = useState<number | null>(null);
   const [resumed, setResumed] = useState(false);
+  const [episodeCompleted, setEpisodeCompleted] = useState(false);
 
   const isThisEpisode = currentEpisode?.audioUrl === episode.audioUrl;
   const thisIsPlaying = isThisEpisode && isPlaying;
@@ -21,21 +22,37 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
   const displayDuration = isThisEpisode ? duration : (episode.durationSeconds ?? 0);
 
   useEffect(() => {
-    const saved = getProgress(episode.slug);
-    if (saved && saved.position > 0 && saved.duration > 0) {
-      const ratio = saved.position / saved.duration;
-      if (ratio < 0.95) {
-        setResumeFrom(saved.position);
-        setResumed(false);
+    const completed = isCompleted(episode.slug);
+    setEpisodeCompleted(completed);
+    if (completed) {
+      setResumeFrom(null);
+    } else {
+      const saved = getProgress(episode.slug);
+      if (saved && saved.position > 0 && saved.duration > 0) {
+        const ratio = saved.position / saved.duration;
+        if (ratio < 0.95) {
+          setResumeFrom(saved.position);
+          setResumed(false);
+        } else {
+          setResumeFrom(null);
+        }
       } else {
         setResumeFrom(null);
       }
-    } else {
-      setResumeFrom(null);
     }
     load(episode, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episode.audioUrl]);
+
+  useEffect(() => {
+    if (isThisEpisode && !isPlaying) {
+      const completed = isCompleted(episode.slug);
+      if (completed) {
+        setEpisodeCompleted(true);
+        setResumeFrom(null);
+      }
+    }
+  }, [isPlaying, isThisEpisode, episode.slug]);
 
   const handlePlayPause = () => {
     if (!isThisEpisode) {
@@ -55,6 +72,8 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
   };
 
   const handleStartOver = () => {
+    clearCompleted(episode.slug);
+    setEpisodeCompleted(false);
     if (!isThisEpisode) load(episode, false);
     seek(0);
     setResumed(true);
@@ -83,10 +102,25 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
     if (audioRef.current) audioRef.current.muted = next;
   };
 
-  const showResumeBanner = resumeFrom !== null && !resumed && !isPlaying;
+  const showResumeBanner = resumeFrom !== null && !resumed && !isPlaying && !episodeCompleted;
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+      {episodeCompleted && !isPlaying && (
+        <div className="flex items-center justify-between gap-3 bg-emerald-900/20 border border-emerald-700/30 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-sm font-semibold text-emerald-300">You've listened to this episode</span>
+          </div>
+          <button
+            onClick={handleStartOver}
+            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg border border-border hover:bg-muted"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Play again
+          </button>
+        </div>
+      )}
       {showResumeBanner && (
         <div className="flex items-center justify-between gap-3 bg-primary/8 border border-primary/20 rounded-lg px-4 py-3">
           <div className="flex flex-col gap-0.5">

@@ -5,11 +5,11 @@ import {
   type Episode,
 } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Layers, PlayCircle, Calendar, Clock, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Layers, PlayCircle, Calendar, Clock, RotateCcw, CheckCircle2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { EpisodeCard } from "@/components/episode-card";
 import { formatDuration } from "@/components/episode-card";
-import { getMostRecentSlugAmong, getProgress } from "@/lib/playback-progress";
+import { getMostRecentSlugAmong, getProgress, isCompleted } from "@/lib/playback-progress";
 import { getSeriesTheme, type SeriesTheme } from "@/lib/seriesTheme";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
@@ -50,6 +50,15 @@ function ContinueBadge({ slug }: { slug: string }) {
   );
 }
 
+function CompletedBadge() {
+  return (
+    <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 bg-emerald-700 text-white px-3 py-1.5 rounded-t-xl pointer-events-none">
+      <CheckCircle2 className="w-3 h-3 shrink-0" />
+      <span className="text-[11px] font-bold uppercase tracking-wider">Played</span>
+    </div>
+  );
+}
+
 function HistoryTimeline({ episodes, continueSlug, theme }: { episodes: Episode[]; continueSlug: string | null; theme: SeriesTheme }) {
   const byDecade = new Map<string, { ep: Episode; position: number }[]>();
   episodes.forEach((ep, idx) => {
@@ -78,17 +87,18 @@ function HistoryTimeline({ episodes, continueSlug, theme }: { episodes: Episode[
           {decItems.map(({ ep, position }) => {
             const pubDate = parseISO(ep.pubDate);
             const isContinue = ep.slug === continueSlug;
+            const done = isCompleted(ep.slug);
             return (
               <div key={ep.guid} className="flex items-start gap-4 pl-0 pb-4 relative">
                 {/* Timeline dot */}
                 <div className="relative z-10 flex items-center justify-center w-12 shrink-0 pt-3">
-                  <div className={`w-3 h-3 rounded-full border-2 shadow-sm ${isContinue ? "bg-primary border-primary/60 scale-125" : "bg-indigo-400/80 border-indigo-600/60"}`} />
+                  <div className={`w-3 h-3 rounded-full border-2 shadow-sm ${done ? "bg-emerald-500 border-emerald-700/60" : isContinue ? "bg-primary border-primary/60 scale-125" : "bg-indigo-400/80 border-indigo-600/60"}`} />
                 </div>
 
                 {/* Card */}
                 <Link
                   href={`/episodes/${ep.slug}`}
-                  className={`group flex-1 flex gap-3 items-start bg-card border rounded-xl p-4 hover:shadow-md transition-all duration-200 ml-0 ${isContinue ? "border-primary/40 ring-1 ring-primary/20 hover:border-primary/60" : "border-border hover:border-indigo-500/40 hover:shadow-indigo-900/20"}`}
+                  className={`group flex-1 flex gap-3 items-start bg-card border rounded-xl p-4 hover:shadow-md transition-all duration-200 ml-0 ${done ? "border-emerald-700/30 ring-1 ring-emerald-700/20 hover:border-emerald-600/40" : isContinue ? "border-primary/40 ring-1 ring-primary/20 hover:border-primary/60" : "border-border hover:border-indigo-500/40 hover:shadow-indigo-900/20"}`}
                 >
                   <img
                     src={ep.artworkUrl || tspLogo}
@@ -97,7 +107,13 @@ function HistoryTimeline({ episodes, continueSlug, theme }: { episodes: Episode[
                   />
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
-                      {isContinue && (
+                      {done && (
+                        <span className="flex items-center gap-1 bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          Played
+                        </span>
+                      )}
+                      {isContinue && !done && (
                         <span className="flex items-center gap-1 bg-primary/15 text-primary border border-primary/25 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
                           <RotateCcw className="w-2.5 h-2.5" />
                           Continue
@@ -240,10 +256,12 @@ export function SeriesDetail() {
               const position = offset + idx + 1;
               const total = data!.total;
               const isContinue = ep.slug === continueSlug;
+              const done = isCompleted(ep.slug);
               return (
                 <div key={ep.guid} className="relative">
-                  {isContinue && <ContinueBadge slug={ep.slug} />}
-                  <div className={isContinue ? "ring-2 ring-primary/30 rounded-xl" : ""}>
+                  {isContinue && !done && <ContinueBadge slug={ep.slug} />}
+                  {done && <CompletedBadge />}
+                  <div className={isContinue && !done ? "ring-2 ring-primary/30 rounded-xl" : done ? "ring-1 ring-emerald-700/30 rounded-xl" : ""}>
                     <EpisodeCard
                       episode={ep}
                       seriesPosition={position}

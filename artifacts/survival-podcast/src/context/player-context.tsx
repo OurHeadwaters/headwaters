@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { saveProgress, getProgress } from "@/lib/playback-progress";
+import { saveProgress, getProgress, markCompleted, isCompleted, clearCompleted } from "@/lib/playback-progress";
 
 export interface PlayerEpisode {
   title: string;
@@ -65,15 +65,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.src = ep.audioUrl;
       audio.load();
 
-      const savedEntry = getProgress(ep.slug);
-      if (savedEntry && savedEntry.position > 0 && savedEntry.duration > 0) {
-        const ratio = savedEntry.position / savedEntry.duration;
-        if (ratio < NEAR_END_THRESHOLD) {
-          const seekToSaved = () => {
-            audio.currentTime = savedEntry.position;
-            setCurrentTime(savedEntry.position);
-          };
-          audio.addEventListener("loadedmetadata", seekToSaved, { once: true });
+      if (!isCompleted(ep.slug)) {
+        const savedEntry = getProgress(ep.slug);
+        if (savedEntry && savedEntry.position > 0 && savedEntry.duration > 0) {
+          const ratio = savedEntry.position / savedEntry.duration;
+          if (ratio < NEAR_END_THRESHOLD) {
+            const seekToSaved = () => {
+              audio.currentTime = savedEntry.position;
+              setCurrentTime(savedEntry.position);
+            };
+            audio.addEventListener("loadedmetadata", seekToSaved, { once: true });
+          }
         }
       }
 
@@ -130,14 +132,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const time = audio.currentTime;
     setCurrentTime(time);
 
-    const now = Date.now();
-    if (
-      currentSlugRef.current &&
-      audio.duration > 0 &&
-      now - lastSavedAtRef.current >= SAVE_INTERVAL_MS
-    ) {
-      lastSavedAtRef.current = now;
-      saveProgress(currentSlugRef.current, time, audio.duration);
+    if (currentSlugRef.current && audio.duration > 0) {
+      const ratio = time / audio.duration;
+      if (ratio >= NEAR_END_THRESHOLD) {
+        markCompleted(currentSlugRef.current);
+      }
+
+      const now = Date.now();
+      if (now - lastSavedAtRef.current >= SAVE_INTERVAL_MS) {
+        lastSavedAtRef.current = now;
+        saveProgress(currentSlugRef.current, time, audio.duration);
+      }
     }
   }, []);
 
@@ -171,6 +176,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             if (audio && audio.duration > 0) {
               saveProgress(currentSlugRef.current, audio.duration, audio.duration);
             }
+            markCompleted(currentSlugRef.current);
           }
         }}
         onPlay={() => setIsPlaying(true)}
