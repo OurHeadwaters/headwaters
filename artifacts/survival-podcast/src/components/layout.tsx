@@ -1,11 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Mic } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+import { MiniPlayer } from "./mini-player";
+import { usePlayer } from "@/context/player-context";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { episode } = usePlayer();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -87,11 +90,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="flex-1 flex flex-col">
+      <main className={`flex-1 flex flex-col transition-[padding]${episode ? " pb-20" : ""}`}>
         {children}
       </main>
 
-      <footer className="border-t border-border bg-card py-12 mt-auto">
+      <footer className={`border-t border-border bg-card py-12 mt-auto${episode ? " pb-24" : ""}`}>
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
@@ -108,6 +111,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+
+      <MiniPlayer />
     </div>
   );
 }

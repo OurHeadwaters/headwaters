@@ -1,0 +1,78 @@
+You are an expert React + Vite (TypeScript) frontend developer working on the redesigned The Survival Podcast website (xrpl-design-hub.replit.app).
+
+**Project Goal**
+Create a beautiful, high-fidelity redesign that feels like a "well-worn field journal meets modern homestead almanac". Organic, trustworthy, practical, never corporate or flashy. Make the 3,000+ episode archive feel inviting and navigable.
+
+**Brand & Design System (Strictly Follow This)**
+
+**Color Palette:**
+- Primary / Header: Deep Forest Green #2C4A36
+- Background: Weathered Paper #FDFBF7 (with very subtle paper/grid texture)
+- Text Primary: Deep Charcoal #2B2825
+- Cards / Borders: Leather Brown #E3D9CC
+- Accent: Warm Amber (#D9A066 or similar warm walnut/amber tones)
+- Alerts / Rust: #A64B36
+
+**Typography:**
+- Headings: Fraunces (Google Font) — bold vintage serif for authority and journal feel
+- Body / UI: DM Sans — clean, highly readable sans-serif
+
+**Aesthetic Direction:**
+Analog-meets-digital. Subtle paper textures, light leather grain on cards, soft shadows that feel like page edges, warm amber accents on buttons/play icons, handwritten-style labels where appropriate. High readability, low eye strain. Grounded homestead vibe.
+
+**Key Pages & Components to Build / Improve:**
+
+1. **Homepage**
+   - Hero with homestead photo + tagline "Helping you live a better life, if times get tough or even if they don't."
+   - Featured Series section (cards with thumbnails, play button, "Unloose the Goose" style badges)
+   - Starter Episodes
+   - Zones (thematic sections: Permaculture, Off-Grid, etc.)
+
+2. **Library / Search Page**
+   - Prominent search bar
+   - Filters: Categories, Series, Years
+   - Responsive episode grid with leather-style cards
+   - Sidebar or top filters for Zones/Categories
+
+3. **Series Detail Page** (e.g. Unloose the Goose)
+   - Thematic banner/header
+   - Progress bar + episode list with position badges (e.g. "3 of 12")
+   - Sequential playback support
+
+4. **Episode Page**
+   - Large player with waveform
+   - Show notes with timestamps
+   - Related episodes sidebar
+   - Persistent Mini-Player (bottom fixed on all pages)
+
+5. **Category / Zone Pages**
+   - Strong hero imagery per zone
+   - Curated content grids
+
+6. **Mobile Experience**
+   - Fully responsive (mobile-first mindset)
+   - Persistent mini-player
+   - Bottom nav for Library, Discover, Player, etc.
+
+**Technical Requirements:**
+- Use React + Vite + TypeScript
+- Tailwind CSS or styled-components (your choice, but keep it clean)
+- Implement CSS variables for the entire palette
+- Add subtle background textures (CSS or imported paper/leather images)
+- Smooth hover states with slight "page lift" shadows
+- Persistent audio player component (use HTML5 audio or Howler)
+- Mock data for episodes/series until API is fully wired
+- Excellent mobile UX (thumb-friendly)
+
+**Deliverables**
+Update the current build to closely match the visual direction described. Prioritize:
+- Homepage first
+- Library + search
+- Persistent mini-player
+- Series & episode pages
+
+Make it production-polished, fast, and true to the honest/practical brand personality.
+
+Start by showing me the updated homepage, then we’ll iterate on other pages.
+
+Reference the visual mockups I provided earlier for exact feel and layout.

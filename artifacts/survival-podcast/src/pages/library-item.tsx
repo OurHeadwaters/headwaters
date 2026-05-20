@@ -111,7 +111,14 @@ export function LibraryItemDetail() {
 
           {item.kind === 'audio' && item.audioUrl && (
             <div className="my-2">
-              <AudioPlayer src={item.audioUrl} title={item.title} />
+              <AudioPlayer episode={{
+                title: item.title,
+                audioUrl: item.audioUrl,
+                artworkUrl: item.artworkUrl,
+                slug: item.slug,
+                episodeNumber: item.episodeNumber,
+                durationSeconds: item.durationSeconds,
+              }} />
             </div>
           )}
 

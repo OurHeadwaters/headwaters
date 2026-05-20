@@ -3,10 +3,10 @@ import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQ
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
-import { EpisodeCard } from "@/components/episode-card";
 import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { Link } from "wouter";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+import { decodeHtml } from "@/lib/decode-html";
 
 type EpisodeLike = { title: string; categories: string[] };
 
@@ -159,13 +159,20 @@ export function EpisodeDetail() {
             </div>
 
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight text-balance">
-              {episode.title}
+              {decodeHtml(episode.title)}
             </h1>
           </header>
 
           {episode.audioUrl && (
             <div className="my-2">
-              <AudioPlayer src={episode.audioUrl} title={episode.title} />
+              <AudioPlayer episode={{
+                title: episode.title,
+                audioUrl: episode.audioUrl,
+                artworkUrl: episode.artworkUrl,
+                slug: episode.slug,
+                episodeNumber: episode.episodeNumber,
+                durationSeconds: episode.durationSeconds,
+              }} />
             </div>
           )}
 

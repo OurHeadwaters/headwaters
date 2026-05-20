@@ -104,7 +104,8 @@ export const GetEpisodeStatsResponse = zod.object({
   "episodesLast30Days": zod.number().optional(),
   "topCategories": zod.array(zod.object({
   "name": zod.string(),
-  "count": zod.number()
+  "count": zod.number(),
+  "description": zod.string().optional()
 })),
   "publishHistogram": zod.array(zod.object({
   "month": zod.string(),
@@ -210,11 +211,13 @@ export const GetLibraryStatsResponse = zod.object({
   "earliestPublishedAt": zod.string().nullish(),
   "topCategories": zod.array(zod.object({
   "name": zod.string(),
-  "count": zod.number()
+  "count": zod.number(),
+  "description": zod.string().optional()
 })),
   "topTags": zod.array(zod.object({
   "name": zod.string(),
-  "count": zod.number()
+  "count": zod.number(),
+  "description": zod.string().optional()
 })),
   "sync": zod.array(zod.object({
   "source": zod.string(),
@@ -241,7 +244,8 @@ export const ListLibraryTagsQueryParams = zod.object({
 
 export const ListLibraryTagsResponseItem = zod.object({
   "name": zod.string(),
-  "count": zod.number()
+  "count": zod.number(),
+  "description": zod.string().optional()
 })
 export const ListLibraryTagsResponse = zod.array(ListLibraryTagsResponseItem)
 
