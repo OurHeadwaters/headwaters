@@ -56,6 +56,26 @@ export function readAnyActiveTrack(): string | null {
   return null;
 }
 
+export function encodeProgressToParam(ids: Set<number>): string {
+  const sorted = [...ids].sort((a, b) => a - b);
+  return btoa(JSON.stringify(sorted));
+}
+
+export function decodeProgressParam(param: string): Set<number> | null {
+  try {
+    const arr = JSON.parse(atob(param));
+    if (Array.isArray(arr)) return new Set(arr as number[]);
+  } catch {
+  }
+  return null;
+}
+
+export function buildShareUrl(slug: string, ids: Set<number>): string {
+  const base = `${window.location.origin}${window.location.pathname}`;
+  const encoded = encodeProgressToParam(ids);
+  return `${base}?shared=${encodeURIComponent(encoded)}`;
+}
+
 export type TrackProgress = {
   doneIds: Set<number>;
   doneCount: number;

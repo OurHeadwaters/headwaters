@@ -1,9 +1,10 @@
 import { Link, useRoute } from "wouter";
 import { useGetTrackEpisodes } from "@/hooks/use-tracks";
-import { useTrackProgress } from "@/hooks/use-track-progress";
+import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { keepPreviousData } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
+import { useState, useEffect, useRef } from "react";
 import {
   Mic,
   FileText,
@@ -14,6 +15,10 @@ import {
   ArrowLeft,
   CheckCircle2,
   Circle,
+  Share2,
+  Download,
+  X,
+  Check,
 } from "lucide-react";
 import { formatDuration } from "@/components/episode-card";
 
@@ -65,6 +70,7 @@ type TrackItemCardProps = {
   globalOffset: number;
   isDone: boolean;
   onToggleDone: (id: number) => void;
+  isSharedView: boolean;
 };
 
 function TrackItemCard({
@@ -74,6 +80,7 @@ function TrackItemCard({
   globalOffset,
   isDone,
   onToggleDone,
+  isSharedView,
 }: TrackItemCardProps) {
   const position = globalOffset + index + 1;
   const href =
@@ -95,11 +102,12 @@ function TrackItemCard({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onToggleDone(item.id);
+          if (!isSharedView) onToggleDone(item.id);
         }}
-        className="shrink-0 mt-0.5 transition-colors"
+        className={`shrink-0 mt-0.5 transition-colors ${isSharedView ? "cursor-default" : ""}`}
         aria-label={isDone ? "Mark as not done" : "Mark as done"}
-        title={isDone ? "Mark as not done" : "Mark as done"}
+        title={isSharedView ? (isDone ? "Done in shared progress" : "Not done in shared progress") : (isDone ? "Mark as not done" : "Mark as done")}
+        disabled={isSharedView}
       >
         {isDone ? (
           <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -236,6 +244,96 @@ function ProgressBar({
   );
 }
 
+type ShareButtonProps = {
+  slug: string;
+  doneIds: Set<number>;
+  doneCount: number;
+  total: number;
+};
+
+function ShareProgressButton({ slug, doneIds, doneCount, total }: ShareButtonProps) {
+  const [state, setState] = useState<"idle" | "copied">("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleShare() {
+    if (doneCount === 0) return;
+    const url = buildShareUrl(slug, doneIds);
+    navigator.clipboard.writeText(url).then(() => {
+      setState("copied");
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setState("idle"), 2500);
+    });
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  if (doneCount === 0) return null;
+
+  return (
+    <button
+      onClick={handleShare}
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ${
+        state === "copied"
+          ? "bg-green-500/10 border-green-500/40 text-green-600"
+          : "bg-background border-border hover:border-primary/40 hover:bg-primary/5 text-foreground"
+      }`}
+    >
+      {state === "copied" ? (
+        <>
+          <Check className="w-4 h-4" />
+          Link copied!
+        </>
+      ) : (
+        <>
+          <Share2 className="w-4 h-4" />
+          Share my progress ({doneCount}/{total})
+        </>
+      )}
+    </button>
+  );
+}
+
+type SharedProgressBannerProps = {
+  sharedDoneCount: number;
+  total: number;
+  onImport: () => void;
+  onDismiss: () => void;
+};
+
+function SharedProgressBanner({ sharedDoneCount, total, onImport, onDismiss }: SharedProgressBannerProps) {
+  const pct = total > 0 ? Math.round((sharedDoneCount / total) * 100) : 0;
+
+  return (
+    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground mb-0.5">
+          You're viewing someone's shared progress
+        </p>
+        <p className="text-xs text-muted-foreground">
+          They've completed {sharedDoneCount} of {total} episodes ({pct}% done). Import it to start
+          tracking from where they left off.
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={onImport}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Import progress
+        </button>
+        <button
+          onClick={onDismiss}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:bg-muted text-xs font-medium text-muted-foreground transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function TrackDetailPage() {
   const [, params] = useRoute("/tracks/:slug");
   const slug = params?.slug ?? "";
@@ -243,6 +341,11 @@ export default function TrackDetailPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const offset = (page - 1) * PAGE_SIZE;
+
+  const sharedParam = searchParams.get("shared");
+  const sharedIds = sharedParam ? decodeProgressParam(sharedParam) : null;
+  const [isSharedView, setIsSharedView] = useState(sharedIds !== null);
+  const [sharedDismissed, setSharedDismissed] = useState(false);
 
   const queryParams = { limit: PAGE_SIZE, offset };
   const { data, isLoading, isError, isFetching } = useGetTrackEpisodes(slug, queryParams);
@@ -252,6 +355,27 @@ export default function TrackDetailPage() {
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const displayDoneIds = isSharedView && sharedIds ? sharedIds : progress.doneIds;
+  const displayDoneCount = displayDoneIds.size;
+  const isDone = (id: number) => displayDoneIds.has(id);
+
+  function importSharedProgress() {
+    if (!sharedIds) return;
+    sharedIds.forEach((id) => progress.markDone(id));
+    setIsSharedView(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("shared");
+    window.history.replaceState({}, "", url.toString());
+  }
+
+  function dismissShared() {
+    setIsSharedView(false);
+    setSharedDismissed(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("shared");
+    window.history.replaceState({}, "", url.toString());
+  }
 
   function navigate(p: number) {
     const qs = new URLSearchParams(window.location.search);
@@ -348,7 +472,19 @@ export default function TrackDetailPage() {
           </div>
 
           {/* Progress bar */}
-          <ProgressBar doneCount={progress.doneCount} total={total} color={track.color} />
+          <ProgressBar doneCount={displayDoneCount} total={total} color={track.color} />
+
+          {/* Share button — only shown when user has their own progress */}
+          {!isSharedView && (
+            <div className="mt-4">
+              <ShareProgressButton
+                slug={slug}
+                doneIds={progress.doneIds}
+                doneCount={progress.doneCount}
+                total={total}
+              />
+            </div>
+          )}
 
           <div className="mt-6 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
@@ -359,6 +495,16 @@ export default function TrackDetailPage() {
 
       {/* Episode list */}
       <div className="max-w-4xl mx-auto px-6 py-10">
+        {/* Shared progress banner */}
+        {isSharedView && sharedIds && !sharedDismissed && (
+          <SharedProgressBanner
+            sharedDoneCount={sharedIds.size}
+            total={total}
+            onImport={importSharedProgress}
+            onDismiss={dismissShared}
+          />
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-serif text-xl font-bold text-foreground">
             The track — oldest to newest
@@ -378,8 +524,9 @@ export default function TrackDetailPage() {
               trackColor={track.color}
               index={i}
               globalOffset={offset}
-              isDone={progress.isDone(item.id)}
+              isDone={isDone(item.id)}
               onToggleDone={progress.toggleDone}
+              isSharedView={isSharedView}
             />
           ))}
         </div>
