@@ -1,6 +1,5 @@
 import { useRoute } from "wouter";
 import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey } from "@workspace/api-client-react";
-import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
@@ -10,30 +9,7 @@ import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
-
-type Transformation = {
-  slug: string;
-  from: string;
-  to: string;
-  description: string;
-  tags: string[];
-  categories: string[];
-  color: string;
-  icon: string;
-};
-
-function useTransformations() {
-  return useQuery<Transformation[]>({
-    queryKey: ["transformations"],
-    queryFn: async () => {
-      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${base}/api/transformations`);
-      if (!res.ok) throw new Error("Failed to load transformations");
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
+import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 
 function matchTransformations(
   episodeCategories: string[],

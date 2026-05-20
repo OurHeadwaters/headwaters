@@ -1,34 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowRight, Compass, Loader2, PlayCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
-
-type Transformation = {
-  slug: string;
-  from: string;
-  to: string;
-  description: string;
-  tags: string[];
-  categories: string[];
-  color: string;
-  icon: string;
-};
-
-function useTransformations() {
-  return useQuery<Transformation[]>({
-    queryKey: ["transformations"],
-    queryFn: async () => {
-      const res = await fetch(
-        `${import.meta.env.BASE_URL}api/transformations`.replace(/\/+/g, "/").replace(":/", "://"),
-      );
-      if (!res.ok) throw new Error("Failed to load transformations");
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
+import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 
 function buildEpisodesUrl(t: Transformation): string {
   return `/episodes?transformation=${encodeURIComponent(t.slug)}`;
