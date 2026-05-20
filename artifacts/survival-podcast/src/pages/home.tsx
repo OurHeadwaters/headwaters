@@ -1,9 +1,23 @@
-import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats } from "@workspace/api-client-react";
+import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, getListSeriesQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
-import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+
+const SERIES_COLORS: Record<string, string> = {
+  "unloose-the-goose": "from-amber-900/40 to-amber-800/20 border-amber-700/30",
+  "13-stomps": "from-stone-900/40 to-stone-800/20 border-stone-700/30",
+  "tuesday-chats": "from-emerald-900/40 to-emerald-800/20 border-emerald-700/30",
+  history: "from-indigo-900/40 to-indigo-800/20 border-indigo-700/30",
+};
+
+const SERIES_BADGE_COLORS: Record<string, string> = {
+  "unloose-the-goose": "bg-amber-900/30 text-amber-300 border-amber-700/40",
+  "13-stomps": "bg-stone-800/50 text-stone-300 border-stone-600/40",
+  "tuesday-chats": "bg-emerald-900/30 text-emerald-300 border-emerald-700/40",
+  history: "bg-indigo-900/30 text-indigo-300 border-indigo-700/40",
+};
 
 export function Home() {
   const { data: feed, isLoading: feedLoading } = useGetFeed();
@@ -11,6 +25,9 @@ export function Home() {
   const { data: stats, isLoading: statsLoading } = useGetEpisodeStats();
   const { data: libraryStats } = useGetLibraryStats();
   const { data: categories, isLoading: categoriesLoading } = useListCategories();
+  const { data: seriesList, isLoading: seriesLoading } = useListSeries({
+    query: { queryKey: getListSeriesQueryKey() },
+  });
 
   const yearsOnAir = new Date().getFullYear() - 2008;
 
@@ -157,6 +174,73 @@ export function Home() {
             
             <Link href="/episodes" className="sm:hidden mt-6 flex items-center justify-center w-full py-3 bg-secondary text-secondary-foreground rounded-md font-semibold">
               Browse the full archive
+            </Link>
+          </section>
+
+          {/* Recurring Series */}
+          <section>
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  <Layers className="w-4 h-4" />
+                  <span>Recurring Series</span>
+                </div>
+                <h2 className="text-3xl font-serif font-bold text-foreground">Follow a Series</h2>
+                <p className="text-muted-foreground mt-1">Themed collections you can follow start to finish.</p>
+              </div>
+              <Link href="/series" className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                All series <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {seriesLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-52 bg-muted rounded-2xl animate-pulse" />
+                ))
+              ) : (
+                seriesList?.slice(0, 3).map((series) => {
+                  const colorClass = SERIES_COLORS[series.slug] ?? "from-zinc-900/40 to-zinc-800/20 border-zinc-700/30";
+                  const badgeClass = SERIES_BADGE_COLORS[series.slug] ?? "bg-zinc-800/50 text-zinc-300 border-zinc-600/40";
+                  return (
+                    <Link
+                      key={series.slug}
+                      href={`/series/${series.slug}`}
+                      className={`group relative flex flex-col gap-4 p-7 rounded-2xl border bg-gradient-to-br ${colorClass} hover:scale-[1.01] transition-all duration-300 hover:shadow-lg hover:shadow-black/20 overflow-hidden`}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+                      {series.sampleArtworkUrl && (
+                        <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 overflow-hidden pointer-events-none">
+                          <img src={series.sampleArtworkUrl} alt="" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-card to-transparent" />
+                        </div>
+                      )}
+                      <div className="flex items-start justify-between gap-4 relative">
+                        <div className="text-4xl leading-none">{series.iconEmoji}</div>
+                        <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${badgeClass}`}>
+                          {series.episodeCount} episode{series.episodeCount !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-2 relative">
+                        <h3 className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                          {series.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                          {series.description}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm font-semibold text-primary/80 group-hover:text-primary transition-colors relative mt-auto pt-1">
+                        Browse episodes
+                        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+
+            <Link href="/series" className="sm:hidden mt-6 flex items-center justify-center w-full py-3 bg-secondary text-secondary-foreground rounded-md font-semibold">
+              View all series
             </Link>
           </section>
         </div>
