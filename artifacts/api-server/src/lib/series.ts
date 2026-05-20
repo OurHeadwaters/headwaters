@@ -10,6 +10,7 @@ export type SeriesDefinition = {
   description: string;
   iconEmoji: string;
   order: "asc" | "desc";
+  featured?: boolean;
   detect: (episode: RssEpisode) => boolean;
   librarySql: () => SQL<unknown>;
 };
@@ -20,6 +21,7 @@ export type SeriesSummary = {
   description: string;
   iconEmoji: string;
   episodeCount: number;
+  featured: boolean;
   latestPubDate: string | null;
   sampleArtworkUrl: string | null;
 };
@@ -35,6 +37,7 @@ export type SeriesEpisodePage = {
 export const SERIES_REGISTRY: SeriesDefinition[] = [
   {
     slug: "unloose-the-goose",
+    featured: true,
     title: "Unloose the Goose",
     description:
       "Jack's irreverent deep-dives into news, politics, and culture — unfiltered and unscripted. These fan-favorite episodes let Jack loose on whatever's on his mind.",
@@ -226,6 +229,7 @@ export function buildSeriesSummary(
     description: series.description,
     iconEmoji: series.iconEmoji,
     episodeCount: episodes.length,
+    featured: series.featured ?? false,
     latestPubDate,
     sampleArtworkUrl: episodes.find((e) => e.artworkUrl)?.artworkUrl ?? null,
   };

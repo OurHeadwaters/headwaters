@@ -390,7 +390,7 @@ export function Home() {
   const { data: stats, isLoading: statsLoading } = useGetEpisodeStats();
   const { data: libraryStats } = useGetLibraryStats();
   const { data: categories, isLoading: categoriesLoading } = useListCategories();
-  const { data: seriesList, isLoading: seriesLoading } = useListSeries({ orderBy: "episodeCount:desc" });
+  const { data: seriesList, isLoading: seriesLoading } = useListSeries({ orderBy: "featured" });
   const { data: zones } = useListZones();
 
   const yearsOnAir = new Date().getFullYear() - 2008;

@@ -24,7 +24,12 @@ router.get("/series", async (req, res) => {
         return buildSeriesSummary(series, merged);
       }),
     );
-    if (orderBy === "episodeCount:desc") {
+    if (orderBy === "featured") {
+      summaries.sort((a, b) => {
+        if (a.featured !== b.featured) return a.featured ? -1 : 1;
+        return b.episodeCount - a.episodeCount;
+      });
+    } else if (orderBy === "episodeCount:desc") {
       summaries.sort((a, b) => b.episodeCount - a.episodeCount);
     } else if (orderBy === "episodeCount:asc") {
       summaries.sort((a, b) => a.episodeCount - b.episodeCount);

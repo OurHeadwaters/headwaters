@@ -257,6 +257,7 @@ export interface SeriesSummary {
   description: string;
   iconEmoji: string;
   episodeCount: number;
+  featured: boolean;
   /** @nullable */
   latestPubDate?: string | null;
   /** @nullable */
@@ -430,9 +431,9 @@ excludeSeries?: boolean;
 
 export type ListSeriesParams = {
 /**
- * Sort order for series list: episodeCount:desc (default), episodeCount:asc
+ * Sort order for series list: episodeCount:desc (default), episodeCount:asc, featured (featured entries first, then by episode count)
  */
-orderBy?: 'episodeCount:desc' | 'episodeCount:asc';
+orderBy?: 'episodeCount:desc' | 'episodeCount:asc' | 'featured';
 };
 
 export type RefreshLibraryParams = {

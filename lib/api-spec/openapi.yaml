@@ -238,6 +238,14 @@ paths:
       operationId: listSeries
       tags: [series]
       summary: List all episode series with episode counts
+      parameters:
+        - name: orderBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [episodeCount:desc, episodeCount:asc, featured]
+          description: "Sort order: episodeCount:desc (default), episodeCount:asc, featured (featured entries first, then by episode count)"
       responses:
         "200":
           description: Series list
@@ -801,13 +809,14 @@ components:
         offset: { type: integer }
     SeriesSummary:
       type: object
-      required: [slug, title, description, iconEmoji, episodeCount]
+      required: [slug, title, description, iconEmoji, episodeCount, featured]
       properties:
         slug: { type: string }
         title: { type: string }
         description: { type: string }
         iconEmoji: { type: string }
         episodeCount: { type: integer }
+        featured: { type: boolean }
         latestPubDate: { type: ["string", "null"] }
         sampleArtworkUrl: { type: ["string", "null"] }
     SeriesEpisodePage:
