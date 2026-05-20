@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, type Variants } from "framer-motion";
-import { CheckSquare, Database, Server, Sprout, HandCoins, ArrowRight, CheckCircle2 } from "lucide-react";
+import { CheckSquare, Database, Server, Sprout, HandCoins, ArrowRight, CheckCircle2, Download, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useForm, ValidationError } from "@formspree/react";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -21,6 +22,8 @@ function CodetryWordmark({ className = "" }: { className?: string }) {
 }
 
 export default function Home() {
+  const [formspreeState, handleFormspreeSubmit] = useForm("xpzvjdbb");
+
   const scrollToChecklist = () => {
     document.getElementById("checklist")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -373,27 +376,56 @@ export default function Home() {
                   <p className="text-muted-foreground">Delivered straight to your inbox.</p>
                 </div>
 
-                <form action="https://formspree.io/f/xpzvjdbb" method="POST" className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium text-foreground">Email address</label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      placeholder="you@example.com"
-                      className="bg-background border-border/50 focus:border-[#D9A066] focus:ring-[#D9A066]"
-                      data-testid="input-email"
-                    />
+                {formspreeState.succeeded ? (
+                  <div className="space-y-6 py-2">
+                    <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-green-800">You're in — check your inbox!</p>
+                        <p className="text-sm text-green-700 mt-1">The guide is on its way. While you wait, download it directly below.</p>
+                      </div>
+                    </div>
+                    <Button
+                      asChild
+                      className="w-full bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-bold py-6 text-lg shadow-md transition-transform hover:-translate-y-0.5"
+                    >
+                      <a href="/codetry/digital-resilience-checklist.pdf" download="Digital-Resilience-Checklist.pdf">
+                        <Download className="w-5 h-5 mr-2" />
+                        Download the checklist PDF
+                      </a>
+                    </Button>
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-bold py-6 text-lg shadow-md transition-transform hover:-translate-y-0.5"
-                    data-testid="button-submit-email"
-                  >
-                    Send it to my inbox
-                  </Button>
-                </form>
+                ) : (
+                  <form onSubmit={handleFormspreeSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium text-foreground">Email address</label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
+                        className="bg-background border-border/50 focus:border-[#D9A066] focus:ring-[#D9A066]"
+                        data-testid="input-email"
+                      />
+                      <ValidationError prefix="Email" field="email" errors={formspreeState.errors} className="text-sm text-red-600" />
+                    </div>
+                    {formspreeState.errors && formspreeState.errors.getAllFieldErrors().length === 0 && formspreeState.errors.getFormErrors().length > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>Something went wrong. Please try again or email codetry@gmail.com directly.</span>
+                      </div>
+                    )}
+                    <Button
+                      type="submit"
+                      disabled={formspreeState.submitting}
+                      className="w-full bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-bold py-6 text-lg shadow-md transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      data-testid="button-submit-email"
+                    >
+                      {formspreeState.submitting ? "Sending…" : "Send it to my inbox"}
+                    </Button>
+                  </form>
+                )}
 
                 <div className="pt-6 border-t border-border/50 text-center">
                   <p className="text-muted-foreground mb-4">Ready to build something?</p>
