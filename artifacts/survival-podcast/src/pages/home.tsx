@@ -10,6 +10,8 @@ import { getSeriesTheme } from "@/lib/seriesTheme";
 import { getCategoryDescription } from "@/data/category-descriptions";
 import { useLastActiveTrack, useTrackProgress } from "@/hooks/use-track-progress";
 import { useGetTrackNextUndone } from "@/hooks/use-tracks";
+import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
+import { X } from "lucide-react";
 
 function ContinueLearningInner({ trackSlug }: { trackSlug: string }) {
   const progress = useTrackProgress(trackSlug);
@@ -175,10 +177,14 @@ function useTransformations() {
 
 function TransformationPathsTeaser() {
   const { data: transformations } = useTransformations();
+  const { selectedSlug, select, clear } = useSelectedTransformation();
 
   if (!transformations || transformations.length === 0) return null;
 
   const featured = transformations.slice(0, 3);
+  const selectedTransformation = selectedSlug
+    ? transformations.find((t) => t.slug === selectedSlug) ?? null
+    : null;
 
   return (
     <section>
@@ -198,6 +204,60 @@ function TransformationPathsTeaser() {
           All six paths <ChevronRight className="w-4 h-4" />
         </Link>
       </div>
+
+      {/* Your Path callout — shown when visitor has picked a path */}
+      {selectedTransformation && (
+        <div
+          className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border px-5 py-4 mb-5 transition-all"
+          style={{
+            borderColor: selectedTransformation.color + "55",
+            background: selectedTransformation.color + "0C",
+          }}
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className="text-2xl leading-none shrink-0">{selectedTransformation.icon}</span>
+            <div className="min-w-0">
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
+                style={{ color: selectedTransformation.color }}
+              >
+                Your Path
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-serif text-base font-bold text-foreground leading-tight">
+                  {selectedTransformation.from}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" style={{ color: selectedTransformation.color }} />
+                <span className="font-serif text-base font-bold leading-tight" style={{ color: selectedTransformation.color }}>
+                  {selectedTransformation.to}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/episodes?transformation=${encodeURIComponent(selectedTransformation.slug)}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:-translate-y-px"
+              style={{
+                color: selectedTransformation.color,
+                background: selectedTransformation.color + "18",
+                border: `1px solid ${selectedTransformation.color}33`,
+              }}
+            >
+              Browse episodes
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+            <button
+              onClick={clear}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground px-2.5 py-2 rounded-lg border border-border hover:border-foreground/20 transition-colors"
+              aria-label="Clear selected path"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Featured cards — 3 on desktop */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
@@ -240,20 +300,40 @@ function TransformationPathsTeaser() {
         ))}
       </div>
 
-      {/* All-six chip row */}
+      {/* All-six chip row — click to select your path */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">All paths:</span>
-        {transformations.map((t) => (
-          <Link
-            key={t.slug}
-            href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors hover:opacity-80"
-            style={{ color: t.color, borderColor: t.color + "44", background: t.color + "10" }}
-          >
-            <span>{t.icon}</span>
-            <span>{t.from} → {t.to}</span>
-          </Link>
-        ))}
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">
+          {selectedSlug ? "Change path:" : "Pick your path:"}
+        </span>
+        {transformations.map((t) => {
+          const isSelected = t.slug === selectedSlug;
+          return (
+            <button
+              key={t.slug}
+              onClick={() => select(t.slug)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all hover:opacity-90"
+              style={
+                isSelected
+                  ? {
+                      color: "#fff",
+                      borderColor: t.color,
+                      background: t.color,
+                      boxShadow: `0 0 0 2px ${t.color}44`,
+                    }
+                  : {
+                      color: t.color,
+                      borderColor: t.color + "44",
+                      background: t.color + "10",
+                    }
+              }
+              aria-pressed={isSelected}
+              title={`Select "${t.from} → ${t.to}" as your transformation path`}
+            >
+              <span>{t.icon}</span>
+              <span>{t.from} → {t.to}</span>
+            </button>
+          );
+        })}
         <Link
           href="/transform"
           className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors ml-1"
