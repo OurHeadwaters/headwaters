@@ -11,20 +11,22 @@ kind = "mobile"
   [[services]]
   name = "expo"
   paths = [ "/mobile/" ]
-  localPort = 24655
+  localPort = 5000
 
   [services.development]
   run = "pnpm --filter @workspace/tsp-mobile run dev"
+
+  [services.development.health.startup]
+  path = "/status"
 
   [services.production]
   build = [ "pnpm", "--filter", "@workspace/tsp-mobile", "run", "build" ]
   run = [ "pnpm", "--filter", "@workspace/tsp-mobile", "run", "serve" ]
 
   [services.env]
-  PORT = "24655"
+  PORT = "5000"
   BASE_PATH = "/mobile/"
   EXPO_PACKAGER_PROXY_URL = "https://$REPLIT_EXPO_DEV_DOMAIN"
   EXPO_PUBLIC_DOMAIN = "$REPLIT_DEV_DOMAIN"
   EXPO_PUBLIC_REPL_ID = "$REPL_ID"
   REACT_NATIVE_PACKAGER_HOSTNAME = "$REPLIT_DEV_DOMAIN"
-  
