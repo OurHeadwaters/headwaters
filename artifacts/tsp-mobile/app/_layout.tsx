@@ -37,6 +37,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="episode/[slug]" options={{ headerShown: false, animation: "slide_from_bottom" }} />
+      <Stack.Screen name="transformation/[slug]" options={{ headerShown: false, animation: "slide_from_right" }} />
     </Stack>
   );
 }

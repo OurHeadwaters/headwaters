@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useGetEpisode } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef } from "react";
 import {
   ActivityIndicator,
@@ -21,6 +22,41 @@ import { useHistory } from "@/context/HistoryContext";
 import { useDownloads } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
+
+type TransformationDef = {
+  slug: string;
+  from: string;
+  to: string;
+  color: string;
+  icon: string;
+  tags: string[];
+  categories: string[];
+};
+
+const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+
+function useTransformations() {
+  return useQuery<TransformationDef[]>({
+    queryKey: ["transformations"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/transformations`);
+      if (!res.ok) throw new Error("Failed to load transformations");
+      return res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+function matchTransformations(
+  episodeCategories: string[],
+  transformations: TransformationDef[],
+): TransformationDef[] {
+  const lowerCats = episodeCategories.map((c) => c.toLowerCase());
+  return transformations.filter((t) => {
+    const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
+    return lowerCats.some((c) => tLower.includes(c));
+  });
+}
 
 function formatDuration(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -70,6 +106,7 @@ export default function EpisodeDetailScreen() {
   const { isDownloaded, isDownloading, downloadEpisode, deleteDownload, getLocalUri, progress: downloadProgress } = useDownloads();
 
   const { data: episode, isLoading: epLoading, error } = useGetEpisode(slug ?? "");
+  const { data: transformations } = useTransformations();
 
   const isThisEpisode = currentEpisode?.slug === slug;
   const activePositionMs = isThisEpisode ? positionMs : 0;
@@ -194,6 +231,10 @@ export default function EpisodeDetailScreen() {
   }
 
   const showNotes = episode.descriptionHtml ? stripHtml(episode.descriptionHtml) : episode.summary;
+  const matchedTransformations =
+    episode.categories && transformations
+      ? matchTransformations(episode.categories, transformations)
+      : [];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -263,6 +304,34 @@ export default function EpisodeDetailScreen() {
                   </Text>
                 </View>
               ))}
+            </View>
+          )}
+
+          {matchedTransformations.length > 0 && (
+            <View style={styles.transformationsSection}>
+              <Text style={[styles.transformationsLabel, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
+                Transformation Paths
+              </Text>
+              <View style={styles.transformationsRow}>
+                {matchedTransformations.map((t) => (
+                  <Pressable
+                    key={t.slug}
+                    onPress={() => {
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push(`/transformation/${t.slug}` as never);
+                    }}
+                    style={[
+                      styles.transformationBadge,
+                      { backgroundColor: t.color + "18", borderColor: t.color + "55" },
+                    ]}
+                  >
+                    <Text style={styles.transformationIcon}>{t.icon}</Text>
+                    <Text style={[styles.transformationText, { color: t.color, fontFamily: "DMSans_500Medium" }]}>
+                      {t.from} → {t.to}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           )}
 
@@ -569,5 +638,33 @@ const styles = StyleSheet.create({
   notesBody: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  transformationsSection: {
+    gap: 6,
+  },
+  transformationsLabel: {
+    fontSize: 11,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  transformationsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  transformationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  transformationIcon: {
+    fontSize: 13,
+  },
+  transformationText: {
+    fontSize: 12,
   },
 });
