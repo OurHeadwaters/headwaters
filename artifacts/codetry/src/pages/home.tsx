@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useForm, ValidationError } from "@formspree/react";
+import Nav from "@/components/Nav";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -45,18 +46,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background text-foreground overflow-x-hidden selection:bg-accent/40">
-
-      {/* Sticky Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A180A]/90 backdrop-blur-md border-b border-[#D9A066]/20 px-6 md:px-12 h-16 flex items-center justify-between">
-        <CodetryWordmark className="text-white" />
-        <Button
-          size="sm"
-          className="bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-medium px-5 rounded-md transition-all duration-300"
-          onClick={scrollToChecklist}
-        >
-          Get the Checklist
-        </Button>
-      </nav>
+      <Nav />
 
       {/* Hero Section */}
       <section className="relative w-full text-white pt-40 pb-24 px-6 md:px-12 flex flex-col items-center justify-center text-center overflow-hidden min-h-[90vh]">
