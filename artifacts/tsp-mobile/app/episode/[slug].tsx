@@ -108,7 +108,7 @@ export default function EpisodeDetailScreen() {
   const progressBarWidth = useRef(0);
   const [wishingWellVisible, setWishingWellVisible] = React.useState(false);
 
-  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek, setOnEpisodeFinished, setOnPlaybackMinute } = usePlayer();
+  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek, addToQueue, setOnEpisodeFinished, setOnPlaybackMinute } = usePlayer();
   const { isBookmarked, toggleBookmark } = useHistory();
   const { isDownloaded, isDownloading, downloadEpisode, deleteDownload, getLocalUri, progress: downloadProgress } = useDownloads();
   const { wallet, streamingSats, addStreamingSats, resetStreamingSats, fetchEpisodeSplits, sendBoost } = useV4V();
@@ -207,6 +207,23 @@ export default function EpisodeDetailScreen() {
       });
     }
   }, [episode, slug, isDownloaded, isDownloading, downloadEpisode, deleteDownload]);
+
+  const [addedToQueue, setAddedToQueue] = useState(false);
+
+  const handleAddToQueue = useCallback(() => {
+    if (!episode) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addToQueue({
+      slug: episode.slug,
+      title: episode.title,
+      audioUrl: episode.audioUrl ?? undefined,
+      artworkUrl: episode.artworkUrl ?? undefined,
+      durationSeconds: episode.durationSeconds ?? undefined,
+      episodeNumber: episode.episodeNumber ?? undefined,
+    });
+    setAddedToQueue(true);
+    setTimeout(() => setAddedToQueue(false), 2000);
+  }, [episode, addToQueue]);
 
   const handleSkip = async (deltaMs: number) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -531,6 +548,35 @@ export default function EpisodeDetailScreen() {
                 {boostSuccess != null ? `✓ ${boostSuccess.toLocaleString()} sats sent!` : "Boost"}
               </Text>
             </Pressable>
+
+            <Pressable
+              onPress={handleAddToQueue}
+              style={[
+                styles.boostBtn,
+                {
+                  backgroundColor: addedToQueue ? colors.primary + "18" : colors.muted,
+                  borderColor: addedToQueue ? colors.primary + "55" : colors.border,
+                },
+              ]}
+              testID="episode-add-to-queue-btn"
+            >
+              <Ionicons
+                name={addedToQueue ? "checkmark" : "list-outline"}
+                size={16}
+                color={addedToQueue ? colors.primary : colors.mutedForeground}
+              />
+              <Text
+                style={[
+                  styles.boostText,
+                  {
+                    color: addedToQueue ? colors.primary : colors.mutedForeground,
+                    fontFamily: "DMSans_600SemiBold",
+                  },
+                ]}
+              >
+                {addedToQueue ? "Added" : "Add to queue"}
+              </Text>
+            </Pressable>
           </View>
 
           {episode.audioUrl && Platform.OS !== "web" && (
@@ -792,7 +838,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   boostRow: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     marginTop: -4,
   },
   boostBtn: {

@@ -26,6 +26,7 @@ interface PlayerState {
   nextEpisode: PlayableEpisode | null;
   play: (episode: PlayableEpisode) => Promise<void>;
   playQueue: (episodes: PlayableEpisode[]) => Promise<void>;
+  addToQueue: (episode: PlayableEpisode) => void;
   clearQueue: () => void;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
@@ -217,6 +218,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     [playEpisodeInternal],
   );
 
+  const addToQueue = useCallback((episode: PlayableEpisode) => {
+    const updated = [...queueRef.current, episode];
+    queueRef.current = updated;
+    setQueue(updated);
+  }, []);
+
   const clearQueue = useCallback(() => {
     queueRef.current = [];
     setQueue([]);
@@ -284,6 +291,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         nextEpisode,
         play,
         playQueue,
+        addToQueue,
         clearQueue,
         pause,
         resume,
