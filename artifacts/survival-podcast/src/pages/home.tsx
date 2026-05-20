@@ -862,7 +862,12 @@ export function Home() {
               {categoriesLoading ? (
                  <div className="h-32 bg-muted rounded-md animate-pulse" />
               ) : (
-                categories?.slice(0, 8).map(cat => {
+                (() => {
+                  const withDesc = (categories ?? []).filter(c => c.description ?? getCategoryDescription(c.name));
+                  const withoutDesc = (categories ?? []).filter(c => !(c.description ?? getCategoryDescription(c.name)));
+                  const sorted = [...withDesc, ...withoutDesc].slice(0, 8);
+                  return sorted;
+                })().map(cat => {
                   const desc = cat.description ?? getCategoryDescription(cat.name);
                   return (
                     <Link
