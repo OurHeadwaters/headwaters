@@ -68,9 +68,11 @@ export function SeriesIndex() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* ULG is a standalone section, not in the API series list — add it as a static card */}
+          {/* ULG is pinned first; use its API count so it reflects the full merged total */}
           {(() => {
+            const ulg = seriesList?.find((s) => s.slug === "unloose-the-goose");
             const { card: colorClass, badge: badgeClass } = getSeriesTheme("unloose-the-goose");
+            const count = ulg?.episodeCount;
             return (
               <Link
                 href="/series/unloose-the-goose"
@@ -79,9 +81,11 @@ export function SeriesIndex() {
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
                 <div className="flex items-start justify-between gap-4 relative">
                   <div className="text-4xl leading-none">🪿</div>
-                  <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${badgeClass}`}>
-                    57 episodes
-                  </span>
+                  {count != null && (
+                    <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${badgeClass}`}>
+                      {count} episode{count !== 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 relative">
                   <h2 className="font-serif text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
