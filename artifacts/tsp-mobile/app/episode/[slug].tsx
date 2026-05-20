@@ -20,7 +20,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useHistory } from "@/context/HistoryContext";
-import { useDownloads } from "@/context/DownloadContext";
+import { useDownloads, estimateEpisodeBytes, formatBytes } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useV4V, type ValueSplit } from "@/context/V4VContext";
 import { useColors } from "@/hooks/useColors";
@@ -565,7 +565,10 @@ export default function EpisodeDetailScreen() {
                   <>
                     <Ionicons name="cloud-download-outline" size={18} color={colors.foreground} />
                     <Text style={[styles.downloadText, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]}>
-                      Download
+                      {(() => {
+                        const bytes = estimateEpisodeBytes(episode.durationSeconds);
+                        return bytes != null ? `Download · ~${formatBytes(bytes)}` : "Download";
+                      })()}
                     </Text>
                   </>
                 )}

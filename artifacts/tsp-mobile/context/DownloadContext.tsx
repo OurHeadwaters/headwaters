@@ -1,10 +1,24 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 
 const STORAGE_KEY = "@tsp_downloads_v1";
 const DOWNLOAD_DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}tsp_episodes/` : null;
+
+const BITRATE_BYTES_PER_SEC = 16_000;
+const LARGE_FILE_WARN_BYTES = 150 * 1024 * 1024;
+const FREE_SPACE_BUFFER_BYTES = 50 * 1024 * 1024;
+
+export function estimateEpisodeBytes(durationSeconds: number | null | undefined): number | null {
+  if (!durationSeconds || durationSeconds <= 0) return null;
+  return Math.round(durationSeconds * BITRATE_BYTES_PER_SEC);
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+}
 
 export interface DownloadedEpisode {
   slug: string;
@@ -13,6 +27,7 @@ export interface DownloadedEpisode {
   artworkUrl?: string | null;
   episodeNumber?: number | null;
   durationSeconds?: number | null;
+  fileSizeBytes?: number | null;
   downloadedAt: number;
 }
 
@@ -28,6 +43,7 @@ export interface EpisodeToDownload {
 interface DownloadContextState {
   downloads: Record<string, DownloadedEpisode>;
   progress: Record<string, number>;
+  totalStorageBytes: number;
   downloadEpisode: (episode: EpisodeToDownload) => Promise<void>;
   deleteDownload: (slug: string) => Promise<void>;
   isDownloaded: (slug: string) => boolean;
@@ -41,10 +57,20 @@ function slugToFilename(slug: string): string {
   return slug.replace(/[^a-zA-Z0-9_-]/g, "_") + ".mp3";
 }
 
+function computeTotalStorage(downloads: Record<string, DownloadedEpisode>): number {
+  return Object.values(downloads).reduce((sum, ep) => {
+    if (ep.fileSizeBytes != null) return sum + ep.fileSizeBytes;
+    const estimated = estimateEpisodeBytes(ep.durationSeconds);
+    return sum + (estimated ?? 0);
+  }, 0);
+}
+
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [downloads, setDownloads] = useState<Record<string, DownloadedEpisode>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const downloadTasksRef = useRef<Record<string, FileSystem.DownloadResumable>>({});
+
+  const totalStorageBytes = computeTotalStorage(downloads);
 
   useEffect(() => {
     loadDownloads();
@@ -61,7 +87,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           try {
             const stat = await FileSystem.getInfoAsync(info.localUri);
             if (stat.exists) {
-              verified[slug] = info;
+              const sizeBytes = (stat as any).size ?? info.fileSizeBytes ?? null;
+              verified[slug] = { ...info, fileSizeBytes: sizeBytes };
             }
           } catch {
           }
@@ -88,6 +115,37 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS === "web") return;
     if (!DOWNLOAD_DIR) return;
     if (downloads[episode.slug] || progress[episode.slug] !== undefined) return;
+
+    const estimatedBytes = estimateEpisodeBytes(episode.durationSeconds);
+
+    if (estimatedBytes != null) {
+      try {
+        const freeSpace = await FileSystem.getFreeDiskStorageAsync();
+        if (estimatedBytes + FREE_SPACE_BUFFER_BYTES > freeSpace) {
+          Alert.alert(
+            "Not Enough Storage",
+            `This episode is about ${formatBytes(estimatedBytes)} and your device doesn't have enough free space (${formatBytes(freeSpace)} available). Free up some storage and try again.`,
+            [{ text: "OK" }],
+          );
+          return;
+        }
+      } catch {
+      }
+
+      if (estimatedBytes >= LARGE_FILE_WARN_BYTES) {
+        const proceed = await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            "Large Download",
+            `This episode is about ${formatBytes(estimatedBytes)}. Make sure you're on Wi-Fi or have plenty of mobile data.`,
+            [
+              { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+              { text: "Download", onPress: () => resolve(true) },
+            ],
+          );
+        });
+        if (!proceed) return;
+      }
+    }
 
     try {
       const dirInfo = await FileSystem.getInfoAsync(DOWNLOAD_DIR);
@@ -124,6 +182,15 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      let fileSizeBytes: number | null = estimatedBytes;
+      try {
+        const stat = await FileSystem.getInfoAsync(result.uri);
+        if (stat.exists && (stat as any).size) {
+          fileSizeBytes = (stat as any).size;
+        }
+      } catch {
+      }
+
       const info: DownloadedEpisode = {
         slug: episode.slug,
         title: episode.title,
@@ -131,6 +198,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         artworkUrl: episode.artworkUrl,
         episodeNumber: episode.episodeNumber,
         durationSeconds: episode.durationSeconds,
+        fileSizeBytes,
         downloadedAt: Date.now(),
       };
 
@@ -176,7 +244,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const getLocalUri = useCallback((slug: string) => downloads[slug]?.localUri ?? null, [downloads]);
 
   return (
-    <DownloadContext.Provider value={{ downloads, progress, downloadEpisode, deleteDownload, isDownloaded, isDownloading, getLocalUri }}>
+    <DownloadContext.Provider value={{ downloads, progress, totalStorageBytes, downloadEpisode, deleteDownload, isDownloaded, isDownloading, getLocalUri }}>
       {children}
     </DownloadContext.Provider>
   );

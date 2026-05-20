@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useDownloads, type DownloadedEpisode } from "@/context/DownloadContext";
+import { useDownloads, formatBytes, type DownloadedEpisode } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -130,7 +130,7 @@ function DownloadItem({ item }: { item: DownloadedEpisode }) {
 export default function DownloadsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { downloads } = useDownloads();
+  const { downloads, totalStorageBytes } = useDownloads();
   const { currentEpisode } = usePlayer();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
@@ -153,7 +153,7 @@ export default function DownloadsScreen() {
             </Text>
             {items.length > 0 && (
               <Text style={[styles.headerSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-                {items.length} episode{items.length !== 1 ? "s" : ""} saved
+                {items.length} episode{items.length !== 1 ? "s" : ""} saved · {formatBytes(totalStorageBytes)} used
               </Text>
             )}
           </View>
