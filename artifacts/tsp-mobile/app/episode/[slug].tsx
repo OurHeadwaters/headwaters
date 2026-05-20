@@ -22,6 +22,7 @@ import { useHistory } from "@/context/HistoryContext";
 import { useDownloads } from "@/context/DownloadContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
+import { WishingWellModal } from "@/components/WishingWellModal";
 
 type TransformationDef = {
   slug: string;
@@ -100,6 +101,7 @@ export default function EpisodeDetailScreen() {
   const insets = useSafeAreaInsets();
   const progressBarRef = useRef<View>(null);
   const progressBarWidth = useRef(0);
+  const [wishingWellVisible, setWishingWellVisible] = React.useState(false);
 
   const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, play, pause, resume, seek } = usePlayer();
   const { isBookmarked, toggleBookmark } = useHistory();
@@ -238,6 +240,11 @@ export default function EpisodeDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <WishingWellModal
+        visible={wishingWellVisible}
+        onClose={() => setWishingWellVisible(false)}
+        episodeSlug={slug ?? undefined}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
@@ -445,6 +452,27 @@ export default function EpisodeDetailScreen() {
           )}
         </View>
 
+        {/* Toss a Coin */}
+        <View style={[styles.wellSection, { borderTopColor: colors.border }]}>
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setWishingWellVisible(true);
+            }}
+            style={[styles.wellBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+          >
+            <Text style={styles.wellBtnEmoji}>🪙</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.wellBtnTitle, { color: colors.foreground, fontFamily: "DMSans_600SemiBold" }]}>
+                Toss a Coin into the Well
+              </Text>
+              <Text style={[styles.wellBtnSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                Make a wish · enter today's 50/50 draw
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+
         {showNotes && (
           <View style={[styles.notesSection, { borderTopColor: colors.border }]}>
             <Text style={[styles.notesTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
@@ -626,6 +654,21 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
   },
+  wellSection: {
+    borderTopWidth: 1,
+    padding: 16,
+  },
+  wellBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  wellBtnEmoji: { fontSize: 26 },
+  wellBtnTitle: { fontSize: 15 },
+  wellBtnSub: { fontSize: 12, marginTop: 2 },
   notesSection: {
     margin: 20,
     paddingTop: 20,

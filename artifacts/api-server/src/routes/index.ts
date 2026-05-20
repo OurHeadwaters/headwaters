@@ -11,6 +11,7 @@ import transformationsRouter from "./transformations";
 import adminCategoriesRouter from "./admin-categories";
 import trackProgressRouter from "./track-progress";
 import adminCouncilRouter from "./admin-council";
+import wishingWellRouter from "./wishing-well";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(transformationsRouter);
 router.use(adminCategoriesRouter);
 router.use(trackProgressRouter);
 router.use(adminCouncilRouter);
+router.use(wishingWellRouter);
 
 export default router;

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { EXPERT_COUNCIL, ULG_BUSINESSES } from "../lib/expert-council";
+import { EXPERT_COUNCIL, ULG_BUSINESSES } from "../lib/expert-council-static";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();

@@ -32,6 +32,10 @@ function NativeTabLayout() {
           <Icon sf={{ default: "arrow.down.circle", selected: "arrow.down.circle.fill" }} />
           <Label>Downloads</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="wishing-well">
+          <Icon sf={{ default: "drop.circle", selected: "drop.circle.fill" }} />
+          <Label>Well</Label>
+        </NativeTabs.Trigger>
         <NativeTabs.Trigger name="privacy-guide">
           <Icon sf={{ default: "lock.shield", selected: "lock.shield.fill" }} />
           <Label>Privacy</Label>
@@ -131,6 +135,18 @@ function ClassicTabLayout() {
                 <SymbolView name="arrow.down.circle" tintColor={color} size={24} />
               ) : (
                 <Feather name="download" size={22} color={color} />
+              ),
+          }}
+        />
+        <Tabs.Screen
+          name="wishing-well"
+          options={{
+            title: "Well",
+            tabBarIcon: ({ color }) =>
+              isIOS ? (
+                <SymbolView name="drop.circle" tintColor={color} size={24} />
+              ) : (
+                <Feather name="gift" size={22} color={color} />
               ),
           }}
         />
