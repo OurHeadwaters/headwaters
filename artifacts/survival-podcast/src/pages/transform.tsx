@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowRight, Compass, Loader2 } from "lucide-react";
+import { ArrowRight, Compass, Loader2, PlayCircle } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
 
@@ -40,11 +41,12 @@ function buildTagsFilter(t: Transformation): string[] {
 
 function TransformationCard({ t }: { t: Transformation }) {
   const queryTags = buildTagsFilter(t);
-  const params = { limit: 1, offset: 0, tags: queryTags };
+  const params = { limit: 3, offset: 0, tags: queryTags };
   const { data: episodePage } = useListEpisodes(params, {
     query: { queryKey: getListEpisodesQueryKey(params) },
   });
   const count = episodePage?.total ?? null;
+  const sampleEpisodes = episodePage?.items ?? [];
 
   return (
     <div
@@ -84,12 +86,39 @@ function TransformationCard({ t }: { t: Transformation }) {
       </div>
 
       <div className="px-6 py-5 flex flex-col flex-1">
-        <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-5">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-4">
           {t.description}
         </p>
+
+        {sampleEpisodes.length > 0 && (
+          <div className="mb-5 flex flex-col gap-1.5">
+            {sampleEpisodes.map((ep) => (
+              <Link
+                key={ep.slug}
+                href={`/episodes/${ep.slug}`}
+                className="group flex items-start gap-2.5 rounded-lg px-3 py-2 transition-colors hover:bg-black/5"
+                style={{ border: `1px solid ${t.color}18`, background: t.color + "05" }}
+              >
+                <PlayCircle
+                  className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
+                  style={{ color: t.color }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-foreground leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                    {ep.title}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {format(parseISO(ep.pubDate), "MMM d, yyyy")}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
         <Link
           href={buildEpisodesUrl(t)}
-          className="self-start inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+          className="self-start inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px mt-auto"
           style={{
             color: t.color,
             background: t.color + "15",
