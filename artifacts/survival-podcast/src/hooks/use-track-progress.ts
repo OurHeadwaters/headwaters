@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 const storageKey = (slug: string) => `tsp_track_progress_${slug}`;
+const LAST_ACTIVE_KEY = "tsp_track_last_active";
 
 function loadDoneIds(slug: string): Set<number> {
   try {
@@ -18,6 +19,41 @@ function saveDoneIds(slug: string, ids: Set<number>) {
     localStorage.setItem(storageKey(slug), JSON.stringify([...ids]));
   } catch {
   }
+}
+
+function recordLastActive(slug: string) {
+  try {
+    localStorage.setItem(LAST_ACTIVE_KEY, slug);
+  } catch {
+  }
+}
+
+export function readLastActiveTrack(): string | null {
+  try {
+    return localStorage.getItem(LAST_ACTIVE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function readAnyActiveTrack(): string | null {
+  try {
+    const last = localStorage.getItem(LAST_ACTIVE_KEY);
+    if (last) {
+      const ids = loadDoneIds(last);
+      if (ids.size > 0) return last;
+    }
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("tsp_track_progress_")) {
+        const slug = key.slice("tsp_track_progress_".length);
+        const ids = loadDoneIds(slug);
+        if (ids.size > 0) return slug;
+      }
+    }
+  } catch {
+  }
+  return null;
 }
 
 export type TrackProgress = {
@@ -49,19 +85,21 @@ export function useTrackProgress(slug: string): TrackProgress {
         next.delete(id);
       } else {
         next.add(id);
+        recordLastActive(slug);
       }
       return next;
     });
-  }, []);
+  }, [slug]);
 
   const markDone = useCallback((id: number) => {
     setDoneIds((prev) => {
       if (prev.has(id)) return prev;
       const next = new Set(prev);
       next.add(id);
+      recordLastActive(slug);
       return next;
     });
-  }, []);
+  }, [slug]);
 
   const resetProgress = useCallback(() => {
     setDoneIds(new Set());
@@ -91,4 +129,14 @@ export function useAllTracksProgress(slugs: string[]): AllTracksSummary {
   }, [slugs.join(",")]);
 
   return summary;
+}
+
+export function useLastActiveTrack(): string | null {
+  const [slug, setSlug] = useState<string | null>(() => readAnyActiveTrack());
+
+  useEffect(() => {
+    setSlug(readAnyActiveTrack());
+  }, []);
+
+  return slug;
 }

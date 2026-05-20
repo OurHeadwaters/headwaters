@@ -177,4 +177,107 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/tracks/:slug/next-undone?done=1,2,3,...
+ * Returns the first episode in the track that is NOT in the provided done list.
+ * Used by the homepage "Continue Learning" widget.
+ */
+router.get("/tracks/:slug/next-undone", async (req, res) => {
+  try {
+    const track = trackBySlug(req.params.slug);
+    if (!track) {
+      res.status(404).json({ error: "Track not found" });
+      return;
+    }
+
+    const doneParam = typeof req.query.done === "string" ? req.query.done : "";
+    const doneIds: number[] = doneParam
+      ? doneParam
+          .split(",")
+          .map((s) => parseInt(s.trim(), 10))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      : [];
+
+    const whereFragment = trackWhereFragment(track.tags, track.categories);
+    const scoreFragment = trackScoreFragment(track.tags);
+    const orderDir = track.order === "asc" ? "ASC" : "DESC";
+
+    const excludeFragment =
+      doneIds.length > 0 ? `AND id NOT IN (${doneIds.join(",")})` : "";
+
+    const [rowResult, totalResult] = await Promise.all([
+      db.execute(sql.raw(`
+        SELECT
+          id, source, kind, slug, title, link, summary,
+          published_at, episode_number, duration_seconds, audio_url,
+          audio_type, video_url, video_id, artwork_url, categories, tags,
+          ${scoreFragment} AS track_score
+        FROM content_items
+        WHERE ${whereFragment} ${excludeFragment}
+        ORDER BY track_score DESC, published_at ${orderDir}
+        LIMIT 1
+      `)),
+      db.execute(sql.raw(`
+        SELECT count(*)::int AS count FROM content_items WHERE ${whereFragment}
+      `)),
+    ]);
+
+    type Row = {
+      id: number; source: string; kind: string; slug: string;
+      title: string; link: string; summary: string | null;
+      published_at: string; episode_number: number | null;
+      duration_seconds: number | null; audio_url: string | null;
+      audio_type: string | null; video_url: string | null; video_id: string | null;
+      artwork_url: string | null; categories: string[]; tags: string[];
+      track_score: number;
+    };
+
+    const total = (totalResult.rows[0] as { count: number }).count;
+    const row = rowResult.rows[0] as Row | undefined;
+
+    const item = row
+      ? {
+          id: row.id,
+          source: row.source,
+          kind: row.kind,
+          slug: row.slug,
+          title: row.title,
+          link: row.link,
+          summary: row.summary,
+          publishedAt: new Date(row.published_at).toISOString(),
+          episodeNumber: row.episode_number,
+          durationSeconds: row.duration_seconds,
+          audioUrl: row.audio_url,
+          audioType: row.audio_type,
+          videoUrl: row.video_url,
+          videoId: row.video_id,
+          artworkUrl: row.artwork_url,
+          categories: row.categories,
+          tags: row.tags,
+          trackScore: row.track_score,
+        }
+      : null;
+
+    res.json({
+      track: {
+        slug: track.slug,
+        zoneSlug: track.zoneSlug,
+        zoneNumber: track.zoneNumber,
+        title: track.title,
+        subtitle: track.subtitle,
+        description: track.description,
+        whatYouWillKnow: track.whatYouWillKnow,
+        color: track.color,
+        icon: track.icon,
+      },
+      item,
+      total,
+      doneCount: doneIds.length,
+    });
+  } catch (err) {
+    logger.error({ err }, "track next-undone failed");
+    res.status(500).json({ error: "Failed to load next undone episode" });
+  }
+});
+
 export default router;

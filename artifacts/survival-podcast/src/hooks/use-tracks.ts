@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export type TrackSummary = {
   slug: string;
@@ -76,5 +77,36 @@ export function useGetTrackEpisodes(
     queryKey: ["tracks", slug, "episodes", params],
     queryFn: () => fetchTrackEpisodes(slug, params),
     enabled: !!slug,
+  });
+}
+
+export type TrackNextUndoneResult = {
+  track: Omit<TrackSummary, "episodeCount" | "sampleArtwork">;
+  item: TrackItem | null;
+  total: number;
+  doneCount: number;
+};
+
+async function fetchTrackNextUndone(
+  slug: string,
+  doneIds: Set<number>,
+): Promise<TrackNextUndoneResult> {
+  const doneParam = [...doneIds].join(",");
+  const qs = doneParam ? `?done=${encodeURIComponent(doneParam)}` : "";
+  const res = await fetch(`/api/tracks/${slug}/next-undone${qs}`);
+  if (!res.ok) throw new Error("Failed to load next undone episode");
+  return res.json();
+}
+
+export function useGetTrackNextUndone(
+  slug: string | null,
+  doneIds: Set<number>,
+) {
+  const doneKey = useMemo(() => [...doneIds].sort((a, b) => a - b).join(","), [doneIds]);
+  return useQuery<TrackNextUndoneResult>({
+    queryKey: ["tracks", slug, "next-undone", doneKey],
+    queryFn: () => fetchTrackNextUndone(slug!, doneIds),
+    enabled: !!slug && doneIds.size > 0,
+    staleTime: 60 * 1000,
   });
 }

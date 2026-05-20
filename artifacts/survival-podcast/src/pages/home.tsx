@@ -4,10 +4,142 @@ import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
 import { ThisDayInHistory } from "@/components/this-day-in-history";
-import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout, ArrowRight } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout, ArrowRight, PlayCircle, CheckCircle2 } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { getCategoryDescription } from "@/data/category-descriptions";
+import { useLastActiveTrack, useTrackProgress } from "@/hooks/use-track-progress";
+import { useGetTrackNextUndone } from "@/hooks/use-tracks";
+
+function ContinueLearningInner({ trackSlug }: { trackSlug: string }) {
+  const progress = useTrackProgress(trackSlug);
+  const { data, isLoading } = useGetTrackNextUndone(trackSlug, progress.doneIds);
+
+  if (isLoading) return null;
+  if (!data) return null;
+
+  const { track, item: nextEpisode, total } = data;
+  const doneCount = progress.doneCount;
+  const pct = total > 0 ? Math.min(100, (doneCount / total) * 100) : 0;
+  const isComplete = doneCount >= total && total > 0;
+
+  if (isComplete && !nextEpisode) {
+    return (
+      <section>
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Track Complete</span>
+        </div>
+        <div
+          className="flex items-center gap-4 p-5 rounded-xl border"
+          style={{ borderColor: "#22c55e44", background: "#22c55e08" }}
+        >
+          <CheckCircle2 className="w-8 h-8 shrink-0 text-green-500" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "#22c55e" }}>
+              {track.icon} {track.title}
+            </div>
+            <p className="font-serif font-bold text-base text-foreground leading-snug">
+              You've finished this track!
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">{doneCount} of {total} episodes done.</p>
+          </div>
+          <Link
+            href={`/tracks/${trackSlug}`}
+            className="shrink-0 text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-0.5"
+          >
+            View track <ChevronRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  if (!nextEpisode) return null;
+
+  const href =
+    nextEpisode.source === "ulg" || nextEpisode.kind === "article"
+      ? `/library/${nextEpisode.slug}`
+      : nextEpisode.kind === "audio"
+        ? `/episodes/${nextEpisode.slug}`
+        : `/library/${nextEpisode.slug}`;
+
+  return (
+    <section>
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+        <PlayCircle className="w-3.5 h-3.5" />
+        <span>Continue Learning</span>
+      </div>
+      <Link
+        href={href}
+        className="group flex flex-col sm:flex-row gap-4 p-5 rounded-xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+        style={{
+          borderColor: track.color + "44",
+          background: track.color + "08",
+        }}
+      >
+        {nextEpisode.artworkUrl && (
+          <img
+            src={nextEpisode.artworkUrl}
+            alt={nextEpisode.title}
+            className="w-full sm:w-20 h-20 rounded-lg object-cover shrink-0"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <span
+              className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+              style={{ color: track.color, background: track.color + "18", border: `1px solid ${track.color}33` }}
+            >
+              {track.icon} {track.title}
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground">
+              Next up
+            </span>
+          </div>
+          <h3 className="font-serif font-bold text-base text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2 mb-2">
+            {nextEpisode.title}
+          </h3>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${pct}%`, background: track.color }}
+              />
+            </div>
+            <span className="text-[11px] font-semibold text-muted-foreground shrink-0">
+              {doneCount} / {total} done
+            </span>
+          </div>
+        </div>
+        <div className="hidden sm:flex items-center shrink-0 self-center">
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
+      </Link>
+      <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+        <CheckCircle2 className="w-3 h-3" />
+        <span>
+          {doneCount === 1
+            ? "1 episode done — keep going!"
+            : `${doneCount} episodes done — keep going!`}
+        </span>
+        <Link
+          href={`/tracks/${trackSlug}`}
+          className="ml-auto text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-0.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          View track <ChevronRight className="w-3 h-3" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function ContinueLearningWidget() {
+  const activeSlug = useLastActiveTrack();
+  if (!activeSlug) return null;
+  return <ContinueLearningInner trackSlug={activeSlug} />;
+}
 
 const ZONE_CHIP_COLORS = [
   "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100",
@@ -268,7 +400,10 @@ export function Home() {
       <div className="container mx-auto px-4 md:px-6 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-16">
-          
+
+          {/* Continue Learning widget — only shown when track progress exists */}
+          <ContinueLearningWidget />
+
           {/* Library CTA */}
           <section className="bg-primary/5 border border-primary/20 rounded-2xl p-8 md:p-10 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
