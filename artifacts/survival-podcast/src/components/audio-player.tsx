@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, RotateCcw } from "lucide-react";
 import { usePlayer, type PlayerEpisode } from "@/context/player-context";
 import { formatDuration } from "./episode-card";
+import { getProgress } from "@/lib/playback-progress";
 
 interface AudioPlayerProps {
   episode: PlayerEpisode;
@@ -12,6 +12,8 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
   const { isPlaying, currentTime, duration, load, toggle, seek, skip, audioRef, episode: currentEpisode } = usePlayer();
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [resumeFrom, setResumeFrom] = useState<number | null>(null);
+  const [resumed, setResumed] = useState(false);
 
   const isThisEpisode = currentEpisode?.audioUrl === episode.audioUrl;
   const thisIsPlaying = isThisEpisode && isPlaying;
@@ -19,6 +21,18 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
   const displayDuration = isThisEpisode ? duration : (episode.durationSeconds ?? 0);
 
   useEffect(() => {
+    const saved = getProgress(episode.slug);
+    if (saved && saved.position > 0 && saved.duration > 0) {
+      const ratio = saved.position / saved.duration;
+      if (ratio < 0.95) {
+        setResumeFrom(saved.position);
+        setResumed(false);
+      } else {
+        setResumeFrom(null);
+      }
+    } else {
+      setResumeFrom(null);
+    }
     load(episode, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episode.audioUrl]);
@@ -29,6 +43,23 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
     } else {
       toggle();
     }
+  };
+
+  const handleResumeClick = () => {
+    if (!isThisEpisode) load(episode, false);
+    if (resumeFrom !== null) {
+      seek(resumeFrom);
+    }
+    setResumed(true);
+    load(episode, true);
+  };
+
+  const handleStartOver = () => {
+    if (!isThisEpisode) load(episode, false);
+    seek(0);
+    setResumed(true);
+    setResumeFrom(null);
+    load(episode, true);
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,8 +83,35 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
     if (audioRef.current) audioRef.current.muted = next;
   };
 
+  const showResumeBanner = resumeFrom !== null && !resumed && !isPlaying;
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+      {showResumeBanner && (
+        <div className="flex items-center justify-between gap-3 bg-primary/8 border border-primary/20 rounded-lg px-4 py-3">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-bold text-primary uppercase tracking-wide">You left off here</span>
+            <span className="text-sm text-foreground font-medium">{formatDuration(resumeFrom!)} in</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleStartOver}
+              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg border border-border hover:bg-muted"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Start over
+            </button>
+            <button
+              onClick={handleResumeClick}
+              className="flex items-center gap-1.5 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              Resume
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-4 justify-between">
         <div className="flex items-center gap-2">
           <button

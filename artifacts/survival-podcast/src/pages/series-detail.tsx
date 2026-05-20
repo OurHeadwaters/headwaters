@@ -4,17 +4,52 @@ import {
   getGetSeriesEpisodesQueryKey,
   type Episode,
 } from "@workspace/api-client-react";
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Layers, PlayCircle, Calendar, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Layers, PlayCircle, Calendar, Clock, RotateCcw } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { EpisodeCard } from "@/components/episode-card";
 import { formatDuration } from "@/components/episode-card";
+import { getMostRecentSlugAmong, getProgress } from "@/lib/playback-progress";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 const LIMIT = 20;
 const HISTORY_LIMIT = 500;
 
-function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
+function useContinueSlug(episodes: Episode[]): string | null {
+  const [continueSlug, setContinueSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (episodes.length === 0) return;
+    const slugs = episodes.map((ep) => ep.slug);
+    setContinueSlug(getMostRecentSlugAmong(slugs));
+  }, [episodes]);
+
+  return continueSlug;
+}
+
+function ContinueBadge({ slug }: { slug: string }) {
+  const entry = getProgress(slug);
+  const position = entry?.position ?? 0;
+  const dur = entry?.duration ?? 0;
+  const pct = dur > 0 ? Math.round((position / dur) * 100) : 0;
+
+  return (
+    <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between gap-2 bg-primary text-primary-foreground px-3 py-1.5 rounded-t-xl pointer-events-none">
+      <div className="flex items-center gap-1.5">
+        <RotateCcw className="w-3 h-3 shrink-0" />
+        <span className="text-[11px] font-bold uppercase tracking-wider">Continue</span>
+        {position > 0 && (
+          <span className="text-[11px] font-medium opacity-80">— {formatDuration(position)} in</span>
+        )}
+      </div>
+      {pct > 0 && (
+        <span className="text-[10px] font-bold tabular-nums opacity-80">{pct}%</span>
+      )}
+    </div>
+  );
+}
+
+function HistoryTimeline({ episodes, continueSlug }: { episodes: Episode[]; continueSlug: string | null }) {
   const byDecade = new Map<string, { ep: Episode; position: number }[]>();
   episodes.forEach((ep, idx) => {
     const year = new Date(ep.pubDate).getFullYear();
@@ -41,17 +76,18 @@ function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
 
           {decItems.map(({ ep, position }) => {
             const pubDate = parseISO(ep.pubDate);
+            const isContinue = ep.slug === continueSlug;
             return (
               <div key={ep.guid} className="flex items-start gap-4 pl-0 pb-4 relative">
                 {/* Timeline dot */}
                 <div className="relative z-10 flex items-center justify-center w-12 shrink-0 pt-3">
-                  <div className="w-3 h-3 rounded-full bg-indigo-400/80 border-2 border-indigo-600/60 shadow-sm" />
+                  <div className={`w-3 h-3 rounded-full border-2 shadow-sm ${isContinue ? "bg-primary border-primary/60 scale-125" : "bg-indigo-400/80 border-indigo-600/60"}`} />
                 </div>
 
                 {/* Card */}
                 <Link
                   href={`/episodes/${ep.slug}`}
-                  className="group flex-1 flex gap-3 items-start bg-card border border-border rounded-xl p-4 hover:border-indigo-500/40 hover:shadow-md hover:shadow-indigo-900/20 transition-all duration-200 ml-0"
+                  className={`group flex-1 flex gap-3 items-start bg-card border rounded-xl p-4 hover:shadow-md transition-all duration-200 ml-0 ${isContinue ? "border-primary/40 ring-1 ring-primary/20 hover:border-primary/60" : "border-border hover:border-indigo-500/40 hover:shadow-indigo-900/20"}`}
                 >
                   <img
                     src={ep.artworkUrl || tspLogo}
@@ -60,6 +96,12 @@ function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
                   />
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
+                      {isContinue && (
+                        <span className="flex items-center gap-1 bg-primary/15 text-primary border border-primary/25 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                          <RotateCcw className="w-2.5 h-2.5" />
+                          Continue
+                        </span>
+                      )}
                       <span className="bg-indigo-900/40 text-indigo-300 border border-indigo-700/40 px-2 py-0.5 rounded text-[10px] font-bold tabular-nums">
                         #{position}
                       </span>
@@ -79,7 +121,7 @@ function HistoryTimeline({ episodes }: { episodes: Episode[] }) {
                     </h3>
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{ep.summary}</p>
                   </div>
-                  <PlayCircle className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-1" />
+                  <PlayCircle className={`w-5 h-5 transition-colors shrink-0 mt-1 ${isContinue ? "text-primary" : "text-muted-foreground/50 group-hover:text-primary"}`} />
                 </Link>
               </div>
             );
@@ -111,6 +153,8 @@ export function SeriesDetail() {
 
   const series = data?.series;
   const totalPages = data && !isHistory ? Math.ceil(data.total / LIMIT) : 0;
+  const episodes = data?.items ?? [];
+  const continueSlug = useContinueSlug(episodes);
 
   if (isLoading) {
     return (
@@ -172,6 +216,12 @@ export function SeriesDetail() {
               Timeline View
             </span>
           )}
+          {continueSlug && (
+            <span className="flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+              <RotateCcw className="w-3 h-3" />
+              In Progress
+            </span>
+          )}
         </div>
       </div>
 
@@ -180,20 +230,26 @@ export function SeriesDetail() {
 
       {/* Episodes */}
       {isHistory ? (
-        <HistoryTimeline episodes={data?.items ?? []} />
+        <HistoryTimeline episodes={episodes} continueSlug={continueSlug} />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data?.items.map((ep, idx) => {
+            {episodes.map((ep, idx) => {
               const position = offset + idx + 1;
-              const total = data.total;
+              const total = data!.total;
+              const isContinue = ep.slug === continueSlug;
               return (
                 <div key={ep.guid} className="relative">
-                  <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-background/90 backdrop-blur-sm border border-border/60 rounded-md px-2 py-1 shadow-sm pointer-events-none">
+                  {isContinue && <ContinueBadge slug={ep.slug} />}
+                  <div
+                    className={`absolute z-10 flex items-center gap-1.5 bg-background/90 backdrop-blur-sm border border-border/60 rounded-md px-2 py-1 shadow-sm pointer-events-none ${isContinue ? "top-10 left-3" : "top-3 left-3"}`}
+                  >
                     <span className="text-xs font-bold text-foreground tabular-nums">{position}</span>
                     <span className="text-[10px] text-muted-foreground font-medium">/ {total}</span>
                   </div>
-                  <EpisodeCard episode={ep} />
+                  <div className={isContinue ? "ring-2 ring-primary/30 rounded-xl" : ""}>
+                    <EpisodeCard episode={ep} />
+                  </div>
                 </div>
               );
             })}

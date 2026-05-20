@@ -1,0 +1,44 @@
+const PREFIX = "tsp:progress:";
+
+export interface ProgressEntry {
+  position: number;
+  duration: number;
+  savedAt: number;
+}
+
+export function saveProgress(slug: string, position: number, duration: number): void {
+  try {
+    if (!slug || position <= 0) return;
+    const entry: ProgressEntry = { position, duration, savedAt: Date.now() };
+    localStorage.setItem(PREFIX + slug, JSON.stringify(entry));
+  } catch {}
+}
+
+export function getProgress(slug: string): ProgressEntry | null {
+  try {
+    const raw = localStorage.getItem(PREFIX + slug);
+    if (!raw) return null;
+    return JSON.parse(raw) as ProgressEntry;
+  } catch {
+    return null;
+  }
+}
+
+export function clearProgress(slug: string): void {
+  try {
+    localStorage.removeItem(PREFIX + slug);
+  } catch {}
+}
+
+export function getMostRecentSlugAmong(slugs: string[]): string | null {
+  let best: { slug: string; savedAt: number } | null = null;
+  for (const slug of slugs) {
+    const entry = getProgress(slug);
+    if (entry && entry.position > 0) {
+      if (!best || entry.savedAt > best.savedAt) {
+        best = { slug, savedAt: entry.savedAt };
+      }
+    }
+  }
+  return best ? best.slug : null;
+}
