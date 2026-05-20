@@ -105,8 +105,10 @@ async function buildDbSeriesSummary(seriesSlug: string) {
  */
 router.get("/zones", async (_req, res) => {
   try {
-    const expertCounts = expertCountByZone();
-    const businessCounts = businessCountByZone();
+    const [expertCounts, businessCounts] = await Promise.all([
+      expertCountByZone(),
+      businessCountByZone(),
+    ]);
 
     const results = await Promise.all(
       ZONES.map(async (zone) => {
@@ -257,8 +259,10 @@ router.get("/zones/:slug/resources", async (req, res) => {
     }
 
     const episodeLimit = safeInt(req.query.episodeLimit, 12, 1, 50);
-    const experts = expertsForZone(zone.slug);
-    const businesses = businessesForZone(zone.slug);
+    const [experts, businesses] = await Promise.all([
+      expertsForZone(zone.slug),
+      businessesForZone(zone.slug),
+    ]);
 
     const rawSource = req.query.source;
     const sourceFilter =

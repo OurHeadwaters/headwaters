@@ -9,6 +9,7 @@ import tracksRouter from "./tracks";
 import transformationsRouter from "./transformations";
 import adminCategoriesRouter from "./admin-categories";
 import trackProgressRouter from "./track-progress";
+import adminCouncilRouter from "./admin-council";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(tracksRouter);
 router.use(transformationsRouter);
 router.use(adminCategoriesRouter);
 router.use(trackProgressRouter);
+router.use(adminCouncilRouter);
 
 export default router;

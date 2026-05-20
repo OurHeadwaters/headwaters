@@ -20,6 +20,7 @@ import TrackDetailPage from "@/pages/track-detail";
 import StartPage from "@/pages/start";
 import TransformPage from "@/pages/transform";
 import { AdminCategories } from "@/pages/admin-categories";
+import { AdminCouncil } from "@/pages/admin-council";
 import { UlgPage } from "@/pages/ulg";
 import NotFound from "@/pages/not-found";
 
@@ -47,6 +48,7 @@ function Router() {
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
         <Route path="/admin/categories" component={AdminCategories} />
+        <Route path="/admin/council" component={AdminCouncil} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
