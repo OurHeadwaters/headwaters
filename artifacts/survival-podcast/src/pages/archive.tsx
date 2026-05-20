@@ -337,7 +337,7 @@ export function Archive() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {episodePage?.items.map((episode) => (
-              <EpisodeCard key={episode.guid} episode={episode} />
+              <EpisodeCard key={episode.guid} episode={episode} transformation={activeTransformation} />
             ))}
           </div>
 

@@ -15,14 +15,23 @@ export function formatDuration(seconds?: number | null) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+interface TransformationBadgeInfo {
+  slug: string;
+  from: string;
+  to: string;
+  icon: string;
+  color: string;
+}
+
 interface EpisodeCardProps {
   episode: Episode;
   featured?: boolean;
   seriesPosition?: number;
   seriesTotal?: number;
+  transformation?: TransformationBadgeInfo | null;
 }
 
-export function EpisodeCard({ episode, featured = false, seriesPosition, seriesTotal }: EpisodeCardProps) {
+export function EpisodeCard({ episode, featured = false, seriesPosition, seriesTotal, transformation }: EpisodeCardProps) {
   const isRecent = new Date().getTime() - new Date(episode.pubDate).getTime() < 7 * 24 * 60 * 60 * 1000;
 
   const seriesSlug = detectSeriesSlug(episode);
@@ -78,7 +87,25 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
           {episode.summary}
         </p>
 
-        {seriesMeta && seriesTheme && (
+        {transformation && (
+          <div className="mt-auto pt-3 border-t border-border/50">
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-sm"
+              style={{
+                color: transformation.color,
+                background: `${transformation.color}18`,
+                border: `1px solid ${transformation.color}44`,
+              }}
+            >
+              <span>{transformation.icon}</span>
+              <span>{transformation.from}</span>
+              <span className="opacity-50 font-normal">→</span>
+              <span>{transformation.to}</span>
+            </span>
+          </div>
+        )}
+
+        {!transformation && seriesMeta && seriesTheme && (
           <div className="mt-auto pt-3 border-t border-border/50">
             <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border px-2 py-1 rounded-sm ${seriesTheme.badge}`}>
               <Layers className="w-3 h-3 shrink-0" />
@@ -91,7 +118,7 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
           </div>
         )}
 
-        {!seriesMeta && episode.categories && episode.categories.length > 0 && (
+        {!transformation && !seriesMeta && episode.categories && episode.categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-border/50">
             {episode.categories.slice(0, 3).map(cat => (
               <span key={cat} className="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-primary/80 bg-primary/5 px-2 py-1 rounded-sm">
