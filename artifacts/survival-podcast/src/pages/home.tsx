@@ -1,4 +1,4 @@
-import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, useListZones, ZoneSummary } from "@workspace/api-client-react";
+import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, useListZones, ZoneSummary, useGetEpisode } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
@@ -12,6 +12,134 @@ import { useLastActiveTrack, useTrackProgress } from "@/hooks/use-track-progress
 import { useGetTrackNextUndone } from "@/hooks/use-tracks";
 import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
 import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getAllInProgress, InProgressEntry } from "@/lib/playback-progress";
+
+function useAllInProgress(): InProgressEntry[] {
+  const [entries, setEntries] = useState<InProgressEntry[]>(() => getAllInProgress());
+  useEffect(() => {
+    setEntries(getAllInProgress());
+  }, []);
+  return entries;
+}
+
+function formatTimeLeft(position: number, duration: number): string {
+  const remaining = Math.max(0, duration - position);
+  const mins = Math.round(remaining / 60);
+  if (mins < 1) return "< 1 min left";
+  if (mins === 1) return "1 min left";
+  return `${mins} min left`;
+}
+
+function ContinueListeningCard({ slug, pct, duration, position }: { slug: string; pct: number; duration: number; position: number }) {
+  const { data: episode, isLoading } = useGetEpisode(slug);
+
+  if (isLoading) {
+    return (
+      <div className="flex-shrink-0 w-64 h-40 bg-muted rounded-xl animate-pulse" />
+    );
+  }
+  if (!episode) return null;
+
+  const pctDisplay = Math.round(pct * 100);
+  const timeLeft = duration > 0 ? formatTimeLeft(position, duration) : null;
+
+  return (
+    <div className="flex-shrink-0 w-64 flex flex-col rounded-xl border border-border bg-card overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+      {/* Artwork header */}
+      <div className="relative h-28 bg-muted overflow-hidden">
+        {episode.artworkUrl ? (
+          <img
+            src={episode.artworkUrl}
+            alt={episode.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-primary/10">
+            <Headphones className="w-8 h-8 text-primary/40" />
+          </div>
+        )}
+        {/* Progress bar overlay at bottom of image */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+          <div
+            className="h-full bg-accent transition-all duration-500"
+            style={{ width: `${pctDisplay}%` }}
+          />
+        </div>
+        {/* Resume button overlay */}
+        <Link
+          href={`/episodes/${slug}`}
+          className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors duration-200"
+        >
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 bg-accent text-accent-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+            <PlayCircle className="w-3.5 h-3.5" />
+            Resume
+          </span>
+        </Link>
+      </div>
+
+      {/* Card body */}
+      <div className="flex flex-col gap-2 p-3 flex-1">
+        {episode.episodeNumber && (
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Ep. {episode.episodeNumber}
+          </span>
+        )}
+        <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1">
+          {episode.title}
+        </p>
+        <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+          <span className="text-[11px] font-semibold text-accent">
+            {pctDisplay}% done
+          </span>
+          {timeLeft && (
+            <span className="text-[11px] text-muted-foreground">{timeLeft}</span>
+          )}
+        </div>
+        <Link
+          href={`/episodes/${slug}`}
+          className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-bold rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors border border-accent/20"
+        >
+          <PlayCircle className="w-3.5 h-3.5" />
+          Resume
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function ContinueListeningSection() {
+  const entries = useAllInProgress();
+  if (entries.length === 0) return null;
+
+  const shown = entries.slice(0, 6);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <Headphones className="w-3.5 h-3.5" />
+          <span>Continue Listening</span>
+        </div>
+        <span className="text-[11px] text-muted-foreground font-medium">
+          {entries.length} episode{entries.length !== 1 ? "s" : ""} in progress
+        </span>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        {shown.map(({ slug, pct, entry }) => (
+          <div key={slug} className="snap-start">
+            <ContinueListeningCard
+              slug={slug}
+              pct={pct}
+              duration={entry.duration}
+              position={entry.position}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function ContinueLearningInner({ trackSlug }: { trackSlug: string }) {
   const progress = useTrackProgress(trackSlug);
@@ -477,6 +605,9 @@ export function Home() {
       <div className="container mx-auto px-4 md:px-6 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-16">
+
+          {/* Continue Listening — in-progress series episodes */}
+          <ContinueListeningSection />
 
           {/* Continue Learning widget — only shown when track progress exists */}
           <ContinueLearningWidget />

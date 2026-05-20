@@ -65,3 +65,32 @@ export function getMostRecentSlugAmong(slugs: string[]): string | null {
   }
   return best ? best.slug : null;
 }
+
+export interface InProgressEntry {
+  slug: string;
+  entry: ProgressEntry;
+  pct: number;
+}
+
+export function getAllInProgress(): InProgressEntry[] {
+  try {
+    const results: InProgressEntry[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(PREFIX)) continue;
+      const slug = key.slice(PREFIX.length);
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        const entry = JSON.parse(raw) as ProgressEntry;
+        const pct = entry.duration > 0 ? entry.position / entry.duration : 0;
+        if (entry.position > 5 && pct < 0.95) {
+          results.push({ slug, entry, pct });
+        }
+      } catch {}
+    }
+    return results.sort((a, b) => b.entry.savedAt - a.entry.savedAt);
+  } catch {
+    return [];
+  }
+}
