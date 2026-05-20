@@ -1021,19 +1021,20 @@ export function useGetLibraryItem<TData = Awaited<ReturnType<typeof getLibraryIt
 
 
 
-export const getListSeriesUrl = (params?: { orderBy?: string }) => {
-  const searchParams = new URLSearchParams();
-  if (params?.orderBy) searchParams.set('orderBy', params.orderBy);
-  const qs = searchParams.toString();
-  return qs ? `/api/series?${qs}` : `/api/series`;
+export const getListSeriesUrl = () => {
+
+
+
+
+  return `/api/series`
 }
 
 /**
  * @summary List all episode series with episode counts
  */
-export const listSeries = async (params?: { orderBy?: string }, options?: RequestInit): Promise<SeriesSummary[]> => {
+export const listSeries = async ( options?: RequestInit): Promise<SeriesSummary[]> => {
 
-  return customFetch<SeriesSummary[]>(getListSeriesUrl(params),
+  return customFetch<SeriesSummary[]>(getListSeriesUrl(),
   {
     ...options,
     method: 'GET'
@@ -1046,23 +1047,23 @@ export const listSeries = async (params?: { orderBy?: string }, options?: Reques
 
 
 
-export const getListSeriesQueryKey = (params?: { orderBy?: string }) => {
+export const getListSeriesQueryKey = () => {
     return [
-    `/api/series`, ...(params ? [params] : [])
+    `/api/series`
     ] as const;
     }
 
 
-export const getListSeriesQueryOptions = <TData = Awaited<ReturnType<typeof listSeries>>, TError = ErrorType<unknown>>(params?: { orderBy?: string }, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListSeriesQueryOptions = <TData = Awaited<ReturnType<typeof listSeries>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListSeriesQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getListSeriesQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSeries>>> = ({ signal }) => listSeries(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSeries>>> = ({ signal }) => listSeries({ signal, ...requestOptions });
 
 
 
@@ -1080,12 +1081,11 @@ export type ListSeriesQueryError = ErrorType<unknown>
  */
 
 export function useListSeries<TData = Awaited<ReturnType<typeof listSeries>>, TError = ErrorType<unknown>>(
-  params?: { orderBy?: string },
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListSeriesQueryOptions(params, options)
+  const queryOptions = getListSeriesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

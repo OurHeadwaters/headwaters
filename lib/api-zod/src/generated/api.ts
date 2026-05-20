@@ -170,7 +170,9 @@ export const GetEpisodeResponse = zod.object({
   "artworkUrl": zod.string().nullish(),
   "categories": zod.array(zod.string())
 }).and(zod.object({
-  "descriptionHtml": zod.string()
+  "descriptionHtml": zod.string(),
+  "seriesSlug": zod.string().nullish(),
+  "positionInSeries": zod.number().nullish()
 }))
 
 

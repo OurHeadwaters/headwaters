@@ -10,6 +10,10 @@ import { extractHistoryTimestamp } from "../lib/history-detection";
 import { fetchAudioChapters, extractChapterHistoryTimestamp } from "../lib/id3-chapters";
 import { sql, or, and, eq } from "drizzle-orm";
 import { db, contentItemsTable, categoryDescriptionsTable } from "@workspace/db";
+import {
+  getEpisodeSeriesContext,
+  libraryRowToRssEpisode,
+} from "../lib/series";
 
 const router: IRouter = Router();
 
@@ -408,12 +412,38 @@ router.get("/episodes/:slug", async (req, res) => {
     }
     const { slug } = parsed.data;
     const feed = await getFeedCached();
-    const ep = feed.episodes.find((e) => e.slug === slug);
+
+    let ep: RssEpisode | undefined = feed.episodes.find((e) => e.slug === slug);
+
+    // Fall back to library DB for older episodes not in the RSS window
+    if (!ep) {
+      try {
+        const rows = await db
+          .select()
+          .from(contentItemsTable)
+          .where(
+            and(
+              sql`${contentItemsTable.kind} = 'audio'`,
+              sql`${contentItemsTable.slug} = ${slug}`,
+            ),
+          )
+          .limit(1);
+        if (rows[0]) {
+          ep = libraryRowToRssEpisode(rows[0]);
+        }
+      } catch (dbErr) {
+        logger.warn({ err: dbErr, slug }, "episodes/:slug — DB fallback failed");
+      }
+    }
+
     if (!ep) {
       res.status(404).json({ error: "Episode not found" });
       return;
     }
-    res.json(ep);
+
+    const { seriesSlug, positionInSeries } = await getEpisodeSeriesContext(ep, feed.episodes);
+
+    res.json({ ...ep, seriesSlug, positionInSeries });
   } catch (err) {
     logger.error({ err }, "Failed to load episode");
     res.status(502).json({ error: "Unable to load episode" });

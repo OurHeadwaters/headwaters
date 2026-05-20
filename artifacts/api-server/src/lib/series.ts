@@ -1,6 +1,8 @@
 import { sql, type SQL } from "drizzle-orm";
-import { contentItemsTable } from "@workspace/db";
+import { desc, asc } from "drizzle-orm";
+import { db, contentItemsTable } from "@workspace/db";
 import { type RssEpisode } from "./rss";
+import { logger } from "./logger";
 
 export type SeriesDefinition = {
   slug: string;
@@ -41,12 +43,14 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
     detect: (ep) => {
       const t = ep.title.toLowerCase();
       const s = ep.slug.toLowerCase();
-      const sum = ep.summary.toLowerCase();
+      const sum = (ep.summary || "").toLowerCase();
+      const body = (ep.descriptionHtml || "").toLowerCase();
       return (
         /unloose\s+the\s+goose/i.test(ep.title) ||
         /\butg\b/.test(t) ||
         /unloose[^a-z]*goose/i.test(t) ||
         /unloose[^a-z]*goose/i.test(sum) ||
+        /unloose[^a-z]*goose/i.test(body) ||
         s.includes("unloose") ||
         s.includes("utg-") ||
         ep.categories.some((c) => /unloose/i.test(c) || /\bgoose\b/i.test(c))
@@ -57,9 +61,12 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
       OR ${contentItemsTable.title} ILIKE '%unloose the goose%'
       OR ${contentItemsTable.slug} ILIKE '%unloose%goose%'
       OR ${contentItemsTable.slug} ILIKE '%unloose-the-goose%'
+      OR ${contentItemsTable.slug} ILIKE '%utg-%'
       OR ${contentItemsTable.summary} ILIKE '%unloose the goose%'
-      OR ${contentItemsTable.categories} @> '["Unloose the Goose"]'::jsonb
-      OR ${contentItemsTable.tags} @> '["unloose the goose"]'::jsonb
+      OR ${contentItemsTable.bodyHtml} ILIKE '%unloose the goose%'
+      OR ${contentItemsTable.categories}::text ILIKE '%unloose%goose%'
+      OR ${contentItemsTable.tags}::text ILIKE '%unloose%goose%'
+      OR ${contentItemsTable.tags}::text ILIKE '%"utg"%'
     )`,
   },
   {
@@ -72,7 +79,7 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
     detect: (ep) => {
       const t = ep.title.toLowerCase();
       const s = ep.slug.toLowerCase();
-      const sum = ep.summary.toLowerCase();
+      const sum = (ep.summary || "").toLowerCase();
       return (
         /13\s*stomps?/i.test(ep.title) ||
         /thirteen\s+stomps?/i.test(ep.title) ||
@@ -90,8 +97,9 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
       OR ${contentItemsTable.slug} ILIKE '%thirteen-stomp%'
       OR ${contentItemsTable.summary} ILIKE '%13 stomp%'
       OR ${contentItemsTable.summary} ILIKE '%thirteen stomp%'
-      OR ${contentItemsTable.categories} @> '["13 Stomps"]'::jsonb
-      OR ${contentItemsTable.tags} @> '["13 stomps"]'::jsonb
+      OR ${contentItemsTable.categories}::text ILIKE '%13 stomp%'
+      OR ${contentItemsTable.categories}::text ILIKE '%13stomp%'
+      OR ${contentItemsTable.tags}::text ILIKE '%13 stomp%'
     )`,
   },
   {
@@ -104,13 +112,18 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
     detect: (ep) => {
       const t = ep.title.toLowerCase();
       const s = ep.slug.toLowerCase();
-      const sum = ep.summary.toLowerCase();
+      const sum = (ep.summary || "").toLowerCase();
+      const body = (ep.descriptionHtml || "").toLowerCase();
       return (
         /tuesday\s+chat/i.test(ep.title) ||
         /tuesday\s+chat/i.test(sum) ||
+        /tuesday\s+chat/i.test(body) ||
         s.includes("tuesday-chat") ||
         ep.categories.some(
-          (c) => /tuesday\s+chat/i.test(c) || /^tuesday$/i.test(c.trim()),
+          (c) =>
+            /tuesday\s+chat/i.test(c) ||
+            /^tuesday$/i.test(c.trim()) ||
+            /^tuesday\s+chats?$/i.test(c.trim()),
         )
       );
     },
@@ -118,10 +131,11 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
       ${contentItemsTable.title} ILIKE '%tuesday chat%'
       OR ${contentItemsTable.slug} ILIKE '%tuesday-chat%'
       OR ${contentItemsTable.summary} ILIKE '%tuesday chat%'
-      OR ${contentItemsTable.categories} @> '["Tuesday Chats"]'::jsonb
-      OR ${contentItemsTable.categories} @> '["Tuesday Chat"]'::jsonb
-      OR ${contentItemsTable.tags} @> '["tuesday chat"]'::jsonb
-      OR ${contentItemsTable.tags} @> '["tuesday"]'::jsonb
+      OR ${contentItemsTable.categories}::text ILIKE '%tuesday chat%'
+      OR ${contentItemsTable.categories}::text ILIKE '"Tuesday"'
+      OR ${contentItemsTable.categories} @> '["Tuesday"]'::jsonb
+      OR ${contentItemsTable.tags}::text ILIKE '%tuesday chat%'
+      OR ${contentItemsTable.tags}::text ILIKE '"tuesday"'
     )`,
   },
   {
@@ -133,12 +147,14 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
     order: "asc",
     detect: (ep) => {
       const titleLower = ep.title.toLowerCase();
-      const sum = ep.summary.toLowerCase();
+      const sum = (ep.summary || "").toLowerCase();
+      const body = (ep.descriptionHtml || "").toLowerCase();
       const hasHistoryKeyword =
         /history\s+with\s+jack/i.test(ep.title) ||
         /history\s+of\s+/i.test(ep.title) ||
         /\bhistory\b.*\b(episode|epi)\b/i.test(ep.title) ||
         /history\s+with\s+jack/i.test(sum) ||
+        /this\s+day\s+in\s+history|today\s+in\s+history|on\s+this\s+day/i.test(body) ||
         ep.categories.some(
           (c) =>
             /\bhistory\b/i.test(c) &&
@@ -158,10 +174,8 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
       OR ${contentItemsTable.title} ILIKE '%history of %'
       OR ${contentItemsTable.slug} ILIKE '%history-with-jack%'
       OR ${contentItemsTable.summary} ILIKE '%history with jack%'
-      OR ${contentItemsTable.categories} @> '["History"]'::jsonb
-      OR ${contentItemsTable.categories} @> '["History with Jack"]'::jsonb
-      OR ${contentItemsTable.tags} @> '["history"]'::jsonb
-      OR ${contentItemsTable.tags} @> '["history with jack"]'::jsonb
+      OR ${contentItemsTable.categories}::text ILIKE '%history%'
+      OR ${contentItemsTable.tags}::text ILIKE '%history%'
       OR (
         ${contentItemsTable.title} ~* '\m(ancient|medieval|world war|civil war|revolutionary|colonial|roman|greek|viking|renaissance|ottoman|mongol|byzantine|napoleon|wwi|wwii|ww1|ww2|founding fathers|great depression|cold war|korean war|vietnam)\M'
       )
@@ -215,4 +229,103 @@ export function buildSeriesSummary(
     latestPubDate,
     sampleArtworkUrl: episodes.find((e) => e.artworkUrl)?.artworkUrl ?? null,
   };
+}
+
+type LibraryRow = typeof contentItemsTable.$inferSelect;
+
+export function libraryRowToRssEpisode(row: LibraryRow): RssEpisode {
+  return {
+    slug: row.slug,
+    guid: `${row.source}:${row.sourceId}`,
+    episodeNumber: row.episodeNumber ?? null,
+    title: row.title,
+    link: row.link,
+    pubDate: row.publishedAt.toISOString(),
+    summary: row.summary,
+    descriptionHtml: row.bodyHtml,
+    durationSeconds: row.durationSeconds ?? null,
+    audioUrl: row.audioUrl ?? null,
+    audioType: row.audioType ?? null,
+    artworkUrl: row.artworkUrl ?? null,
+    categories: row.categories,
+  };
+}
+
+export async function getLibrarySeriesEpisodes(
+  seriesSlug: string,
+  order: "asc" | "desc",
+): Promise<RssEpisode[]> {
+  const series = SERIES_REGISTRY.find((s) => s.slug === seriesSlug);
+  if (!series) return [];
+  try {
+    const rows = await db
+      .select()
+      .from(contentItemsTable)
+      .where(series.librarySql())
+      .orderBy(
+        order === "asc"
+          ? asc(contentItemsTable.publishedAt)
+          : desc(contentItemsTable.publishedAt),
+      )
+      .limit(2000);
+    return rows.map(libraryRowToRssEpisode);
+  } catch (err) {
+    logger.warn({ err, seriesSlug }, "Library series query failed; falling back to RSS only");
+    return [];
+  }
+}
+
+export function mergeAndDeduplicateEpisodes(
+  rssEps: RssEpisode[],
+  libraryEps: RssEpisode[],
+  order: "asc" | "desc",
+): RssEpisode[] {
+  const seen = new Set<string>();
+  const merged: RssEpisode[] = [];
+
+  for (const ep of rssEps) {
+    const key = ep.slug || ep.guid;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(ep);
+    }
+  }
+
+  for (const ep of libraryEps) {
+    const key = ep.slug || ep.guid;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(ep);
+    }
+  }
+
+  merged.sort((a, b) =>
+    order === "asc"
+      ? a.pubDate.localeCompare(b.pubDate)
+      : b.pubDate.localeCompare(a.pubDate),
+  );
+
+  return merged;
+}
+
+export type EpisodeSeriesContext = {
+  seriesSlug: string | null;
+  positionInSeries: number | null;
+};
+
+export async function getEpisodeSeriesContext(
+  episode: RssEpisode,
+  rssFeedEpisodes: RssEpisode[],
+): Promise<EpisodeSeriesContext> {
+  const series = detectSeries(episode);
+  if (!series) return { seriesSlug: null, positionInSeries: null };
+
+  const rssSeriesEps = getSeriesEpisodes(series.slug, rssFeedEpisodes);
+  const libraryEps = await getLibrarySeriesEpisodes(series.slug, series.order);
+  const allEps = mergeAndDeduplicateEpisodes(rssSeriesEps, libraryEps, series.order);
+
+  const idx = allEps.findIndex((ep) => ep.slug === episode.slug);
+  const positionInSeries = idx >= 0 ? idx + 1 : null;
+
+  return { seriesSlug: series.slug, positionInSeries };
 }

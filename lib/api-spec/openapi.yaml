@@ -368,6 +368,8 @@ components:
           required: [descriptionHtml]
           properties:
             descriptionHtml: { type: string }
+            seriesSlug: { type: ["string", "null"] }
+            positionInSeries: { type: ["integer", "null"] }
     EpisodePage:
       type: object
       required: [items, total, limit, offset]

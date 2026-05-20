@@ -7,6 +7,10 @@
  */
 import type { Episode } from './episode';
 
-export type EpisodeDetail = Episode & {
+export type EpisodeDetail = Episode & ({
   descriptionHtml: string;
-};
+  /** @nullable */
+  seriesSlug?: string | null;
+  /** @nullable */
+  positionInSeries?: number | null;
+});

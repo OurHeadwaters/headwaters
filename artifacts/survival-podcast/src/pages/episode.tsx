@@ -72,7 +72,7 @@ export function EpisodeDetail() {
       ? matchTransformations(episode.categories, transformations)
       : [];
 
-  const episodeSeriesSlug = episode ? detectSeriesSlug(episode) : null;
+  const episodeSeriesSlug = episode?.seriesSlug ?? null;
   const episodeSeries = episodeSeriesSlug
     ? seriesList?.find((s) => s.slug === episodeSeriesSlug)
     : null;
@@ -92,7 +92,7 @@ export function EpisodeDetail() {
   const currentSeriesIndex = episode
     ? seriesEpisodes.findIndex((ep) => ep.slug === episode.slug)
     : -1;
-  const positionInSeries = currentSeriesIndex >= 0 ? currentSeriesIndex + 1 : null;
+  const positionInSeries = episode?.positionInSeries ?? (currentSeriesIndex >= 0 ? currentSeriesIndex + 1 : null);
   const totalInSeries = seriesEpisodesData?.total ?? null;
   const prevSeriesEpisode = currentSeriesIndex > 0 ? seriesEpisodes[currentSeriesIndex - 1] : null;
   const nextSeriesEpisode =
