@@ -1,12 +1,10 @@
-import { useListSeries, getListSeriesQueryKey } from "@workspace/api-client-react";
+import { useListSeries } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { ChevronRight, Layers } from "lucide-react";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 
 export function SeriesIndex() {
-  const { data: seriesList, isLoading, isError } = useListSeries(undefined, {
-    query: { queryKey: getListSeriesQueryKey() },
-  });
+  const { data: seriesList, isLoading, isError } = useListSeries();
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-10">

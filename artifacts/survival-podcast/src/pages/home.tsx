@@ -1,4 +1,4 @@
-import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, getListSeriesQueryKey, useListZones, ZoneSummary } from "@workspace/api-client-react";
+import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, useListZones, ZoneSummary } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
@@ -390,10 +390,10 @@ export function Home() {
   const { data: stats, isLoading: statsLoading } = useGetEpisodeStats();
   const { data: libraryStats } = useGetLibraryStats();
   const { data: categories, isLoading: categoriesLoading } = useListCategories();
-  const { data: seriesList, isLoading: seriesLoading } = useListSeries(
-    { orderBy: "episodeCount:desc" },
-    { query: { queryKey: getListSeriesQueryKey({ orderBy: "episodeCount:desc" }) } },
-  );
+  const { data: seriesListRaw, isLoading: seriesLoading } = useListSeries();
+  const seriesList = seriesListRaw
+    ? [...seriesListRaw].sort((a, b) => b.episodeCount - a.episodeCount)
+    : undefined;
   const { data: zones } = useListZones();
 
   const yearsOnAir = new Date().getFullYear() - 2008;
