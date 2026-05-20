@@ -56,6 +56,16 @@ paths:
         - { name: offset, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
         - { name: q, in: query, required: false, schema: { type: string } }
         - { name: category, in: query, required: false, schema: { type: string } }
+        - name: tags
+          in: query
+          required: false
+          description: "One or more topic tags to filter by (sent as tags[] array)"
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
       responses:
         "200":
           description: Episodes page
@@ -152,6 +162,7 @@ paths:
         - { name: kind, in: query, required: false, description: "Comma-separated subset of audio,article,video", schema: { type: string } }
         - { name: tag, in: query, required: false, schema: { type: string } }
         - { name: category, in: query, required: false, schema: { type: string } }
+        - { name: series, in: query, required: false, description: "Slug of a series from the SERIES_REGISTRY (e.g. unloose-the-goose)", schema: { type: string } }
         - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
         - { name: offset, in: query, required: false, schema: { type: integer, minimum: 0, default: 0 } }
         - { name: sort, in: query, required: false, schema: { type: string, enum: [newest, oldest, relevance], default: newest } }

@@ -3,6 +3,7 @@ import { sql, and, eq, desc, asc, ne, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db, contentItemsTable } from "@workspace/db";
 import { refreshAll, getSyncStatus } from "../lib/library";
+import { SERIES_REGISTRY } from "../lib/series";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -58,6 +59,8 @@ router.get("/library/search", async (req, res) => {
     const category =
       typeof req.query.category === "string" ? req.query.category.trim() : "";
     const tag = typeof req.query.tag === "string" ? req.query.tag.trim() : "";
+    const seriesSlug =
+      typeof req.query.series === "string" ? req.query.series.trim() : "";
     const sort =
       typeof req.query.sort === "string"
         ? req.query.sort.toLowerCase()
@@ -72,6 +75,12 @@ router.get("/library/search", async (req, res) => {
     }
     if (tag) {
       conditions.push(sql`${contentItemsTable.tags} @> ${JSON.stringify([tag])}::jsonb`);
+    }
+    if (seriesSlug) {
+      const seriesDef = SERIES_REGISTRY.find((s) => s.slug === seriesSlug);
+      if (seriesDef) {
+        conditions.push(seriesDef.librarySql());
+      }
     }
     let rankExpr: SQL<unknown> | null = null;
     if (q) {

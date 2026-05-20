@@ -216,10 +216,16 @@ export const getListEpisodesUrl = (params?: ListEpisodesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-    if (value === undefined) return;
-    if (key === 'tags' && Array.isArray(value)) {
-      (value as string[]).forEach((tag) => normalizedParams.append('tags[]', tag));
-    } else {
+    const explodeParameters = ["tags"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : v.toString());
+      });
+      return;
+    }
+
+    if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });

@@ -50,7 +50,7 @@ export const ListEpisodesQueryParams = zod.object({
   "offset": zod.coerce.number().min(listEpisodesQueryOffsetMin).default(listEpisodesQueryOffsetDefault),
   "q": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
-  "tags": zod.array(zod.string()).optional()
+  "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)')
 })
 
 export const ListEpisodesResponse = zod.object({
@@ -202,6 +202,7 @@ export const SearchLibraryQueryParams = zod.object({
   "kind": zod.coerce.string().optional().describe('Comma-separated subset of audio,article,video'),
   "tag": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
+  "series": zod.coerce.string().optional().describe('Slug of a series from the SERIES_REGISTRY (e.g. unloose-the-goose)'),
   "limit": zod.coerce.number().min(1).max(searchLibraryQueryLimitMax).default(searchLibraryQueryLimitDefault),
   "offset": zod.coerce.number().min(searchLibraryQueryOffsetMin).default(searchLibraryQueryOffsetDefault),
   "sort": zod.enum(['newest', 'oldest', 'relevance']).default(searchLibraryQuerySortDefault)

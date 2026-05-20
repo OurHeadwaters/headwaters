@@ -279,6 +279,9 @@ limit?: number;
 offset?: number;
 q?: string;
 category?: string;
+/**
+ * One or more topic tags to filter by (sent as tags[] array)
+ */
 tags?: string[];
 };
 
@@ -303,6 +306,10 @@ q?: string;
 kind?: string;
 tag?: string;
 category?: string;
+/**
+ * Slug of a series from the SERIES_REGISTRY (e.g. unloose-the-goose)
+ */
+series?: string;
 /**
  * @minimum 1
  * @maximum 100

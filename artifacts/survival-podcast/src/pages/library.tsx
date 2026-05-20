@@ -5,12 +5,13 @@ import {
   getSearchLibraryQueryKey, 
   useGetLibraryStats, 
   useListLibraryTags,
+  useListSeries,
   SearchLibrarySort
 } from "@workspace/api-client-react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { LibraryItemCard } from "@/components/library-item-card";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, Filter, ChevronLeft, ChevronRight, Hash, Tag, RefreshCw } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Tag, RefreshCw } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 
 export function Library() {
@@ -22,6 +23,7 @@ export function Library() {
   const initialKind = searchParams.get("kind") || "";
   const initialTag = searchParams.get("tag") || "";
   const initialCategory = searchParams.get("category") || "";
+  const initialSeries = searchParams.get("series") || "";
   const initialSort = (searchParams.get("sort") as SearchLibrarySort) || SearchLibrarySort.newest;
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
   const limit = 24;
@@ -31,6 +33,7 @@ export function Library() {
 
   const { data: stats } = useGetLibraryStats();
   const { data: tagsData } = useListLibraryTags({ limit: 24 });
+  const { data: seriesData } = useListSeries();
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -38,6 +41,7 @@ export function Library() {
     if (initialKind) params.set("kind", initialKind);
     if (initialTag) params.set("tag", initialTag);
     if (initialCategory) params.set("category", initialCategory);
+    if (initialSeries) params.set("series", initialSeries);
     if (initialSort && initialSort !== SearchLibrarySort.newest) params.set("sort", initialSort);
     if (pageParam > 1) params.set("page", pageParam.toString());
     
@@ -45,7 +49,7 @@ export function Library() {
     if (newSearch !== searchString && debouncedSearch !== initialQ) {
       setLocation(`${location}?${newSearch}`, { replace: true });
     }
-  }, [debouncedSearch, initialKind, initialTag, initialCategory, initialSort, pageParam, location, searchString, setLocation, initialQ]);
+  }, [debouncedSearch, initialKind, initialTag, initialCategory, initialSeries, initialSort, pageParam, location, searchString, setLocation, initialQ]);
 
   const offset = (pageParam - 1) * limit;
 
@@ -56,6 +60,7 @@ export function Library() {
     kind: initialKind || undefined,
     tag: initialTag || undefined,
     category: initialCategory || undefined,
+    series: initialSeries || undefined,
     sort: initialSort
   };
 
@@ -193,6 +198,40 @@ export function Library() {
               </div>
             </div>
 
+            {/* Series Filters */}
+            {seriesData && seriesData.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Series</h4>
+                <div className="flex flex-col gap-2">
+                  {seriesData.map(s => {
+                    const isActive = initialSeries === s.slug;
+                    return (
+                      <label key={s.slug} className="flex items-center gap-3 cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="series-filter"
+                          className="w-4 h-4 border-border text-primary focus:ring-primary accent-primary"
+                          checked={isActive}
+                          onChange={() => updateFilter("series", isActive ? "" : s.slug)}
+                        />
+                        <span className={`text-sm font-medium ${isActive ? 'text-foreground font-bold' : 'text-muted-foreground group-hover:text-foreground transition-colors'}`}>
+                          {s.iconEmoji} {s.title}
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {initialSeries && (
+                    <button
+                      onClick={() => updateFilter("series", "")}
+                      className="text-xs text-primary hover:underline text-left mt-1 font-medium"
+                    >
+                      Clear series filter
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Sort */}
             <div className="mb-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Sort</h4>
@@ -259,13 +298,14 @@ export function Library() {
             )}
           </div>
 
-          {(debouncedSearch || initialKind || initialTag || initialCategory) && !isLoading && libraryPage && (
+          {(debouncedSearch || initialKind || initialTag || initialCategory || initialSeries) && !isLoading && libraryPage && (
             <div className="flex items-center justify-between text-sm font-medium text-muted-foreground bg-secondary/50 px-4 py-3 rounded-lg border border-border">
               <div>
                 Found <span className="text-foreground font-bold">{libraryPage.total}</span> items
                 {debouncedSearch && <span> matching "<span className="text-foreground font-bold">{debouncedSearch}</span>"</span>}
                 {initialTag && <span> tagged <span className="text-foreground font-bold">{initialTag}</span></span>}
                 {initialCategory && <span> in <span className="text-foreground font-bold">{initialCategory}</span></span>}
+                {initialSeries && <span> in series <span className="text-foreground font-bold">{seriesData?.find(s => s.slug === initialSeries)?.title ?? initialSeries}</span></span>}
               </div>
               <button 
                 onClick={clearFilters}

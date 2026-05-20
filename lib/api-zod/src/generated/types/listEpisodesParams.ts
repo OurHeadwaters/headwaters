@@ -18,4 +18,8 @@ limit?: number;
 offset?: number;
 q?: string;
 category?: string;
+/**
+ * One or more topic tags to filter by (sent as tags[] array)
+ */
+tags?: string[];
 };
