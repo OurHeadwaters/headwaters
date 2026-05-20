@@ -2,22 +2,21 @@
 /**
  * Expo start wrapper for Replit.
  *
- * Two workflows run this script:
- *   1. "artifacts/tsp-mobile: expo" — artifact-managed, PORT=24655, health check broken
- *      (createArtifact returned success:false so platform monitoring is unregistered)
- *   2. "TSP Mobile" — configureWorkflow-managed, PORT=5000, health check uses internal TCP
+ * Starts an HTTP proxy on PORT (default 5000) that:
+ *   - Responds to /status health checks immediately
+ *   - Forwards all other requests to Metro on METRO_PORT (24656)
+ *   - Spawns Metro if it is not already running
  *
- * Metro always binds to METRO_PORT (24656). Whichever workflow starts first owns Metro.
- * The second workflow detects Metro is already running and reuses it.
- * The "TSP Mobile" workflow at PORT=5000 passes the platform health check.
+ * Run by the "artifacts/tsp-mobile: expo" artifact-managed workflow.
+ * PORT is set to 5000 via the artifact.toml [services.env] block.
  */
 
 const http = require("http");
 const net = require("net");
 const { spawn } = require("child_process");
 
-const PROXY_PORT = parseInt(process.env.PORT || "24655", 10);
-const METRO_PORT = 24656; // always the same regardless of which workflow runs us
+const PROXY_PORT = parseInt(process.env.PORT || "5000", 10);
+const METRO_PORT = 24656;
 
 function isPortInUse(port) {
   return new Promise((resolve) => {
