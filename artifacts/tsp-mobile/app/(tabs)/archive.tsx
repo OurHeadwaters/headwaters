@@ -1,6 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useListCategories, useListEpisodes } from "@workspace/api-client-react";
-import type { Episode } from "@workspace/api-client-react";
+import {
+  useListCategories,
+  useListEpisodes,
+  getListEpisodesQueryKey,
+  useListSeries,
+  getListSeriesQueryKey,
+  useSearchLibrary,
+  getSearchLibraryQueryKey,
+} from "@workspace/api-client-react";
+import type { Episode, LibraryItem, SeriesSummary } from "@workspace/api-client-react";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,6 +31,40 @@ import { useColors } from "@/hooks/useColors";
 const PAGE_SIZE = 20;
 const MINI_PLAYER_HEIGHT = 64;
 
+type CardItem = {
+  slug: string;
+  title: string;
+  pubDate?: string;
+  episodeNumber?: number | null;
+  durationSeconds?: number | null;
+  artworkUrl?: string | null;
+  summary?: string;
+};
+
+function episodeToCard(e: Episode): CardItem {
+  return {
+    slug: e.slug,
+    title: e.title,
+    pubDate: e.pubDate,
+    episodeNumber: e.episodeNumber,
+    durationSeconds: e.durationSeconds,
+    artworkUrl: e.artworkUrl,
+    summary: e.summary,
+  };
+}
+
+function libraryItemToCard(item: LibraryItem): CardItem {
+  return {
+    slug: item.slug,
+    title: item.title,
+    pubDate: item.publishedAt,
+    episodeNumber: item.episodeNumber ?? null,
+    durationSeconds: item.durationSeconds ?? null,
+    artworkUrl: item.artworkUrl ?? null,
+    summary: item.summary ?? undefined,
+  };
+}
+
 export default function ArchiveScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -31,8 +73,9 @@ export default function ArchiveScreen() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
+  const [allItems, setAllItems] = useState<CardItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,32 +86,74 @@ export default function ArchiveScreen() {
     : Platform.OS === "web" ? 84 + 16 : 49 + insets.bottom + 16;
 
   const { data: categories } = useListCategories();
+  const { data: seriesList } = useListSeries({
+    query: { queryKey: getListSeriesQueryKey() },
+  });
 
-  const { data: episodesPage, isLoading, refetch } = useListEpisodes({
+  const listEpisodesParams = {
     q: debouncedSearch || undefined,
     category: selectedCategory ?? undefined,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
-  });
+  };
+
+  const searchLibraryParams = {
+    q: debouncedSearch || undefined,
+    category: selectedCategory ?? undefined,
+    series: selectedSeries ?? undefined,
+    limit: PAGE_SIZE,
+    offset: page * PAGE_SIZE,
+  };
+
+  const { data: episodesPage, isLoading: listLoading, refetch: refetchList } = useListEpisodes(
+    listEpisodesParams,
+    { query: { enabled: !selectedSeries, queryKey: getListEpisodesQueryKey(listEpisodesParams) } },
+  );
+
+  const { data: searchPage, isLoading: searchLoading, refetch: refetchSearch } = useSearchLibrary(
+    searchLibraryParams,
+    { query: { enabled: !!selectedSeries, queryKey: getSearchLibraryQueryKey(searchLibraryParams) } },
+  );
+
+  const isLoading = selectedSeries ? searchLoading : listLoading;
+  const totalItems = selectedSeries ? (searchPage?.total ?? 0) : (episodesPage?.total ?? 0);
 
   React.useEffect(() => {
-    if (episodesPage?.items) {
+    if (!selectedSeries && episodesPage?.items) {
       if (page === 0) {
-        setAllEpisodes(episodesPage.items);
+        setAllItems(episodesPage.items.map(episodeToCard));
       } else {
-        setAllEpisodes(prev => {
+        setAllItems(prev => {
           const slugs = new Set(prev.map(e => e.slug));
-          const newItems = episodesPage.items.filter(e => !slugs.has(e.slug));
+          const newItems = episodesPage.items
+            .filter(e => !slugs.has(e.slug))
+            .map(episodeToCard);
           return [...prev, ...newItems];
         });
       }
     }
-  }, [episodesPage, page]);
+  }, [episodesPage, page, selectedSeries]);
+
+  React.useEffect(() => {
+    if (selectedSeries && searchPage?.items) {
+      if (page === 0) {
+        setAllItems(searchPage.items.map(libraryItemToCard));
+      } else {
+        setAllItems(prev => {
+          const slugs = new Set(prev.map(e => e.slug));
+          const newItems = searchPage.items
+            .filter(e => !slugs.has(e.slug))
+            .map(libraryItemToCard);
+          return [...prev, ...newItems];
+        });
+      }
+    }
+  }, [searchPage, page, selectedSeries]);
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
     setPage(0);
-    setAllEpisodes([]);
+    setAllItems([]);
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setDebouncedSearch(text);
@@ -77,12 +162,18 @@ export default function ArchiveScreen() {
 
   const handleCategoryPress = (name: string) => {
     setPage(0);
-    setAllEpisodes([]);
+    setAllItems([]);
     setSelectedCategory(prev => (prev === name ? null : name));
   };
 
+  const handleSeriesPress = (slug: string) => {
+    setPage(0);
+    setAllItems([]);
+    setSelectedSeries(prev => (prev === slug ? null : slug));
+  };
+
   const loadMore = () => {
-    if (episodesPage && allEpisodes.length < episodesPage.total && !isLoading) {
+    if (allItems.length < totalItems && !isLoading) {
       setPage(prev => prev + 1);
     }
   };
@@ -90,8 +181,12 @@ export default function ArchiveScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     setPage(0);
-    setAllEpisodes([]);
-    await refetch();
+    setAllItems([]);
+    if (selectedSeries) {
+      await refetchSearch();
+    } else {
+      await refetchList();
+    }
     setRefreshing(false);
   };
 
@@ -99,9 +194,16 @@ export default function ArchiveScreen() {
     setSearch("");
     setDebouncedSearch("");
     setSelectedCategory(null);
+    setSelectedSeries(null);
     setPage(0);
-    setAllEpisodes([]);
+    setAllItems([]);
   };
+
+  const hasFilters = !!(debouncedSearch || selectedCategory || selectedSeries);
+
+  const selectedSeriesInfo = selectedSeries
+    ? seriesList?.find((s: SeriesSummary) => s.slug === selectedSeries)
+    : null;
 
   const ListHeader = () => (
     <View>
@@ -134,14 +236,14 @@ export default function ArchiveScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           style={{ backgroundColor: colors.background }}
-          contentContainerStyle={styles.categoryList}
+          contentContainerStyle={styles.chipList}
         >
           {categories.slice(0, 20).map(cat => (
             <Pressable
               key={cat.name}
               onPress={() => handleCategoryPress(cat.name)}
               style={[
-                styles.categoryChip,
+                styles.chip,
                 {
                   backgroundColor: selectedCategory === cat.name ? colors.primary : colors.muted,
                   borderColor: selectedCategory === cat.name ? colors.primary : colors.border,
@@ -150,7 +252,7 @@ export default function ArchiveScreen() {
             >
               <Text
                 style={[
-                  styles.categoryText,
+                  styles.chipText,
                   {
                     color: selectedCategory === cat.name ? colors.primaryForeground : colors.foreground,
                     fontFamily: "DMSans_500Medium",
@@ -161,7 +263,7 @@ export default function ArchiveScreen() {
               </Text>
               <Text
                 style={[
-                  styles.categoryCount,
+                  styles.chipCount,
                   {
                     color: selectedCategory === cat.name ? colors.primaryForeground : colors.mutedForeground,
                     fontFamily: "DMSans_400Regular",
@@ -175,11 +277,80 @@ export default function ArchiveScreen() {
         </ScrollView>
       )}
 
+      {seriesList && seriesList.length > 0 && (
+        <>
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: colors.mutedForeground, fontFamily: "DMSans_500Medium", backgroundColor: colors.background },
+            ]}
+          >
+            Series
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ backgroundColor: colors.background }}
+            contentContainerStyle={styles.chipList}
+          >
+            {seriesList.map((s: SeriesSummary) => {
+              const active = selectedSeries === s.slug;
+              return (
+                <Pressable
+                  key={s.slug}
+                  onPress={() => handleSeriesPress(s.slug)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? colors.primary : colors.muted,
+                      borderColor: active ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={styles.chipEmoji}>{s.iconEmoji}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      {
+                        color: active ? colors.primaryForeground : colors.foreground,
+                        fontFamily: "DMSans_500Medium",
+                      },
+                    ]}
+                  >
+                    {s.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.chipCount,
+                      {
+                        color: active ? colors.primaryForeground : colors.mutedForeground,
+                        fontFamily: "DMSans_400Regular",
+                      },
+                    ]}
+                  >
+                    {s.episodeCount}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </>
+      )}
+
       <View style={[styles.resultRow, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.resultCount, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-          {episodesPage ? `${episodesPage.total} episodes` : " "}
-        </Text>
-        {(debouncedSearch || selectedCategory) && (
+        <View style={styles.resultLeft}>
+          <Text style={[styles.resultCount, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            {totalItems > 0 || !isLoading ? `${totalItems} episodes` : " "}
+          </Text>
+          {selectedSeriesInfo && (
+            <View style={[styles.seriesBadge, { backgroundColor: colors.primary + "22", borderColor: colors.primary + "44" }]}>
+              <Text style={[styles.seriesBadgeText, { color: colors.primary, fontFamily: "DMSans_500Medium" }]}>
+                {selectedSeriesInfo.iconEmoji} {selectedSeriesInfo.title}
+              </Text>
+            </View>
+          )}
+        </View>
+        {hasFilters && (
           <Pressable onPress={clearFilters} style={styles.clearBtn}>
             <Text style={[styles.clearText, { color: colors.primary, fontFamily: "DMSans_500Medium" }]}>
               Clear filters
@@ -193,7 +364,7 @@ export default function ArchiveScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={allEpisodes}
+        data={allItems}
         keyExtractor={item => item.slug}
         renderItem={({ item }) => (
           <EpisodeCard
@@ -226,7 +397,7 @@ export default function ArchiveScreen() {
           )
         }
         ListFooterComponent={
-          episodesPage && allEpisodes.length < episodesPage.total ? (
+          allItems.length < totalItems ? (
             <View style={styles.center}>
               <ActivityIndicator color={colors.primary} />
             </View>
@@ -242,7 +413,7 @@ export default function ArchiveScreen() {
             tintColor={colors.primary}
           />
         }
-        scrollEnabled={!!(allEpisodes.length > 0 || isLoading)}
+        scrollEnabled={!!(allItems.length > 0 || isLoading)}
         keyboardShouldPersistTaps="handled"
       />
     </View>
@@ -275,12 +446,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     padding: 0,
   },
-  categoryList: {
+  sectionLabel: {
+    fontSize: 11,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
+  chipList: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
   },
-  categoryChip: {
+  chip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
@@ -289,10 +468,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  categoryText: {
+  chipEmoji: {
+    fontSize: 13,
+  },
+  chipText: {
     fontSize: 12,
   },
-  categoryCount: {
+  chipCount: {
     fontSize: 11,
   },
   resultRow: {
@@ -304,11 +486,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     marginBottom: 8,
   },
+  resultLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
   resultCount: {
     fontSize: 12,
   },
+  seriesBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  seriesBadgeText: {
+    fontSize: 11,
+  },
   clearBtn: {
     paddingVertical: 4,
+    paddingLeft: 8,
   },
   clearText: {
     fontSize: 12,
