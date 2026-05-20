@@ -536,7 +536,7 @@ export function Library() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {libraryPage?.items.map(item => (
-                  <LibraryItemCard key={`${item.kind}-${item.id}`} item={item} />
+                  <LibraryItemCard key={`${item.kind}-${item.id}`} item={item} series={seriesData ?? undefined} />
                 ))}
               </div>
 

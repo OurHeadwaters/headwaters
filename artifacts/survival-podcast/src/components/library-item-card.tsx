@@ -1,12 +1,27 @@
 import { LibraryItem } from "@workspace/api-client-react";
+import { SeriesSummary } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
-import { PlayCircle, Clock, Calendar, FileText, Mic, PlaySquare, File } from "lucide-react";
+import { PlayCircle, Clock, Calendar, FileText, Mic, PlaySquare, File, Layers } from "lucide-react";
 import { formatDuration } from "./episode-card";
+import { detectSeriesSlug } from "@/lib/detect-series";
+import { getSeriesTheme } from "@/lib/seriesTheme";
 
-export function LibraryItemCard({ item, featured = false }: { item: LibraryItem; featured?: boolean }) {
+export function LibraryItemCard({
+  item,
+  featured = false,
+  series,
+}: {
+  item: LibraryItem;
+  featured?: boolean;
+  series?: SeriesSummary[];
+}) {
   const isRecent = new Date().getTime() - new Date(item.publishedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
-  
+
+  const seriesSlug = detectSeriesSlug({ title: item.title, categories: item.categories });
+  const matchedSeries = seriesSlug && series ? series.find((s) => s.slug === seriesSlug) : null;
+  const seriesTheme = seriesSlug ? getSeriesTheme(seriesSlug) : null;
+
   const getKindIcon = () => {
     switch (item.kind) {
       case 'audio': return <Mic className="w-5 h-5" />;
@@ -101,8 +116,22 @@ export function LibraryItemCard({ item, featured = false }: { item: LibraryItem;
         <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
           {item.summary}
         </p>
-        
-        {item.categories && item.categories.length > 0 && (
+
+        {matchedSeries && seriesTheme && (
+          <div className="mt-auto pt-3 border-t border-border/50">
+            <Link
+              href={`/library?series=${matchedSeries.slug}`}
+              onClick={(e) => e.stopPropagation()}
+              className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border px-2 py-1 rounded-sm hover:opacity-80 transition-opacity ${seriesTheme.badge}`}
+            >
+              <Layers className="w-3 h-3 shrink-0" />
+              <span>{matchedSeries.iconEmoji}</span>
+              <span>{matchedSeries.title}</span>
+            </Link>
+          </div>
+        )}
+
+        {!matchedSeries && item.categories && item.categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-border/50">
             {item.categories.slice(0, 3).map(cat => (
               <span key={cat} className="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-primary/80 bg-primary/5 px-2 py-1 rounded-sm border border-primary/10">
