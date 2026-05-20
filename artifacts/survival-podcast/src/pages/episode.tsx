@@ -58,6 +58,7 @@ export function EpisodeDetail() {
   const episodeSeries = episodeSeriesSlug
     ? seriesList?.find((s) => s.slug === episodeSeriesSlug)
     : null;
+  const seriesTheme = episodeSeries ? getSeriesTheme(episodeSeries.slug) : null;
 
   const { data: seriesEpisodesData } = useGetSeriesEpisodes(
     episodeSeriesSlug ?? "",
@@ -139,7 +140,7 @@ export function EpisodeDetail() {
               {episodeSeries && positionInSeries && totalInSeries && (
                 <Link
                   href={`/series/${episodeSeries.slug}`}
-                  className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors font-bold text-xs uppercase tracking-wider"
+                  className={`inline-flex items-center gap-1.5 ${seriesTheme!.badge} px-3 py-1 rounded-full hover:opacity-90 transition-colors font-bold text-xs uppercase tracking-wider`}
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span>{episodeSeries.iconEmoji}</span>
@@ -149,7 +150,7 @@ export function EpisodeDetail() {
               {episodeSeries && !positionInSeries && (
                 <Link
                   href={`/series/${episodeSeries.slug}`}
-                  className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors font-bold text-xs uppercase tracking-wider"
+                  className={`inline-flex items-center gap-1.5 ${seriesTheme!.badge} px-3 py-1 rounded-full hover:opacity-90 transition-colors font-bold text-xs uppercase tracking-wider`}
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span>{episodeSeries.iconEmoji}</span>
@@ -248,11 +249,11 @@ export function EpisodeDetail() {
               className="w-full aspect-square object-cover rounded-lg mb-6 shadow-sm border border-border/50"
             />
 
-            {episodeSeries && (
+            {episodeSeries && seriesTheme && (
               <div className="mb-5">
                 <Link
                   href={`/series/${episodeSeries.slug}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/15 hover:bg-primary/10 hover:border-primary/30 transition-colors group"
+                  className={`flex items-center gap-3 p-3 rounded-lg ${seriesTheme.badge} hover:opacity-90 transition-colors group`}
                 >
                   <span className="text-2xl leading-none">{episodeSeries.iconEmoji}</span>
                   <div className="flex flex-col gap-0.5 flex-1 min-w-0">

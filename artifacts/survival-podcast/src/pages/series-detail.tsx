@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import { EpisodeCard } from "@/components/episode-card";
 import { formatDuration } from "@/components/episode-card";
 import { getMostRecentSlugAmong, getProgress } from "@/lib/playback-progress";
+import { getSeriesTheme, type SeriesTheme } from "@/lib/seriesTheme";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 const LIMIT = 20;
@@ -49,7 +50,7 @@ function ContinueBadge({ slug }: { slug: string }) {
   );
 }
 
-function HistoryTimeline({ episodes, continueSlug }: { episodes: Episode[]; continueSlug: string | null }) {
+function HistoryTimeline({ episodes, continueSlug, theme }: { episodes: Episode[]; continueSlug: string | null; theme: SeriesTheme }) {
   const byDecade = new Map<string, { ep: Episode; position: number }[]>();
   episodes.forEach((ep, idx) => {
     const year = new Date(ep.pubDate).getFullYear();
@@ -102,7 +103,7 @@ function HistoryTimeline({ episodes, continueSlug }: { episodes: Episode[]; cont
                           Continue
                         </span>
                       )}
-                      <span className="bg-indigo-900/40 text-indigo-300 border border-indigo-700/40 px-2 py-0.5 rounded text-[10px] font-bold tabular-nums">
+                      <span className={`${theme.badge} px-2 py-0.5 rounded text-[10px] font-bold tabular-nums`}>
                         #{position}
                       </span>
                       <span className="flex items-center gap-1">
@@ -155,6 +156,7 @@ export function SeriesDetail() {
   const totalPages = data && !isHistory ? Math.ceil(data.total / LIMIT) : 0;
   const episodes = data?.items ?? [];
   const continueSlug = useContinueSlug(episodes);
+  const theme = getSeriesTheme(slug);
 
   if (isLoading) {
     return (
@@ -208,11 +210,11 @@ export function SeriesDetail() {
         </div>
         <p className="text-muted-foreground max-w-2xl leading-relaxed">{series?.description}</p>
         <div className="flex items-center gap-4 text-sm text-muted-foreground font-medium">
-          <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wider">
+          <span className={`${theme.badge} px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wider`}>
             {data?.total} episode{data?.total !== 1 ? "s" : ""}
           </span>
           {isHistory && (
-            <span className="bg-indigo-900/30 text-indigo-300 border border-indigo-700/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+            <span className={`${theme.badge} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider`}>
               Timeline View
             </span>
           )}
@@ -230,7 +232,7 @@ export function SeriesDetail() {
 
       {/* Episodes */}
       {isHistory ? (
-        <HistoryTimeline episodes={episodes} continueSlug={continueSlug} />
+        <HistoryTimeline episodes={episodes} continueSlug={continueSlug} theme={theme} />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
