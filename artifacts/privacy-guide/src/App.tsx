@@ -1,18 +1,66 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const STORAGE_KEY = "sandbox-handbook-community-name";
+const SECTIONS_KEY = "sandbox-handbook-sections";
+
+/* ── Default section content (HTML strings) ── */
+const DEFAULT_SECTIONS: Record<string, string> = {
+  "the-clearing": `The Clearing is your family's private sandbox — a locally-run workspace where children compose, draft, and experiment without anything leaving your home network. Notes, voice memos, and sketches stay on your device unless you deliberately share them. Think of it as a fenced garden: the gate is closed by default, and only you hold the latch.`,
+  "the-lodge": `The Lodge is your community's shared meeting hall — a Saltbox instance hosted by your co-op coordinator. Families post announcements, share curriculum links, and hold threaded discussions here. Everything posted in The Lodge is visible to all enrolled families and stored on the coordinator's server. Post here as you would on a community bulletin board: thoughtfully, and without sensitive personal details.`,
+  "the-key": `Every family receives one login per household, protected by a passphrase chosen at enrollment. Your passphrase is never stored in plain text. Do not share it with other families — if a child needs separate access, ask the coordinator to create a junior account. Rotate your passphrase once per school year or immediately if you suspect it has been seen by someone outside your household.`,
+  "the-mailbox": `Direct messages sent through The Lodge travel encrypted in transit but are stored on the coordinator's server in readable form for moderation. Do not use Lodge messages for sensitive matters: medical details, financial arrangements, or disciplinary conversations belong in a separate end-to-end encrypted channel such as Signal. The Lodge mailbox is for logistics — field trips, book orders, scheduling.`,
+  "three-habits": `<strong>Lock before you leave.</strong> Enable your device's auto-lock after two minutes of inactivity so The Clearing is never open on an unattended screen. <strong>One task, one tab.</strong> Close The Lodge session when you step away from community work; a stray open tab can expose your session token. <strong>Updates are not optional.</strong> When The Clearing or Lodge app prompts for an update, apply it within 48 hours — security patches are the fastest fix for known risks.`,
+  "zone-identity": `Treat The Clearing as Zone 0 — intimate, personal, and fully under your control. Treat The Lodge as Zone 2 — shared with trusted neighbours but open to the whole co-op. Never place Zone 0 material (personal journals, health notes, financial records) into a Zone 2 space. When in doubt, ask yourself: "Would I pin this to the co-op noticeboard?" If the answer is no, keep it in The Clearing.`,
+  "covered-wagon": `A VPN (Virtual Private Network) encrypts the road between your device and the internet, hiding your family's browsing from your internet provider and from coffee-shop networks. A VPN does not make you anonymous — the VPN provider still sees your traffic — but it does prevent casual surveillance. The comparison panel on the right lists four vetted providers suitable for family use. Choose one with a published no-log audit and a jurisdiction outside the Five Eyes intelligence alliance.`,
+  "legal-landscape": `Canada's <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA) gives you the right to know what data an organization holds about you and to request its correction or deletion. Quebec's Law 25 strengthens these rights for residents of that province. If your co-op collects enrolment data, the coordinator must have a written privacy policy, obtain meaningful consent, and delete records when no longer needed. You may file a complaint with the Office of the Privacy Commissioner of Canada at priv.gc.ca at no cost.`,
+};
+
+function loadSections(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(SECTIONS_KEY);
+    if (raw) return { ...DEFAULT_SECTIONS, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_SECTIONS };
+}
+
+function saveSections(data: Record<string, string>) {
+  localStorage.setItem(SECTIONS_KEY, JSON.stringify(data));
+}
 
 export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [sections, setSections] = useState<Record<string, string>>(loadSections);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) || "";
     if (inputRef.current) inputRef.current.value = saved;
   }, []);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleCommunityChange(e: React.ChangeEvent<HTMLInputElement>) {
     localStorage.setItem(STORAGE_KEY, e.target.value);
   }
+
+  const handleSectionSave = useCallback(
+    (id: string, html: string) => {
+      const trimmed = html.trim();
+      const next = { ...sections, [id]: trimmed };
+      setSections(next);
+      saveSections(next);
+      setEditingId(null);
+    },
+    [sections]
+  );
+
+  function handleReset() {
+    setSections({ ...DEFAULT_SECTIONS });
+    localStorage.removeItem(SECTIONS_KEY);
+    setEditingId(null);
+  }
+
+  const isCustomized = Object.keys(DEFAULT_SECTIONS).some(
+    (k) => sections[k] !== DEFAULT_SECTIONS[k]
+  );
 
   return (
     <>
@@ -33,13 +81,18 @@ export default function App() {
           <span className="header-subtitle">The Clearing &amp; The Lodge — Homeschool Digital Handbook</span>
         </div>
         <div className="header-right">
+          {isCustomized && (
+            <button className="reset-btn no-print" onClick={handleReset}>
+              Reset to defaults
+            </button>
+          )}
           <label className="community-label">Community</label>
           <input
             ref={inputRef}
             className="community-input"
             type="text"
             placeholder="Your community name"
-            onChange={handleChange}
+            onChange={handleCommunityChange}
             maxLength={40}
           />
         </div>
@@ -50,83 +103,94 @@ export default function App() {
         {/* LEFT COLUMN */}
         <div className="col-left">
 
-          <Section color="terracotta" label="The Clearing">
-            The Clearing is your family's private sandbox — a locally-run workspace
-            where children compose, draft, and experiment without anything leaving
-            your home network. Notes, voice memos, and sketches stay on your device
-            unless you deliberately share them. Think of it as a fenced garden: the
-            gate is closed by default, and only you hold the latch.
-          </Section>
+          <EditableSection
+            id="the-clearing"
+            color="terracotta"
+            label="The Clearing"
+            html={sections["the-clearing"]}
+            isEditing={editingId === "the-clearing"}
+            onStartEdit={() => setEditingId("the-clearing")}
+            onSave={handleSectionSave}
 
-          <Section color="moss" label="The Lodge">
-            The Lodge is your community's shared meeting hall — a Saltbox instance
-            hosted by your co-op coordinator. Families post announcements, share
-            curriculum links, and hold threaded discussions here. Everything posted
-            in The Lodge is visible to all enrolled families and stored on the
-            coordinator's server. Post here as you would on a community bulletin board:
-            thoughtfully, and without sensitive personal details.
-          </Section>
+          />
 
-          <Section color="moss" label="The key on the hook">
-            Every family receives one login per household, protected by a passphrase
-            chosen at enrollment. Your passphrase is never stored in plain text. Do
-            not share it with other families — if a child needs separate access,
-            ask the coordinator to create a junior account. Rotate your passphrase
-            once per school year or immediately if you suspect it has been seen
-            by someone outside your household.
-          </Section>
+          <EditableSection
+            id="the-lodge"
+            color="moss"
+            label="The Lodge"
+            html={sections["the-lodge"]}
+            isEditing={editingId === "the-lodge"}
+            onStartEdit={() => setEditingId("the-lodge")}
+            onSave={handleSectionSave}
 
-          <Section color="moss" label="The mailbox">
-            Direct messages sent through The Lodge travel encrypted in transit but
-            are stored on the coordinator's server in readable form for moderation.
-            Do not use Lodge messages for sensitive matters: medical details,
-            financial arrangements, or disciplinary conversations belong in a
-            separate end-to-end encrypted channel such as Signal. The Lodge
-            mailbox is for logistics — field trips, book orders, scheduling.
-          </Section>
+          />
 
-          <Section color="moss" label="Three simple habits">
-            <strong>Lock before you leave.</strong> Enable your device's auto-lock
-            after two minutes of inactivity so The Clearing is never open on an
-            unattended screen.{" "}
-            <strong>One task, one tab.</strong> Close The Lodge session when you
-            step away from community work; a stray open tab can expose your session
-            token.{" "}
-            <strong>Updates are not optional.</strong> When The Clearing or Lodge
-            app prompts for an update, apply it within 48 hours — security patches
-            are the fastest fix for known risks.
-          </Section>
+          <EditableSection
+            id="the-key"
+            color="moss"
+            label="The key on the hook"
+            html={sections["the-key"]}
+            isEditing={editingId === "the-key"}
+            onStartEdit={() => setEditingId("the-key")}
+            onSave={handleSectionSave}
 
-          <Section color="terracotta" label="Zone identity">
-            Treat The Clearing as Zone 0 — intimate, personal, and fully under
-            your control. Treat The Lodge as Zone 2 — shared with trusted neighbours
-            but open to the whole co-op. Never place Zone 0 material (personal
-            journals, health notes, financial records) into a Zone 2 space. When
-            in doubt, ask yourself: "Would I pin this to the co-op noticeboard?"
-            If the answer is no, keep it in The Clearing.
-          </Section>
+          />
 
-          <Section color="moss" label="The covered wagon route">
-            A VPN (Virtual Private Network) encrypts the road between your device
-            and the internet, hiding your family's browsing from your internet
-            provider and from coffee-shop networks. A VPN does not make you
-            anonymous — the VPN provider still sees your traffic — but it does
-            prevent casual surveillance. The comparison panel on the right lists
-            four vetted providers suitable for family use. Choose one with a
-            published no-log audit and a jurisdiction outside the Five Eyes
-            intelligence alliance.
-          </Section>
+          <EditableSection
+            id="the-mailbox"
+            color="moss"
+            label="The mailbox"
+            html={sections["the-mailbox"]}
+            isEditing={editingId === "the-mailbox"}
+            onStartEdit={() => setEditingId("the-mailbox")}
+            onSave={handleSectionSave}
 
-          <Section color="moss" label="The Canadian legal landscape" noMargin>
-            Canada's <em>Personal Information Protection and Electronic Documents
-            Act</em> (PIPEDA) gives you the right to know what data an organization
-            holds about you and to request its correction or deletion. Quebec's
-            Law 25 strengthens these rights for residents of that province. If your
-            co-op collects enrolment data, the coordinator must have a written
-            privacy policy, obtain meaningful consent, and delete records when no
-            longer needed. You may file a complaint with the Office of the Privacy
-            Commissioner of Canada at priv.gc.ca at no cost.
-          </Section>
+          />
+
+          <EditableSection
+            id="three-habits"
+            color="moss"
+            label="Three simple habits"
+            html={sections["three-habits"]}
+            isEditing={editingId === "three-habits"}
+            onStartEdit={() => setEditingId("three-habits")}
+            onSave={handleSectionSave}
+
+          />
+
+          <EditableSection
+            id="zone-identity"
+            color="terracotta"
+            label="Zone identity"
+            html={sections["zone-identity"]}
+            isEditing={editingId === "zone-identity"}
+            onStartEdit={() => setEditingId("zone-identity")}
+            onSave={handleSectionSave}
+
+          />
+
+          <EditableSection
+            id="covered-wagon"
+            color="moss"
+            label="The covered wagon route"
+            html={sections["covered-wagon"]}
+            isEditing={editingId === "covered-wagon"}
+            onStartEdit={() => setEditingId("covered-wagon")}
+            onSave={handleSectionSave}
+
+          />
+
+          <EditableSection
+            id="legal-landscape"
+            color="moss"
+            label="The Canadian legal landscape"
+            html={sections["legal-landscape"]}
+            isEditing={editingId === "legal-landscape"}
+            onStartEdit={() => setEditingId("legal-landscape")}
+            onSave={handleSectionSave}
+
+            noMargin
+          />
 
         </div>
 
@@ -280,22 +344,96 @@ export default function App() {
   );
 }
 
-function Section({
+/* ── Editable Section ── */
+function EditableSection({
+  id,
   color,
   label,
-  children,
+  html,
+  isEditing,
+  onStartEdit,
+  onSave,
+
   noMargin,
 }: {
+  id: string;
   color: "terracotta" | "moss";
   label: string;
-  children: React.ReactNode;
+  html: string;
+  isEditing: boolean;
+  onStartEdit: () => void;
+  onSave: (id: string, html: string) => void;
   noMargin?: boolean;
 }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const isModified = html !== DEFAULT_SECTIONS[id];
+
+  /* When entering edit mode, focus the editable div and move cursor to end */
+  useEffect(() => {
+    if (isEditing && bodyRef.current) {
+      bodyRef.current.focus();
+      const range = document.createRange();
+      range.selectNodeContents(bodyRef.current);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }, [isEditing]);
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      const current = bodyRef.current?.innerHTML ?? html;
+      onSave(id, current);
+    }
+  }
+
+  function handleBlur() {
+    if (!isEditing) return;
+    const current = bodyRef.current?.innerHTML ?? html;
+    onSave(id, current);
+  }
+
   return (
-    <div className={`section${noMargin ? " section-no-margin" : ""}`}>
-      <div className={`section-label label-${color}`}>{label}</div>
+    <div className={`section${noMargin ? " section-no-margin" : ""}${isEditing ? " section-editing" : ""}`}>
+      <div className={`section-label label-${color}`}>
+        {label}
+        {isModified && <span className="section-modified-dot no-print" title="Customised" />}
+      </div>
       <div className={`section-rule rule-${color}`} />
-      <p className="section-body">{children}</p>
+
+      {/* Static read view — visible in print, hidden while editing */}
+      {!isEditing && (
+        <p
+          className={`section-body section-body-clickable no-print`}
+          onClick={onStartEdit}
+          title="Click to edit"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      )}
+
+      {/* Print-only static view — always present but only shown when printing */}
+      <p
+        className="section-body print-only"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+
+      {/* Editable div — only shown while editing, hidden in print */}
+      <div
+        ref={bodyRef}
+        className={`section-body section-editable no-print${isEditing ? " section-editable-active" : ""}`}
+        contentEditable={isEditing}
+        suppressContentEditableWarning
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        dangerouslySetInnerHTML={isEditing ? { __html: html } : undefined}
+        style={{ display: isEditing ? undefined : "none" }}
+      />
+
+      {isEditing && (
+        <span className="edit-hint no-print">Click away or press Esc to save</span>
+      )}
     </div>
   );
 }

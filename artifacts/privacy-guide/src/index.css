@@ -390,6 +390,90 @@ html, body {
   background: #2e4228;
 }
 
+/* ── Edit affordances ── */
+
+/* "Reset to defaults" button */
+.reset-btn {
+  background: none;
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  color: var(--muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  align-self: flex-end;
+  transition: border-color 0.15s, color 0.15s;
+}
+.reset-btn:hover {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+/* Small dot indicating a section has been customised */
+.section-modified-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--terracotta);
+  margin-left: 4px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+/* Section in editing state gets a subtle highlight */
+.section-editing {
+  background: rgba(74, 103, 65, 0.04);
+  border-radius: 3px;
+  margin-left: -4px;
+  padding-left: 4px;
+}
+
+/* Clickable section body shows a cursor hint */
+.section-body-clickable {
+  cursor: text;
+  border-radius: 2px;
+  transition: background 0.12s;
+}
+.section-body-clickable:hover {
+  background: rgba(74, 103, 65, 0.06);
+}
+
+/* contentEditable body while active */
+.section-editable {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px;
+  line-height: 1.58;
+  color: var(--charcoal);
+  outline: none;
+}
+.section-editable-active {
+  border: 1px solid var(--moss);
+  border-radius: 2px;
+  padding: 2px 3px;
+  background: rgba(74, 103, 65, 0.04);
+  min-height: 1em;
+}
+
+/* Small hint text below active edit */
+.edit-hint {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 6.5px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Print helpers ── */
+.no-print { }
+.print-only { display: none; }
+
 /* ── Print ── */
 @media print {
   html, body {
@@ -419,5 +503,15 @@ html, body {
   @page {
     size: letter portrait;
     margin: 0;
+  }
+
+  /* Hide all edit UI in print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show the clean static copy in print */
+  .print-only {
+    display: block !important;
   }
 }
