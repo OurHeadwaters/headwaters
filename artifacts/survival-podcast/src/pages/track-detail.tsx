@@ -1,6 +1,7 @@
 import { Link, useRoute } from "wouter";
 import { useGetTrackEpisodes } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
+import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { keepPreviousData } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -337,6 +338,7 @@ function SharedProgressBanner({ sharedDoneCount, total, onImport, onDismiss }: S
 export default function TrackDetailPage() {
   const [, params] = useRoute("/tracks/:slug");
   const slug = params?.slug ?? "";
+  const [copied, setCopied] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
@@ -375,6 +377,57 @@ export default function TrackDetailPage() {
     const url = new URL(window.location.href);
     url.searchParams.delete("shared");
     window.history.replaceState({}, "", url.toString());
+  }
+
+  const trackUrl = `${window.location.origin}${window.location.pathname.split("/tracks/")[0]}/tracks/${slug}`;
+
+  useDocumentMeta(
+    track
+      ? {
+          title: `${track.title} — TSP Learning Track`,
+          description: track.description,
+          ogTitle: `${track.title} — TSP Learning Track`,
+          ogDescription: track.description,
+          ogImage: track.artworkUrl ?? undefined,
+          ogUrl: trackUrl,
+          ogType: "website",
+        }
+      : {},
+  );
+
+  async function handleShare() {
+    const shareData = {
+      title: track ? `${track.title} — TSP Learning Track` : "TSP Learning Track",
+      text: track
+        ? `${track.title}: ${track.description}`
+        : "Check out this learning track on The Survival Podcast.",
+      url: trackUrl,
+    };
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(trackUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = trackUrl;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   function navigate(p: number) {
@@ -486,9 +539,41 @@ export default function TrackDetailPage() {
             </div>
           )}
 
-          <div className="mt-6 flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
-            <span>episodes &amp; resources in this track</span>
+          <div className="mt-6 flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
+              <span>episodes &amp; resources in this track</span>
+            </div>
+
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all duration-200"
+              style={
+                copied
+                  ? {
+                      color: "#22c55e",
+                      borderColor: "#22c55e44",
+                      background: "#22c55e12",
+                    }
+                  : {
+                      color: track.color,
+                      borderColor: track.color + "44",
+                      background: track.color + "12",
+                    }
+              }
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Link copied!
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  Share this track
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
