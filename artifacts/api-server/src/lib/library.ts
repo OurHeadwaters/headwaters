@@ -4,7 +4,7 @@ import type { InsertContentItem, SyncRun } from "@workspace/db";
 import { logger } from "./logger";
 import { syncWordPressArchive } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
-import { syncUlg } from "./sources/ulg";
+import { syncUlg, correctUlgDiscoveredDates } from "./sources/ulg";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
 const BATCH_SIZE = 200;
@@ -115,7 +115,26 @@ async function syncYouTube(): Promise<{ itemsSeen: number; itemsUpserted: number
 }
 
 async function syncUlgSource(): Promise<{ itemsSeen: number; itemsUpserted: number }> {
-  return syncUlg({ upsertBatch: (items) => upsertBatch(items) });
+  const result = await syncUlg({ upsertBatch: (items) => upsertBatch(items) });
+
+  // Post-insert date-correction pass: update any audio-server-directory rows
+  // that still carry epoch-0 placeholders with the curated known dates.
+  // This is idempotent — rows with real dates are untouched.
+  await correctUlgDiscoveredDates(async (epNum, date) => {
+    await db
+      .update(contentItemsTable)
+      .set({ publishedAt: date, updatedAt: new Date() })
+      .where(
+        and(
+          eq(contentItemsTable.source, "ulg"),
+          eq(contentItemsTable.episodeNumber, epNum),
+          sql`${contentItemsTable.extra}->>'discoveredFrom' = 'audio-server-directory'`,
+          sql`${contentItemsTable.publishedAt} = '1970-01-01 00:00:00+00'`,
+        ),
+      );
+  });
+
+  return result;
 }
 
 export type RefreshSummary = {

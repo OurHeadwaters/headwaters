@@ -3,6 +3,91 @@ import { logger } from "../logger";
 import type { InsertContentItem } from "@workspace/db";
 
 /**
+ * Known publication dates for episodes discovered via the audio-server-directory
+ * strategy (Strategy 4).  These episodes have no date information in their audio
+ * URL and were originally stored with epoch-0 placeholders.
+ *
+ * Date sources:
+ *   ✓ Confirmed  — extracted from article:published_time in a Wayback Machine
+ *                  archived page for the episode's WordPress post.
+ *   ~ Interpolated — derived from the weekly publishing cadence (mostly
+ *                  Thursdays/Fridays) and surrounding confirmed anchors.
+ *
+ * Episode → ISO-8601 UTC date string
+ */
+export const KNOWN_ULG_DATES: ReadonlyMap<number, Date> = new Map<number, Date>([
+  // ── 2020 season ────────────────────────────────────────────────────────────
+  [13, new Date("2020-10-01T19:45:14Z")],   // ✓ RSS pubDate
+  [15, new Date("2020-10-15T17:43:33Z")],   // ✓ RSS pubDate
+  [16, new Date("2020-10-29T22:12:59Z")],   // ✓ article:published_time
+  [17, new Date("2020-11-05T17:00:00Z")],   // ~ between ep16 (Oct 29) & ep18 (Nov 19); "Election" topic → day after election
+  [18, new Date("2020-11-19T23:30:41Z")],   // ✓ article:published_time
+  [19, new Date("2020-11-26T19:10:01Z")],   // ✓ article:published_time
+  [21, new Date("2020-12-03T23:58:36Z")],   // ✓ RSS pubDate
+  [23, new Date("2020-12-18T17:09:55Z")],   // ✓ RSS pubDate
+  // ── 2021 season ────────────────────────────────────────────────────────────
+  [24, new Date("2021-01-07T20:16:00Z")],   // ✓ RSS pubDate
+  [29, new Date("2021-02-18T17:06:13Z")],   // ✓ RSS pubDate
+  [30, new Date("2021-02-25T17:00:00Z")],   // ~ between ep29 (Feb 18) & ep31 (Mar 12)
+  [31, new Date("2021-03-12T02:17:11Z")],   // ✓ article:published_time
+  [32, new Date("2021-03-17T16:26:19Z")],   // ✓ article:published_time
+  [33, new Date("2021-03-25T18:22:59Z")],   // ✓ article:published_time
+  [34, new Date("2021-04-01T17:00:00Z")],   // ~ between ep33 (Mar 25) & ep36 (Apr 9)
+  [35, new Date("2021-04-02T17:00:00Z")],   // ~ between ep34 (~Apr 1) & ep36 (Apr 9)
+  [36, new Date("2021-04-09T19:38:56Z")],   // ✓ RSS pubDate
+  [40, new Date("2021-05-06T17:00:00Z")],   // ~ between ep39 (Apr 29) & ep42 (May 20)
+  [42, new Date("2021-05-20T18:00:25Z")],   // ✓ RSS pubDate
+  [45, new Date("2021-06-17T17:00:00Z")],   // ~ between ep44 (Jun 10) & ep47 (Jun 28)
+  [46, new Date("2021-06-24T17:00:00Z")],   // ~ between ep45 (~Jun 17) & ep47 (Jun 28)
+  [47, new Date("2021-06-28T15:40:18Z")],   // ✓ RSS pubDate
+  [48, new Date("2021-07-05T21:17:45Z")],   // ✓ RSS pubDate
+  [50, new Date("2021-07-23T17:08:55Z")],   // ✓ RSS pubDate
+  [51, new Date("2021-08-06T20:29:57Z")],   // ✓ RSS pubDate
+  [52, new Date("2021-08-19T19:10:57Z")],   // ✓ RSS pubDate
+  [54, new Date("2021-09-03T20:07:23Z")],   // ✓ RSS pubDate
+  [56, new Date("2021-09-16T20:59:54Z")],   // ✓ RSS pubDate
+  [58, new Date("2021-09-30T17:07:51Z")],   // ✓ RSS pubDate
+  [59, new Date("2021-10-15T14:28:23Z")],   // ✓ RSS pubDate
+  [60, new Date("2021-10-22T19:51:53Z")],   // ✓ RSS pubDate
+  [65, new Date("2021-11-02T17:00:00Z")],   // ~ between ep61 (Oct 29) & ep69 (Nov 5); eps 62-68 cluster
+  [69, new Date("2021-11-05T11:01:32Z")],   // ✓ RSS pubDate
+  [70, new Date("2021-12-10T20:15:27Z")],   // ✓ RSS pubDate
+  // ── 2022 season ────────────────────────────────────────────────────────────
+  [71, new Date("2022-01-13T14:56:03Z")],   // ✓ RSS pubDate
+  // ── 2024 season ────────────────────────────────────────────────────────────
+  [77, new Date("2024-10-24T17:00:00Z")],   // ~ "Pre-Election Gaggle"; 2024 US election (Nov 5)
+]);
+
+/**
+ * Post-insert date-correction pass for ULG audio-server-directory episodes.
+ *
+ * Audio-server-discovered episodes are stored with epoch-0 placeholder dates
+ * because the audio file URL carries no temporal metadata.  This function
+ * applies the curated KNOWN_ULG_DATES lookup to fix those placeholders.
+ *
+ * Only rows that still carry a epoch-0 published_at are updated — rows that
+ * already have a real date (e.g. from a successful RSS upsert on a subsequent
+ * run) are left untouched.
+ *
+ * @param updatePublishedAt  Callback that performs the actual DB write.
+ *   It receives the episode number and the corrected Date; it should target
+ *   only the audio-server-directory row for that episode (source = 'ulg',
+ *   discoveredFrom = 'audio-server-directory', published_at = epoch 0).
+ * @returns Number of rows corrected.
+ */
+export async function correctUlgDiscoveredDates(
+  updatePublishedAt: (epNum: number, date: Date) => Promise<void>,
+): Promise<number> {
+  let corrected = 0;
+  for (const [epNum, date] of KNOWN_ULG_DATES) {
+    await updatePublishedAt(epNum, date);
+    corrected++;
+  }
+  logger.info({ corrected }, "ULG date-correction pass complete");
+  return corrected;
+}
+
+/**
  * Primary feed URL. This site's SSL cert expired; the domain may be unreachable
  * from the current hosting environment. All known Wayback Machine snapshots are
  * used as a fallback to ensure a full backfill of the archive.
@@ -780,10 +865,11 @@ async function fetchEpisodesFromAudioServer(
       const title = titleFromFilename(filename);
       const summary = `Unloose the Goose episode ${epNum}.`;
 
-      // Rough publication date estimate — episodes were ~weekly.
-      // We use epoch 0 as a placeholder; the RSS feed upsert (if it ever
-      // succeeds) will overwrite with the correct date via ON CONFLICT.
-      const publishedAt = new Date(0);
+      // Use the curated known-dates map if available; otherwise fall back to
+      // epoch 0 as a placeholder.  The post-insert date-correction pass in
+      // library.ts will also apply KNOWN_ULG_DATES to any remaining epoch-0
+      // rows after the sync completes.
+      const publishedAt = KNOWN_ULG_DATES.get(epNum) ?? new Date(0);
 
       seenEpNums.add(epNum);
       result.set(sourceId, {
