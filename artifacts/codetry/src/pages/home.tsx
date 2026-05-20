@@ -5,6 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+const BASE = import.meta.env.BASE_URL;
+
+function CodetryWordmark({ className = "" }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect width="28" height="28" rx="6" fill="#D9A066" />
+        <path d="M8 14c0-3.314 2.686-6 6-6 1.657 0 3.157.672 4.243 1.757L16.828 11.17A3.978 3.978 0 0 0 14 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.105 0 2.105-.448 2.828-1.172l1.415 1.415A5.978 5.978 0 0 1 14 20c-3.314 0-6-2.686-6-6Z" fill="#1A2C18" />
+        <path d="M18 11h2v6h-2z" fill="#1A2C18" />
+      </svg>
+      <span className="font-serif font-medium tracking-tight text-xl">Codetry</span>
+    </span>
+  );
+}
+
 export default function Home() {
   const scrollToChecklist = () => {
     document.getElementById("checklist")?.scrollIntoView({ behavior: "smooth" });
@@ -27,35 +42,59 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background text-foreground overflow-x-hidden selection:bg-accent/40">
+
+      {/* Sticky Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A180A]/90 backdrop-blur-md border-b border-[#D9A066]/20 px-6 md:px-12 h-16 flex items-center justify-between">
+        <CodetryWordmark className="text-white" />
+        <Button
+          size="sm"
+          className="bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-medium px-5 rounded-md transition-all duration-300"
+          onClick={scrollToChecklist}
+        >
+          Get the Checklist
+        </Button>
+      </nav>
+
       {/* Hero Section */}
-      <section className="relative w-full bg-gradient-to-br from-[#0A180A] to-[#1A2C18] text-white pt-32 pb-24 px-6 md:px-12 flex flex-col items-center justify-center text-center overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.75%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3CfeColorMatrix type=%22saturate%22 values=%220%22/%3E%3C/filter%3E%3Crect width=%22400%22 height=%22400%22 filter=%22url(%23n)%22 opacity=%220.08%22/%3E%3C/svg%3E')] opacity-50 mix-blend-overlay pointer-events-none" />
-        
-        <motion.div 
+      <section className="relative w-full text-white pt-40 pb-24 px-6 md:px-12 flex flex-col items-center justify-center text-center overflow-hidden min-h-[90vh]">
+        {/* Real forest background photo */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&q=80')"
+          }}
+        />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A180A]/90 via-[#0A180A]/80 to-[#1A2C18]/85" />
+        {/* Noise texture */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.75%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3CfeColorMatrix type=%22saturate%22 values=%220%22/%3E%3C/filter%3E%3Crect width=%22400%22 height=%22400%22 filter=%22url(%23n)%22 opacity=%220.06%22/%3E%3C/svg%3E')] opacity-50 mix-blend-overlay pointer-events-none" />
+
+        <motion.div
           className="max-w-4xl z-10 space-y-8"
           initial="hidden"
           animate="visible"
           variants={staggerContainer}
         >
-          <motion.h1 
+          <motion.h1
             variants={fadeInUp}
             className="text-4xl md:text-6xl lg:text-7xl font-serif font-medium leading-tight tracking-tight text-[#FEFDFC]"
             data-testid="hero-headline"
           >
             I went down the rabbit hole. Then I built a way out.
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             variants={fadeInUp}
             className="text-lg md:text-xl text-[#E3D9CC] max-w-2xl mx-auto leading-relaxed"
             data-testid="hero-subhead"
           >
             Codetry builds clean, owned digital tools for the local economy &mdash; no lock-in, no retainer, handed off completely.
           </motion.p>
-          
+
           <motion.div variants={fadeInUp} className="pt-4">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-medium text-lg px-8 py-6 rounded-md shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
               onClick={scrollToChecklist}
               data-testid="button-get-checklist"
@@ -69,7 +108,7 @@ export default function Home() {
 
       {/* Jars & Scars Timeline */}
       <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
@@ -122,16 +161,28 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Transformation Pullquote */}
+      {/* Transformation Pullquote — with Bobbie's headshot */}
       <section className="bg-primary/5 py-24 px-6 md:px-12 border-y border-border/50">
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
           className="max-w-4xl mx-auto text-center space-y-8"
         >
-          <div className="w-16 h-1 bg-[#D9A066] mx-auto rounded-full mb-8" />
+          {/* Bobbie headshot */}
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#D9A066] shadow-xl mx-auto">
+              <img
+                src={`${BASE}bobbie-headshot.png`}
+                alt="Bobbie Parr"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+          </div>
+
+          <div className="w-16 h-1 bg-[#D9A066] mx-auto rounded-full" />
+
           <h2 className="text-3xl md:text-5xl font-serif text-primary leading-tight">
             "I help families go from scared to prepared so they can tackle an uncertain world with confidence."
           </h2>
@@ -146,7 +197,7 @@ export default function Home() {
 
       {/* What is Codetry */}
       <section className="py-24 px-6 md:px-12 max-w-6xl mx-auto">
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -169,7 +220,7 @@ export default function Home() {
               </CardContent>
             </Card>
           </motion.div>
-          
+
           <motion.div variants={fadeInUp} className="space-y-8">
             <div className="flex gap-4 items-start">
               <div className="mt-1 bg-accent/30 p-3 rounded-full text-[#D9A066]">
@@ -180,7 +231,7 @@ export default function Home() {
                 <p className="text-muted-foreground">For local food hubs and co-ops</p>
               </div>
             </div>
-            
+
             <div className="flex gap-4 items-start">
               <div className="mt-1 bg-accent/30 p-3 rounded-full text-[#D9A066]">
                 <CheckSquare className="w-6 h-6" />
@@ -190,7 +241,7 @@ export default function Home() {
                 <p className="text-muted-foreground">For homestead businesses</p>
               </div>
             </div>
-            
+
             <div className="flex gap-4 items-start">
               <div className="mt-1 bg-accent/30 p-3 rounded-full text-[#D9A066]">
                 <HandCoins className="w-6 h-6" />
@@ -207,7 +258,7 @@ export default function Home() {
       {/* Who It's For */}
       <section className="py-24 px-6 md:px-12 bg-card border-y border-border/50">
         <div className="max-w-6xl mx-auto space-y-16">
-          <motion.div 
+          <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -218,7 +269,7 @@ export default function Home() {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Software that serves the local economy, not Silicon Valley.</p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -282,7 +333,7 @@ export default function Home() {
 
       {/* Lead Magnet + Contact */}
       <section id="checklist" className="py-24 px-6 md:px-12 bg-accent/20 relative">
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -325,18 +376,18 @@ export default function Home() {
                 <form action="https://formspree.io/f/xpzvjdbb" method="POST" className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="email" className="text-sm font-medium text-foreground">Email address</label>
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      required 
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
                       placeholder="you@example.com"
                       className="bg-background border-border/50 focus:border-[#D9A066] focus:ring-[#D9A066]"
                       data-testid="input-email"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-bold py-6 text-lg shadow-md transition-transform hover:-translate-y-0.5"
                     data-testid="button-submit-email"
                   >
@@ -346,8 +397,8 @@ export default function Home() {
 
                 <div className="pt-6 border-t border-border/50 text-center">
                   <p className="text-muted-foreground mb-4">Ready to build something?</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-medium"
                     asChild
                     data-testid="link-book-conversation"
@@ -363,26 +414,32 @@ export default function Home() {
 
       {/* Ecosystem Footer */}
       <footer className="bg-primary text-primary-foreground py-16 px-6 md:px-12 border-t-4 border-[#D9A066]">
+        {/* Codetry wordmark in footer */}
+        <div className="max-w-6xl mx-auto mb-12">
+          <CodetryWordmark className="text-white" />
+          <p className="text-primary-foreground/60 text-sm mt-2 ml-9">Digital self-reliance. Built for the local economy.</p>
+        </div>
+
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12 mb-16">
           <div className="space-y-3">
             <a href="https://ourheadwaters.ca" target="_blank" rel="noreferrer" className="text-xl font-serif font-medium hover:text-[#D9A066] transition-colors" data-testid="footer-link-headwaters">ourheadwaters.ca</a>
             <p className="text-primary-foreground/70 text-sm leading-relaxed">Community-scale resilience. For when individual self-reliance isn't enough.</p>
           </div>
-          
+
           <div className="space-y-3">
             <a href="https://parrsjars.ca" target="_blank" rel="noreferrer" className="text-xl font-serif font-medium hover:text-[#D9A066] transition-colors" data-testid="footer-link-parrsjars">parrsjars.ca</a>
             <p className="text-primary-foreground/70 text-sm leading-relaxed">Bobbie's local food business. Year-round fresh food in Northwestern Ontario.</p>
           </div>
-          
+
           <div className="space-y-3">
             <a href="/" className="text-xl font-serif font-medium hover:text-[#D9A066] transition-colors" data-testid="footer-link-tsp">TSP Archive</a>
             <p className="text-primary-foreground/70 text-sm leading-relaxed">16 years of practical self-reliance content from The Survival Podcast.</p>
           </div>
         </div>
-        
+
         <div className="max-w-6xl mx-auto pt-8 border-t border-primary-foreground/20 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-primary-foreground/60">
           <p>&copy; 2024 Codetry / Above Parr Solutions &mdash; Northwestern Ontario</p>
-          <p className="font-medium tracking-wide text-[#D9A066]">Digital self-reliance. No lock-in. No retainer. Just yours.</p>
+          <p className="font-medium tracking-wide text-[#D9A066]">No lock-in. No retainer. Just yours.</p>
         </div>
       </footer>
     </div>
