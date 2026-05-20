@@ -50,20 +50,19 @@ function TransformationCard({ t }: { t: Transformation }) {
             </span>
           </div>
         </div>
-        {count !== null && (
-          <div
-            className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{ color: t.color, background: t.color + "18", border: `1px solid ${t.color}30` }}
-          >
-            {count} ep{count !== 1 ? "s" : ""}
-          </div>
-        )}
       </div>
 
       <div className="px-6 py-5 flex flex-col flex-1">
-        <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-2">
           {t.description}
         </p>
+        {count !== null ? (
+          <p className="text-xs font-semibold mb-4" style={{ color: t.color }}>
+            {count.toLocaleString()} episode{count !== 1 ? "s" : ""}
+          </p>
+        ) : (
+          <p className="text-xs font-semibold mb-4 text-muted-foreground/50">Loading…</p>
+        )}
 
         {sampleEpisodes.length > 0 && (
           <div className="mb-5 flex flex-col gap-1.5">
