@@ -6,6 +6,7 @@ import seriesRouter from "./series";
 import zonesRouter from "./zones";
 import tracksRouter from "./tracks";
 import transformationsRouter from "./transformations";
+import adminCategoriesRouter from "./admin-categories";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(seriesRouter);
 router.use(zonesRouter);
 router.use(tracksRouter);
 router.use(transformationsRouter);
+router.use(adminCategoriesRouter);
 
 export default router;

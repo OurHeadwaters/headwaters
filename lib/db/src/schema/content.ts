@@ -89,3 +89,22 @@ export const syncRunsTable = pgTable("sync_runs", {
 });
 
 export type SyncRun = typeof syncRunsTable.$inferSelect;
+
+/**
+ * Editor-managed category descriptions.
+ * These take priority over auto-generated descriptions derived from episode summaries.
+ * Seeded from the static category-descriptions.ts file on first run.
+ */
+export const categoryDescriptionsTable = pgTable("category_descriptions", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (t) => [
+  uniqueIndex("category_descriptions_category_idx").on(t.category),
+]);
+
+export type CategoryDescription = typeof categoryDescriptionsTable.$inferSelect;
+export type InsertCategoryDescription = typeof categoryDescriptionsTable.$inferInsert;

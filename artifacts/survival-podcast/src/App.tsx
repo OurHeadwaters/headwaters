@@ -19,6 +19,7 @@ import TracksPage from "@/pages/tracks";
 import TrackDetailPage from "@/pages/track-detail";
 import StartPage from "@/pages/start";
 import TransformPage from "@/pages/transform";
+import { AdminCategories } from "@/pages/admin-categories";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/transform" component={TransformPage} />
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
+        <Route path="/admin/categories" component={AdminCategories} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
