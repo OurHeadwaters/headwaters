@@ -273,12 +273,45 @@ export function libraryRowToRssEpisode(row: LibraryRow): RssEpisode {
   };
 }
 
+const SERIES_EPISODE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type SeriesEpisodeCacheEntry = {
+  fetchedAt: number;
+  episodes: RssEpisode[];
+};
+
+const seriesEpisodeCache = new Map<string, SeriesEpisodeCacheEntry>();
+
+export function invalidateSeriesEpisodeCache(seriesSlug?: string): void {
+  if (seriesSlug) {
+    for (const key of seriesEpisodeCache.keys()) {
+      if (key.startsWith(`${seriesSlug}:`)) {
+        seriesEpisodeCache.delete(key);
+      }
+    }
+    logger.info({ seriesSlug }, "Series episode cache invalidated for series");
+  } else {
+    seriesEpisodeCache.clear();
+    logger.info("Series episode cache fully invalidated");
+  }
+}
+
 export async function getLibrarySeriesEpisodes(
   seriesSlug: string,
   order: "asc" | "desc",
 ): Promise<RssEpisode[]> {
   const series = SERIES_REGISTRY.find((s) => s.slug === seriesSlug);
   if (!series) return [];
+
+  const cacheKey = `${seriesSlug}:${order}`;
+  const now = Date.now();
+  const cached = seriesEpisodeCache.get(cacheKey);
+
+  if (cached && now - cached.fetchedAt < SERIES_EPISODE_CACHE_TTL_MS) {
+    logger.debug({ seriesSlug, order }, "series: serving episode list from cache");
+    return cached.episodes;
+  }
+
   try {
     const rows = await db
       .select()
@@ -290,7 +323,10 @@ export async function getLibrarySeriesEpisodes(
           : desc(contentItemsTable.publishedAt),
       )
       .limit(2000);
-    return rows.map(libraryRowToRssEpisode);
+    const episodes = rows.map(libraryRowToRssEpisode);
+    seriesEpisodeCache.set(cacheKey, { fetchedAt: now, episodes });
+    logger.debug({ seriesSlug, order, count: episodes.length }, "series: episode list cached");
+    return episodes;
   } catch (err) {
     logger.warn({ err, seriesSlug }, "Library series query failed; falling back to RSS only");
     return [];
