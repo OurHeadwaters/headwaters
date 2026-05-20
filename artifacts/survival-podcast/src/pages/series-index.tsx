@@ -1,20 +1,7 @@
 import { useListSeries, getListSeriesQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { ChevronRight, Layers } from "lucide-react";
-
-const SERIES_COLORS: Record<string, string> = {
-  "unloose-the-goose": "from-amber-900/40 to-amber-800/20 border-amber-700/30",
-  "13-stomps": "from-stone-900/40 to-stone-800/20 border-stone-700/30",
-  "tuesday-chats": "from-emerald-900/40 to-emerald-800/20 border-emerald-700/30",
-  history: "from-indigo-900/40 to-indigo-800/20 border-indigo-700/30",
-};
-
-const SERIES_BADGE_COLORS: Record<string, string> = {
-  "unloose-the-goose": "bg-amber-900/30 text-amber-300 border-amber-700/40",
-  "13-stomps": "bg-stone-800/50 text-stone-300 border-stone-600/40",
-  "tuesday-chats": "bg-emerald-900/30 text-emerald-300 border-emerald-700/40",
-  history: "bg-indigo-900/30 text-indigo-300 border-indigo-700/40",
-};
+import { getSeriesTheme } from "@/lib/seriesTheme";
 
 export function SeriesIndex() {
   const { data: seriesList, isLoading, isError } = useListSeries({
@@ -49,8 +36,7 @@ export function SeriesIndex() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {seriesList?.map((series) => {
-            const colorClass = SERIES_COLORS[series.slug] ?? "from-zinc-900/40 to-zinc-800/20 border-zinc-700/30";
-            const badgeClass = SERIES_BADGE_COLORS[series.slug] ?? "bg-zinc-800/50 text-zinc-300 border-zinc-600/40";
+            const { card: colorClass, badge: badgeClass } = getSeriesTheme(series.slug);
             return (
               <Link
                 key={series.slug}
