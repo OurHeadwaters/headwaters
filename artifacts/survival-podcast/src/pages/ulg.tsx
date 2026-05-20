@@ -63,8 +63,20 @@ function useUlgEpisodes(page: number) {
   });
 }
 
+function GoosePlaceholder({ className }: { className?: string }) {
+  return (
+    <div
+      className={`flex items-center justify-center bg-amber-950/60 border border-amber-800/40 text-amber-400 rounded-lg select-none ${className ?? ""}`}
+      aria-hidden="true"
+    >
+      <span className="text-2xl">🪿</span>
+    </div>
+  );
+}
+
 function UlgEpisodeCard({ item, position }: { item: LibraryItem; position: number }) {
   const { load } = usePlayer();
+  const [imgFailed, setImgFailed] = useState(false);
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,14 +96,16 @@ function UlgEpisodeCard({ item, position }: { item: LibraryItem; position: numbe
   return (
     <div className="group flex gap-4 items-start bg-card border border-border rounded-xl p-4 hover:border-amber-600/40 hover:shadow-md hover:shadow-amber-900/10 transition-all duration-200">
       <div className="relative shrink-0">
-        <img
-          src={item.artworkUrl || ""}
-          alt=""
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
-          className="w-16 h-16 rounded-lg object-cover border border-border/50"
-        />
+        {item.artworkUrl && !imgFailed ? (
+          <img
+            src={item.artworkUrl}
+            alt=""
+            onError={() => setImgFailed(true)}
+            className="w-16 h-16 rounded-lg object-cover border border-border/50"
+          />
+        ) : (
+          <GoosePlaceholder className="w-16 h-16" />
+        )}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handlePlay}
@@ -159,6 +173,7 @@ function UlgEpisodeCard({ item, position }: { item: LibraryItem; position: numbe
 
 export function UlgPage() {
   const [page, setPage] = useState(1);
+  const [heroImgFailed, setHeroImgFailed] = useState(false);
   const { data, isLoading, isError } = useUlgEpisodes(page);
 
   const totalPages = data ? Math.ceil(data.total / LIMIT) : 0;
@@ -193,15 +208,20 @@ export function UlgPage() {
           }
         />
 
-        {firstArtwork && (
-          <div className="relative shrink-0 w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden border-2 border-amber-700/40 shadow-2xl shadow-amber-900/40">
+        <div className="relative shrink-0 w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden border-2 border-amber-700/40 shadow-2xl shadow-amber-900/40">
+          {firstArtwork && !heroImgFailed ? (
             <img
               src={firstArtwork}
               alt="Unloose the Goose artwork"
+              onError={() => setHeroImgFailed(true)}
               className="w-full h-full object-cover"
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-amber-950/80 text-amber-400">
+              <span className="text-5xl md:text-6xl">🪿</span>
+            </div>
+          )}
+        </div>
 
         <div className="relative flex flex-col gap-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-500/80">
