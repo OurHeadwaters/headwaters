@@ -28,6 +28,10 @@ function NativeTabLayout() {
           <Icon sf={{ default: "arrow.down.circle", selected: "arrow.down.circle.fill" }} />
           <Label>Downloads</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="privacy-guide">
+          <Icon sf={{ default: "lock.shield", selected: "lock.shield.fill" }} />
+          <Label>Privacy</Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
       {currentEpisode && <MiniPlayer />}
     </View>
@@ -107,6 +111,18 @@ function ClassicTabLayout() {
                 <SymbolView name="arrow.down.circle" tintColor={color} size={24} />
               ) : (
                 <Feather name="download" size={22} color={color} />
+              ),
+          }}
+        />
+        <Tabs.Screen
+          name="privacy-guide"
+          options={{
+            title: "Privacy",
+            tabBarIcon: ({ color }) =>
+              isIOS ? (
+                <SymbolView name="lock.shield" tintColor={color} size={24} />
+              ) : (
+                <Feather name="shield" size={22} color={color} />
               ),
           }}
         />

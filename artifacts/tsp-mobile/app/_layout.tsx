@@ -3,8 +3,12 @@ import {
   DMSans_500Medium,
   DMSans_600SemiBold,
   DMSans_700Bold,
-  useFonts,
+  useFonts as useDMSansFonts,
 } from "@expo-google-fonts/dm-sans";
+import {
+  Fraunces_700Bold,
+  useFonts as useFramuncesFonts,
+} from "@expo-google-fonts/fraunces";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -43,12 +47,18 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
+  const [dmSansLoaded, dmSansError] = useDMSansFonts({
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_600SemiBold,
     DMSans_700Bold,
   });
+  const [frauncesLoaded, frauncesError] = useFramuncesFonts({
+    Fraunces_700Bold,
+  });
+
+  const fontsLoaded = dmSansLoaded && frauncesLoaded;
+  const fontError = dmSansError || frauncesError;
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
