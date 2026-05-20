@@ -90,6 +90,19 @@ async function fetchServerProgress(slug: string): Promise<number[] | null> {
   }
 }
 
+async function mergeLocalToServer(slug: string, localIds: number[]): Promise<void> {
+  if (localIds.length === 0) return;
+  try {
+    await fetch(`/api/track-progress/${encodeURIComponent(slug)}/merge`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ episodeIds: localIds }),
+    });
+  } catch {
+  }
+}
+
 async function syncToggleToServer(
   slug: string,
   episodeId: number,
@@ -129,12 +142,16 @@ export function useTrackProgress(slug: string): TrackProgress {
     if (authLoading) return;
 
     if (isAuthenticated) {
+      const localIds = loadDoneIds(slug);
       fetchServerProgress(slug).then((ids) => {
         if (ids !== null) {
           const serverSet = new Set(ids);
-          setDoneIds(serverSet);
-          saveDoneIds(slug, serverSet);
+          const localOnlyIds = [...localIds].filter((id) => !serverSet.has(id));
+          const merged = new Set([...serverSet, ...localIds]);
+          setDoneIds(merged);
+          saveDoneIds(slug, merged);
           serverLoadedRef.current = true;
+          mergeLocalToServer(slug, localOnlyIds);
         }
       });
     }

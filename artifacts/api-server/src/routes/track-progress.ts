@@ -61,4 +61,29 @@ router.patch("/track-progress/:slug", async (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+router.post("/track-progress/:slug/merge", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { slug } = req.params;
+  const userId = req.user.id;
+  const { episodeIds } = req.body as { episodeIds: number[] };
+
+  if (!Array.isArray(episodeIds) || episodeIds.some((id) => typeof id !== "number")) {
+    res.status(400).json({ error: "episodeIds must be an array of numbers" });
+    return;
+  }
+
+  if (episodeIds.length > 0) {
+    await db
+      .insert(userTrackProgressTable)
+      .values(episodeIds.map((episodeId) => ({ userId, trackSlug: slug, episodeId })))
+      .onConflictDoNothing();
+  }
+
+  res.json({ success: true });
+});
+
 export default router;
