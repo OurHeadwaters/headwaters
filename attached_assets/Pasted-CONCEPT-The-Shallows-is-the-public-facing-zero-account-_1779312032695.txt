@@ -1,0 +1,133 @@
+CONCEPT
+The Shallows is the public-facing, zero-account social layer of Dam Days. Where the Forge is private (your signals, your book), The Shallows is open water — anyone can wade in and post.
+
+Design philosophy
+Anonymous by design. No accounts, no sign-up, no email. Your identity within a thread is a loaned water-name ("Driftwood", "Ripple", "Spindrift") that persists only within that thread — you cannot be tracked across threads even by the platform.
+No engagement metrics. No like counts, no follower counts, no share counts, no tip counts. The author sees their wallet balance; nobody else does. Reaction counts exist but are muted — they're mood, not score.
+Flag-to-hide, not delete. Posts are permanent in the database. Moderation is soft: 3 independent-session flags within 10 minutes trips an auto-hide. Hidden rows stay for owner review via admin endpoints. Nothing is destroyed.
+Zone 5 in the permaculture map. In the Dam Days zone model, Zone 5 is wild — no tending, no algorithm, no promotion. The Shallows is where things wash up on their own.
+TECH: DATABASE
+Three tables in PostgreSQL (Drizzle ORM, lib/db/src/schema/shallows.ts):
+
+shallows_posts
+column	type	notes
+id	serial PK	
+body	text NOT NULL	≤1000 chars, control chars stripped, runs of 3+ newlines collapsed
+handle	varchar(32)	deterministic water-name, set after insert (needs own ID to derive)
+session_hash	varchar(64)	sha256 of the X-Shallows-Session token — never the raw token
+created_at	timestamptz	indexed
+flag_count	int default 0	incremented on each flag
+hidden_at	timestamptz nullable	indexed; non-null = hidden from feed
+wallet_address	varchar(64) nullable	XRPL classic address (starts with r) — null for pre-tipping posts
+Indexes on created_at and hidden_at for feed queries and admin queries.
+
+shallows_replies
+Same shape minus wallet_address. post_id FK → shallows_posts.id with ON DELETE CASCADE. Single-level threading (replies belong to a root post only).
+
+shallows_reactions
+Polymorphic: target_type ("post" | "reply") + target_id + kind ("heart" | "anchor" | "candle" | "wave") + session_hash. Unique index on (target_type, target_id, kind, session_hash) — one reaction per kind per session per target, enforced at the DB level.
+
+TECH: API SERVER (artifacts/api-server/src/routes/shallows.ts)
+Endpoints
+method	path	notes
+GET	/shallows/posts	cursor-paginated feed, ?cursor=, ?limit=, ?q= full-text search
+POST	/shallows/posts	create root post; body + optional walletAddress
+GET	/shallows/posts/:id	single thread: post + all non-hidden replies + reactions
+POST	/shallows/posts/:id/replies	add reply to thread
+POST	/shallows/posts/:id/reactions	toggle reaction on a post
+POST	/shallows/replies/:id/reactions	toggle reaction on a reply
+POST	/shallows/posts/:id/flag	flag a post
+POST	/shallows/replies/:id/flag	flag a reply
+GET	/admin/shallows	flagged + hidden posts + replies (needs X-Admin-Token)
+POST	/admin/shallows/posts/:id/hide	force-hide a post
+POST	/admin/shallows/posts/:id/restore	restore a post
+POST	/admin/shallows/replies/:id/hide	force-hide a reply
+POST	/admin/shallows/replies/:id/restore	restore a reply
+Session identity
+Every request carries X-Shallows-Session — an opaque token generated once per browser and stored in localStorage under watershed.shallows.session. The server never stores this token. It runs it through sha256 on every request and stores the hash. The raw token is only ever in the client's memory and localStorage.
+
+Handle derivation
+The handle pool is 20 water-themed names: Driftwood, Tide, Pebble, Shoal, Foam, Kelp, Reed, Brine, Eddy, Pier, Spindrift, Cove, Ripple, Lantern, Compass, Anchor, Sextant, Dune, Marsh, Surf.
+
+Root post: sha256(sessionHash + ":" + postId) → UInt32BE(0) % 20 → picks name. Inserted with "…" placeholder, then updated in the same request once the post ID is known.
+Reply: same derivation. If two different participants in the same thread land on the same base name, they get collision suffixes: Anchor, Anchor2, Anchor3. But if you've already posted in this thread, the server looks up your existing handle and reuses it — so a back-and-forth stays coherent.
+Handles are thread-scoped: the same session gets a different name in every thread.
+Rate limiting (in-memory, resets on server restart)
+Post per IP: 15s cooldown, 30/hour cap
+Post per session: 5s cooldown, 60/hour cap
+Flag per IP: 10s cooldown, 30/hour cap
+Auto-moderation
+Banlist: ~12 regex patterns (profanity/slurs). Matched pre-insert. Returns "That post doesn't fit The Shallows" without revealing what triggered it.
+Body normalization: strips control chars (preserves \n and \t), collapses trailing whitespace per line, collapses 3+ newlines to 2, trims.
+Flag-to-hide: 3 distinct-session flags within a 10-minute sliding window auto-sets hidden_at. OR if flag_count >= 3 at DB level. Flaggers are tracked per-target in a Map<FlagTarget, Set<sessionHash>> to prevent one session from triple-flagging. Hidden posts stay in DB, invisible to the feed.
+Feed query
+Default page: 30 posts, max 60.
+Cursor is the id of the last post seen (WHERE id < cursor).
+Filters: hidden_at IS NULL always.
+Search: ilike(body, '%pattern%') — basic, case-insensitive, LIKE. Pattern special chars (\, %, _) are escaped before wrapping.
+Reactions are loaded in a single batch query across all post IDs on the page, then joined in memory.
+Reply counts come from a COUNT(replies.id) subquery in the main list query.
+XRPL wallet address
+On POST, the server validates the address against /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/ before storing. Invalid/missing → stored as null. List and thread endpoints both return walletAddress: null | string.
+
+TECH: CLIENT (artifacts/watershed/src/lib/shallows-session.ts, src/pages/shallows.tsx)
+Session (shallows-session.ts)
+Token generated with crypto.randomUUID() (falls back to getRandomValues then Math.random).
+Stored in localStorage under watershed.shallows.session.
+Flagged targets persisted in localStorage under watershed.shallows.flagged so the "flag" button stays suppressed after refresh.
+shallowsRequestHeaders() builds { "X-Shallows-Session": token } for every API call.
+Feed (ShallowsFeed)
+Infinite query via TanStack Query + listShallowsPosts (generated hook from Orval/OpenAPI).
+Loads next page on "load more" button click — not infinite scroll.
+Search field with 250ms debounce, 80-char max. While typing, the query refetches with ?q=. Clear → back to full feed.
+Posts that the local session has flagged are hidden client-side immediately (optimistic).
+Framer Motion staggered entrance animation on posts.
+Composer (ShallowsComposer)
+Controlled textarea with live char counter.
+On mount: reads XRPL wallet from localStorage; if none exists, calls getOrCreateWallet(true) in background (generates + funds via faucet).
+Every post submission includes walletAddress if available.
+Error messages from the server are extracted and surfaced inline.
+Reactions (ReactionRow, shallows-reactions.tsx)
+4 kinds: heart ♥, anchor ⚓, candle 🕯, wave 〰
+Toggle mutation: fires optimistic update, rolls back on error.
+One reaction per kind per session (enforced server + DB).
+Tip button (TipButton)
+Phase-state machine: idle → funding → funded → tipping → tipped → error
+
+idle: "Get testnet wallet" — calls faucet
+funding: spinning ◈ glyph
+funded: WalletCard (address + live XRP balance), 0.1 / 0.5 / 1 XRP preset grid, custom number input, recipient row (handle + truncated address), "Send X XRP →"
+tipping: spinning ◈ + "Signing and submitting…"
+tipped: success banner, updated balance, tx hash, "View on XRPL Explorer →" link, "Try another tip"
+error: error message, "Try again"
+Opening the panel on a post where a wallet already exists in localStorage skips idle — fetches live balance immediately and lands on funded.
+
+TECH: XRPL LAYER (artifacts/watershed/src/lib/xrpl-wallet.ts)
+Library: xrpl (browser build via vite-plugin-node-polyfills — polyfills Buffer, process, global)
+Network: wss://xrplcluster.com (mainnet, full-history cluster)
+Faucet: https://faucet.altnet.rippletest.net/accounts — testnet only, used by fundAndStoreWallet()
+Storage key: watershed:shallows:xrpl:wallet:v1 in localStorage — stores { seed, address, publicKey }
+Functions
+export	what it does
+getWalletAddress()	sync; reads address from localStorage, null if none
+getStoredWallet()	reconstructs live Wallet object from stored seed, null if none
+getOrCreateWallet(autoFund?)	used by composer; generates locally or funds via faucet
+fundAndStoreWallet()	POST to testnet faucet → 4s wait → fetch balance → persist seed
+getBalance(address)	connect → client.getBalances() → disconnect → returns XRP value string
+sendTip(wallet, amountXrp, toAddress)	autofill → wallet.sign → submitAndWait → getBalance → returns { ok, txHash, newBalance } or { ok, reason }
+isValidXrplAddress(address)	regex /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/
+Transaction flow: each sendTip opens a fresh WebSocket connection, submits, waits for ledger confirmation, fetches updated balance, then disconnects. No persistent connection.
+
+TECH: ADMIN (artifacts/watershed/src/pages/shallows-admin.tsx)
+Private moderation surface at /admin/shallows — not linked from any nav, owners navigate directly. Asks for admin token (persisted in localStorage under watershed.shallows.admin.token), then:
+
+Lists flagged + hidden posts and replies
+Hide / Restore buttons for each
+Calls POST /admin/shallows/posts/:id/{hide,restore} and equivalent reply endpoints
+Server requires X-Admin-Token header matching the WATERSHED_ADMIN_TOKEN env var. Without that env var, every admin route returns 404.
+WHAT DOESN'T EXIST YET (v1 gaps noted in the reference PoC)
+External wallet integration — GemWallet or Crossmark browser extension instead of platform-generated seed; removes custody of the seed entirely
+Memo field on tips — post reference in the XRPL Memo field (privacy tradeoff)
+Reply wallet addresses — only root posts carry a wallet address; tipping reply authors isn't in v1
+Tip count privacy — enforced by design (never shown), but no on-chain proof of that commitment
+Mobile Shallows tipping — the Zones tab exists on mobile but the tip layer is web-only for now
