@@ -56,6 +56,7 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
         /unloose[^a-z]*goose/i.test(body) ||
         s.includes("unloose") ||
         s.includes("utg-") ||
+        s.includes("ulg-") ||
         ep.categories.some((c) => /unloose/i.test(c) || /\bgoose\b/i.test(c))
       );
     },
@@ -65,11 +66,13 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
       OR ${contentItemsTable.slug} ILIKE '%unloose%goose%'
       OR ${contentItemsTable.slug} ILIKE '%unloose-the-goose%'
       OR ${contentItemsTable.slug} ILIKE '%utg-%'
+      OR ${contentItemsTable.slug} ILIKE '%ulg-%'
       OR ${contentItemsTable.summary} ILIKE '%unloose the goose%'
       OR ${contentItemsTable.bodyHtml} ILIKE '%unloose the goose%'
       OR ${contentItemsTable.categories}::text ILIKE '%unloose%goose%'
       OR ${contentItemsTable.tags}::text ILIKE '%unloose%goose%'
       OR ${contentItemsTable.tags}::text ILIKE '%"utg"%'
+      OR ${contentItemsTable.tags} @> '["unloose-the-goose"]'::jsonb
     )`,
   },
   {
@@ -103,6 +106,7 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
       OR ${contentItemsTable.categories}::text ILIKE '%13 stomp%'
       OR ${contentItemsTable.categories}::text ILIKE '%13stomp%'
       OR ${contentItemsTable.tags}::text ILIKE '%13 stomp%'
+      OR ${contentItemsTable.tags} @> '["13 stomps"]'::jsonb
     )`,
   },
   {
