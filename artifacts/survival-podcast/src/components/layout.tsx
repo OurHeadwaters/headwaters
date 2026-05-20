@@ -177,6 +177,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link href="/admin/categories" className="hover:text-white/70 transition-colors">
                 Category Descriptions Editor
               </Link>
+              <Link href="/admin/content-gaps" className="hover:text-white/70 transition-colors">
+                Content Gaps
+              </Link>
               <span>Built for people building a life worth defending.</span>
             </div>
           </div>

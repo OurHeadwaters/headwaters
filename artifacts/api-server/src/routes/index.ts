@@ -14,6 +14,7 @@ import adminCouncilRouter from "./admin-council";
 import wishingWellRouter from "./wishing-well";
 import v4vRouter from "./v4v";
 import ogRouter from "./og";
+import gapsRouter from "./gaps";
 
 const router: IRouter = Router();
 
@@ -26,6 +27,7 @@ router.use(zonesRouter);
 router.use(expertsRouter);
 router.use(tracksRouter);
 router.use(transformationsRouter);
+router.use(gapsRouter);
 router.use(adminCategoriesRouter);
 router.use(trackProgressRouter);
 router.use(adminCouncilRouter);

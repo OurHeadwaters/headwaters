@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
 import { ThisDayInHistory } from "@/components/this-day-in-history";
-import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout, ArrowRight, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout, ArrowRight, PlayCircle, CheckCircle2, Waves, CheckCircle } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { getCategoryDescription } from "@/data/category-descriptions";
@@ -12,8 +12,170 @@ import { useLastActiveTrack, useTrackProgress } from "@/hooks/use-track-progress
 import { useGetTrackNextUndone } from "@/hooks/use-tracks";
 import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
 import { X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getAllInProgress, InProgressEntry } from "@/lib/playback-progress";
+import { useDebounce } from "@/hooks/use-debounce";
+
+function apiUrl(path: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${base}/api${path}`;
+}
+
+interface SearchResult {
+  id: number;
+  title: string;
+  slug: string;
+  publishedAt: string;
+}
+
+interface SearchResponse {
+  items: SearchResult[];
+  total: number;
+}
+
+type SubmitState = "idle" | "submitting" | "done" | "error";
+
+function HeroSearch() {
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query.trim(), 350);
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data, isFetching } = useQuery<SearchResponse>({
+    queryKey: ["hero-search", debouncedQuery],
+    queryFn: async () => {
+      if (!debouncedQuery || debouncedQuery.length < 2) return { items: [], total: 0 };
+      const res = await fetch(apiUrl(`/library/search?q=${encodeURIComponent(debouncedQuery)}&limit=3&sort=relevance`));
+      if (!res.ok) throw new Error("Search failed");
+      return res.json();
+    },
+    enabled: debouncedQuery.length >= 2,
+    staleTime: 30_000,
+  });
+
+  const hasTyped = query.trim().length >= 2;
+  const isSearching = hasTyped && (isFetching || debouncedQuery !== query.trim());
+  const results = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const showResults = hasTyped && !isSearching && debouncedQuery.length >= 2;
+  const isSparse = showResults && total < 3;
+  const isZero = showResults && total === 0;
+
+  async function handleFloat() {
+    if (!debouncedQuery || submitState === "submitting" || submitState === "done") return;
+    setSubmitState("submitting");
+    try {
+      const res = await fetch(apiUrl("/gaps"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: debouncedQuery }),
+      });
+      setSubmitState(res.ok ? "done" : "error");
+    } catch {
+      setSubmitState("error");
+    }
+  }
+
+  return (
+    <section className="relative bg-[#2C4A36] py-14 md:py-20 overflow-hidden">
+      <div className="absolute inset-0 opacity-[0.07] bg-[url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center" />
+      <div className="relative container mx-auto px-4 md:px-6 max-w-3xl">
+        <p className="text-white/60 text-xs uppercase tracking-widest font-semibold mb-3 flex items-center gap-2">
+          <Waves className="w-3.5 h-3.5" />
+          Search the archive
+        </p>
+        <h2 className="font-serif text-3xl md:text-5xl font-bold text-white leading-tight mb-6">
+          Has anyone ever<br className="hidden sm:block" /> talked about&nbsp;…
+        </h2>
+
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 pointer-events-none" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSubmitState("idle");
+            }}
+            placeholder="beekeeping, water storage, financial independence…"
+            className="w-full bg-white/10 border border-white/20 text-white placeholder-white/35 rounded-xl pl-12 pr-4 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-[#D9A066] focus:border-transparent transition-all"
+          />
+          {query && (
+            <button
+              onClick={() => { setQuery(""); setSubmitState("idle"); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Live results */}
+        {showResults && (
+          <div className="mt-3 space-y-1.5">
+            {results.length > 0 && (
+              <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl overflow-hidden">
+                {results.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/library/${item.slug}`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors border-b border-white/10 last:border-0"
+                  >
+                    <PlayCircle className="w-4 h-4 text-[#D9A066] shrink-0" />
+                    <span className="text-white text-sm font-medium line-clamp-1">{item.title}</span>
+                  </Link>
+                ))}
+                {total > 3 && (
+                  <Link
+                    href={`/library?q=${encodeURIComponent(debouncedQuery)}`}
+                    className="flex items-center gap-2 px-4 py-2.5 text-[#D9A066] text-xs font-semibold hover:bg-white/10 transition-colors"
+                  >
+                    See all {total.toLocaleString()} results
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* No/sparse results nudge */}
+            {isSparse && (
+              <div className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <p className="text-white/70 text-sm flex-1">
+                  {isZero
+                    ? "Nothing yet — want to float this to the shallows?"
+                    : `Only ${total} result${total !== 1 ? "s" : ""} — want to suggest more coverage?`}
+                </p>
+                {submitState === "done" ? (
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-[#D9A066] shrink-0">
+                    <CheckCircle className="w-4 h-4" />
+                    Floated — thanks!
+                  </span>
+                ) : submitState === "error" ? (
+                  <span className="text-sm text-red-300">Couldn't submit — try again</span>
+                ) : (
+                  <button
+                    onClick={handleFloat}
+                    disabled={submitState === "submitting"}
+                    className="shrink-0 bg-[#D9A066] text-[#2C4A36] text-sm font-bold px-4 py-2 rounded-lg hover:bg-[#e8b07a] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <Waves className="w-3.5 h-3.5" />
+                    Float this topic →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Searching indicator */}
+        {isSearching && (
+          <p className="mt-3 text-white/40 text-sm animate-pulse">Searching the archive…</p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function useAllInProgress(): InProgressEntry[] {
   const [entries, setEntries] = useState<InProgressEntry[]>(() => getAllInProgress());
@@ -525,6 +687,9 @@ export function Home() {
 
   return (
     <div className="flex flex-col w-full">
+      {/* Hero Search — very first thing above the fold */}
+      <HeroSearch />
+
       {/* This Day in History — primary front door */}
       <ThisDayInHistory />
 
