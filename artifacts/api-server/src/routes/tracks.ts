@@ -39,6 +39,16 @@ function trackScoreFragment(tags: string[]): string {
   return `(SELECT count(*) FROM jsonb_array_elements_text(tags) t WHERE lower(t.value) IN (${tagList.toLowerCase()}))::int`;
 }
 
+function searchFragment(q: string): string {
+  const escaped = esc(q.trim().toLowerCase());
+  return `(lower(title) LIKE '%${escaped}%' OR lower(coalesce(summary, '')) LIKE '%${escaped}%')`;
+}
+
+function tagFilterFragment(tag: string): string {
+  const escaped = esc(tag.trim().toLowerCase());
+  return `EXISTS (SELECT 1 FROM jsonb_array_elements_text(tags) t WHERE lower(t.value) = '${escaped}')`;
+}
+
 /**
  * GET /api/tracks
  * Returns all learning tracks with episode counts.
@@ -88,6 +98,7 @@ router.get("/tracks", async (_req, res) => {
 /**
  * GET /api/tracks/:slug/episodes
  * Episodes for a learning track, ordered to create a progression arc.
+ * Supports ?q= for full-text search and ?tag= for sub-topic filtering.
  */
 router.get("/tracks/:slug/episodes", async (req, res) => {
   try {
@@ -100,11 +111,23 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
     const limit = safeInt(req.query.limit, 20, 1, 100);
     const offset = safeInt(req.query.offset, 0, 0, 100_000);
 
-    const whereFragment = trackWhereFragment(track.tags, track.categories);
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const tagFilter = typeof req.query.tag === "string" ? req.query.tag.trim() : "";
+
+    const trackWhere = trackWhereFragment(track.tags, track.categories);
     const scoreFragment = trackScoreFragment(track.tags);
     const orderDir = track.order === "asc" ? "ASC" : "DESC";
 
-    const [rows, countRow] = await Promise.all([
+    const extraClauses: string[] = [];
+    if (q) extraClauses.push(searchFragment(q));
+    if (tagFilter) extraClauses.push(tagFilterFragment(tagFilter));
+
+    const whereFragment =
+      extraClauses.length > 0
+        ? `${trackWhere} AND ${extraClauses.join(" AND ")}`
+        : trackWhere;
+
+    const [rows, countRow, topTagsRow] = await Promise.all([
       db.execute(sql.raw(`
         SELECT
           id, source, kind, slug, title, link, summary,
@@ -120,6 +143,15 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
         SELECT count(*)::int AS count
         FROM content_items
         WHERE ${whereFragment}
+      `)),
+      db.execute(sql.raw(`
+        SELECT lower(t.value) AS tag, count(*)::int AS cnt
+        FROM content_items ci,
+             jsonb_array_elements_text(ci.tags) t
+        WHERE ${trackWhere}
+        GROUP BY lower(t.value)
+        ORDER BY cnt DESC
+        LIMIT 30
       `)),
     ]);
 
@@ -154,6 +186,8 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
       trackScore: r.track_score,
     }));
 
+    const topTags = (topTagsRow.rows as { tag: string; cnt: number }[]).map((r) => r.tag);
+
     res.json({
       track: {
         slug: track.slug,
@@ -170,6 +204,7 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
       total: (countRow.rows[0] as { count: number }).count,
       limit,
       offset,
+      topTags,
     });
   } catch (err) {
     logger.error({ err }, "track episodes failed");

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 export type TrackSummary = {
@@ -42,6 +42,7 @@ export type TrackEpisodePage = {
   total: number;
   limit: number;
   offset: number;
+  topTags: string[];
 };
 
 async function fetchTracks(): Promise<TrackSummary[]> {
@@ -52,11 +53,13 @@ async function fetchTracks(): Promise<TrackSummary[]> {
 
 async function fetchTrackEpisodes(
   slug: string,
-  params: { limit?: number; offset?: number },
+  params: { limit?: number; offset?: number; q?: string; tag?: string },
 ): Promise<TrackEpisodePage> {
   const qs = new URLSearchParams();
   if (params.limit != null) qs.set("limit", String(params.limit));
   if (params.offset != null) qs.set("offset", String(params.offset));
+  if (params.q) qs.set("q", params.q);
+  if (params.tag) qs.set("tag", params.tag);
   const res = await fetch(`/api/tracks/${slug}/episodes?${qs.toString()}`);
   if (!res.ok) throw new Error("Failed to load track episodes");
   return res.json();
@@ -71,12 +74,13 @@ export function useListTracks() {
 
 export function useGetTrackEpisodes(
   slug: string,
-  params: { limit?: number; offset?: number } = {},
+  params: { limit?: number; offset?: number; q?: string; tag?: string } = {},
 ) {
   return useQuery<TrackEpisodePage>({
     queryKey: ["tracks", slug, "episodes", params],
     queryFn: () => fetchTrackEpisodes(slug, params),
     enabled: !!slug,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -3,7 +3,6 @@ import { useGetTrackEpisodes } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
-import { keepPreviousData } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -18,6 +17,7 @@ import {
   Circle,
   Share2,
   Download,
+  Search,
   X,
   Check,
 } from "lucide-react";
@@ -335,6 +335,15 @@ function SharedProgressBanner({ sharedDoneCount, total, onImport, onDismiss }: S
   );
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
 export default function TrackDetailPage() {
   const [, params] = useRoute("/tracks/:slug");
   const slug = params?.slug ?? "";
@@ -349,13 +358,25 @@ export default function TrackDetailPage() {
   const [isSharedView, setIsSharedView] = useState(sharedIds !== null);
   const [sharedDismissed, setSharedDismissed] = useState(false);
 
-  const queryParams = { limit: PAGE_SIZE, offset };
+  const [searchInput, setSearchInput] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  const queryParams = {
+    limit: PAGE_SIZE,
+    offset,
+    q: debouncedSearch || undefined,
+    tag: activeTag || undefined,
+  };
+
+
   const { data, isLoading, isError, isFetching } = useGetTrackEpisodes(slug, queryParams);
   const progress = useTrackProgress(slug);
 
   const track = data?.track;
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
+  const topTags = data?.topTags ?? [];
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const displayDoneIds = isSharedView && sharedIds ? sharedIds : progress.doneIds;
@@ -388,7 +409,6 @@ export default function TrackDetailPage() {
           description: track.description,
           ogTitle: `${track.title} — TSP Learning Track`,
           ogDescription: track.description,
-          ogImage: track.artworkUrl ?? undefined,
           ogUrl: trackUrl,
           ogType: "website",
         }
@@ -429,6 +449,7 @@ export default function TrackDetailPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   }
+  const isFiltering = !!debouncedSearch || !!activeTag;
 
   function navigate(p: number) {
     const qs = new URLSearchParams(window.location.search);
@@ -436,6 +457,29 @@ export default function TrackDetailPage() {
     window.history.pushState({}, "", `${window.location.pathname}?${qs.toString()}`);
     window.dispatchEvent(new PopStateEvent("popstate"));
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetToFirstPage() {
+    const qs = new URLSearchParams(window.location.search);
+    qs.set("page", "1");
+    window.history.pushState({}, "", `${window.location.pathname}?${qs.toString()}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function handleSearchChange(val: string) {
+    setSearchInput(val);
+    resetToFirstPage();
+  }
+
+  function handleTagClick(tag: string) {
+    setActiveTag((prev) => (prev === tag ? null : tag));
+    resetToFirstPage();
+  }
+
+  function clearFilters() {
+    setSearchInput("");
+    setActiveTag(null);
+    resetToFirstPage();
   }
 
   if (isLoading) {
@@ -540,10 +584,24 @@ export default function TrackDetailPage() {
           )}
 
           <div className="mt-6 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
-              <span>episodes &amp; resources in this track</span>
-            </div>
+            {isFiltering ? (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
+                <span>matching episodes</span>
+                <span className="text-muted-foreground/50">·</span>
+                <button
+                  onClick={clearFilters}
+                  className="text-xs text-primary hover:underline"
+                >
+                  clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
+                <span>episodes &amp; resources in this track</span>
+              </div>
+            )}
 
             <button
               onClick={handleShare}
@@ -578,6 +636,67 @@ export default function TrackDetailPage() {
         </div>
       </div>
 
+      {/* Search + tag filter bar */}
+      <div className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-6 py-3 flex flex-col gap-3">
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search episodes in this track…"
+              className="w-full pl-9 pr-9 py-2 text-sm bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground/60"
+            />
+            {searchInput && (
+              <button
+                onClick={() => handleSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Tag chips */}
+          {topTags.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground shrink-0">
+                Filter:
+              </span>
+              {topTags.slice(0, 16).map((tag) => {
+                const isActive = activeTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => handleTagClick(tag)}
+                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
+                      isActive
+                        ? "border-transparent text-white"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                    style={isActive ? { background: track.color, borderColor: track.color } : {}}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+              {isFiltering && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground flex items-center gap-1 ml-auto"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Episode list */}
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Shared progress banner */}
@@ -592,12 +711,28 @@ export default function TrackDetailPage() {
 
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-serif text-xl font-bold text-foreground">
-            The track — oldest to newest
+            {isFiltering
+              ? `${total.toLocaleString()} result${total !== 1 ? "s" : ""}`
+              : "The track — oldest to newest"}
           </h2>
           {isFetching && (
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           )}
         </div>
+
+        {items.length === 0 && !isFetching && (
+          <div className="text-center py-16 text-muted-foreground">
+            <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium mb-1">No episodes match your search</p>
+            <p className="text-xs mb-4">Try different keywords or remove a filter.</p>
+            <button
+              onClick={clearFilters}
+              className="text-xs text-primary hover:underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
 
         <div
           className={`flex flex-col gap-3 transition-opacity duration-200 ${isFetching ? "opacity-60" : "opacity-100"}`}
@@ -642,7 +777,7 @@ export default function TrackDetailPage() {
         )}
 
         {/* Odyssey bridge — shown at the end of the last page */}
-        {(isLastPage || totalPages === 0) && (
+        {!isFiltering && (isLastPage || totalPages === 0) && (
           <div className="mt-12 pt-10 border-t border-border">
             <div className="mb-5">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
@@ -657,7 +792,7 @@ export default function TrackDetailPage() {
         )}
 
         {/* Always-visible compact bridge for deeper pages */}
-        {!isLastPage && totalPages > 1 && (
+        {!isFiltering && !isLastPage && totalPages > 1 && (
           <div className="mt-10 pt-8 border-t border-border">
             <OdysseyBridge variant="compact" />
           </div>
