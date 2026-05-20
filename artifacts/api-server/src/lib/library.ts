@@ -4,6 +4,7 @@ import type { InsertContentItem, SyncRun } from "@workspace/db";
 import { logger } from "./logger";
 import { syncWordPressArchive } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
+import { syncUlg } from "./sources/ulg";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
 const BATCH_SIZE = 200;
@@ -95,10 +96,17 @@ async function syncYouTube(): Promise<{ itemsSeen: number; itemsUpserted: number
   return { itemsSeen, itemsUpserted };
 }
 
+async function syncUlgSource(): Promise<{ itemsSeen: number; itemsUpserted: number }> {
+  return syncUlg({ upsertBatch: (items) => upsertBatch(items) });
+}
+
 export type RefreshSummary = {
   wordpress: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   youtube: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
+  ulg: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
 };
+
+const ALL_SOURCES = ["wordpress", "youtube", "ulg"] as const;
 
 let inflight: Promise<RefreshSummary> | null = null;
 
@@ -110,29 +118,30 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
       .from(syncRunsTable)
       .where(eq(syncRunsTable.status, "ok"))
       .orderBy(desc(syncRunsTable.finishedAt))
-      .limit(2);
-    const sources = new Set(recent.map((r) => r.source));
+      .limit(3);
     const now = Date.now();
     const hasRecent = (s: string) => {
       const r = recent.find((x) => x.source === s);
       return r && r.finishedAt && now - r.finishedAt.getTime() < REFRESH_THROTTLE_MS;
     };
-    if (sources.has("wordpress") && sources.has("youtube") && hasRecent("wordpress") && hasRecent("youtube")) {
+    if (ALL_SOURCES.every((s) => hasRecent(s))) {
       logger.info("Skipping refresh: recent successful run within throttle window");
       return {
         wordpress: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
         youtube: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
+        ulg: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
       };
     }
   }
   inflight = (async () => {
     logger.info("Library refresh starting");
-    const [wp, yt] = await Promise.all([
+    const [wp, yt, ulg] = await Promise.all([
       recordRun("wordpress", syncWordPress),
       recordRun("youtube", syncYouTube),
+      recordRun("ulg", syncUlgSource),
     ]);
-    logger.info({ wp, yt }, "Library refresh complete");
-    return { wordpress: wp, youtube: yt };
+    logger.info({ wp, yt, ulg }, "Library refresh complete");
+    return { wordpress: wp, youtube: yt, ulg };
   })();
   try {
     return await inflight;
@@ -158,7 +167,7 @@ export function startBackgroundRefresh(): void {
 }
 
 export async function getSyncStatus(): Promise<{ source: string; lastRun: SyncRun | null }[]> {
-  const sources = ["wordpress", "youtube"];
+  const sources = ["wordpress", "youtube", "ulg"];
   const results: { source: string; lastRun: SyncRun | null }[] = [];
   for (const source of sources) {
     const [last] = await db
