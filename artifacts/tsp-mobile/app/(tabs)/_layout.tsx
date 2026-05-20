@@ -24,6 +24,10 @@ function NativeTabLayout() {
           <Icon sf={{ default: "list.bullet", selected: "list.bullet" }} />
           <Label>Archive</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="history">
+          <Icon sf={{ default: "clock", selected: "clock.fill" }} />
+          <Label>History</Label>
+        </NativeTabs.Trigger>
         <NativeTabs.Trigger name="downloads">
           <Icon sf={{ default: "arrow.down.circle", selected: "arrow.down.circle.fill" }} />
           <Label>Downloads</Label>
@@ -99,6 +103,18 @@ function ClassicTabLayout() {
                 <SymbolView name="list.bullet" tintColor={color} size={22} />
               ) : (
                 <Feather name="list" size={22} color={color} />
+              ),
+          }}
+        />
+        <Tabs.Screen
+          name="history"
+          options={{
+            title: "History",
+            tabBarIcon: ({ color }) =>
+              isIOS ? (
+                <SymbolView name="clock" tintColor={color} size={22} />
+              ) : (
+                <Feather name="clock" size={22} color={color} />
               ),
           }}
         />
