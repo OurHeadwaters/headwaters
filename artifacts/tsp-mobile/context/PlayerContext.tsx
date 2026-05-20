@@ -28,6 +28,8 @@ interface PlayerState {
   playQueue: (episodes: PlayableEpisode[]) => Promise<void>;
   addToQueue: (episode: PlayableEpisode) => void;
   clearQueue: () => void;
+  reorderQueue: (fromIndex: number, toIndex: number) => void;
+  removeFromQueue: (index: number) => void;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
@@ -229,6 +231,23 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setQueue([]);
   }, []);
 
+  const reorderQueue = useCallback((fromIndex: number, toIndex: number) => {
+    const next = [...queueRef.current];
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= next.length || toIndex >= next.length) return;
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    queueRef.current = next;
+    setQueue(next);
+  }, []);
+
+  const removeFromQueue = useCallback((index: number) => {
+    const next = [...queueRef.current];
+    if (index < 0 || index >= next.length) return;
+    next.splice(index, 1);
+    queueRef.current = next;
+    setQueue(next);
+  }, []);
+
   const pause = useCallback(async () => {
     await soundRef.current?.pauseAsync();
     setIsPlaying(false);
@@ -293,6 +312,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         playQueue,
         addToQueue,
         clearQueue,
+        reorderQueue,
+        removeFromQueue,
         pause,
         resume,
         seek,

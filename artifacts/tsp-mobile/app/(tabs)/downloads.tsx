@@ -142,7 +142,7 @@ export default function DownloadsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { downloads, totalStorageBytes, deleteDownload } = useDownloads();
-  const { currentEpisode, playQueue } = usePlayer();
+  const { currentEpisode, playQueue, queue } = usePlayer();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPadding = currentEpisode
@@ -209,17 +209,30 @@ export default function DownloadsScreen() {
                   </Text>
                 )}
               </View>
-              {items.length > 1 && (
-                <Pressable
-                  onPress={handlePlayAll}
-                  style={[styles.playAllBtn, { backgroundColor: colors.primary }]}
-                >
-                  <Ionicons name="play" size={14} color={colors.primaryForeground} style={{ marginLeft: 2 }} />
-                  <Text style={[styles.playAllText, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}>
-                    Play all
-                  </Text>
-                </Pressable>
-              )}
+              <View style={styles.headerBtns}>
+                {queue.length > 0 && (
+                  <Pressable
+                    onPress={() => router.push("/queue")}
+                    style={[styles.queueBtn, { borderColor: colors.primary }]}
+                  >
+                    <Ionicons name="list" size={14} color={colors.primary} />
+                    <Text style={[styles.queueBtnText, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
+                      Queue ({queue.length})
+                    </Text>
+                  </Pressable>
+                )}
+                {items.length > 1 && (
+                  <Pressable
+                    onPress={handlePlayAll}
+                    style={[styles.playAllBtn, { backgroundColor: colors.primary }]}
+                  >
+                    <Ionicons name="play" size={14} color={colors.primaryForeground} style={{ marginLeft: 2 }} />
+                    <Text style={[styles.playAllText, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                      Play all
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
             {hasStale && (
               <Pressable
@@ -272,6 +285,23 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   headerSub: {
+    fontSize: 13,
+  },
+  headerBtns: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  queueBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  queueBtnText: {
     fontSize: 13,
   },
   playAllBtn: {

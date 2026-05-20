@@ -29,6 +29,10 @@ export function MiniPlayer() {
     router.push(`/episode/${currentEpisode.slug}`);
   };
 
+  const handleOpenQueue = () => {
+    router.push("/queue");
+  };
+
   const upNextLabel = nextEpisode
     ? (nextEpisode.episodeNumber != null
         ? `EP ${nextEpisode.episodeNumber} · ${nextEpisode.title}`
@@ -80,12 +84,17 @@ export function MiniPlayer() {
             {currentEpisode.title}
           </Text>
           {upNextLabel && (
-            <Text
-              style={[styles.upNext, { color: colors.primaryForeground, fontFamily: "DMSans_400Regular" }]}
-              numberOfLines={1}
+            <Pressable
+              onPress={(e) => { e.stopPropagation?.(); handleOpenQueue(); }}
+              hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
             >
-              Up next: {upNextLabel}
-            </Text>
+              <Text
+                style={[styles.upNext, { color: colors.primaryForeground, fontFamily: "DMSans_400Regular" }]}
+                numberOfLines={1}
+              >
+                Up next: {upNextLabel}
+              </Text>
+            </Pressable>
           )}
         </View>
         <Pressable
