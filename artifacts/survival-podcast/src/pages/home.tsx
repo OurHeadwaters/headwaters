@@ -1,6 +1,7 @@
 import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
+import { StarterEpisodes } from "@/components/starter-episodes";
 import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
@@ -177,6 +178,7 @@ export function Home() {
             <Link href="/about" className="inline-block border-b border-primary text-primary font-semibold text-sm pb-0.5 hover:text-primary/80 transition-colors">
               Hear how it started
             </Link>
+            <StarterEpisodes />
           </div>
 
           {/* Top Categories */}
