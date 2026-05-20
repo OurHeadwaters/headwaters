@@ -20,6 +20,7 @@ import {
   Search,
   X,
   Check,
+  ClipboardCopy,
 } from "lucide-react";
 import { formatDuration } from "@/components/episode-card";
 
@@ -348,6 +349,7 @@ export default function TrackDetailPage() {
   const [, params] = useRoute("/tracks/:slug");
   const slug = params?.slug ?? "";
   const [copied, setCopied] = useState(false);
+  const [copiedSummary, setCopiedSummary] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
@@ -449,6 +451,26 @@ export default function TrackDetailPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   }
+  async function handleCopySummary() {
+    if (!track) return;
+    const zoneLabel = ZONE_LABELS[track.zoneNumber];
+    const summary = `${track.icon} ${track.title} — TSP ${zoneLabel} Learning Track · ${total.toLocaleString()} episodes · ${trackUrl}`;
+    try {
+      await navigator.clipboard.writeText(summary);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = summary;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedSummary(true);
+    setTimeout(() => setCopiedSummary(false), 2000);
+  }
+
   const isFiltering = !!debouncedSearch || !!activeTag;
 
   function navigate(p: number) {
@@ -629,6 +651,37 @@ export default function TrackDetailPage() {
                 <>
                   <Share2 className="w-4 h-4" />
                   Share this track
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleCopySummary}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all duration-200"
+              style={
+                copiedSummary
+                  ? {
+                      color: "#22c55e",
+                      borderColor: "#22c55e44",
+                      background: "#22c55e12",
+                    }
+                  : {
+                      color: track.color,
+                      borderColor: track.color + "44",
+                      background: track.color + "12",
+                    }
+              }
+              title={`Copy a text summary you can paste anywhere`}
+            >
+              {copiedSummary ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Summary copied!
+                </>
+              ) : (
+                <>
+                  <ClipboardCopy className="w-4 h-4" />
+                  Copy summary
                 </>
               )}
             </button>
