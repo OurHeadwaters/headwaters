@@ -15,6 +15,16 @@ export default function App() {
   }
 
   return (
+    <>
+    <button className="print-btn" onClick={() => window.print()} aria-label="Print or save as PDF">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <rect x="2" y="9" width="10" height="4" rx="0.75" stroke="currentColor" strokeWidth="1.2"/>
+        <rect x="3.5" y="1" width="7" height="6" rx="0.75" stroke="currentColor" strokeWidth="1.2"/>
+        <path d="M3.5 11H2a.75.75 0 0 1-.75-.75V6.25A.75.75 0 0 1 2 5.5h10a.75.75 0 0 1 .75.75v4A.75.75 0 0 1 12 11h-1.5" stroke="currentColor" strokeWidth="1.2"/>
+        <circle cx="10.5" cy="7.5" r="0.6" fill="currentColor"/>
+      </svg>
+      Print / Save PDF
+    </button>
     <div className="page-root">
       {/* HEADER */}
       <header className="page-header">
@@ -266,6 +276,7 @@ export default function App() {
         <span className="footer-credit">Prepared for The Clearing &amp; The Lodge communities</span>
       </footer>
     </div>
+    </>
   );
 }
 

@@ -358,6 +358,38 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ── Print button ── */
+.print-btn {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: var(--moss);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.print-btn:hover {
+  background: #3a5332;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.22);
+}
+
+.print-btn:active {
+  background: #2e4228;
+}
+
 /* ── Print ── */
 @media print {
   html, body {
@@ -370,6 +402,10 @@ html, body {
 
   #root {
     display: block;
+  }
+
+  .print-btn {
+    display: none;
   }
 
   .page-root {
