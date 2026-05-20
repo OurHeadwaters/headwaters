@@ -4,6 +4,7 @@ import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-
 import { EpisodeCard } from "@/components/episode-card";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { getCategoryDescription } from "@/data/category-descriptions";
 
 export function Archive() {
   const [location, setLocation] = useLocation();
@@ -59,10 +60,28 @@ export function Archive() {
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
         <div>
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-2">Episode Archive</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Thousands of conversations on skills, strategy, and self-reliance. Search by topic or browse straight through.
-          </p>
+          {initialCategory ? (
+            <>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Topic</p>
+              <h1 className="font-serif text-4xl font-bold text-foreground mb-2">{initialCategory}</h1>
+              {getCategoryDescription(initialCategory) ? (
+                <p className="text-muted-foreground max-w-2xl">
+                  {getCategoryDescription(initialCategory)}
+                </p>
+              ) : (
+                <p className="text-muted-foreground max-w-2xl">
+                  Browse every episode tagged under this topic.
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <h1 className="font-serif text-4xl font-bold text-foreground mb-2">Episode Archive</h1>
+              <p className="text-muted-foreground max-w-2xl">
+                Thousands of conversations on skills, strategy, and self-reliance. Search by topic or browse straight through.
+              </p>
+            </>
+          )}
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
