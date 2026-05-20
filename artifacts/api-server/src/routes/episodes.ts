@@ -190,8 +190,8 @@ router.get("/episodes/this-day", async (req, res) => {
         .from(contentItemsTable)
         .where(
           sql`${contentItemsTable.kind} = 'audio'
-            AND EXTRACT(MONTH FROM ${contentItemsTable.publishedAt}) = ${targetMonth}
-            AND EXTRACT(DAY FROM ${contentItemsTable.publishedAt}) = ${targetDay}`,
+            AND extract_month_utc(${contentItemsTable.publishedAt}) = ${targetMonth}
+            AND extract_day_utc(${contentItemsTable.publishedAt}) = ${targetDay}`,
         )
         .orderBy(sql`${contentItemsTable.publishedAt} DESC`);
 

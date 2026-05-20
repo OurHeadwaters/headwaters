@@ -61,6 +61,10 @@ export const contentItemsTable = pgTable(
       "gin",
       sql`to_tsvector('english', ${t.title} || ' ' || ${t.summary} || ' ' || ${t.bodyText})`,
     ),
+    index("content_items_month_day_idx").on(
+      sql`extract_month_utc(${t.publishedAt})`,
+      sql`extract_day_utc(${t.publishedAt})`,
+    ),
   ],
 );
 
