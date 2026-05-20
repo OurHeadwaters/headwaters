@@ -68,7 +68,37 @@ export function SeriesIndex() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {seriesList?.map((series) => {
+          {/* ULG is a standalone section, not in the API series list — add it as a static card */}
+          {(() => {
+            const { card: colorClass, badge: badgeClass } = getSeriesTheme("unloose-the-goose");
+            return (
+              <Link
+                href="/series/unloose-the-goose"
+                className={`group relative flex flex-col gap-4 p-7 rounded-2xl border bg-gradient-to-br ${colorClass} hover:scale-[1.01] transition-all duration-300 hover:shadow-lg hover:shadow-black/20 overflow-hidden`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+                <div className="flex items-start justify-between gap-4 relative">
+                  <div className="text-4xl leading-none">🪿</div>
+                  <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${badgeClass}`}>
+                    57 episodes
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 relative">
+                  <h2 className="font-serif text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    Unloose the Goose
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                    Jack's solo deep-dives — no guests, no fluff. Raw takes on homesteading, self-reliance, philosophy, and the stuff that keeps him up at night.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-sm font-semibold text-primary/80 group-hover:text-primary transition-colors relative mt-auto pt-2">
+                  Browse episodes
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            );
+          })()}
+          {seriesList?.filter((s) => s.slug !== "unloose-the-goose").map((series) => {
             const { card: colorClass, badge: badgeClass } = getSeriesTheme(series.slug);
             return (
               <Link
