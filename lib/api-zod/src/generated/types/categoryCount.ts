@@ -10,4 +10,5 @@ export interface CategoryCount {
   name: string;
   count: number;
   description?: string;
+  autoDescriptionStale?: boolean;
 }
