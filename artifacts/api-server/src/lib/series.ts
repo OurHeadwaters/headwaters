@@ -121,24 +121,42 @@ export const SERIES_REGISTRY: SeriesDefinition[] = [
         /tuesday\s+chat/i.test(ep.title) ||
         /tuesday\s+chat/i.test(sum) ||
         /tuesday\s+chat/i.test(body) ||
+        /first\s+tuesday\s+coffee\s+chat/i.test(ep.title) ||
+        /tuesday\s+coffee\s+chat/i.test(ep.title) ||
+        /first\s+tuesday\s+coffee\s+chat/i.test(sum) ||
+        /tuesday\s+coffee\s+chat/i.test(sum) ||
         s.includes("tuesday-chat") ||
+        s.includes("first-tues") ||
+        s.includes("1st-tues") ||
+        s.includes("1tuesday") ||
         ep.categories.some(
           (c) =>
             /tuesday\s+chat/i.test(c) ||
             /^tuesday$/i.test(c.trim()) ||
-            /^tuesday\s+chats?$/i.test(c.trim()),
+            /^tuesday\s+chats?$/i.test(c.trim()) ||
+            /^coffee\s+chat$/i.test(c.trim()) ||
+            /^first\s+tuesday$/i.test(c.trim()),
         )
       );
     },
     librarySql: () => sql`(
       ${contentItemsTable.title} ILIKE '%tuesday chat%'
+      OR ${contentItemsTable.title} ILIKE '%tuesday coffee chat%'
+      OR ${contentItemsTable.title} ILIKE '%first tuesday coffee chat%'
       OR ${contentItemsTable.slug} ILIKE '%tuesday-chat%'
+      OR ${contentItemsTable.slug} ILIKE '%first-tues%'
+      OR ${contentItemsTable.slug} ILIKE '%1st-tues%'
+      OR ${contentItemsTable.slug} ILIKE '%1tuesday%'
       OR ${contentItemsTable.summary} ILIKE '%tuesday chat%'
+      OR ${contentItemsTable.summary} ILIKE '%tuesday coffee chat%'
       OR ${contentItemsTable.categories}::text ILIKE '%tuesday chat%'
       OR ${contentItemsTable.categories}::text ILIKE '"Tuesday"'
       OR ${contentItemsTable.categories} @> '["Tuesday"]'::jsonb
       OR ${contentItemsTable.tags}::text ILIKE '%tuesday chat%'
       OR ${contentItemsTable.tags}::text ILIKE '"tuesday"'
+      OR ${contentItemsTable.tags} @> '["coffee chat"]'::jsonb
+      OR ${contentItemsTable.tags} @> '["first tuesday"]'::jsonb
+      OR ${contentItemsTable.tags} @> '["tuesday chats"]'::jsonb
     )`,
   },
   {
