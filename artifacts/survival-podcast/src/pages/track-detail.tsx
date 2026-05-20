@@ -1,5 +1,6 @@
 import { Link, useRoute } from "wouter";
 import { useGetTrackEpisodes } from "@/hooks/use-tracks";
+import { useTrackProgress } from "@/hooks/use-track-progress";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { keepPreviousData } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   ArrowLeft,
   CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { formatDuration } from "@/components/episode-card";
 
@@ -61,9 +63,18 @@ type TrackItemCardProps = {
   trackColor: string;
   index: number;
   globalOffset: number;
+  isDone: boolean;
+  onToggleDone: (id: number) => void;
 };
 
-function TrackItemCard({ item, trackColor, index, globalOffset }: TrackItemCardProps) {
+function TrackItemCard({
+  item,
+  trackColor,
+  index,
+  globalOffset,
+  isDone,
+  onToggleDone,
+}: TrackItemCardProps) {
   const position = globalOffset + index + 1;
   const href =
     item.source === "ulg" || item.kind === "article"
@@ -73,40 +84,62 @@ function TrackItemCard({ item, trackColor, index, globalOffset }: TrackItemCardP
         : `/library/${item.slug}`;
 
   return (
-    <Link
-      href={href}
-      className="group flex gap-4 p-4 rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200"
+    <div
+      className={`group flex gap-4 p-4 rounded-lg border bg-card transition-all duration-200 ${
+        isDone
+          ? "border-green-500/30 bg-green-500/5"
+          : "border-border hover:border-primary/30 hover:shadow-md"
+      }`}
     >
+      {/* Done toggle */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleDone(item.id);
+        }}
+        className="shrink-0 mt-0.5 transition-colors"
+        aria-label={isDone ? "Mark as not done" : "Mark as done"}
+        title={isDone ? "Mark as not done" : "Mark as done"}
+      >
+        {isDone ? (
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
+        ) : (
+          <Circle className="w-5 h-5 text-muted-foreground/40 hover:text-green-500/60" />
+        )}
+      </button>
+
       {/* Position number */}
       <div
         className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mt-0.5"
         style={{
-          color: trackColor,
-          background: trackColor + "18",
-          border: `1px solid ${trackColor}33`,
+          color: isDone ? "#22c55e" : trackColor,
+          background: isDone ? "#22c55e18" : trackColor + "18",
+          border: `1px solid ${isDone ? "#22c55e33" : trackColor + "33"}`,
         }}
       >
-        {position}
+        {isDone ? <CheckCircle2 className="w-4 h-4" /> : position}
       </div>
 
       {/* Artwork */}
-      {item.artworkUrl ? (
-        <img
-          src={item.artworkUrl}
-          alt={item.title}
-          className="shrink-0 w-14 h-14 rounded-md object-cover"
-        />
-      ) : (
-        <div
-          className="shrink-0 w-14 h-14 rounded-md flex items-center justify-center"
-          style={{ background: trackColor + "18" }}
-        >
-          <KindIcon kind={item.kind} />
-        </div>
-      )}
+      <Link href={href} className="shrink-0">
+        {item.artworkUrl ? (
+          <img
+            src={item.artworkUrl}
+            alt={item.title}
+            className={`w-14 h-14 rounded-md object-cover transition-opacity ${isDone ? "opacity-50" : "opacity-100"}`}
+          />
+        ) : (
+          <div
+            className="w-14 h-14 rounded-md flex items-center justify-center"
+            style={{ background: trackColor + "18" }}
+          >
+            <KindIcon kind={item.kind} />
+          </div>
+        )}
+      </Link>
 
       {/* Body */}
-      <div className="flex-1 min-w-0">
+      <Link href={href} className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
           <KindBadge kind={item.kind} />
           {item.episodeNumber && (
@@ -123,17 +156,83 @@ function TrackItemCard({ item, trackColor, index, globalOffset }: TrackItemCardP
               {formatDuration(item.durationSeconds)}
             </span>
           )}
+          {isDone && (
+            <span className="text-[10px] font-bold text-green-500 uppercase tracking-wider">
+              Done
+            </span>
+          )}
         </div>
-        <h3 className="font-serif font-bold text-sm leading-snug mb-1 text-foreground group-hover:text-primary transition-colors line-clamp-2">
+        <h3
+          className={`font-serif font-bold text-sm leading-snug mb-1 transition-colors ${
+            isDone
+              ? "text-muted-foreground line-through decoration-muted-foreground/40"
+              : "text-foreground group-hover:text-primary"
+          }`}
+        >
           {item.title}
         </h3>
-        {item.summary && (
+        {item.summary && !isDone && (
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {item.summary.replace(/^https?:\/\/\S+\n\n?/, "").slice(0, 180)}
           </p>
         )}
+      </Link>
+    </div>
+  );
+}
+
+function ProgressBar({
+  doneCount,
+  total,
+  color,
+}: {
+  doneCount: number;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? Math.min(100, (doneCount / total) * 100) : 0;
+  const isComplete = doneCount >= total && total > 0;
+
+  return (
+    <div
+      className="rounded-xl p-5 max-w-2xl"
+      style={{
+        background: isComplete ? "#22c55e12" : color + "12",
+        border: `1px solid ${isComplete ? "#22c55e30" : color + "30"}`,
+      }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div
+          className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest"
+          style={{ color: isComplete ? "#22c55e" : color }}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          {isComplete ? "Track complete!" : "Your progress"}
+        </div>
+        <span className="text-sm font-bold text-foreground">
+          {doneCount.toLocaleString()} / {total.toLocaleString()}
+        </span>
       </div>
-    </Link>
+
+      {/* Bar */}
+      <div className="h-2 rounded-full bg-border overflow-hidden mb-2">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${pct}%`,
+            background: isComplete ? "#22c55e" : color,
+          }}
+        />
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {doneCount === 0
+          ? "Click the circle next to any episode to mark it done."
+          : isComplete
+            ? "You've completed this entire learning track."
+            : `${(total - doneCount).toLocaleString()} episodes remaining`}
+      </p>
+    </div>
   );
 }
 
@@ -147,6 +246,7 @@ export default function TrackDetailPage() {
 
   const queryParams = { limit: PAGE_SIZE, offset };
   const { data, isLoading, isError, isFetching } = useGetTrackEpisodes(slug, queryParams);
+  const progress = useTrackProgress(slug);
 
   const track = data?.track;
   const items = data?.items ?? [];
@@ -229,7 +329,7 @@ export default function TrackDetailPage() {
 
           {/* What you'll know */}
           <div
-            className="rounded-xl p-5 max-w-2xl"
+            className="rounded-xl p-5 max-w-2xl mb-4"
             style={{
               background: track.color + "12",
               border: `1px solid ${track.color}30`,
@@ -246,6 +346,9 @@ export default function TrackDetailPage() {
               {track.whatYouWillKnow}
             </p>
           </div>
+
+          {/* Progress bar */}
+          <ProgressBar doneCount={progress.doneCount} total={total} color={track.color} />
 
           <div className="mt-6 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
@@ -275,6 +378,8 @@ export default function TrackDetailPage() {
               trackColor={track.color}
               index={i}
               globalOffset={offset}
+              isDone={progress.isDone(item.id)}
+              onToggleDone={progress.toggleDone}
             />
           ))}
         </div>

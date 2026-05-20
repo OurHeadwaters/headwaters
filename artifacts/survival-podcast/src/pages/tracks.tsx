@@ -1,11 +1,23 @@
 import { Link } from "wouter";
 import { useListTracks, TrackSummary } from "@/hooks/use-tracks";
+import { useAllTracksProgress } from "@/hooks/use-track-progress";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
-import { BookOpen, ChevronRight, Loader2 } from "lucide-react";
+import { BookOpen, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
 
 const ZONE_LABELS = ["Zone 0", "Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5"];
 
-function TrackCard({ track }: { track: TrackSummary }) {
+function TrackCard({
+  track,
+  doneCount,
+}: {
+  track: TrackSummary;
+  doneCount: number;
+}) {
+  const pct =
+    track.episodeCount > 0 ? Math.min(100, (doneCount / track.episodeCount) * 100) : 0;
+  const isStarted = doneCount > 0;
+  const isComplete = isStarted && doneCount >= track.episodeCount;
+
   return (
     <Link
       href={`/tracks/${track.slug}`}
@@ -34,12 +46,19 @@ function TrackCard({ track }: { track: TrackSummary }) {
           <span
             className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full border"
             style={{
-              color: track.color,
-              borderColor: track.color + "44",
-              background: track.color + "15",
+              color: isComplete ? "#22c55e" : track.color,
+              borderColor: isComplete ? "#22c55e44" : track.color + "44",
+              background: isComplete ? "#22c55e15" : track.color + "15",
             }}
           >
-            {track.episodeCount.toLocaleString()} episodes
+            {isComplete ? (
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                Complete
+              </span>
+            ) : (
+              `${track.episodeCount.toLocaleString()} episodes`
+            )}
           </span>
         )}
       </div>
@@ -63,8 +82,31 @@ function TrackCard({ track }: { track: TrackSummary }) {
           </div>
         )}
 
+        {/* Progress bar — only shown if started */}
+        {isStarted && track.episodeCount > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                {isComplete ? "Completed!" : "In progress"}
+              </span>
+              <span className="text-[11px] font-bold" style={{ color: isComplete ? "#22c55e" : track.color }}>
+                {doneCount.toLocaleString()} / {track.episodeCount.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-border overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${pct}%`,
+                  background: isComplete ? "#22c55e" : track.color,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5 text-sm font-semibold text-primary/70 group-hover:text-primary transition-colors mt-auto">
-          Start this track
+          {isStarted ? (isComplete ? "Review this track" : "Continue track") : "Start this track"}
           <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
@@ -74,6 +116,11 @@ function TrackCard({ track }: { track: TrackSummary }) {
 
 export default function TracksPage() {
   const { data: tracks, isLoading, isError } = useListTracks();
+  const slugs = tracks?.map((t) => t.slug) ?? [];
+  const progressSummary = useAllTracksProgress(slugs);
+
+  const totalDone = Object.values(progressSummary).reduce((a, b) => a + b, 0);
+  const hasAnyProgress = totalDone > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +167,7 @@ export default function TracksPage() {
             When you're ready to take what you've learned into community, there's a path waiting.
           </p>
 
-          <div className="mt-8 flex gap-3">
+          <div className="mt-8 flex gap-3 flex-wrap items-center">
             <Link
               href="/start"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors border"
@@ -132,6 +179,12 @@ export default function TracksPage() {
             >
               New here? Start here
             </Link>
+            {hasAnyProgress && (
+              <span className="text-sm font-semibold" style={{ color: "#8FA883" }}>
+                <CheckCircle2 className="w-4 h-4 inline mr-1 text-green-400" />
+                {totalDone.toLocaleString()} episodes marked done across all tracks
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -167,7 +220,11 @@ export default function TracksPage() {
         {tracks && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {tracks.map((track) => (
-              <TrackCard key={track.slug} track={track} />
+              <TrackCard
+                key={track.slug}
+                track={track}
+                doneCount={progressSummary[track.slug] ?? 0}
+              />
             ))}
           </div>
         )}
