@@ -6,6 +6,7 @@ import {
 import { getFeedCached, type RssEpisode } from "../lib/rss";
 import { logger } from "../lib/logger";
 import { getCuratedDescription } from "../lib/category-descriptions";
+import { extractHistoryTimestamp } from "../lib/history-detection";
 import { sql } from "drizzle-orm";
 import { db, contentItemsTable } from "@workspace/db";
 
@@ -78,61 +79,6 @@ router.get("/episodes", async (req, res) => {
   }
 });
 
-function extractHistoryTimestamp(descriptionHtml: string): number | null {
-  // Preserve line boundaries BEFORE stripping tags so list items / paragraphs
-  // don't collapse into one giant line and accidentally match wrong timestamps.
-  const text = descriptionHtml
-    .replace(/<\/(p|div|li|h\d|br|tr|dt|dd)>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/[ \t]+/g, " ");
-
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-
-  const historyKeywords =
-    /this\s+day\s+in\s+history|today\s+in\s+history|on\s+this\s+day|tsp\s+history|jack.*history/i;
-  // H:MM:SS  or  MM:SS  — but NOT a bare "12:00" that could be a clock time at
-  // the start of a sentence; require it to be preceded by a space, dash, bracket,
-  // or line start when doing proximity matching.
-  const timestampRe = /(?:^|[\s\-–—\[•·])(\d{1,2}):(\d{2}):(\d{2})(?:\b|$)|(?:^|[\s\-–—\[•·])(\d{1,3}):(\d{2})(?:\b|$)/;
-
-  function parseTs(m: RegExpMatchArray): number {
-    if (m[1] !== undefined) {
-      return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
-    }
-    return Number(m[4]) * 60 + Number(m[5]);
-  }
-
-  // Primary pass: look for "this day in history" keywords with nearby timestamp
-  for (let i = 0; i < lines.length; i++) {
-    if (!historyKeywords.test(lines[i])) continue;
-    // Check the keyword line itself and the 3 lines before/after it
-    for (let j = Math.max(0, i - 3); j <= Math.min(lines.length - 1, i + 3); j++) {
-      const m = lines[j].match(timestampRe);
-      if (m) return parseTs(m);
-    }
-  }
-
-  // Secondary pass: any "history" mention adjacent to a meaningful timestamp
-  for (let i = 0; i < lines.length; i++) {
-    if (!/\bhistory\b/i.test(lines[i])) continue;
-    for (let j = Math.max(0, i - 1); j <= Math.min(lines.length - 1, i + 2); j++) {
-      const m = lines[j].match(timestampRe);
-      if (m) {
-        const ts = parseTs(m);
-        if (ts >= 60) return ts;
-      }
-    }
-  }
-
-  return null;
-}
 
 router.get("/episodes/this-day", async (req, res) => {
   try {
