@@ -7,6 +7,7 @@ import {
   getLibrarySeriesEpisodes,
   mergeAndDeduplicateEpisodes,
 } from "../lib/series";
+import { getSeriesConsistencyReport } from "../lib/series-consistency";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -66,6 +67,18 @@ router.get("/series/:slug/episodes", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "Failed to load series episodes");
     res.status(502).json({ error: "Unable to load series episodes" });
+  }
+});
+
+router.get("/series/consistency", async (req, res) => {
+  try {
+    const forceRefresh = req.query.refresh === "1";
+    const feed = await getFeedCached();
+    const report = await getSeriesConsistencyReport(feed.episodes, { forceRefresh });
+    res.json(report);
+  } catch (err) {
+    logger.error({ err }, "Failed to run series consistency check");
+    res.status(502).json({ error: "Unable to run consistency check" });
   }
 });
 

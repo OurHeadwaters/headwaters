@@ -4,6 +4,157 @@ import { logger } from "./logger";
 import { SERIES_REGISTRY } from "./series";
 import type { RssEpisode } from "./rss";
 
+export type SeriesConsistencyStatus = {
+  slug: string;
+  title: string;
+  status: "ok" | "warning";
+  rssDetectCount: number;
+  sqlCount: number;
+  missedBySql: string[];
+  missedByDetect: string[];
+};
+
+export type ConsistencyReport = {
+  checkedAt: string;
+  allOk: boolean;
+  series: SeriesConsistencyStatus[];
+};
+
+let cachedReport: ConsistencyReport | null = null;
+let cacheExpiresAt = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+export async function getSeriesConsistencyReport(
+  rssEpisodes: RssEpisode[],
+  { forceRefresh = false } = {},
+): Promise<ConsistencyReport> {
+  const now = Date.now();
+  if (!forceRefresh && cachedReport && now < cacheExpiresAt) {
+    return cachedReport;
+  }
+
+  const series: SeriesConsistencyStatus[] = [];
+
+  for (const seriesDef of SERIES_REGISTRY) {
+    try {
+      const detectSlugs = new Set(
+        rssEpisodes.filter((ep) => seriesDef.detect(ep)).map((ep) => ep.slug),
+      );
+
+      let sqlSlugs = new Set<string>();
+      try {
+        const sqlRows = await db
+          .select({ slug: contentItemsTable.slug })
+          .from(contentItemsTable)
+          .where(seriesDef.librarySql())
+          .limit(5000);
+        sqlSlugs = new Set(sqlRows.map((r) => r.slug));
+      } catch (sqlErr) {
+        logger.warn(
+          { err: sqlErr, series: seriesDef.slug },
+          "series-consistency: librarySql() query failed; skipping SQL side of check",
+        );
+        series.push({
+          slug: seriesDef.slug,
+          title: seriesDef.title,
+          status: "warning",
+          rssDetectCount: detectSlugs.size,
+          sqlCount: 0,
+          missedBySql: [],
+          missedByDetect: ["(sql query failed)"],
+        });
+        continue;
+      }
+
+      const detectSlugArray = [...detectSlugs];
+      let libraryRowsForDetected: { slug: string }[] = [];
+      if (detectSlugArray.length > 0) {
+        libraryRowsForDetected = await db
+          .select({ slug: contentItemsTable.slug })
+          .from(contentItemsTable)
+          .where(inArray(contentItemsTable.slug, detectSlugArray))
+          .limit(5000);
+      }
+
+      const missedBySql: string[] = [];
+      const missedByDetect: string[] = [];
+
+      const libraryDetectSlugs = new Set(libraryRowsForDetected.map((r) => r.slug));
+
+      for (const row of libraryRowsForDetected) {
+        if (!sqlSlugs.has(row.slug)) {
+          missedBySql.push(row.slug);
+        }
+      }
+
+      for (const slug of sqlSlugs) {
+        if (!libraryDetectSlugs.has(slug) && !detectSlugs.has(slug)) {
+          const sqlRow = await db
+            .select({ slug: contentItemsTable.slug, title: contentItemsTable.title, summary: contentItemsTable.summary, bodyHtml: contentItemsTable.bodyHtml, categories: contentItemsTable.categories })
+            .from(contentItemsTable)
+            .where(inArray(contentItemsTable.slug, [slug]))
+            .limit(1);
+          if (sqlRow[0]) {
+            const ep: RssEpisode = {
+              slug: sqlRow[0].slug,
+              guid: sqlRow[0].slug,
+              episodeNumber: null,
+              title: sqlRow[0].title,
+              link: "",
+              pubDate: "",
+              summary: sqlRow[0].summary,
+              descriptionHtml: sqlRow[0].bodyHtml,
+              durationSeconds: null,
+              audioUrl: null,
+              audioType: null,
+              artworkUrl: null,
+              categories: sqlRow[0].categories,
+            };
+            if (!seriesDef.detect(ep)) {
+              missedByDetect.push(slug);
+            }
+          }
+        }
+      }
+
+      series.push({
+        slug: seriesDef.slug,
+        title: seriesDef.title,
+        status: missedBySql.length > 0 || missedByDetect.length > 0 ? "warning" : "ok",
+        rssDetectCount: detectSlugs.size,
+        sqlCount: sqlSlugs.size,
+        missedBySql,
+        missedByDetect,
+      });
+    } catch (err) {
+      logger.warn(
+        { err, series: seriesDef.slug },
+        "series-consistency: check failed for series; skipping",
+      );
+      series.push({
+        slug: seriesDef.slug,
+        title: seriesDef.title,
+        status: "warning",
+        rssDetectCount: 0,
+        sqlCount: 0,
+        missedBySql: [],
+        missedByDetect: ["(check threw an error)"],
+      });
+    }
+  }
+
+  const report: ConsistencyReport = {
+    checkedAt: new Date().toISOString(),
+    allOk: series.every((s) => s.status === "ok"),
+    series,
+  };
+
+  cachedReport = report;
+  cacheExpiresAt = Date.now() + CACHE_TTL_MS;
+
+  return report;
+}
+
 /**
  * Pre-flight guard: verifies that every SeriesDefinition in SERIES_REGISTRY has a
  * non-trivially-empty librarySql() predicate.

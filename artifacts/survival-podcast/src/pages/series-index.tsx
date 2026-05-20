@@ -1,13 +1,48 @@
 import { useListSeries } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { ChevronRight, Layers } from "lucide-react";
+import { ChevronRight, Layers, AlertTriangle } from "lucide-react";
 import { getSeriesTheme } from "@/lib/seriesTheme";
+import { useQuery } from "@tanstack/react-query";
+
+function apiUrl(path: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${base}/api${path}`;
+}
+
+function useConsistencyWarning() {
+  return useQuery({
+    queryKey: ["series-consistency-banner"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/series/consistency"));
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data as { allOk: boolean; series: { status: string }[] };
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
 
 export function SeriesIndex() {
   const { data: seriesList, isLoading, isError } = useListSeries({ orderBy: "episodeCount:desc" });
+  const { data: consistency } = useConsistencyWarning();
+  const warningCount = consistency?.series.filter((s) => s.status === "warning").length ?? 0;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-10">
+      {warningCount > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
+          <p className="flex-1">
+            <span className="font-semibold">{warningCount} series {warningCount === 1 ? "has" : "have"} count mismatches</span>
+            {" — "}episode totals may be inaccurate.{" "}
+            <Link href="/admin/series-health" className="underline hover:text-amber-900 font-medium">
+              View details →
+            </Link>
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           <Layers className="w-4 h-4" />
