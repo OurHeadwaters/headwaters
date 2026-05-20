@@ -172,7 +172,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="mt-8 pt-8 border-t border-white/10 text-xs text-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
             <span>&copy; {new Date().getFullYear()} The Survival Podcast. All rights reserved.</span>
-            <span>Built for people building a life worth defending.</span>
+            <div className="flex items-center gap-4">
+              <Link href="/admin/categories" className="hover:text-white/70 transition-colors">
+                Category Descriptions Editor
+              </Link>
+              <span>Built for people building a life worth defending.</span>
+            </div>
           </div>
         </div>
       </footer>
