@@ -131,7 +131,7 @@ export default function DownloadsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { downloads, totalStorageBytes } = useDownloads();
-  const { currentEpisode } = usePlayer();
+  const { currentEpisode, playQueue } = usePlayer();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPadding = currentEpisode
@@ -139,6 +139,20 @@ export default function DownloadsScreen() {
     : Platform.OS === "web" ? 84 + 16 : 49 + insets.bottom + 16;
 
   const items = Object.values(downloads).sort((a, b) => b.downloadedAt - a.downloadedAt);
+
+  const handlePlayAll = async () => {
+    if (items.length === 0) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const episodes = items.map(item => ({
+      slug: item.slug,
+      title: item.title,
+      audioUrl: item.localUri,
+      artworkUrl: item.artworkUrl,
+      episodeNumber: item.episodeNumber,
+      durationSeconds: item.durationSeconds,
+    }));
+    await playQueue(episodes);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -148,14 +162,29 @@ export default function DownloadsScreen() {
         renderItem={({ item }) => <DownloadItem item={item} />}
         ListHeaderComponent={
           <View style={[styles.header, { paddingTop: topPadding + 16 }]}>
-            <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-              Downloads
-            </Text>
-            {items.length > 0 && (
-              <Text style={[styles.headerSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-                {items.length} episode{items.length !== 1 ? "s" : ""} saved · {formatBytes(totalStorageBytes)} used
-              </Text>
-            )}
+            <View style={styles.headerRow}>
+              <View style={styles.headerText}>
+                <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+                  Downloads
+                </Text>
+                {items.length > 0 && (
+                  <Text style={[styles.headerSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                    {items.length} episode{items.length !== 1 ? "s" : ""} saved · {formatBytes(totalStorageBytes)} used
+                  </Text>
+                )}
+              </View>
+              {items.length > 1 && (
+                <Pressable
+                  onPress={handlePlayAll}
+                  style={[styles.playAllBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="play" size={14} color={colors.primaryForeground} style={{ marginLeft: 2 }} />
+                  <Text style={[styles.playAllText, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                    Play all
+                  </Text>
+                </Pressable>
+              )}
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -184,11 +213,30 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 4,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerText: {
+    gap: 4,
+  },
   headerTitle: {
     fontSize: 28,
   },
   headerSub: {
     fontSize: 13,
+  },
+  playAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  playAllText: {
+    fontSize: 14,
   },
   item: {
     borderBottomWidth: 1,

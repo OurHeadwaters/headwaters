@@ -13,7 +13,7 @@ const TAB_BAR_HEIGHT = Platform.OS === "web" ? 84 : 49;
 export function MiniPlayer() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, pause, resume } = usePlayer();
+  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, pause, resume, nextEpisode } = usePlayer();
 
   if (!currentEpisode) return null;
 
@@ -28,6 +28,12 @@ export function MiniPlayer() {
   const handleOpen = () => {
     router.push(`/episode/${currentEpisode.slug}`);
   };
+
+  const upNextLabel = nextEpisode
+    ? (nextEpisode.episodeNumber != null
+        ? `EP ${nextEpisode.episodeNumber} · ${nextEpisode.title}`
+        : nextEpisode.title)
+    : null;
 
   return (
     <Pressable
@@ -66,12 +72,22 @@ export function MiniPlayer() {
             <Ionicons name="radio" size={18} color={colors.primaryForeground} />
           </View>
         )}
-        <Text
-          style={[styles.title, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}
-          numberOfLines={1}
-        >
-          {currentEpisode.title}
-        </Text>
+        <View style={styles.textBlock}>
+          <Text
+            style={[styles.title, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}
+            numberOfLines={1}
+          >
+            {currentEpisode.title}
+          </Text>
+          {upNextLabel && (
+            <Text
+              style={[styles.upNext, { color: colors.primaryForeground, fontFamily: "DMSans_400Regular" }]}
+              numberOfLines={1}
+            >
+              Up next: {upNextLabel}
+            </Text>
+          )}
+        </View>
         <Pressable
           onPress={handlePlayPause}
           style={styles.playBtn}
@@ -131,9 +147,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  title: {
+  textBlock: {
     flex: 1,
+    gap: 2,
+  },
+  title: {
     fontSize: 13,
+  },
+  upNext: {
+    fontSize: 11,
+    opacity: 0.75,
   },
   playBtn: {
     width: 36,

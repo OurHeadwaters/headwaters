@@ -19,7 +19,11 @@ interface PlayerState {
   positionMs: number;
   durationMs: number;
   playbackMinutes: number;
+  queue: PlayableEpisode[];
+  nextEpisode: PlayableEpisode | null;
   play: (episode: PlayableEpisode) => Promise<void>;
+  playQueue: (episodes: PlayableEpisode[]) => Promise<void>;
+  clearQueue: () => void;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
@@ -45,6 +49,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const lastMinuteRef = useRef(0);
   const playbackMinutesRef = useRef(0);
 
+  const [queue, setQueue] = useState<PlayableEpisode[]>([]);
+  const queueRef = useRef<PlayableEpisode[]>([]);
+
   const onEpisodeFinishedRef = useRef<((slug: string) => void) | null>(null);
   const onPlaybackMinuteRef = useRef<((slug: string, minuteCount: number) => void) | null>(null);
   const [onEpisodeFinished, setOnEpisodeFinishedState] = useState<((slug: string) => void) | null>(null);
@@ -62,6 +69,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const { savePosition, getPositionAsync, markFinished } = useHistory();
 
+  const playEpisodeInternalRef = useRef<((episode: PlayableEpisode, fromPosition?: number) => Promise<void>) | null>(null);
+
   const onPlaybackStatus = useCallback(
     (status: AVPlaybackStatus) => {
       if (!status.isLoaded) return;
@@ -72,7 +81,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const ep = currentEpisodeRef.current;
       if (ep && status.positionMillis > 5000) {
         const now = Date.now();
-        // Save position every 5 seconds
         if (now - lastSaveRef.current >= 5000) {
           lastSaveRef.current = now;
           savePosition({
@@ -86,7 +94,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           });
         }
 
-        // Track playback minutes for streaming micropayments
         if (status.isPlaying) {
           const minutesSinceStart = Math.floor(status.positionMillis / 60000);
           if (minutesSinceStart > lastMinuteRef.current) {
@@ -109,13 +116,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             onEpisodeFinishedRef.current(ep.slug);
           }
         }
+
+        const nextQueue = queueRef.current;
+        if (nextQueue.length > 0) {
+          const [next, ...remaining] = nextQueue;
+          queueRef.current = remaining;
+          setQueue(remaining);
+          playEpisodeInternalRef.current?.(next, 0);
+        }
       }
     },
     [savePosition, markFinished],
   );
 
-  const play = useCallback(
-    async (episode: PlayableEpisode) => {
+  const playEpisodeInternal = useCallback(
+    async (episode: PlayableEpisode, fromPosition = 0) => {
       if (!episode.audioUrl) return;
       try {
         setIsLoading(true);
@@ -131,13 +146,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             shouldDuckAndroid: true,
           });
         }
-        const savedPos = await getPositionAsync(episode.slug);
         const { sound } = await Audio.Sound.createAsync(
           { uri: episode.audioUrl },
           {
             shouldPlay: true,
             progressUpdateIntervalMillis: 500,
-            positionMillis: savedPos > 0 ? savedPos : 0,
+            positionMillis: fromPosition > 0 ? fromPosition : 0,
           },
           onPlaybackStatus,
         );
@@ -145,20 +159,48 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         currentEpisodeRef.current = episode;
         setCurrentEpisode(episode);
         setIsPlaying(true);
-        setPositionMs(savedPos);
+        setPositionMs(fromPosition);
         setDurationMs(episode.durationSeconds ? episode.durationSeconds * 1000 : 0);
         lastSaveRef.current = 0;
-        lastMinuteRef.current = Math.floor(savedPos / 60000);
-        playbackMinutesRef.current = Math.floor(savedPos / 60000);
-        setPlaybackMinutes(Math.floor(savedPos / 60000));
+        lastMinuteRef.current = Math.floor(fromPosition / 60000);
+        playbackMinutesRef.current = Math.floor(fromPosition / 60000);
+        setPlaybackMinutes(Math.floor(fromPosition / 60000));
       } catch (e) {
         console.error("Audio play error:", e);
       } finally {
         setIsLoading(false);
       }
     },
-    [onPlaybackStatus, getPositionAsync],
+    [onPlaybackStatus],
   );
+
+  playEpisodeInternalRef.current = playEpisodeInternal;
+
+  const play = useCallback(
+    async (episode: PlayableEpisode) => {
+      queueRef.current = [];
+      setQueue([]);
+      const savedPos = await getPositionAsync(episode.slug);
+      await playEpisodeInternal(episode, savedPos > 0 ? savedPos : 0);
+    },
+    [playEpisodeInternal, getPositionAsync],
+  );
+
+  const playQueue = useCallback(
+    async (episodes: PlayableEpisode[]) => {
+      if (episodes.length === 0) return;
+      const [first, ...rest] = episodes;
+      queueRef.current = rest;
+      setQueue(rest);
+      await playEpisodeInternal(first, 0);
+    },
+    [playEpisodeInternal],
+  );
+
+  const clearQueue = useCallback(() => {
+    queueRef.current = [];
+    setQueue([]);
+  }, []);
 
   const pause = useCallback(async () => {
     await soundRef.current?.pauseAsync();
@@ -196,14 +238,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     await soundRef.current?.unloadAsync();
     soundRef.current = null;
     currentEpisodeRef.current = null;
+    queueRef.current = [];
     setCurrentEpisode(null);
     setIsPlaying(false);
     setPositionMs(0);
     setDurationMs(0);
     setPlaybackMinutes(0);
+    setQueue([]);
     lastMinuteRef.current = 0;
     playbackMinutesRef.current = 0;
   }, []);
+
+  const nextEpisode = queue.length > 0 ? queue[0] : null;
 
   return (
     <PlayerContext.Provider
@@ -214,7 +260,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         positionMs,
         durationMs,
         playbackMinutes,
+        queue,
+        nextEpisode,
         play,
+        playQueue,
+        clearQueue,
         pause,
         resume,
         seek,
