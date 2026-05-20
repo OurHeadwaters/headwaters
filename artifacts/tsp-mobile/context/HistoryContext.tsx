@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 const HISTORY_KEY = "tsp:playback_history";
 const BOOKMARKS_KEY = "tsp:bookmarks";
@@ -28,8 +28,10 @@ export interface BookmarkEntry {
 interface HistoryState {
   history: Record<string, PlaybackRecord>;
   bookmarks: BookmarkEntry[];
+  isReady: boolean;
   savePosition: (record: Omit<PlaybackRecord, "updatedAt">) => Promise<void>;
   getSavedPosition: (slug: string) => number;
+  getPositionAsync: (slug: string) => Promise<number>;
   markFinished: (slug: string) => Promise<void>;
   isBookmarked: (slug: string) => boolean;
   toggleBookmark: (entry: Omit<BookmarkEntry, "savedAt">) => Promise<void>;
@@ -41,21 +43,39 @@ const HistoryContext = createContext<HistoryState | null>(null);
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<Record<string, PlaybackRecord>>({});
   const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
+  const [isReady, setIsReady] = useState(false);
+  const historyRef = useRef<Record<string, PlaybackRecord>>({});
 
   useEffect(() => {
+    let historyLoaded = false;
+    let bookmarksLoaded = false;
+
+    function checkReady() {
+      if (historyLoaded && bookmarksLoaded) {
+        setIsReady(true);
+      }
+    }
+
     AsyncStorage.getItem(HISTORY_KEY).then((raw) => {
       if (raw) {
         try {
-          setHistory(JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          historyRef.current = parsed;
+          setHistory(parsed);
         } catch {}
       }
+      historyLoaded = true;
+      checkReady();
     });
+
     AsyncStorage.getItem(BOOKMARKS_KEY).then((raw) => {
       if (raw) {
         try {
           setBookmarks(JSON.parse(raw));
         } catch {}
       }
+      bookmarksLoaded = true;
+      checkReady();
     });
   }, []);
 
@@ -63,6 +83,7 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     const entry: PlaybackRecord = { ...record, updatedAt: Date.now() };
     setHistory((prev) => {
       const next = { ...prev, [record.slug]: entry };
+      historyRef.current = next;
       AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
       return next;
     });
@@ -75,10 +96,28 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     [history],
   );
 
+  const getPositionAsync = useCallback(
+    async (slug: string): Promise<number> => {
+      if (isReady) {
+        return historyRef.current[slug]?.positionMs ?? 0;
+      }
+      try {
+        const raw = await AsyncStorage.getItem(HISTORY_KEY);
+        if (raw) {
+          const parsed: Record<string, PlaybackRecord> = JSON.parse(raw);
+          return parsed[slug]?.positionMs ?? 0;
+        }
+      } catch {}
+      return 0;
+    },
+    [isReady],
+  );
+
   const markFinished = useCallback(async (slug: string) => {
     setHistory((prev) => {
       if (!prev[slug]) return prev;
       const next = { ...prev, [slug]: { ...prev[slug], positionMs: 0, updatedAt: Date.now() } };
+      historyRef.current = next;
       AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
       return next;
     });
@@ -112,8 +151,10 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       value={{
         history,
         bookmarks,
+        isReady,
         savePosition,
         getSavedPosition,
+        getPositionAsync,
         markFinished,
         isBookmarked,
         toggleBookmark,

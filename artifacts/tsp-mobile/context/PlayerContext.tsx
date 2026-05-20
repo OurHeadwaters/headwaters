@@ -37,7 +37,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [durationMs, setDurationMs] = useState(0);
   const lastSaveRef = useRef(0);
 
-  const { savePosition, getSavedPosition, markFinished } = useHistory();
+  const { savePosition, getPositionAsync, markFinished } = useHistory();
 
   const onPlaybackStatus = useCallback(
     (status: AVPlaybackStatus) => {
@@ -91,7 +91,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             shouldDuckAndroid: true,
           });
         }
-        const savedPos = getSavedPosition(episode.slug);
+        const savedPos = await getPositionAsync(episode.slug);
         const { sound } = await Audio.Sound.createAsync(
           { uri: episode.audioUrl },
           {
@@ -114,7 +114,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [onPlaybackStatus, getSavedPosition],
+    [onPlaybackStatus, getPositionAsync],
   );
 
   const pause = useCallback(async () => {
