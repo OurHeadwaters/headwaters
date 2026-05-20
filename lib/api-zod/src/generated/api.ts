@@ -50,7 +50,8 @@ export const ListEpisodesQueryParams = zod.object({
   "offset": zod.coerce.number().min(listEpisodesQueryOffsetMin).default(listEpisodesQueryOffsetDefault),
   "q": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
-  "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)')
+  "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)'),
+  "sort": zod.enum(["newest", "oldest", "popular"]).default("newest").optional().describe('Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)')
 })
 
 export const ListEpisodesResponse = zod.object({

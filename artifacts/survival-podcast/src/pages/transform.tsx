@@ -16,7 +16,7 @@ function buildTagsFilter(t: Transformation): string[] {
 
 function TransformationCard({ t }: { t: Transformation }) {
   const queryTags = buildTagsFilter(t);
-  const params = { limit: 3, offset: 0, tags: queryTags };
+  const params = { limit: 3, offset: 0, tags: queryTags, sort: "popular" as const };
   const { data: episodePage } = useListEpisodes(params, {
     query: { queryKey: getListEpisodesQueryKey(params) },
   });

@@ -70,6 +70,14 @@ paths:
               type: string
           style: form
           explode: true
+        - name: sort
+          in: query
+          required: false
+          description: "Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)"
+          schema:
+            type: string
+            enum: [newest, oldest, popular]
+            default: newest
       responses:
         "200":
           description: Episodes page

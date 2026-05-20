@@ -26,8 +26,41 @@ type TagCacheEntry = {
 
 const tagQueryCache = new Map<string, TagCacheEntry>();
 
-function tagCacheKey(normalizedTags: string[]): string {
-  return [...normalizedTags].sort().join("|");
+function tagCacheKey(normalizedTags: string[], sort: string): string {
+  return [...normalizedTags].sort().join("|") + ":" + sort;
+}
+
+type SortOrder = "newest" | "oldest" | "popular";
+
+/**
+ * Returns a comparator for EpisodeSummary items.
+ *
+ * - newest  : most recent pubDate first (default / fallback)
+ * - oldest  : oldest pubDate first
+ * - popular : lowest episode number first (foundational / evergreen episodes);
+ *             episodes without a number sort after numbered ones, then by pubDate asc.
+ *             Falls back to recency when no episodeNumber is available.
+ */
+function sortComparator(sort: SortOrder | string | undefined): (a: EpisodeSummary, b: EpisodeSummary) => number {
+  if (sort === "oldest") {
+    return (a, b) => a.pubDate.localeCompare(b.pubDate);
+  }
+  if (sort === "popular") {
+    return (a, b) => {
+      const aNum = a.episodeNumber ?? null;
+      const bNum = b.episodeNumber ?? null;
+      // Both have episode numbers: lower number = more foundational
+      if (aNum !== null && bNum !== null) return aNum - bNum;
+      // Only a has a number: a comes first
+      if (aNum !== null) return -1;
+      // Only b has a number: b comes first
+      if (bNum !== null) return 1;
+      // Neither has a number: fall back to oldest-first
+      return a.pubDate.localeCompare(b.pubDate);
+    };
+  }
+  // newest (default)
+  return (a, b) => b.pubDate.localeCompare(a.pubDate);
 }
 
 export function invalidateTagQueryCache(): void {
@@ -79,12 +112,13 @@ router.get("/episodes", async (req, res) => {
       category:
         typeof req.query.category === "string" ? req.query.category : undefined,
       tags: tagsInput.length > 0 ? tagsInput : undefined,
+      sort: typeof req.query.sort === "string" ? req.query.sort : undefined,
     });
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid query parameters" });
       return;
     }
-    const { limit = 20, offset = 0, q, category, tags } = parsed.data;
+    const { limit = 20, offset = 0, q, category, tags, sort = "newest" } = parsed.data;
     const feed = await getFeedCached();
 
     // Apply tag / category filter on RSS episodes, then strip descriptionHtml
@@ -109,7 +143,7 @@ router.get("/episodes", async (req, res) => {
     // heavy JSONB queries on every page change.
     if (tags && tags.length > 0) {
       const normalizedTags = tags.map((t) => t.toLowerCase());
-      const cacheKey = tagCacheKey(normalizedTags);
+      const cacheKey = tagCacheKey(normalizedTags, sort ?? "newest");
       const now = Date.now();
       const cached = tagQueryCache.get(cacheKey);
 
@@ -167,8 +201,8 @@ router.get("/episodes", async (req, res) => {
             });
           }
 
-          // Re-sort the merged list by most recent first
-          items.sort((a, b) => b.pubDate.localeCompare(a.pubDate));
+          // Sort the merged list according to requested order
+          items.sort(sortComparator(sort));
 
           tagQueryCache.set(cacheKey, { fetchedAt: now, items });
           logger.debug({ cacheKey, total: items.length }, "episodes: tag query result cached");
@@ -179,6 +213,13 @@ router.get("/episodes", async (req, res) => {
           );
         }
       }
+    }
+
+    // Apply sort to RSS-only paths (tags path sorts internally; this covers
+    // category-only or no-filter requests whose items come pre-sorted newest-first
+    // from the RSS feed and may need re-ordering for oldest/popular).
+    if (!tags || tags.length === 0) {
+      items.sort(sortComparator(sort));
     }
 
     if (q && q.trim()) {

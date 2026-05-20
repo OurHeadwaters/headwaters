@@ -343,6 +343,10 @@ category?: string;
  * One or more topic tags to filter by (sent as tags[] array)
  */
 tags?: string[];
+/**
+ * Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)
+ */
+sort?: 'newest' | 'oldest' | 'popular';
 };
 
 export type GetThisDayEpisodesParams = {
