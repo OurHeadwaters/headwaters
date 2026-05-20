@@ -1,6 +1,6 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListZones, ZoneSummary, ZoneSeriesSummary } from "@workspace/api-client-react";
-import { Sprout, Loader2 } from "lucide-react";
+import { Sprout, Loader2, Headphones, Users, Building2 } from "lucide-react";
 
 const ZONE_RING_COLORS = [
   "border-amber-600",
@@ -38,6 +38,11 @@ const ZONE_NUMBER_LABELS = [
   "Zone 5",
 ];
 
+type ZoneSummaryExtended = ZoneSummary & {
+  expertCount?: number;
+  businessCount?: number;
+};
+
 export default function ZonesPage() {
   const { data: zones, isLoading, isError } = useListZones();
 
@@ -58,7 +63,8 @@ export default function ZonesPage() {
           <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
             Jack has always taught permaculture in zones — concentric rings of
             care and attention starting from the self outward. We've organized
-            his entire archive the same way. Start where you are. Work outward.
+            his entire archive the same way. Each zone page collects episodes to
+            listen to, experts to learn from, and businesses working in that space.
           </p>
           {/* Zone diagram hint */}
           <div className="mt-8 flex items-center gap-3 flex-wrap">
@@ -90,7 +96,7 @@ export default function ZonesPage() {
         )}
         {zones && (
           <div className="space-y-6">
-            {zones.map((zone) => (
+            {(zones as ZoneSummaryExtended[]).map((zone) => (
               <ZoneCard key={zone.slug} zone={zone} />
             ))}
           </div>
@@ -100,82 +106,99 @@ export default function ZonesPage() {
   );
 }
 
-function ZoneCard({ zone }: { zone: ZoneSummary }) {
+function ZoneCard({ zone }: { zone: ZoneSummaryExtended }) {
   const idx = zone.number;
   const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
   const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
   const textColor = ZONE_TEXT_COLORS[idx] ?? "text-foreground";
+  const [, navigate] = useLocation();
 
   return (
     <div
-      className={`rounded-xl border-l-4 ${ringColor} border border-border bg-card overflow-hidden group hover:shadow-md transition-shadow`}
+      onClick={() => navigate(`/zones/${zone.slug}`)}
+      className={`rounded-xl border-l-4 ${ringColor} border border-border bg-card overflow-hidden group hover:shadow-md transition-shadow cursor-pointer`}
     >
-      <div className="flex flex-col md:flex-row">
-        {/* Left: zone number + name */}
-        <div className={`${bgColor} px-6 py-6 md:w-56 shrink-0 flex flex-col justify-center`}>
-          <div className={`text-xs font-bold uppercase tracking-widest mb-1 ${textColor} opacity-70`}>
-            Zone {zone.number}
-          </div>
-          <h2 className={`font-serif text-2xl font-bold ${textColor}`}>{zone.name}</h2>
-          <div className={`text-xs mt-2 font-medium ${textColor} opacity-60 leading-snug`}>
-            {zone.itemCount.toLocaleString()} items
-          </div>
-          {/* Sample artwork strip */}
-          {zone.sampleArtwork.length > 0 && (
-            <div className="flex gap-1 mt-3">
-              {zone.sampleArtwork.slice(0, 3).map((url: string, i: number) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt=""
-                  className="w-10 h-10 rounded object-cover opacity-80"
-                />
-              ))}
+        <div className="flex flex-col md:flex-row">
+          {/* Left: zone number + name */}
+          <div className={`${bgColor} px-6 py-6 md:w-56 shrink-0 flex flex-col justify-center`}>
+            <div className={`text-xs font-bold uppercase tracking-widest mb-1 ${textColor} opacity-70`}>
+              Zone {zone.number}
             </div>
-          )}
-        </div>
+            <h2 className={`font-serif text-2xl font-bold ${textColor}`}>{zone.name}</h2>
 
-        {/* Right: description + series + CTA */}
-        <div className="flex-1 p-6">
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-            {zone.description}
-          </p>
-
-          {/* Blockquote philosophy */}
-          <blockquote className="border-l-2 border-primary/30 pl-3 text-xs italic text-muted-foreground mb-4">
-            {zone.philosophy}
-          </blockquote>
-
-          {/* Series chips */}
-          {zone.series.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {zone.series.map((s: ZoneSeriesSummary) => (
-                <Link
-                  key={s.slug}
-                  href={`/series/${s.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 text-primary hover:bg-primary/15 transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span>{s.iconEmoji}</span>
-                  <span>{s.title}</span>
-                  {s.episodeCount > 0 && (
-                    <span className="text-muted-foreground font-normal">
-                      · {s.episodeCount}
-                    </span>
-                  )}
-                </Link>
-              ))}
+            {/* Resource counts */}
+            <div className="flex flex-col gap-1 mt-3">
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${textColor} opacity-60`}>
+                <Headphones className="w-3 h-3" />
+                <span>{zone.itemCount.toLocaleString()} episodes</span>
+              </div>
+              {(zone.expertCount ?? 0) > 0 && (
+                <div className={`flex items-center gap-1.5 text-xs font-medium ${textColor} opacity-60`}>
+                  <Users className="w-3 h-3" />
+                  <span>{zone.expertCount} expert{(zone.expertCount ?? 0) !== 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {(zone.businessCount ?? 0) > 0 && (
+                <div className={`flex items-center gap-1.5 text-xs font-medium ${textColor} opacity-60`}>
+                  <Building2 className="w-3 h-3" />
+                  <span>{zone.businessCount} business{(zone.businessCount ?? 0) !== 1 ? "es" : ""}</span>
+                </div>
+              )}
             </div>
-          )}
 
-          <Link
-            href={`/zones/${zone.slug}`}
-            className="inline-flex items-center text-sm font-semibold text-primary gap-1.5 hover:underline"
-          >
-            Explore Zone {zone.number} →
-          </Link>
+            {/* Sample artwork strip */}
+            {zone.sampleArtwork.length > 0 && (
+              <div className="flex gap-1 mt-3">
+                {zone.sampleArtwork.slice(0, 3).map((url: string, i: number) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt=""
+                    className="w-10 h-10 rounded object-cover opacity-80"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: description + series + CTA */}
+          <div className="flex-1 p-6">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              {zone.description}
+            </p>
+
+            {/* Blockquote philosophy */}
+            <blockquote className="border-l-2 border-primary/30 pl-3 text-xs italic text-muted-foreground mb-4">
+              {zone.philosophy}
+            </blockquote>
+
+            {/* Series chips */}
+            {zone.series.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4" onClick={(e) => e.stopPropagation()}>
+                {zone.series.map((s: ZoneSeriesSummary) => (
+                  <Link
+                    key={s.slug}
+                    href={`/series/${s.slug}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 text-primary hover:bg-primary/15 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span>{s.iconEmoji}</span>
+                    <span>{s.title}</span>
+                    {s.episodeCount > 0 && (
+                      <span className="text-muted-foreground font-normal">
+                        · {s.episodeCount}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <div className="inline-flex items-center text-sm font-semibold text-primary gap-1.5 group-hover:underline">
+              Explore Zone {zone.number} →
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 }

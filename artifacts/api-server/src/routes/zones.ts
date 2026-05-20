@@ -3,6 +3,12 @@ import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { ZONES, zoneBySlug, SERIES_TITLE_PATTERNS, ALL_SERIES_TAGS } from "../lib/zones";
 import { SERIES_REGISTRY } from "../lib/series";
+import {
+  expertsForZone,
+  businessesForZone,
+  expertCountByZone,
+  businessCountByZone,
+} from "../lib/expert-council";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -60,7 +66,6 @@ async function buildDbSeriesSummary(seriesSlug: string) {
   const def = SERIES_REGISTRY.find((s) => s.slug === seriesSlug);
   if (!def) return null;
 
-  // Count items from library matching series title pattern or series tag
   const titlePattern = esc(seriesSlug === "unloose-the-goose" ? "unloose the goose" :
     seriesSlug === "13-stomps" ? "13 stomps" :
     seriesSlug === "tuesday-chats" ? "tuesday chat" :
@@ -95,10 +100,14 @@ async function buildDbSeriesSummary(seriesSlug: string) {
 
 /**
  * GET /api/zones
- * Returns all 6 zones with item counts, sample artwork, and embedded series summaries.
+ * Returns all 6 zones with item counts, sample artwork, embedded series summaries,
+ * and Expert Council / ULG business counts.
  */
 router.get("/zones", async (_req, res) => {
   try {
+    const expertCounts = expertCountByZone();
+    const businessCounts = businessCountByZone();
+
     const results = await Promise.all(
       ZONES.map(async (zone) => {
         const whereFragment = zoneWhereFragment(zone.tags, zone.categories);
@@ -130,6 +139,8 @@ router.get("/zones", async (_req, res) => {
             .map((r) => r.artwork_url)
             .filter((u): u is string => !!u),
           series: seriesList,
+          expertCount: expertCounts[zone.slug] ?? 0,
+          businessCount: businessCounts[zone.slug] ?? 0,
         };
       }),
     );
@@ -229,6 +240,92 @@ router.get("/zones/:slug/episodes", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "zone episodes failed");
     res.status(500).json({ error: "Failed to load zone episodes" });
+  }
+});
+
+/**
+ * GET /api/zones/:slug/resources
+ * Returns Expert Council members and ULG businesses for a zone,
+ * plus a preview of zone episodes.
+ */
+router.get("/zones/:slug/resources", async (req, res) => {
+  try {
+    const zone = zoneBySlug(req.params.slug);
+    if (!zone) {
+      res.status(404).json({ error: "Zone not found" });
+      return;
+    }
+
+    const episodeLimit = safeInt(req.query.episodeLimit, 12, 1, 50);
+    const experts = expertsForZone(zone.slug);
+    const businesses = businessesForZone(zone.slug);
+
+    const whereFragment = zoneWhereFragment(zone.tags, zone.categories);
+    const scoreFragment = zoneScoreFragment(zone.tags);
+
+    const [episodeRows, countRow] = await Promise.all([
+      db.execute(sql.raw(`
+        SELECT
+          id, source, kind, slug, title, link, summary,
+          published_at, episode_number, duration_seconds, audio_url,
+          audio_type, artwork_url, categories, tags,
+          ${scoreFragment} AS zone_score
+        FROM content_items
+        WHERE ${whereFragment}
+        ORDER BY zone_score DESC, published_at DESC
+        LIMIT ${episodeLimit}
+      `)),
+      db.execute(sql.raw(`
+        SELECT count(*)::int AS count FROM content_items WHERE ${whereFragment}
+      `)),
+    ]);
+
+    type EpRow = {
+      id: number; source: string; kind: string; slug: string;
+      title: string; link: string; summary: string | null;
+      published_at: string; episode_number: number | null;
+      duration_seconds: number | null; audio_url: string | null;
+      audio_type: string | null; artwork_url: string | null;
+      categories: string[]; tags: string[]; zone_score: number;
+    };
+
+    const episodes = (episodeRows.rows as EpRow[]).map((r) => ({
+      id: r.id,
+      source: r.source,
+      kind: r.kind,
+      slug: r.slug,
+      title: r.title,
+      link: r.link,
+      summary: r.summary,
+      publishedAt: new Date(r.published_at).toISOString(),
+      episodeNumber: r.episode_number,
+      durationSeconds: r.duration_seconds,
+      audioUrl: r.audio_url,
+      audioType: r.audio_type,
+      artworkUrl: r.artwork_url,
+      categories: r.categories,
+      tags: r.tags,
+      zoneScore: r.zone_score,
+    }));
+
+    res.json({
+      zone: {
+        number: zone.number,
+        slug: zone.slug,
+        name: zone.name,
+        subtitle: zone.subtitle,
+        description: zone.description,
+        philosophy: zone.philosophy,
+        color: zone.color,
+      },
+      episodes,
+      episodeTotal: (countRow.rows[0] as { count: number }).count,
+      experts,
+      businesses,
+    });
+  } catch (err) {
+    logger.error({ err }, "zone resources failed");
+    res.status(500).json({ error: "Failed to load zone resources" });
   }
 });
 

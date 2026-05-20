@@ -1,123 +1,183 @@
 import { Link, useRoute } from "wouter";
-import { useGetZoneEpisodes, getGetZoneEpisodesQueryKey } from "@workspace/api-client-react";
-import { keepPreviousData } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
-import { Mic, FileText, PlaySquare, Clock, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
-import { formatDuration } from "../components/episode-card";
+import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
+import { OdysseyBridge } from "@/components/odyssey-bridge";
+import {
+  Loader2, Headphones, Users, Building2, ExternalLink,
+  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare,
+} from "lucide-react";
 
-const PAGE_SIZE = 24;
+const ZONE_RING_COLORS = [
+  "border-amber-600",
+  "border-yellow-600",
+  "border-lime-600",
+  "border-green-700",
+  "border-emerald-800",
+  "border-stone-800",
+];
 
-function formatDur(secs: number | null | undefined): string | null {
-  if (!secs) return null;
-  return formatDuration(secs);
+const ZONE_BG_COLORS = [
+  "bg-amber-50",
+  "bg-yellow-50",
+  "bg-lime-50",
+  "bg-green-50",
+  "bg-emerald-50",
+  "bg-stone-100",
+];
+
+const ZONE_TEXT_COLORS = [
+  "text-amber-700",
+  "text-yellow-700",
+  "text-lime-700",
+  "text-green-800",
+  "text-emerald-900",
+  "text-stone-800",
+];
+
+const ZONE_BADGE_BG = [
+  "bg-amber-100 border-amber-300 text-amber-800",
+  "bg-yellow-100 border-yellow-300 text-yellow-800",
+  "bg-lime-100 border-lime-300 text-lime-800",
+  "bg-green-100 border-green-300 text-green-800",
+  "bg-emerald-100 border-emerald-300 text-emerald-900",
+  "bg-stone-200 border-stone-400 text-stone-800",
+];
+
+function kindIcon(kind: string) {
+  if (kind === "audio") return <Mic className="w-3.5 h-3.5" />;
+  if (kind === "video") return <PlaySquare className="w-3.5 h-3.5" />;
+  return <FileText className="w-3.5 h-3.5" />;
 }
 
-type ZoneItem = {
-  id: number; source: string; kind: string; slug: string;
-  title: string; link: string; summary: string | null;
-  publishedAt: string; episodeNumber: number | null;
-  durationSeconds: number | null; audioUrl: string | null;
-  artworkUrl: string | null; categories: string[]; tags: string[];
-  zoneScore: number;
-};
-
-function KindIcon({ kind }: { kind: string }) {
-  if (kind === "audio") return <Mic className="w-4 h-4" />;
-  if (kind === "video") return <PlaySquare className="w-4 h-4" />;
-  return <FileText className="w-4 h-4" />;
+function formatDuration(seconds: number | null): string {
+  if (!seconds) return "";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
-function KindBadge({ kind }: { kind: string }) {
-  const cls =
-    kind === "audio"
-      ? "bg-primary text-primary-foreground"
-      : kind === "video"
-      ? "bg-destructive text-destructive-foreground"
-      : "bg-accent text-accent-foreground";
+function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
+  const isUlg = ep.source === "ulg";
+  const href = isUlg ? ep.link : `/episodes/${ep.slug}`;
+
+  const inner = (
+    <div className="group flex items-start gap-3 py-3 px-3 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer">
+      {ep.artworkUrl ? (
+        <img
+          src={ep.artworkUrl}
+          alt=""
+          className="w-12 h-12 rounded object-cover shrink-0 mt-0.5"
+        />
+      ) : (
+        <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0 mt-0.5">
+          <Play className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start gap-2 flex-wrap mb-0.5">
+          {isUlg && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300 shrink-0 leading-none">
+              ULG
+            </span>
+          )}
+          <p className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
+            {ep.title}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+          <span>{new Date(ep.publishedAt).getFullYear()}</span>
+          {ep.durationSeconds && <span>{formatDuration(ep.durationSeconds)}</span>}
+          {kindIcon(ep.kind)}
+          {isUlg && <ExternalLink className="w-3 h-3" />}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isUlg) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {inner}
+      </a>
+    );
+  }
+  return <Link href={href}>{inner}</Link>;
+}
+
+function ExpertCard({ expert }: { expert: ZoneExpert }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm ${cls}`}
+    <a
+      href={expert.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col gap-2 p-5 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
     >
-      <KindIcon kind={kind} />
-      {kind}
-    </span>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+            {expert.name}
+          </p>
+          <p className="text-xs font-medium text-muted-foreground mt-0.5">{expert.role}</p>
+        </div>
+        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+        {expert.description}
+      </p>
+    </a>
   );
 }
 
-function EpisodeCard({ item, zoneColor }: { item: ZoneItem; zoneColor: string }) {
-  const href =
-    item.source === "ulg" || item.kind === "audio" || item.kind === "article"
-      ? `/library/${item.slug}`
-      : `/episodes/${item.slug}`;
+function BusinessCard({ biz }: { biz: ZoneBusiness }) {
   return (
-    <Link
-      href={href}
-      className="group flex flex-col bg-card border border-border rounded-lg overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 transition-all duration-200"
+    <a
+      href={biz.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col gap-2 p-5 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
     >
-      {/* Artwork */}
-      <div className="relative aspect-video bg-muted overflow-hidden">
-        {item.artworkUrl ? (
-          <img
-            src={item.artworkUrl}
-            alt={item.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ backgroundColor: zoneColor + "22" }}
-          >
-            <KindIcon kind={item.kind} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        <div className="absolute top-2 left-2">
-          <KindBadge kind={item.kind} />
-        </div>
-        {item.episodeNumber && (
-          <div className="absolute bottom-2 left-2">
-            <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-sm">
-              Ep {item.episodeNumber}
-            </span>
-          </div>
-        )}
-      </div>
-      {/* Body */}
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-2 font-medium">
-          <span>{format(parseISO(item.publishedAt), "MMM d, yyyy")}</span>
-          {item.durationSeconds && (
-            <>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {formatDur(item.durationSeconds)}
-              </span>
-            </>
-          )}
-        </div>
-        <h3 className="font-serif font-bold text-sm leading-snug mb-2 text-foreground group-hover:text-primary transition-colors line-clamp-3">
-          {item.title}
-        </h3>
-        {item.summary && (
-          <p className="text-xs text-muted-foreground line-clamp-2 flex-1">
-            {item.summary.replace(/^https?:\/\/\S+\n\n?/, "").slice(0, 160)}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+            {biz.name}
           </p>
-        )}
-        {item.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-border/50">
-            {item.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] uppercase tracking-wider font-semibold text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-sm border border-primary/10"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+          <p className="text-xs font-medium text-muted-foreground mt-0.5 italic">{biz.tagline}</p>
+        </div>
+        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
       </div>
-    </Link>
+      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+        {biz.description}
+      </p>
+    </a>
+  );
+}
+
+function ShelfHeader({
+  icon,
+  title,
+  count,
+  zoneColor,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  zoneColor: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 mb-1">
+      <div
+        className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+        style={{ background: `${zoneColor}20`, color: zoneColor }}
+      >
+        {icon}
+      </div>
+      <h2 className="font-serif text-xl font-bold text-foreground">{title}</h2>
+      {count > 0 && (
+        <span className="ml-auto text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+          {count.toLocaleString()}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -125,167 +185,186 @@ export default function ZoneDetailPage() {
   const [, params] = useRoute("/zones/:slug");
   const slug = params?.slug ?? "";
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const offset = (page - 1) * PAGE_SIZE;
-
-  const queryParams = { limit: PAGE_SIZE, offset, excludeSeries: true };
-  const { data, isLoading, isError, isFetching } = useGetZoneEpisodes(
-    slug,
-    queryParams,
-    {
-      query: {
-        enabled: !!slug,
-        queryKey: getGetZoneEpisodesQueryKey(slug, queryParams),
-        placeholderData: keepPreviousData,
-      },
-    },
-  );
-
-  const zone = data?.zone;
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  function navigate(p: number) {
-    const qs = new URLSearchParams(window.location.search);
-    qs.set("page", String(p));
-    window.history.pushState({}, "", `${window.location.pathname}?${qs.toString()}`);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const { data, isLoading, isError } = useZoneResources(slug);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm">Loading zone…</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Loading zone resources…</span>
         </div>
       </div>
     );
   }
 
-  if (isError || !zone) {
+  if (isError || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-serif font-bold mb-2">Zone not found</p>
-          <Link href="/zones" className="text-sm text-primary hover:underline">
-            ← Back to all zones
-          </Link>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Could not load this zone. Try refreshing.</p>
+        <Link href="/zones" className="text-sm font-semibold text-primary hover:underline">
+          ← Back to all zones
+        </Link>
       </div>
     );
   }
+
+  const { zone, episodes, episodeTotal, experts, businesses } = data;
+  const idx = zone.number;
+  const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
+  const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
+  const textColor = ZONE_TEXT_COLORS[idx] ?? "text-foreground";
+  const badgeColor = ZONE_BADGE_BG[idx] ?? "bg-muted border-border text-foreground";
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <div
-        className="border-b border-border relative overflow-hidden"
-        style={{ backgroundColor: zone.color + "18" }}
-      >
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `radial-gradient(circle at 80% 50%, ${zone.color} 0%, transparent 60%)`,
-          }}
-        />
-        <div className="max-w-5xl mx-auto px-6 py-12 relative">
+      <div className={`border-b border-border ${bgColor}`}>
+        <div className="max-w-5xl mx-auto px-6 py-12">
           <Link
             href="/zones"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             All Zones
           </Link>
 
-          <div
-            className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border-2 mb-3"
-            style={{ borderColor: zone.color, color: zone.color }}
-          >
-            Zone {zone.number}
-          </div>
+          <div className="flex items-start gap-5">
+            {/* Zone number badge */}
+            <div
+              className={`shrink-0 w-16 h-16 rounded-2xl border-2 ${ringColor} ${bgColor} flex flex-col items-center justify-center`}
+            >
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${textColor} opacity-60`}>
+                Zone
+              </span>
+              <span className={`text-2xl font-serif font-bold ${textColor}`}>{zone.number}</span>
+            </div>
 
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-2">
-            {zone.name}
-          </h1>
-          <p className="text-base text-muted-foreground font-medium mb-4">{zone.subtitle}</p>
-          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed mb-6">
-            {zone.description}
-          </p>
-          <blockquote
-            className="border-l-2 pl-4 text-sm italic text-muted-foreground max-w-xl"
-            style={{ borderColor: zone.color }}
-          >
-            {zone.philosophy}
-          </blockquote>
+            <div className="flex-1 min-w-0">
+              {/* Resource count pills */}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badgeColor}`}>
+                  Zone {zone.number}
+                </span>
+                {episodeTotal > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {episodeTotal.toLocaleString()} episodes
+                  </span>
+                )}
+                {experts.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    · {experts.length} expert{experts.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {businesses.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    · {businesses.length} business{businesses.length !== 1 ? "es" : ""}
+                  </span>
+                )}
+              </div>
 
-          <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
-            <span>standalone episodes &amp; articles</span>
+              <h1 className={`font-serif text-3xl md:text-4xl font-bold ${textColor} mb-2`}>
+                {zone.name}
+              </h1>
+              <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+                {zone.description}
+              </p>
+              <blockquote className="mt-3 border-l-2 border-primary/30 pl-3 text-sm italic text-muted-foreground max-w-xl">
+                {zone.philosophy}
+              </blockquote>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-serif text-xl font-bold text-foreground">
-            Most relevant to this zone
-          </h2>
-          <span className="text-sm text-muted-foreground">
-            {total.toLocaleString()} items · sorted by relevance
-          </span>
-        </div>
+      {/* Three shelves */}
+      <div className="max-w-5xl mx-auto px-6 py-12 space-y-14">
 
-        {/* Episode grid */}
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 transition-opacity duration-200 ${isFetching ? "opacity-60" : "opacity-100"}`}
-        >
-          {items.map((item) => (
-            <EpisodeCard key={item.id} item={item as ZoneItem} zoneColor={zone.color} />
-          ))}
-        </div>
+        {/* Shelf 1: Listen */}
+        <section>
+          <ShelfHeader
+            icon={<Headphones className="w-4 h-4" />}
+            title="Listen"
+            count={episodeTotal}
+            zoneColor={zone.color}
+          />
+          <p className="text-sm text-muted-foreground mb-5 ml-11">
+            TSP and Unloose the Goose episodes relevant to {zone.name.toLowerCase()}.
+          </p>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-10">
-            <button
-              onClick={() => navigate(page - 1)}
-              disabled={page <= 1}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-border rounded-md hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              onClick={() => navigate(page + 1)}
-              disabled={page >= totalPages}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-border rounded-md hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          {episodes.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No episodes found for this zone yet.
+            </p>
+          ) : (
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {episodes.map((ep) => (
+                <EpisodeRow key={ep.id} ep={ep} />
+              ))}
+            </div>
+          )}
+
+          {episodeTotal > episodes.length && (
+            <div className="mt-4 text-center">
+              <Link
+                href={`/zones/${zone.slug}/episodes`}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              >
+                Browse all {episodeTotal.toLocaleString()} episodes for this zone
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* Shelf 2: Learn from (Expert Council) */}
+        <section>
+          <ShelfHeader
+            icon={<Users className="w-4 h-4" />}
+            title="Learn From"
+            count={experts.length}
+            zoneColor={zone.color}
+          />
+          <p className="text-sm text-muted-foreground mb-5 ml-11">
+            Expert Council members whose work lives in {zone.name.toLowerCase()}.
+          </p>
+
+          {experts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No Expert Council members tagged for this zone yet.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {experts.map((expert) => (
+                <ExpertCard key={expert.id} expert={expert} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Shelf 3: Businesses */}
+        {businesses.length > 0 && (
+          <section>
+            <ShelfHeader
+              icon={<Building2 className="w-4 h-4" />}
+              title="Businesses in This Zone"
+              count={businesses.length}
+              zoneColor={zone.color}
+            />
+            <p className="text-sm text-muted-foreground mb-5 ml-11">
+              ULG-affiliated companies operating in {zone.name.toLowerCase()}.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {businesses.map((biz) => (
+                <BusinessCard key={biz.id} biz={biz} />
+              ))}
+            </div>
+          </section>
         )}
 
-        {/* Library link */}
-        <div className="mt-10 pt-8 border-t border-border text-center">
-          <p className="text-sm text-muted-foreground mb-3">
-            Want to include series episodes or search across all zones?
-          </p>
-          <Link
-            href="/library"
-            className="text-sm font-semibold text-primary hover:underline"
-          >
-            Open the full library →
-          </Link>
-        </div>
+        {/* Headwaters Odyssey CTA */}
+        <OdysseyBridge variant="full" />
       </div>
     </div>
   );

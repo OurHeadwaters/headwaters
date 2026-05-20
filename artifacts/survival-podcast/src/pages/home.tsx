@@ -1,9 +1,9 @@
-import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, getListSeriesQueryKey } from "@workspace/api-client-react";
+import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, getListSeriesQueryKey, useListZones, ZoneSummary } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { EpisodeCard } from "@/components/episode-card";
 import { StarterEpisodes } from "@/components/starter-episodes";
 import { ThisDayInHistory } from "@/components/this-day-in-history";
-import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen } from "lucide-react";
+import { Mic, Headphones, Users, ChevronRight, Compass, Search, Library as LibraryIcon, Layers, BookOpen, Sprout } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 const SERIES_COLORS: Record<string, string> = {
@@ -20,6 +20,54 @@ const SERIES_BADGE_COLORS: Record<string, string> = {
   history: "bg-indigo-900/30 text-indigo-300 border-indigo-700/40",
 };
 
+const ZONE_CHIP_COLORS = [
+  "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100",
+  "border-yellow-500 text-yellow-700 bg-yellow-50 hover:bg-yellow-100",
+  "border-lime-600 text-lime-700 bg-lime-50 hover:bg-lime-100",
+  "border-green-600 text-green-800 bg-green-50 hover:bg-green-100",
+  "border-emerald-700 text-emerald-900 bg-emerald-50 hover:bg-emerald-100",
+  "border-stone-600 text-stone-700 bg-stone-100 hover:bg-stone-200",
+];
+
+function ExploreByZoneStrip({ zones }: { zones: ZoneSummary[] }) {
+  return (
+    <div className="bg-muted/40 border-y border-border">
+      <div className="container mx-auto px-4 md:px-6 py-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-2 shrink-0">
+            <Sprout className="w-4 h-4 text-primary" />
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Explore by Zone
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {zones.map((zone) => {
+              const chipColor = ZONE_CHIP_COLORS[zone.number] ?? "border-border text-foreground bg-muted hover:bg-muted/80";
+              return (
+                <Link
+                  key={zone.slug}
+                  href={`/zones/${zone.slug}`}
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${chipColor}`}
+                >
+                  <span className="font-bold opacity-60">Z{zone.number}</span>
+                  <span>{zone.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+          <Link
+            href="/zones"
+            className="sm:ml-auto shrink-0 text-xs font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap flex items-center gap-1"
+          >
+            All zones
+            <ChevronRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Home() {
   const { data: feed, isLoading: feedLoading } = useGetFeed();
   const { data: featured, isLoading: featuredLoading } = useGetFeaturedEpisodes();
@@ -29,13 +77,17 @@ export function Home() {
   const { data: seriesList, isLoading: seriesLoading } = useListSeries({
     query: { queryKey: getListSeriesQueryKey() },
   });
+  const { data: zones } = useListZones();
 
   const yearsOnAir = new Date().getFullYear() - 2008;
 
   return (
     <div className="flex flex-col w-full">
-      {/* This Day in History */}
+      {/* This Day in History — primary front door */}
       <ThisDayInHistory />
+
+      {/* Explore by Zone strip — secondary nav, below the front door */}
+      {zones && zones.length > 0 && <ExploreByZoneStrip zones={zones} />}
 
       {/* Hero Section */}
       <section className="relative bg-primary text-primary-foreground py-20 md:py-28 overflow-hidden">
