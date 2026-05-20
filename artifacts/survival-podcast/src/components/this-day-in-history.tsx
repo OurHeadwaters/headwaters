@@ -1,10 +1,19 @@
 import { useGetThisDayEpisodes } from "@workspace/api-client-react";
-import { format } from "date-fns";
-import { Play, BookOpen, Calendar } from "lucide-react";
-import { Link } from "wouter";
+import { Play, BookOpen, Calendar, ChevronDown, RotateCcw } from "lucide-react";
+import { Link, useSearch, useLocation } from "wouter";
+import { useState, useRef, useEffect } from "react";
 import { usePlayer } from "@/context/player-context";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function daysInMonth(month: number): number {
+  return new Date(2000, month, 0).getDate();
+}
 
 function formatTimestamp(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -16,11 +25,85 @@ function formatTimestamp(seconds: number): string {
 
 export function ThisDayInHistory() {
   const today = new Date();
+  const searchString = useSearch();
+  const [, setLocation] = useLocation();
   const { load, seek, audioRef } = usePlayer();
+  const pickerRef = useRef<HTMLDivElement>(null);
 
-  const { data: episodes, isLoading } = useGetThisDayEpisodes();
+  const searchParams = new URLSearchParams(searchString);
+  const urlMonth = parseInt(searchParams.get("month") ?? "", 10);
+  const urlDay = parseInt(searchParams.get("day") ?? "", 10);
 
-  const dateLabel = format(today, "MMMM d");
+  const initMonth =
+    !isNaN(urlMonth) && urlMonth >= 1 && urlMonth <= 12
+      ? urlMonth
+      : today.getMonth() + 1;
+  const initDay =
+    !isNaN(urlDay) && urlDay >= 1 && urlDay <= 31
+      ? urlDay
+      : today.getDate();
+
+  const [selectedMonth, setSelectedMonth] = useState(initMonth);
+  const [selectedDay, setSelectedDay] = useState(initDay);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [draftMonth, setDraftMonth] = useState(initMonth);
+  const [draftDay, setDraftDay] = useState(initDay);
+
+  const { data: episodes, isLoading } = useGetThisDayEpisodes({
+    month: selectedMonth,
+    day: selectedDay,
+  });
+
+  const dateLabel = `${MONTHS[selectedMonth - 1]} ${selectedDay}`;
+  const isToday =
+    selectedMonth === today.getMonth() + 1 && selectedDay === today.getDate();
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [pickerOpen]);
+
+  const openPicker = () => {
+    setDraftMonth(selectedMonth);
+    setDraftDay(selectedDay);
+    setPickerOpen(true);
+  };
+
+  const applyDate = () => {
+    const maxDay = daysInMonth(draftMonth);
+    const clampedDay = Math.min(draftDay, maxDay);
+    setSelectedMonth(draftMonth);
+    setSelectedDay(clampedDay);
+    setPickerOpen(false);
+
+    const params = new URLSearchParams();
+    if (
+      draftMonth !== today.getMonth() + 1 ||
+      clampedDay !== today.getDate()
+    ) {
+      params.set("month", String(draftMonth));
+      params.set("day", String(clampedDay));
+    }
+    const qs = params.toString();
+    setLocation(qs ? `/?${qs}` : "/", { replace: true });
+  };
+
+  const resetToToday = () => {
+    const m = today.getMonth() + 1;
+    const d = today.getDate();
+    setSelectedMonth(m);
+    setSelectedDay(d);
+    setDraftMonth(m);
+    setDraftDay(d);
+    setPickerOpen(false);
+    setLocation("/", { replace: true });
+  };
 
   const handlePlay = (ep: {
     slug: string;
@@ -55,6 +138,8 @@ export function ThisDayInHistory() {
     }
   };
 
+  const dayCount = daysInMonth(draftMonth);
+
   return (
     <section className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 border-b border-indigo-800/40 text-white">
       <div className="container mx-auto px-4 md:px-6 py-10 md:py-14">
@@ -67,13 +152,101 @@ export function ThisDayInHistory() {
               <div className="text-xs font-bold uppercase tracking-widest text-indigo-300/80 mb-0.5">
                 This Day in History
               </div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-white leading-none">
-                {dateLabel}
-              </h2>
+
+              <div className="relative" ref={pickerRef}>
+                <button
+                  onClick={openPicker}
+                  className="flex items-center gap-2 group"
+                  aria-label="Change date"
+                >
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold text-white leading-none group-hover:text-indigo-200 transition-colors">
+                    {dateLabel}
+                  </h2>
+                  <ChevronDown
+                    className={`w-5 h-5 text-indigo-400 transition-all group-hover:text-indigo-200 ${pickerOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {!isToday && (
+                  <button
+                    onClick={resetToToday}
+                    className="flex items-center gap-1 mt-1 text-xs text-indigo-400 hover:text-indigo-200 transition-colors"
+                    aria-label="Back to today"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Back to today
+                  </button>
+                )}
+
+                {pickerOpen && (
+                  <div className="absolute top-full left-0 mt-2 z-50 bg-indigo-950 border border-indigo-700/60 rounded-xl shadow-2xl shadow-black/60 p-4 min-w-[260px]">
+                    <p className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-3">
+                      Browse any date
+                    </p>
+                    <div className="flex gap-3 mb-4">
+                      <div className="flex-1">
+                        <label className="block text-xs text-indigo-400 mb-1 font-medium">
+                          Month
+                        </label>
+                        <select
+                          value={draftMonth}
+                          onChange={(e) => {
+                            const m = Number(e.target.value);
+                            setDraftMonth(m);
+                            const max = daysInMonth(m);
+                            if (draftDay > max) setDraftDay(max);
+                          }}
+                          className="w-full bg-indigo-900/60 border border-indigo-700/50 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {MONTHS.map((name, i) => (
+                            <option key={name} value={i + 1}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="w-24">
+                        <label className="block text-xs text-indigo-400 mb-1 font-medium">
+                          Day
+                        </label>
+                        <select
+                          value={draftDay}
+                          onChange={(e) => setDraftDay(Number(e.target.value))}
+                          className="w-full bg-indigo-900/60 border border-indigo-700/50 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {Array.from({ length: dayCount }, (_, i) => i + 1).map(
+                            (d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={applyDate}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                      >
+                        Show episodes
+                      </button>
+                      <button
+                        onClick={resetToToday}
+                        className="px-3 text-sm text-indigo-400 hover:text-white border border-indigo-700/50 rounded-lg transition-colors"
+                      >
+                        Today
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <p className="text-indigo-200/70 text-sm md:ml-auto md:text-right max-w-sm">
-            Every episode Jack published on this date — and what happened in history that day.
+            {isToday
+              ? "Every episode Jack published on this date — and what happened in history that day."
+              : `Episodes Jack published on ${MONTHS[selectedMonth - 1]} ${selectedDay} — across all years.`}
           </p>
         </div>
 
@@ -90,8 +263,17 @@ export function ThisDayInHistory() {
           <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
             <BookOpen className="w-10 h-10 text-indigo-400/50" />
             <p className="text-indigo-200/70 font-medium">
-              No episodes published on this date — check back tomorrow.
+              No episodes published on {MONTHS[selectedMonth - 1]} {selectedDay}
+              {isToday ? " — check back tomorrow." : "."}
             </p>
+            {!isToday && (
+              <button
+                onClick={resetToToday}
+                className="text-sm font-semibold text-indigo-300 hover:text-white transition-colors underline underline-offset-4"
+              >
+                Back to today →
+              </button>
+            )}
             <Link
               href="/series/history"
               className="text-sm font-semibold text-indigo-300 hover:text-white transition-colors underline underline-offset-4"

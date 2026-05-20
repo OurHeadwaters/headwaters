@@ -3,16 +3,18 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useGetFeaturedEpisodes, useGetFeed, useListEpisodes, useGetThisDayEpisodes } from "@workspace/api-client-react";
 import type { Episode, ThisDayEpisode } from "@workspace/api-client-react";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +25,15 @@ import { useColors } from "@/hooks/useColors";
 const PAGE_SIZE = 20;
 const MINI_PLAYER_HEIGHT = 64;
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function daysInMonth(month: number): number {
+  return new Date(2000, month, 0).getDate();
+}
+
 function formatTimestamp(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -31,8 +42,116 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+const ITEM_HEIGHT = 44;
+
+function WheelPicker({
+  items,
+  selectedIndex,
+  onSelect,
+}: {
+  items: string[];
+  selectedIndex: number;
+  onSelect: (index: number) => void;
+}) {
+  const scrollRef = useRef<ScrollView>(null);
+  const VISIBLE = 5;
+  const PAD = Math.floor(VISIBLE / 2);
+
+  React.useEffect(() => {
+    scrollRef.current?.scrollTo({ y: selectedIndex * ITEM_HEIGHT, animated: false });
+  }, [selectedIndex]);
+
+  return (
+    <View style={wheelStyles.container}>
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+          onSelect(Math.max(0, Math.min(idx, items.length - 1)));
+        }}
+        contentContainerStyle={{ paddingVertical: PAD * ITEM_HEIGHT }}
+        style={{ height: VISIBLE * ITEM_HEIGHT }}
+      >
+        {items.map((label, i) => (
+          <Pressable
+            key={label}
+            onPress={() => {
+              scrollRef.current?.scrollTo({ y: i * ITEM_HEIGHT, animated: true });
+              onSelect(i);
+            }}
+            style={[wheelStyles.item, i === selectedIndex && wheelStyles.selectedItem]}
+          >
+            <Text
+              style={[
+                wheelStyles.itemText,
+                i === selectedIndex && wheelStyles.selectedText,
+                { fontFamily: i === selectedIndex ? "DMSans_600SemiBold" : "DMSans_400Regular" },
+              ]}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View style={wheelStyles.highlightTop} pointerEvents="none" />
+      <View style={wheelStyles.highlightBottom} pointerEvents="none" />
+      <View style={wheelStyles.selectionBar} pointerEvents="none" />
+      <View style={[wheelStyles.selectionBar, { top: (PAD + 1) * ITEM_HEIGHT }]} pointerEvents="none" />
+    </View>
+  );
+}
+
+const wheelStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    overflow: "hidden",
+    position: "relative",
+  },
+  item: {
+    height: ITEM_HEIGHT,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectedItem: {},
+  itemText: {
+    fontSize: 16,
+    color: "rgba(199, 210, 254, 0.5)",
+  },
+  selectedText: {
+    color: "#e0e7ff",
+    fontSize: 18,
+  },
+  highlightTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2 * ITEM_HEIGHT,
+    background: "linear-gradient(to bottom, #1e1b4b, transparent)",
+    backgroundColor: "rgba(30, 27, 75, 0.7)",
+  },
+  highlightBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2 * ITEM_HEIGHT,
+    backgroundColor: "rgba(30, 27, 75, 0.7)",
+  },
+  selectionBar: {
+    position: "absolute",
+    top: 2 * ITEM_HEIGHT,
+    left: 8,
+    right: 8,
+    height: 1,
+    backgroundColor: "rgba(99, 102, 241, 0.4)",
+  },
+});
+
 function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
-  const colors = useColors();
   const { play, seek } = usePlayer();
   const year = new Date(episode.pubDate).getUTCFullYear();
 
@@ -156,6 +275,13 @@ export default function HomeScreen() {
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState(today.getDate());
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [draftMonthIdx, setDraftMonthIdx] = useState(today.getMonth());
+  const [draftDayIdx, setDraftDayIdx] = useState(today.getDate() - 1);
+
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPadding = currentEpisode
     ? MINI_PLAYER_HEIGHT + (Platform.OS === "web" ? 84 : 49 + insets.bottom) + 16
@@ -163,7 +289,10 @@ export default function HomeScreen() {
 
   const { data: feed } = useGetFeed();
   const { data: featured } = useGetFeaturedEpisodes();
-  const { data: thisDayEpisodes, isLoading: thisDayLoading } = useGetThisDayEpisodes();
+  const { data: thisDayEpisodes, isLoading: thisDayLoading } = useGetThisDayEpisodes({
+    month: selectedMonth,
+    day: selectedDay,
+  });
   const { data: episodesPage, isLoading, refetch } = useListEpisodes(
     { limit: PAGE_SIZE, offset: page * PAGE_SIZE }
   );
@@ -196,20 +325,61 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const todayLabel = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const isToday =
+    selectedMonth === today.getMonth() + 1 && selectedDay === today.getDate();
+
+  const dateLabel = `${MONTHS[selectedMonth - 1]} ${selectedDay}`;
+
+  const openDatePicker = () => {
+    setDraftMonthIdx(selectedMonth - 1);
+    setDraftDayIdx(selectedDay - 1);
+    setDatePickerVisible(true);
+  };
+
+  const applyDate = () => {
+    const maxDay = daysInMonth(draftMonthIdx + 1);
+    const clampedDayIdx = Math.min(draftDayIdx, maxDay - 1);
+    setSelectedMonth(draftMonthIdx + 1);
+    setSelectedDay(clampedDayIdx + 1);
+    setDatePickerVisible(false);
+  };
+
+  const resetToToday = () => {
+    setSelectedMonth(today.getMonth() + 1);
+    setSelectedDay(today.getDate());
+    setDraftMonthIdx(today.getMonth());
+    setDraftDayIdx(today.getDate() - 1);
+    setDatePickerVisible(false);
+  };
+
+  const dayLabels = Array.from(
+    { length: daysInMonth(draftMonthIdx + 1) },
+    (_, i) => String(i + 1),
+  );
 
   const ListHeader = () => (
     <View>
       {/* This Day in History */}
       <View style={[styles.thisDaySection, { backgroundColor: "#1e1b4b" }]}>
         <View style={styles.thisDaySectionHeader}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.thisDaySectionLabel, { color: "#818cf8", fontFamily: "DMSans_600SemiBold" }]}>
               THIS DAY IN HISTORY
             </Text>
-            <Text style={[styles.thisDaySectionDate, { color: "#e0e7ff", fontFamily: "DMSans_700Bold" }]}>
-              {todayLabel}
-            </Text>
+            <TouchableOpacity onPress={openDatePicker} style={styles.dateLabelRow} activeOpacity={0.7}>
+              <Text style={[styles.thisDaySectionDate, { color: "#e0e7ff", fontFamily: "DMSans_700Bold" }]}>
+                {dateLabel}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#818cf8" style={{ marginTop: 3 }} />
+            </TouchableOpacity>
+            {!isToday && (
+              <TouchableOpacity onPress={resetToToday} style={styles.backToTodayBtn} activeOpacity={0.7}>
+                <Ionicons name="refresh" size={11} color="#818cf8" />
+                <Text style={[styles.backToTodayText, { color: "#818cf8", fontFamily: "DMSans_400Regular" }]}>
+                  Back to today
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -223,7 +393,8 @@ export default function HomeScreen() {
           <View style={styles.thisDayEmpty}>
             <Ionicons name="time-outline" size={28} color="#818cf8" />
             <Text style={[styles.thisDayEmptyText, { color: "#818cf8", fontFamily: "DMSans_400Regular" }]}>
-              No episodes on this date — check back tomorrow.
+              No episodes on {MONTHS[selectedMonth - 1]} {selectedDay}
+              {isToday ? " — check back tomorrow." : "."}
             </Text>
           </View>
         ) : (
@@ -283,6 +454,64 @@ export default function HomeScreen() {
       <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold", marginHorizontal: 16, marginBottom: 8 }]}>
         All Episodes
       </Text>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={datePickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDatePickerVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setDatePickerVisible(false)}>
+          <Pressable style={[styles.modalSheet, { backgroundColor: "#1e1b4b" }]} onPress={() => {}}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: "#e0e7ff", fontFamily: "DMSans_700Bold" }]}>
+              Browse Any Date
+            </Text>
+            <Text style={[styles.modalSub, { color: "#818cf8", fontFamily: "DMSans_400Regular" }]}>
+              Scroll to pick a month and day
+            </Text>
+
+            <View style={styles.wheelRow}>
+              <WheelPicker
+                items={MONTHS}
+                selectedIndex={draftMonthIdx}
+                onSelect={(i) => {
+                  setDraftMonthIdx(i);
+                  const max = daysInMonth(i + 1);
+                  if (draftDayIdx >= max) setDraftDayIdx(max - 1);
+                }}
+              />
+              <WheelPicker
+                items={dayLabels}
+                selectedIndex={Math.min(draftDayIdx, dayLabels.length - 1)}
+                onSelect={setDraftDayIdx}
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={resetToToday}
+                style={[styles.modalBtnSecondary, { borderColor: "rgba(99, 102, 241, 0.4)" }]}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.modalBtnSecondaryText, { color: "#818cf8", fontFamily: "DMSans_500Medium" }]}>
+                  Today
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={applyDate}
+                style={[styles.modalBtnPrimary, { backgroundColor: "#4f46e5" }]}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.modalBtnPrimaryText, { color: "#fff", fontFamily: "DMSans_600SemiBold" }]}>
+                  Show Episodes
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 
@@ -361,9 +590,23 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 2,
   },
+  dateLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   thisDaySectionDate: {
     fontSize: 22,
     lineHeight: 26,
+  },
+  backToTodayBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  backToTodayText: {
+    fontSize: 11,
   },
   thisDayList: {
     paddingHorizontal: 16,
@@ -528,5 +771,67 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 12,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(99, 102, 241, 0.4)",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  modalSub: {
+    fontSize: 13,
+    marginBottom: 24,
+  },
+  wheelRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 28,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "rgba(79, 70, 229, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.2)",
+    padding: 8,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalBtnSecondary: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  modalBtnSecondaryText: {
+    fontSize: 15,
+  },
+  modalBtnPrimary: {
+    flex: 2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  modalBtnPrimaryText: {
+    fontSize: 15,
   },
 });
