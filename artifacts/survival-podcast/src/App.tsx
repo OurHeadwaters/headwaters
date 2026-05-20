@@ -29,6 +29,7 @@ import { CouncilPage } from "@/pages/council";
 import { CouncilMemberPage } from "@/pages/council-member";
 import { AdminContentGaps } from "@/pages/admin-content-gaps";
 import HistoryPage from "@/pages/history";
+import { WisdomDig } from "@/pages/wisdom-dig";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/admin/series-health" component={AdminSeriesHealth} />
         <Route path="/admin/content-gaps" component={AdminContentGaps} />
         <Route path="/wishing-well" component={WishingWell} />
+        <Route path="/wisdom-dig" component={WisdomDig} />
         <Route path="/history" component={HistoryPage} />
         <Route component={NotFound} />
       </Switch>

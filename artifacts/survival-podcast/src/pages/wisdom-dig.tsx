@@ -1,0 +1,247 @@
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Anchor, Sparkles, RefreshCw, ExternalLink, BookOpen } from "lucide-react";
+
+function apiUrl(path: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${base}/api${path}`;
+}
+
+interface WisdomGem {
+  id: number;
+  episodeSlug: string;
+  episodeTitle: string | null;
+  gemText: string;
+  anchorCount: number;
+  featured: boolean;
+  extractedAt: string;
+}
+
+interface GemsResponse {
+  gems: WisdomGem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+async function fetchGems(offset = 0): Promise<GemsResponse> {
+  const res = await fetch(apiUrl(`/wisdom/gems?limit=40&offset=${offset}`));
+  if (!res.ok) throw new Error("Failed to load gems");
+  return res.json();
+}
+
+async function anchorGem(id: number): Promise<{ anchorCount: number }> {
+  const res = await fetch(apiUrl(`/wisdom/gems/anchor/${id}`), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to anchor");
+  return res.json();
+}
+
+async function triggerExtraction(): Promise<{ extracted: number; episodes: number }> {
+  const res = await fetch(apiUrl("/wisdom/extract"), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Extraction failed");
+  return res.json();
+}
+
+const GEM_PALETTE = [
+  "from-[#2C4A36]/10 border-[#2C4A36]/30",
+  "from-[#D9A066]/10 border-[#D9A066]/40",
+  "from-[#A64B36]/10 border-[#A64B36]/30",
+  "from-[#E3D9CC]/60 border-[#E3D9CC]",
+  "from-[#2C4A36]/8 border-[#2C4A36]/20",
+];
+
+function GemCard({
+  gem,
+  anchored,
+  onAnchor,
+}: {
+  gem: WisdomGem;
+  anchored: boolean;
+  onAnchor: (id: number) => void;
+}) {
+  const palette = GEM_PALETTE[gem.id % GEM_PALETTE.length];
+  return (
+    <div
+      className={`relative rounded-2xl border bg-gradient-to-br ${palette} to-transparent p-5 shadow-sm flex flex-col gap-3 card-lift`}
+    >
+      {gem.featured && (
+        <div className="absolute -top-2 -right-2 bg-[#D9A066] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow">
+          ✦ Featured
+        </div>
+      )}
+
+      <p className="font-serif text-base leading-relaxed text-foreground italic">
+        "{gem.gemText}"
+      </p>
+
+      <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/40">
+        <a
+          href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/episodes/${gem.episodeSlug}`}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#2C4A36] transition-colors max-w-[65%] truncate"
+          title={gem.episodeTitle ?? gem.episodeSlug}
+        >
+          <BookOpen className="w-3 h-3 shrink-0" />
+          <span className="truncate">{gem.episodeTitle ?? gem.episodeSlug}</span>
+          <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
+        </a>
+
+        <button
+          onClick={() => !anchored && onAnchor(gem.id)}
+          disabled={anchored}
+          aria-label={anchored ? "Anchored" : "Anchor this gem"}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
+            anchored
+              ? "bg-[#2C4A36] text-white border-[#2C4A36] cursor-default"
+              : "border-[#2C4A36]/40 text-[#2C4A36] hover:bg-[#2C4A36] hover:text-white"
+          }`}
+        >
+          <Anchor className="w-3 h-3" />
+          {gem.anchorCount > 0 && <span>{gem.anchorCount}</span>}
+          {anchored ? "Anchored" : "Anchor"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ onExtract, extracting }: { onExtract: () => void; extracting: boolean }) {
+  return (
+    <div className="text-center py-20 flex flex-col items-center gap-5">
+      <div className="text-6xl">💎</div>
+      <div>
+        <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+          The dig hasn't started yet
+        </h2>
+        <p className="text-muted-foreground max-w-md mx-auto text-sm leading-relaxed">
+          Wisdom Dig mines key phrases and soundbites from thousands of TSP episodes.
+          Run the first extraction to surface the gems.
+        </p>
+      </div>
+      <button
+        onClick={onExtract}
+        disabled={extracting}
+        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#2C4A36] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+      >
+        <Sparkles className="w-4 h-4" />
+        {extracting ? "Digging…" : "Start the Dig"}
+      </button>
+    </div>
+  );
+}
+
+export function WisdomDig() {
+  const qc = useQueryClient();
+  const [anchored, setAnchored] = useState<Set<number>>(new Set());
+  const [extractResult, setExtractResult] = useState<{ extracted: number; episodes: number } | null>(null);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["wisdom-gems"],
+    queryFn: () => fetchGems(0),
+  });
+
+  const anchorMutation = useMutation({
+    mutationFn: anchorGem,
+    onSuccess: (_data, id) => {
+      setAnchored((prev) => new Set(prev).add(id));
+      qc.invalidateQueries({ queryKey: ["wisdom-gems"] });
+    },
+  });
+
+  const extractMutation = useMutation({
+    mutationFn: triggerExtraction,
+    onSuccess: (result) => {
+      setExtractResult(result);
+      qc.invalidateQueries({ queryKey: ["wisdom-gems"] });
+    },
+  });
+
+  const handleAnchor = useCallback(
+    (id: number) => {
+      if (!anchored.has(id)) anchorMutation.mutate(id);
+    },
+    [anchored, anchorMutation],
+  );
+
+  const gems = data?.gems ?? [];
+  const hasGems = gems.length > 0;
+
+  return (
+    <div className="container mx-auto px-4 md:px-6 py-12 max-w-6xl">
+      <header className="mb-10 text-center">
+        <div className="text-5xl mb-4">💎</div>
+        <h1 className="font-serif text-4xl font-bold text-foreground mb-3">Wisdom Dig</h1>
+        <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
+          Gems of wisdom mined from 6,000+ episodes of The Stomping Path. Each phrase
+          is a signal worth anchoring — pulled from Jack's best moments of insight.
+        </p>
+      </header>
+
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        {hasGems && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{data?.total ?? 0}</span> gems surfaced
+          </p>
+        )}
+        <div className="flex items-center gap-2 ml-auto">
+          {extractResult && (
+            <span className="text-xs text-[#2C4A36] font-medium bg-[#2C4A36]/10 px-3 py-1 rounded-full">
+              +{extractResult.extracted} new gems from {extractResult.episodes} episodes
+            </span>
+          )}
+          <button
+            onClick={() => extractMutation.mutate()}
+            disabled={extractMutation.isPending}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#2C4A36]/40 text-[#2C4A36] hover:bg-[#2C4A36] hover:text-white transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${extractMutation.isPending ? "animate-spin" : ""}`} />
+            {extractMutation.isPending ? "Digging…" : "Dig More"}
+          </button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="text-center py-16 text-muted-foreground">
+          Failed to load gems. Try refreshing.
+        </div>
+      ) : !hasGems ? (
+        <EmptyState
+          onExtract={() => extractMutation.mutate()}
+          extracting={extractMutation.isPending}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {gems.map((gem) => (
+            <GemCard
+              key={gem.id}
+              gem={gem}
+              anchored={anchored.has(gem.id)}
+              onAnchor={handleAnchor}
+            />
+          ))}
+        </div>
+      )}
+
+      {hasGems && (
+        <div className="mt-10 p-5 rounded-xl border border-dashed border-[#D9A066]/40 bg-[#D9A066]/5 text-center">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Wisdom Dig is always growing.</span>{" "}
+            Each run mines 30 more episodes. Anchor gems you want to revisit — the most
+            anchored rise to the top.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

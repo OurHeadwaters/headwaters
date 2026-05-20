@@ -1,10 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Coins, Sparkles, Trophy, Heart, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Coins,
+  Sparkles,
+  Trophy,
+  Heart,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Flame,
+  Zap,
+} from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return `${base}/api${path}`;
+}
+
+function getOrCreateSessionId(): string {
+  let id = sessionStorage.getItem("ww_session_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem("ww_session_id", id);
+  }
+  return id;
+}
+
+const FOUNDER_MATCH_THRESHOLD = 10;
+
+interface WishingWellTip {
+  id: number;
+  amountUnits: number;
+  currency: string;
+  wishText: string;
+  listenerName: string | null;
+  drawDate: string;
+  episodeSlug: string | null;
+  status: string;
+  stackCount: number;
+  founderMatchTriggered: boolean;
+  createdAt: string;
 }
 
 interface PotToday {
@@ -34,6 +70,11 @@ interface Board {
   past: Distribution[];
 }
 
+interface WishesResponse {
+  date: string;
+  wishes: WishingWellTip[];
+}
+
 async function fetchPotToday(): Promise<PotToday> {
   const res = await fetch(apiUrl("/wishing-well/pot/today"));
   if (!res.ok) throw new Error("Failed to load today's pot");
@@ -43,6 +84,12 @@ async function fetchPotToday(): Promise<PotToday> {
 async function fetchBoard(): Promise<Board> {
   const res = await fetch(apiUrl("/wishing-well/board"));
   if (!res.ok) throw new Error("Failed to load board");
+  return res.json();
+}
+
+async function fetchWishes(): Promise<WishesResponse> {
+  const res = await fetch(apiUrl("/wishing-well/wishes"));
+  if (!res.ok) throw new Error("Failed to load wishes");
   return res.json();
 }
 
@@ -65,6 +112,28 @@ async function submitTip(data: {
   return res.json();
 }
 
+async function stackWish(tipId: number): Promise<{
+  tipId: number;
+  stackCount: number;
+  founderMatchTriggered: boolean;
+  threshold: number;
+  alreadyStacked?: boolean;
+}> {
+  const sessionId = getOrCreateSessionId();
+  const res = await fetch(apiUrl(`/wishing-well/stack/${tipId}`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ sessionId }),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({})) as { error?: string; alreadyStacked?: boolean };
+    if (j.alreadyStacked) return { tipId, stackCount: 0, founderMatchTriggered: false, threshold: FOUNDER_MATCH_THRESHOLD, alreadyStacked: true };
+    throw new Error(j.error ?? "Failed to stack wish");
+  }
+  return res.json();
+}
+
 function formatDate(d: string): string {
   try {
     return new Date(d).toLocaleDateString("en-US", {
@@ -83,6 +152,97 @@ function CoinIcon({ size = 20 }: { size?: number }) {
     <span style={{ fontSize: size }} role="img" aria-label="coin">
       🪙
     </span>
+  );
+}
+
+function MomentumBar({ count, threshold }: { count: number; threshold: number }) {
+  const pct = Math.min(100, (count / threshold) * 100);
+  const triggered = count >= threshold;
+  return (
+    <div className="mt-2">
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <span className="flex items-center gap-1">
+          <Layers className="w-3 h-3" />
+          {count} {count === 1 ? "stack" : "stacks"}
+        </span>
+        {triggered ? (
+          <span className="text-[#D9A066] font-bold flex items-center gap-0.5">
+            <Zap className="w-3 h-3" /> Founder match unlocked!
+          </span>
+        ) : (
+          <span>{threshold - count} more to unlock founder match</span>
+        )}
+      </div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${
+            triggered
+              ? "bg-gradient-to-r from-[#D9A066] to-[#A64B36]"
+              : "bg-[#2C4A36]"
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function WishCard({
+  wish,
+  stacked,
+  onStack,
+}: {
+  wish: WishingWellTip;
+  stacked: boolean;
+  onStack: (id: number) => void;
+}) {
+  const triggered = wish.founderMatchTriggered;
+  return (
+    <div
+      className={`relative rounded-xl border p-4 transition-all ${
+        triggered
+          ? "border-[#D9A066] bg-gradient-to-br from-[#D9A066]/10 to-[#2C4A36]/8 shadow-md"
+          : "border-border bg-card hover:border-[#2C4A36]/40"
+      }`}
+    >
+      {triggered && (
+        <div className="absolute -top-3 left-4 flex items-center gap-1 bg-[#D9A066] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow">
+          <Flame className="w-3 h-3" /> Founder Matching!
+        </div>
+      )}
+
+      <p className="font-serif text-sm leading-relaxed text-foreground italic mb-2">
+        "{wish.wishText}"
+      </p>
+
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <CoinIcon size={12} />
+          <span>{wish.amountUnits} coin{wish.amountUnits !== 1 ? "s" : ""}</span>
+          {wish.listenerName && (
+            <>
+              <span>·</span>
+              <span className="font-medium text-foreground/70">{wish.listenerName}</span>
+            </>
+          )}
+        </div>
+
+        <button
+          onClick={() => !stacked && onStack(wish.id)}
+          disabled={stacked}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
+            stacked
+              ? "bg-[#2C4A36] text-white border-[#2C4A36] cursor-default"
+              : "border-[#2C4A36]/50 text-[#2C4A36] hover:bg-[#2C4A36] hover:text-white"
+          }`}
+        >
+          <Layers className="w-3 h-3" />
+          {stacked ? "Stacked" : "Stack"}
+        </button>
+      </div>
+
+      <MomentumBar count={wish.stackCount} threshold={FOUNDER_MATCH_THRESHOLD} />
+    </div>
   );
 }
 
@@ -151,10 +311,15 @@ function TipForm({ onSuccess }: { onSuccess: () => void }) {
           Your coin is in the well!
         </p>
         <p className="text-sm text-muted-foreground">
-          Your wish is in today's pot. The draw runs at midnight — good luck!
+          Your wish is in today's pot. Now stack onto other wishes below to build community momentum!
         </p>
         <button
-          onClick={() => { setSubmitted(false); setWishText(""); setListenerName(""); setAmountUnits(1); }}
+          onClick={() => {
+            setSubmitted(false);
+            setWishText("");
+            setListenerName("");
+            setAmountUnits(1);
+          }}
           className="mt-4 text-xs text-muted-foreground hover:text-foreground underline"
         >
           Toss another coin
@@ -171,7 +336,7 @@ function TipForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <p className="text-sm text-muted-foreground mb-5">
         Each coin you toss enters you into today's draw. Half the day's pot goes to
-        the randomly selected winner — the other half supports The Survival Podcast.
+        the randomly selected winner — the other half supports The Stomping Path.
       </p>
 
       {mutation.isError && (
@@ -240,18 +405,108 @@ function TipForm({ onSuccess }: { onSuccess: () => void }) {
 
         <button
           onClick={() =>
-            mutation.mutate({ amountUnits, wishText, listenerName, currency: "XRP" })
+            mutation.mutate({ amountUnits, wishText, listenerName, currency: "BTC" })
           }
           disabled={!wishText.trim() || wishText.trim().length < 3 || mutation.isPending}
           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#2C4A36] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <CoinIcon size={16} />
-          {mutation.isPending ? "Tossing…" : `Toss ${amountUnits} coin${amountUnits !== 1 ? "s" : ""} into the Well`}
+          {mutation.isPending
+            ? "Tossing…"
+            : `Toss ${amountUnits} coin${amountUnits !== 1 ? "s" : ""} into the Well`}
         </button>
         <p className="text-xs text-muted-foreground text-center -mt-1">
-          Crypto payouts pending legal review — currency to be announced.
+          Bitcoin-only. Crypto payouts pending legal review — currency and payout mechanism to be confirmed.
         </p>
       </div>
+    </div>
+  );
+}
+
+function CommunityWishesWall() {
+  const qc = useQueryClient();
+  const [stacked, setStacked] = useState<Set<number>>(new Set());
+  const [justTriggered, setJustTriggered] = useState<number | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["wishing-well-wishes"],
+    queryFn: fetchWishes,
+    refetchInterval: 30_000,
+  });
+
+  const stackMutation = useMutation({
+    mutationFn: stackWish,
+    onSuccess: (result) => {
+      if (result.alreadyStacked) {
+        setStacked((prev) => new Set(prev).add(result.tipId));
+        return;
+      }
+      setStacked((prev) => new Set(prev).add(result.tipId));
+      if (result.founderMatchTriggered) {
+        setJustTriggered(result.tipId);
+        setTimeout(() => setJustTriggered(null), 4000);
+      }
+      qc.invalidateQueries({ queryKey: ["wishing-well-wishes"] });
+      qc.invalidateQueries({ queryKey: ["wishing-well-pot"] });
+    },
+  });
+
+  const handleStack = useCallback(
+    (id: number) => stackMutation.mutate(id),
+    [stackMutation],
+  );
+
+  const wishes = data?.wishes ?? [];
+
+  return (
+    <div className="mb-14">
+      <div className="flex items-center gap-2 mb-4">
+        <Layers className="w-5 h-5 text-[#2C4A36]" />
+        <h2 className="font-serif text-2xl font-bold text-foreground">Today's Wishes</h2>
+        <span className="ml-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+          Stack a wish to build momentum
+        </span>
+      </div>
+
+      <div className="mb-5 p-4 rounded-xl border border-[#2C4A36]/30 bg-[#2C4A36]/5 text-sm text-muted-foreground leading-relaxed">
+        <span className="font-semibold text-foreground">How the flywheel works:</span>{" "}
+        When a wish earns <strong>{FOUNDER_MATCH_THRESHOLD} stacks</strong> from the community, the founder
+        commits to matching her 50% of the pot back to that cause — creating a giving flywheel for
+        massive impact. Stack the wishes you believe in most.
+      </div>
+
+      {justTriggered !== null && (
+        <div className="mb-4 p-4 rounded-xl border border-[#D9A066] bg-[#D9A066]/10 text-[#A64B36] font-semibold text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+          <Zap className="w-5 h-5 text-[#D9A066]" />
+          Founder match unlocked! This cause now has the community's full backing.
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : wishes.length === 0 ? (
+        <div className="text-center py-10 border border-dashed border-border rounded-xl">
+          <Coins className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">
+            No wishes yet today — toss the first coin!
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {wishes.map((wish) => (
+            <WishCard
+              key={wish.id}
+              wish={wish}
+              stacked={stacked.has(wish.id)}
+              onStack={handleStack}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -273,6 +528,7 @@ export function WishingWell() {
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wishing-well-pot"] });
     qc.invalidateQueries({ queryKey: ["wishing-well-board"] });
+    qc.invalidateQueries({ queryKey: ["wishing-well-wishes"] });
   };
 
   return (
@@ -283,20 +539,17 @@ export function WishingWell() {
           The Wishing Well
         </h1>
         <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
-          Toss a coin, make a wish. Every day one listener wins half the day's pot.
-          The other half powers The Survival Podcast. Community. Intention. Impact.
+          Toss a coin, make a wish. Stack the wishes you believe in to build community momentum.
+          When enough hearts align, the founder matches her share — a flywheel of giving for massive impact.
         </p>
       </header>
 
-      {/* Legal notice */}
       <div className="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm">
-        <strong>Note:</strong> This feature is in preview. Crypto payouts require legal
-        review (Ontario gaming regulations). Currency and payout mechanism to be
-        confirmed before launch.
+        <strong>Note:</strong> This feature is in preview. Bitcoin-only. Crypto payouts require legal
+        review (Ontario gaming regulations). Payout mechanism to be confirmed before launch.
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
-        {/* Today's Pot */}
         <div className="rounded-xl border border-[#2C4A36]/30 bg-gradient-to-br from-[#2C4A36]/8 to-transparent p-6">
           <div className="flex items-center gap-2 mb-4">
             <Coins className="w-5 h-5 text-[#2C4A36]" />
@@ -310,7 +563,8 @@ export function WishingWell() {
           ) : pot ? (
             <>
               <div className="text-4xl font-bold text-foreground mb-1 font-serif">
-                {pot.totalUnits} <span className="text-xl text-muted-foreground font-sans font-normal">coins</span>
+                {pot.totalUnits}{" "}
+                <span className="text-xl text-muted-foreground font-sans font-normal">coins</span>
               </div>
               <p className="text-sm text-muted-foreground mb-3">
                 from {pot.tipCount} {pot.tipCount === 1 ? "wish" : "wishes"} today
@@ -332,7 +586,6 @@ export function WishingWell() {
           )}
         </div>
 
-        {/* Today's Winner */}
         <div>
           {board?.todayWinner ? (
             <WinnerCard dist={board.todayWinner} label="🎉 Today's Winner" />
@@ -347,12 +600,12 @@ export function WishingWell() {
         </div>
       </div>
 
-      {/* Tip Form */}
-      <div className="mb-14">
+      <div className="mb-10">
         <TipForm onSuccess={refresh} />
       </div>
 
-      {/* Past Winners Feed */}
+      <CommunityWishesWall />
+
       {boardLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -367,11 +620,7 @@ export function WishingWell() {
           </h2>
           <div className="space-y-4">
             {board.past.map((dist) => (
-              <WinnerCard
-                key={dist.id}
-                dist={dist}
-                label={formatDate(dist.drawDate)}
-              />
+              <WinnerCard key={dist.id} dist={dist} label={formatDate(dist.drawDate)} />
             ))}
           </div>
         </div>

@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
-import { db, wishingWellTipsTable, wishingWellDistributionsTable } from "@workspace/db";
-import { eq, sql, desc } from "drizzle-orm";
+import { db, wishingWellTipsTable, wishingWellDistributionsTable, wishStacksTable } from "@workspace/db";
+import { eq, sql, desc, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
+
+const FOUNDER_MATCH_THRESHOLD = 10;
 
 const router: IRouter = Router();
 
@@ -43,6 +45,116 @@ router.get("/wishing-well/pot/today", async (_req, res) => {
   } catch (err) {
     logger.error({ err }, "wishing-well: pot/today failed");
     res.status(500).json({ error: "Failed to load today's pot" });
+  }
+});
+
+/**
+ * GET /api/wishing-well/wishes
+ * Returns all active (pending) wishes for today, sorted by stack count desc.
+ * Used by the community wall so listeners can stack onto each other's wishes.
+ */
+router.get("/wishing-well/wishes", async (_req, res) => {
+  try {
+    const date = todayUtc();
+    const wishes = await db
+      .select()
+      .from(wishingWellTipsTable)
+      .where(
+        sql`${wishingWellTipsTable.drawDate} = ${date} AND ${wishingWellTipsTable.status} = 'pending'`,
+      )
+      .orderBy(desc(wishingWellTipsTable.stackCount), desc(wishingWellTipsTable.createdAt));
+    res.json({ date, wishes });
+  } catch (err) {
+    logger.error({ err }, "wishing-well: GET /wishes failed");
+    res.status(500).json({ error: "Failed to load wishes" });
+  }
+});
+
+/**
+ * POST /api/wishing-well/stack/:tipId
+ * Stack community momentum onto an existing wish.
+ * Anonymous: tracked by sessionId (client-generated UUID).
+ * Each session can stack once per wish. When stackCount >= FOUNDER_MATCH_THRESHOLD,
+ * founderMatchTriggered is set to true — the founder commits to matching her 50%
+ * back to the community for that cause.
+ * Body: { sessionId }
+ */
+router.post("/wishing-well/stack/:tipId", async (req, res) => {
+  try {
+    const tipId = parseInt(req.params.tipId, 10);
+    if (!Number.isFinite(tipId)) {
+      res.status(400).json({ error: "Invalid tip id" });
+      return;
+    }
+    const sessionId =
+      typeof req.body?.sessionId === "string" && req.body.sessionId.trim()
+        ? req.body.sessionId.trim().slice(0, 64)
+        : null;
+    if (!sessionId) {
+      res.status(400).json({ error: "sessionId is required" });
+      return;
+    }
+
+    const [tip] = await db
+      .select()
+      .from(wishingWellTipsTable)
+      .where(
+        and(
+          eq(wishingWellTipsTable.id, tipId),
+          eq(wishingWellTipsTable.status, "pending"),
+        ),
+      )
+      .limit(1);
+
+    if (!tip) {
+      res.status(404).json({ error: "Wish not found or draw already complete" });
+      return;
+    }
+
+    const existing = await db
+      .select({ id: wishStacksTable.id })
+      .from(wishStacksTable)
+      .where(
+        and(
+          eq(wishStacksTable.tipId, tipId),
+          eq(wishStacksTable.sessionId, sessionId),
+        ),
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      res.status(409).json({ error: "You have already stacked onto this wish", alreadyStacked: true });
+      return;
+    }
+
+    const listenerId = req.isAuthenticated() ? req.user.id : null;
+    await db.insert(wishStacksTable).values({ tipId, sessionId, listenerId: listenerId ?? undefined });
+
+    const newCount = tip.stackCount + 1;
+    const founderMatchTriggered = newCount >= FOUNDER_MATCH_THRESHOLD;
+
+    const [updated] = await db
+      .update(wishingWellTipsTable)
+      .set({
+        stackCount: newCount,
+        founderMatchTriggered,
+      })
+      .where(eq(wishingWellTipsTable.id, tipId))
+      .returning();
+
+    if (founderMatchTriggered && !tip.founderMatchTriggered) {
+      logger.info({ tipId, stackCount: newCount }, "wishing-well: founder match triggered!");
+    }
+
+    res.json({
+      tipId,
+      stackCount: updated.stackCount,
+      founderMatchTriggered: updated.founderMatchTriggered,
+      threshold: FOUNDER_MATCH_THRESHOLD,
+    });
+  } catch (err) {
+    logger.error({ err }, "wishing-well: POST /stack failed");
+    res.status(500).json({ error: "Failed to stack wish" });
   }
 });
 

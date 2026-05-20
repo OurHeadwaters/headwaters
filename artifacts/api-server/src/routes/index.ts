@@ -15,6 +15,7 @@ import wishingWellRouter from "./wishing-well";
 import v4vRouter from "./v4v";
 import ogRouter from "./og";
 import gapsRouter from "./gaps";
+import wisdomRouter from "./wisdom";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(adminCouncilRouter);
 router.use(wishingWellRouter);
 router.use(v4vRouter);
 router.use(ogRouter);
+router.use(wisdomRouter);
 
 export default router;

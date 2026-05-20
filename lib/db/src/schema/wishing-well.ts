@@ -3,6 +3,7 @@ import {
   serial,
   text,
   integer,
+  boolean,
   timestamp,
   index,
   uniqueIndex,
@@ -40,6 +41,8 @@ export const wishingWellTipsTable = pgTable(
     drawDate: text("draw_date").notNull(),
     episodeSlug: text("episode_slug"),
     status: text("status").notNull().default("pending"),
+    stackCount: integer("stack_count").notNull().default(0),
+    founderMatchTriggered: boolean("founder_match_triggered").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -48,8 +51,35 @@ export const wishingWellTipsTable = pgTable(
     index("wishing_well_tips_draw_date_idx").on(t.drawDate),
     index("wishing_well_tips_status_idx").on(t.status),
     index("wishing_well_tips_listener_id_idx").on(t.listenerId),
+    index("wishing_well_tips_stack_count_idx").on(t.stackCount),
   ],
 );
+
+/**
+ * Tracks who stacked onto a wish (to prevent duplicate stacking per session).
+ * Anonymous stacking is allowed — tracked by sessionId (client-generated UUID).
+ */
+export const wishStacksTable = pgTable(
+  "wish_stacks",
+  {
+    id: serial("id").primaryKey(),
+    tipId: integer("tip_id")
+      .notNull()
+      .references(() => wishingWellTipsTable.id, { onDelete: "cascade" }),
+    sessionId: text("session_id").notNull(),
+    listenerId: varchar("listener_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("wish_stacks_tip_id_idx").on(t.tipId),
+    index("wish_stacks_session_id_idx").on(t.sessionId),
+  ],
+);
+
+export type WishStack = typeof wishStacksTable.$inferSelect;
+export type InsertWishStack = typeof wishStacksTable.$inferInsert;
 
 export type WishingWellTip = typeof wishingWellTipsTable.$inferSelect;
 export type InsertWishingWellTip = typeof wishingWellTipsTable.$inferInsert;
