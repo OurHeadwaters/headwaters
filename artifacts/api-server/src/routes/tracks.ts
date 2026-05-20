@@ -40,8 +40,21 @@ function trackScoreFragment(tags: string[]): string {
 }
 
 function searchFragment(q: string): string {
-  const escaped = esc(q.trim().toLowerCase());
-  return `(lower(title) LIKE '%${escaped}%' OR lower(coalesce(summary, '')) LIKE '%${escaped}%')`;
+  const terms = q
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => {
+      const sanitized = word.replace(/[&|!():*<>\\@]/g, "").trim();
+      if (!sanitized) return null;
+      return `${sanitized.replace(/'/g, "''")}:*`;
+    })
+    .filter((t): t is string => t !== null);
+
+  if (!terms.length) return "true";
+
+  const tsquery = terms.join(" & ");
+  return `to_tsvector('english', title || ' ' || summary || ' ' || body_text) @@ to_tsquery('english', '${tsquery}')`;
 }
 
 function tagFilterFragment(tag: string): string {
