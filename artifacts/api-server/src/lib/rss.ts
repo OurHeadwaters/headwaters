@@ -79,30 +79,37 @@ function textOf(node: unknown): string {
   return "";
 }
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<\/(p|div|li|h\d|br)>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
+function decodeEntities(text: string): string {
+  return text
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#039;|&#39;|&apos;/g, "'")
-    .replace(/&hellip;/g, "…")
-    .replace(/&mdash;/g, "—")
-    .replace(/&ndash;/g, "–")
-    .replace(/&rsquo;|&#8217;/g, "’")
-    .replace(/&lsquo;|&#8216;/g, "‘")
-    .replace(/&ldquo;|&#8220;/g, "“")
-    .replace(/&rdquo;|&#8221;/g, "”")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+    .replace(/&hellip;/g, "\u2026")
+    .replace(/&mdash;/g, "\u2014")
+    .replace(/&ndash;/g, "\u2013")
+    .replace(/&rsquo;|&#8217;/g, "\u2019")
+    .replace(/&lsquo;|&#8216;/g, "\u2018")
+    .replace(/&ldquo;|&#8220;/g, "\u201c")
+    .replace(/&rdquo;|&#8221;/g, "\u201d")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
+}
+
+function stripHtml(html: string): string {
+  return decodeEntities(
+    html
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<\/(p|div|li|h\d|br)>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 function sanitizeHtml(html: string): string {
@@ -136,8 +143,8 @@ function parseEpisodeNumber(title: string): number | null {
 
 function cleanTitle(title: string): string {
   return title
-    .replace(/\s*[–—-]\s*Epi[-\s]?\d{2,5}\s*$/i, "")
-    .replace(/\s*[–—-]\s*Episode\s+\d{2,5}\s*$/i, "")
+    .replace(/\s*[\u2013\u2014-]\s*Epi[-\s]?\d{2,5}\s*$/i, "")
+    .replace(/\s*[\u2013\u2014-]\s*Episode\s+\d{2,5}\s*$/i, "")
     .trim();
 }
 
@@ -190,7 +197,7 @@ function parseChannel(xml: string): RssFeed {
   const rawItems = asArray(channel["item"]);
   const episodes: RssEpisode[] = rawItems.map((raw): RssEpisode => {
     const item = raw as Record<string, unknown>;
-    const rawTitle = textOf(item["title"]);
+    const rawTitle = decodeEntities(textOf(item["title"]));
     const link = textOf(item["link"]);
     const guidRaw = item["guid"];
     const guid =
