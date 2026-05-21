@@ -19,6 +19,14 @@ const communityItems = [
   { href: "/about", label: "About", desc: "The mission and story of TSP" },
 ];
 
+const adminItems = [
+  { href: "/admin/ground-events", label: "Workshop Board", desc: "Manage ground events and workshops" },
+  { href: "/admin/categories", label: "Category Descriptions", desc: "Edit category descriptions" },
+  { href: "/admin/content-gaps", label: "Content Gaps", desc: "Identify content gaps" },
+  { href: "/admin/gear", label: "Gear Catalog", desc: "Manage the gear catalog" },
+  { href: "/admin/wisdom", label: "Wisdom Scraper", desc: "Scrape and manage wisdom entries" },
+];
+
 function DropdownMenu({
   label,
   items,
@@ -87,16 +95,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [journeyOpen, setJourneyOpen] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const { episode } = usePlayer();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
 
   const journeyPaths = journeyItems.map((i) => i.href);
   const communityPaths = communityItems.map((i) => i.href);
+  const adminPaths = adminItems.map((i) => i.href);
 
   const isJourneyActive = journeyPaths.some(
     (p) => location === p || location.startsWith(p + "/")
   );
   const isCommunityActive = communityPaths.some(
+    (p) => location === p || location.startsWith(p + "/")
+  );
+  const isAdminActive = adminPaths.some(
     (p) => location === p || location.startsWith(p + "/")
   );
   const isGroundsActive =
@@ -171,6 +184,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               Grounds
             </Link>
+
+            {/* Admin dropdown */}
+            <DropdownMenu
+              label="Admin"
+              items={adminItems}
+              isActive={isAdminActive}
+            />
 
             {/* Auth button */}
             {!authLoading && (
@@ -328,6 +348,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               Grounds
             </Link>
+
+            {/* Admin accordion */}
+            <div>
+              <button
+                onClick={() => setAdminOpen((v) => !v)}
+                className={`w-full flex items-center justify-between text-base font-medium px-3 py-2.5 rounded-md ${
+                  isAdminActive
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                Admin
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${adminOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {adminOpen && (
+                <div className="mt-1 ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                  {adminItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`text-sm font-medium px-2 py-2 rounded-md ${
+                        location === item.href || location.startsWith(item.href + "/")
+                          ? "text-white bg-white/8"
+                          : "text-white/60 hover:text-white hover:bg-white/5"
+                      }`}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Mobile auth */}
             {!authLoading && (
