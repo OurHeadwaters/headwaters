@@ -270,6 +270,174 @@
   }
 }
 
+/* ==============================
+   FORGE — CodeTry Forge styles
+   ============================== */
+
+.forge-page {
+  background: #0A180A;
+  color: #D4C9B8;
+  font-family: var(--app-font-sans, 'DM Sans', sans-serif);
+}
+
+/* Primary action button */
+.forge-btn-primary {
+  background: linear-gradient(135deg, #D9A066 0%, #C07840 100%);
+  color: #2B2825;
+  font-weight: 600;
+  box-shadow: 0 0 0 0 rgba(217, 160, 102, 0.4);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.forge-btn-primary:hover {
+  box-shadow: 0 0 20px rgba(217, 160, 102, 0.35);
+  transform: translateY(-1px);
+}
+.forge-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Run button */
+.forge-btn-run {
+  background: linear-gradient(135deg, #D9A066 0%, #C07840 100%);
+  color: #1A0E06;
+  font-weight: 600;
+  animation: forge-pulse 3s ease-in-out infinite;
+  transition: transform 0.15s;
+}
+.forge-btn-run:hover {
+  animation: none;
+  box-shadow: 0 0 18px rgba(217, 160, 102, 0.5);
+}
+
+@keyframes forge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 160, 102, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(217, 160, 102, 0.3); }
+}
+
+/* Secondary button */
+.forge-btn-secondary {
+  background: #1A2E1A;
+  color: #8A9E8A;
+  border: 1px solid #2A4A2A;
+  transition: color 0.15s, border-color 0.15s;
+}
+.forge-btn-secondary:hover {
+  color: #D9A066;
+  border-color: #D9A066;
+}
+
+/* Workbench container */
+.forge-workbench {
+  background: #0E1F10;
+  border: 1px solid #2A4A2A;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(217, 160, 102, 0.06),
+    0 4px 32px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(217, 160, 102, 0.08);
+}
+
+.forge-workbench-header {
+  background: #0A1A0A;
+  border-bottom: 1px solid #1E3820;
+}
+
+.forge-workbench-footer {
+  background: #0A1A0A;
+  border-top: 1px solid #1E3820;
+}
+
+/* Tool wall panel */
+.forge-toolwall-panel {
+  background: #0C1C0C;
+  border-right: 1px solid #1E3820;
+}
+
+/* Template plaques */
+.forge-plaque {
+  background: #111B0F;
+  border: 1px solid #1E3820;
+  color: #8A9E8A;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+}
+.forge-plaque:hover {
+  background: #1A2E1A;
+  border-color: #3A5A3A;
+  color: #C4B49A;
+  transform: translateX(2px);
+}
+.forge-plaque-active {
+  background: #1A2E1A !important;
+  border-color: #D9A066 !important;
+  color: #D9A066 !important;
+}
+
+/* Editor / Preview panes */
+.forge-editor-pane,
+.forge-preview-pane {
+  position: relative;
+  background: #0E1F10;
+}
+
+.forge-pane-label {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3A5A3A;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Resize handle override */
+.forge-resize-handle {
+  background: #1E3820 !important;
+  width: 3px !important;
+}
+.forge-resize-handle:hover {
+  background: #D9A066 !important;
+}
+
+.forge-panels-h {
+  min-height: 460px;
+}
+
+/* Why cards */
+.forge-why-card {
+  background: #111B0F;
+  border: 1px solid #1E3820;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.forge-why-card:hover {
+  border-color: #3A5A3A;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+/* Blueprint cards */
+.forge-blueprint-card {
+  border: 1px solid #1E3820;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.forge-blueprint-card:hover {
+  border-color: #D9A066;
+  transform: translateY(-3px);
+}
+
+/* Community cards */
+.forge-community-card {
+  background: #111B0F;
+  border: 1px solid #1E3820;
+  transition: border-color 0.2s;
+}
+.forge-community-card:hover {
+  border-color: #3A5A3A;
+}
+
 /**
  * Using the elevate system.
  * Automatic contrast adjustment.
