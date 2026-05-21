@@ -9,7 +9,6 @@ import type { PlaybackRecord } from "@/context/HistoryContext";
 import {
   ActivityIndicator,
   Animated,
-  Easing,
   FlatList,
   Modal,
   Platform,
@@ -25,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { WoodCard } from "@/components/homestead/WoodCard";
 import { GordBird } from "@/components/GordBird";
+import { EmberParticles } from "@/components/EmberParticles";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -313,62 +313,6 @@ function FeaturedCard({ episode }: { episode: Episode }) {
   );
 }
 
-function EmberParticles({ count = 8 }: { count?: number }) {
-  const particles = useRef(
-    Array.from({ length: count }, () => ({
-      x: new Animated.Value(Math.random() * 300),
-      y: new Animated.Value(Math.random() * 60),
-      opacity: new Animated.Value(0),
-      size: 2 + Math.random() * 3,
-    }))
-  ).current;
-
-  useEffect(() => {
-    particles.forEach((p, i) => {
-      const animate = () => {
-        p.x.setValue(Math.random() * 300);
-        p.y.setValue(40 + Math.random() * 40);
-        p.opacity.setValue(0);
-        Animated.sequence([
-          Animated.delay(i * 400 + Math.random() * 600),
-          Animated.parallel([
-            Animated.timing(p.opacity, { toValue: 0.7, duration: 400, useNativeDriver: true }),
-            Animated.timing(p.y, {
-              toValue: -10 - Math.random() * 30,
-              duration: 2200 + Math.random() * 1200,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.timing(p.opacity, { toValue: 0, duration: 600, useNativeDriver: true }),
-        ]).start(animate);
-      };
-      animate();
-    });
-    return () => particles.forEach(p => { p.opacity.stopAnimation(); p.y.stopAnimation(); });
-  }, []);
-
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {particles.map((p, i) => (
-        <Animated.View
-          key={i}
-          style={{
-            position: "absolute",
-            left: p.x,
-            top: 0,
-            width: p.size,
-            height: p.size,
-            borderRadius: p.size / 2,
-            backgroundColor: "#E8B84B",
-            opacity: p.opacity,
-            transform: [{ translateY: p.y }],
-          }}
-        />
-      ))}
-    </View>
-  );
-}
 
 export default function HomeScreen() {
   const colors = useColors();

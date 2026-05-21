@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Alert,
   Platform,
@@ -18,6 +18,7 @@ import { WoodCard } from "@/components/homestead/WoodCard";
 import { FieldNoteCard } from "@/components/homestead/FieldNoteCard";
 import { LanternGauge } from "@/components/homestead/LanternGauge";
 import { GordBird } from "@/components/GordBird";
+import { EmberBurst } from "@/components/EmberParticles";
 
 function getTimeColors(hour: number): readonly [string, string] {
   if (hour >= 5 && hour < 10)  return ["#7a5c2a", "#4a6822"] as const;
@@ -289,7 +290,10 @@ export default function StompScreen() {
   const [mode, setMode] = useState<"quick" | "deep">("quick");
   const [showRename, setShowRename] = useState(false);
   const [showReflect, setShowReflect] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [hour, setHour] = useState(() => new Date().getHours());
+
+  const prevStompedToday = useRef(state.stompedToday);
 
   const [bgTop, bgBottom] = getTimeColors(hour);
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
@@ -300,6 +304,13 @@ export default function StompScreen() {
     const id = setInterval(() => setHour(new Date().getHours()), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!prevStompedToday.current && state.stompedToday) {
+      setShowCelebration(true);
+    }
+    prevStompedToday.current = state.stompedToday;
+  }, [state.stompedToday]);
 
   useEffect(() => {
     if (state.stompedToday && !state.reflectShown) {
@@ -333,6 +344,10 @@ export default function StompScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <EmberBurst
+        visible={showCelebration}
+        onHide={() => setShowCelebration(false)}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
