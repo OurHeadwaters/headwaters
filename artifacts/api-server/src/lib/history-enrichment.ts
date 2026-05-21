@@ -249,27 +249,70 @@ async function findUlgCrossLink(
 }
 
 /**
- * Look for a TSP episode featuring the Expert Council historian that is also
- * relevant to this history topic.
+ * Look for a TSP episode featuring Prof CJ Kilmer, the Expert Council historian.
  *
- * The history professor's name is not in the static Expert Council registry —
- * this search finds him by looking for TSP episodes that mention historian
- * credentials ("historian", "history professor") in their show notes and whose
- * topic keywords overlap with the current history segment topic.
+ * Search strategy (in order of preference):
+ *  1. Slug prefix match — episodes whose slug starts with known CJ Kilmer slug
+ *     prefixes (most precise; avoids false positives).
+ *  2. Name match — full-text search for "kilmer" in show notes. This catches any
+ *     episode where CJ is mentioned by name, regardless of slug convention.
  *
- * Returns null if the DB is unavailable, the professor has no relevant episode,
- * or no match is found.
+ * Both passes look for a topic-keyword overlap with the current history segment
+ * so we surface a contextually relevant episode rather than always the same one.
+ * If no topic-overlapping episode is found we fall back to any CJ Kilmer episode.
+ *
+ * Returns null if the DB is unavailable or no CJ Kilmer episode exists.
  */
+const CJ_KILMER_SLUG_PREFIXES = [
+  "societal-collapse-with-cj-kilmer",
+  "prof-cj-personal-liberty",
+  "prof-cj-kilmer",
+  "cj-kilmer",
+];
+
 async function findExpertLink(
   title: string,
 ): Promise<HistoryCrossLink | null> {
   const keywords = extractHistoryTopicKeywords(title);
-  if (keywords.length === 0) return null;
-
   const queryText = keywords.slice(0, 3).join(" ");
 
+  const slugPrefixCondition = sql`(${sql.join(
+    CJ_KILMER_SLUG_PREFIXES.map((p) => sql`${contentItemsTable.slug} LIKE ${p + "%"}`),
+    sql` OR `,
+  )})`;
+
   try {
-    const rows = await db
+    if (queryText.trim()) {
+      const topicRows = await db
+        .select({
+          title: contentItemsTable.title,
+          slug: contentItemsTable.slug,
+          link: contentItemsTable.link,
+        })
+        .from(contentItemsTable)
+        .where(
+          sql`${contentItemsTable.source} != 'ulg'
+            AND ${contentItemsTable.kind} = 'audio'
+            AND (
+              ${slugPrefixCondition}
+              OR to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
+                @@ plainto_tsquery('english', 'kilmer')
+            )
+            AND to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
+              @@ plainto_tsquery('english', ${queryText})`,
+        )
+        .limit(1);
+
+      if (topicRows[0]) {
+        return {
+          title: topicRows[0].title,
+          slug: topicRows[0].slug,
+          url: `/episodes/${topicRows[0].slug}`,
+        };
+      }
+    }
+
+    const fallbackRows = await db
       .select({
         title: contentItemsTable.title,
         slug: contentItemsTable.slug,
@@ -279,18 +322,19 @@ async function findExpertLink(
       .where(
         sql`${contentItemsTable.source} != 'ulg'
           AND ${contentItemsTable.kind} = 'audio'
-          AND to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
-            @@ plainto_tsquery('english', 'historian')
-          AND to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
-            @@ plainto_tsquery('english', ${queryText})`,
+          AND (
+            ${slugPrefixCondition}
+            OR to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
+              @@ plainto_tsquery('english', 'kilmer')
+          )`,
       )
       .limit(1);
 
-    if (rows[0]) {
+    if (fallbackRows[0]) {
       return {
-        title: rows[0].title,
-        slug: rows[0].slug,
-        url: `/episodes/${rows[0].slug}`,
+        title: fallbackRows[0].title,
+        slug: fallbackRows[0].slug,
+        url: `/episodes/${fallbackRows[0].slug}`,
       };
     }
   } catch (err) {

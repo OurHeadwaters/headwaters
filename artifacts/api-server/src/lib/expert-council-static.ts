@@ -158,6 +158,15 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.projectwellbeing.com",
     zones: ["zone-0"],
   },
+  {
+    id: "prof-cj-kilmer",
+    name: "Prof CJ Kilmer",
+    role: "Historian & History Professor",
+    description:
+      "History professor and recurring TSP guest who brings rigorous academic context to topics like societal collapse, personal liberty, and the long arc of civilization. CJ makes history immediately relevant to modern self-reliance.",
+    url: "https://www.thesurvivalpodcast.com/prof-cj-kilmer",
+    zones: ["zone-0", "zone-5"],
+  },
 ];
 
 export const ULG_BUSINESSES: UlgBusiness[] = [
