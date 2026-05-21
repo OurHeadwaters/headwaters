@@ -19,6 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/zones", label: "Zones" },
     { href: "/transform", label: "Transform" },
     { href: "/council", label: "Creators" },
+    { href: "/stomping-grounds", label: "🏡 Grounds" },
     { href: "/wisdom-dig", label: "💎 Wisdom" },
     { href: "/wishing-well", label: "🪙 Well" },
     { href: "/episodes", label: "Archive" },

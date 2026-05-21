@@ -31,6 +31,7 @@ import { AdminContentGaps } from "@/pages/admin-content-gaps";
 import { AdminGear } from "@/pages/admin-gear";
 import HistoryPage from "@/pages/history";
 import { WisdomDig } from "@/pages/wisdom-dig";
+import StompingGroundsPage from "@/pages/stomping-grounds";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ function Router() {
         <Route path="/admin/gear" component={AdminGear} />
         <Route path="/wishing-well" component={WishingWell} />
         <Route path="/wisdom-dig" component={WisdomDig} />
+        <Route path="/stomping-grounds" component={StompingGroundsPage} />
         <Route path="/history" component={HistoryPage} />
         <Route component={NotFound} />
       </Switch>
