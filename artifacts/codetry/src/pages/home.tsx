@@ -154,6 +154,24 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* Full-bleed 'Life on the Land' Photo */}
+      <section
+        className="relative w-full overflow-hidden"
+        style={{ height: "clamp(260px, 45vh, 600px)" }}
+        aria-hidden="true"
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&q=80')",
+            transform: "scale(1.08)",
+            willChange: "transform"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/40" />
+      </section>
+
       {/* Transformation Pullquote — with Bobbie's headshot */}
       <section className="bg-primary/5 py-24 px-6 md:px-12 border-y border-border/50">
         <motion.div
