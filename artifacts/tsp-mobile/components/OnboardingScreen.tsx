@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GordBird } from "@/components/GordBird";
 import { WoodCard } from "@/components/homestead/WoodCard";
+import { useHistory } from "@/context/HistoryContext";
 import { useColors } from "@/hooks/useColors";
 
 export const ONBOARDING_KEY = "hasSeenOnboarding_v1";
@@ -83,22 +84,78 @@ const SLIDES: Slide[] = [
 ];
 
 const MILESTONES = [
-  { label: "10", sub: "stomps" },
-  { label: "100", sub: "episodes" },
-  { label: "1,000", sub: "episodes" },
+  { label: "10", sub: "stomps", value: 10 },
+  { label: "100", sub: "episodes", value: 100 },
+  { label: "1,000", sub: "episodes", value: 1000 },
 ];
 
-function FencePost({ color, capColor }: { color: string; capColor: string }) {
+function FencePost({
+  color,
+  capColor,
+  passed,
+  glowColor,
+}: {
+  color: string;
+  capColor: string;
+  passed?: boolean;
+  glowColor?: string;
+}) {
   return (
     <View style={fenceStyles.postGroup}>
-      <View style={[fenceStyles.cap, { backgroundColor: capColor }]} />
-      <View style={[fenceStyles.post, { backgroundColor: color }]} />
+      <View
+        style={[
+          fenceStyles.cap,
+          { backgroundColor: capColor },
+          passed && glowColor
+            ? {
+                shadowColor: glowColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.9,
+                shadowRadius: 6,
+                elevation: 6,
+              }
+            : undefined,
+        ]}
+      />
+      <View
+        style={[
+          fenceStyles.post,
+          { backgroundColor: color },
+          passed && glowColor
+            ? {
+                shadowColor: glowColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
+                elevation: 4,
+              }
+            : undefined,
+        ]}
+      />
     </View>
   );
 }
 
 function JourneyTrail({ isVisible }: { isVisible: boolean }) {
   const colors = useColors();
+  const { history } = useHistory();
+
+  const episodeCount = Object.keys(history).length;
+  const hasProgress = episodeCount > 0;
+
+  const passed = MILESTONES.map((m) => episodeCount >= m.value);
+
+  // seg 0 = leading (1–9), seg 1 = rail 0→1 (10–99),
+  // seg 2 = rail 1→2 (100–999), seg 3 = trailing (1000+)
+  let footprintSeg = -1;
+  if (episodeCount >= 1000) footprintSeg = 3;
+  else if (episodeCount >= 100) footprintSeg = 2;
+  else if (episodeCount >= 10) footprintSeg = 1;
+  else if (episodeCount > 0) footprintSeg = 0;
+
+  const trailLabel = hasProgress
+    ? `${episodeCount} episode${episodeCount === 1 ? "" : "s"} stomped`
+    : "The Stomping Trail";
 
   // Animation slots (in stagger order):
   //  0: post0, 1: label0, 2: rails0,
@@ -154,6 +211,15 @@ function JourneyTrail({ isVisible }: { isVisible: boolean }) {
   return (
     <View style={fenceStyles.wrapper}>
       <View style={fenceStyles.trailRow}>
+        {/* Leading segment (before first milestone) */}
+        <View style={fenceStyles.leadingWrapper}>
+          <View style={[fenceStyles.rail, { backgroundColor: colors.woodBorder }]} />
+          <View style={[fenceStyles.rail, fenceStyles.railLower, { backgroundColor: colors.woodBorder }]} />
+          {footprintSeg === 0 && (
+            <Text style={fenceStyles.footprint}>👣</Text>
+          )}
+        </View>
+
         {MILESTONES.map((m, i) => (
           <React.Fragment key={i}>
             <Animated.View
@@ -165,7 +231,12 @@ function JourneyTrail({ isVisible }: { isVisible: boolean }) {
                 },
               ]}
             >
-              <FencePost color={colors.woodBrown} capColor={colors.woodLight} />
+              <FencePost
+                color={passed[i] ? colors.amberGold : colors.woodBrown}
+                capColor={passed[i] ? colors.amberGold : colors.woodLight}
+                passed={passed[i]}
+                glowColor={colors.amberGold}
+              />
               <Animated.Text
                 style={[
                   fenceStyles.milestoneNum,
@@ -190,17 +261,26 @@ function JourneyTrail({ isVisible }: { isVisible: boolean }) {
               >
                 {m.sub}
               </Animated.Text>
+              {passed[i] && (
+                <Text style={[fenceStyles.checkmark, { color: colors.amberGold }]}>✓</Text>
+              )}
             </Animated.View>
             {i < MILESTONES.length - 1 && (
               <Animated.View style={[fenceStyles.railWrapper, { opacity: railAnims[i] }]}>
                 <View style={[fenceStyles.rail, { backgroundColor: colors.woodBorder }]} />
                 <View style={[fenceStyles.rail, fenceStyles.railLower, { backgroundColor: colors.woodBorder }]} />
+                {footprintSeg === i + 1 && (
+                  <Text style={fenceStyles.footprint}>👣</Text>
+                )}
               </Animated.View>
             )}
           </React.Fragment>
         ))}
         <Animated.View style={[fenceStyles.trailEnd, { opacity: anims[8] }]}>
           <View style={[fenceStyles.trailEndLine, { backgroundColor: colors.woodBorder }]} />
+          {footprintSeg === 3 && (
+            <Text style={fenceStyles.footprint}>👣</Text>
+          )}
         </Animated.View>
       </View>
 
@@ -214,7 +294,7 @@ function JourneyTrail({ isVisible }: { isVisible: boolean }) {
           { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", opacity: anims[10] },
         ]}
       >
-        The Stomping Trail
+        {trailLabel}
       </Animated.Text>
     </View>
   );
@@ -263,6 +343,13 @@ const fenceStyles = StyleSheet.create({
   railLower: {
     marginBottom: 2,
   },
+  leadingWrapper: {
+    flex: 0.4,
+    paddingBottom: 18,
+    gap: 8,
+    justifyContent: "flex-end",
+    paddingHorizontal: 2,
+  },
   trailEnd: {
     flex: 0.4,
     paddingBottom: 18,
@@ -273,6 +360,20 @@ const fenceStyles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     opacity: 0.45,
+  },
+  footprint: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  checkmark: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "700",
+    marginTop: 1,
   },
   groundLine: {
     height: 3,
