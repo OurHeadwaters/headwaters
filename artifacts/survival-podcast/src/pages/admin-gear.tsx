@@ -271,9 +271,12 @@ function ProductRow({ product }: { product: GearProduct }) {
   );
 }
 
+type VisibilityFilter = "all" | "visible" | "hidden";
+
 export function AdminGear() {
   const qc = useQueryClient();
   const [offset, setOffset] = useState(0);
+  const [visFilter, setVisFilter] = useState<VisibilityFilter>("all");
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const LIMIT = 50;
@@ -307,6 +310,16 @@ export function AdminGear() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
   const currentPage = Math.floor(offset / LIMIT) + 1;
+
+  const allProducts = data?.products ?? [];
+  const filteredProducts =
+    visFilter === "visible"
+      ? allProducts.filter((p) => p.isVisible)
+      : visFilter === "hidden"
+        ? allProducts.filter((p) => !p.isVisible)
+        : allProducts;
+
+  const hiddenCount = allProducts.filter((p) => !p.isVisible).length;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 max-w-4xl">
@@ -345,10 +358,35 @@ export function AdminGear() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">
           {total > 0 ? `${total.toLocaleString()} products` : isLoading ? "Loading…" : isError ? "" : "No products imported yet"}
         </p>
+
+        {/* Visibility filter */}
+        {total > 0 && (
+          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 bg-muted/40">
+            {(["all", "visible", "hidden"] as VisibilityFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => { setVisFilter(f); setOffset(0); }}
+                className={`text-xs px-3 py-1 rounded-md capitalize transition-colors ${
+                  visFilter === f
+                    ? "bg-background text-foreground shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f}
+                {f === "hidden" && hiddenCount > 0 && (
+                  <span className="ml-1 bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-[9px] font-bold">
+                    {hiddenCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
         {totalPages > 1 && (
           <span className="text-sm text-muted-foreground">
             Page {currentPage} of {totalPages}
@@ -379,20 +417,29 @@ export function AdminGear() {
             <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
-      ) : !data || data.products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="py-20 text-center border border-dashed border-border rounded-xl flex flex-col items-center gap-4">
           <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
           <div>
-            <p className="font-semibold text-foreground">No products imported yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Click <strong>Re-import from TSP</strong> to pull Jack's product review posts.
-            </p>
+            {total === 0 ? (
+              <>
+                <p className="font-semibold text-foreground">No products imported yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click <strong>Re-import from TSP</strong> to pull Jack's product review posts.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-foreground">No {visFilter} products on this page</p>
+                <p className="text-sm text-muted-foreground mt-1">Try switching the filter or paging through results.</p>
+              </>
+            )}
           </div>
         </div>
       ) : (
         <>
           <div className="space-y-2">
-            {data.products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductRow key={product.id} product={product} />
             ))}
           </div>
