@@ -4,10 +4,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -240,6 +243,376 @@ const sectionStyles = StyleSheet.create({
   emptyInner: { alignItems: "center", paddingVertical: 18, gap: 10 },
   emptyEmoji: { fontSize: 30 },
   emptyText: { fontSize: 14, textAlign: "center" },
+});
+
+interface WorkshopFormState {
+  title: string;
+  description: string;
+  hostName: string;
+  eventDate: string;
+  location: string;
+  isOnline: boolean;
+  priceDisplay: string;
+  seats: string;
+}
+
+const EMPTY_FORM: WorkshopFormState = {
+  title: "",
+  description: "",
+  hostName: "",
+  eventDate: "",
+  location: "",
+  isOnline: false,
+  priceDisplay: "",
+  seats: "",
+};
+
+async function postWorkshopSubmission(form: WorkshopFormState): Promise<void> {
+  const body: Record<string, unknown> = {
+    title: form.title.trim(),
+    description: form.description.trim(),
+    hostName: form.hostName.trim(),
+    eventDate: form.eventDate.trim(),
+    location: form.isOnline ? "Online" : form.location.trim(),
+    isOnline: form.isOnline,
+    priceDisplay: form.priceDisplay.trim() || "Free",
+  };
+  const seatsNum = parseInt(form.seats, 10);
+  if (seatsNum > 0) body.seats = seatsNum;
+
+  const res = await fetch(`${API_BASE}/api/ground-events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to submit");
+  }
+}
+
+function HostWorkshopModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [form, setForm] = useState<WorkshopFormState>(EMPTY_FORM);
+  const [submitted, setSubmitted] = useState(false);
+
+  const { mutate: submit, isPending, error } = useMutation({
+    mutationFn: () => postWorkshopSubmission(form),
+    onSuccess: () => {
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setSubmitted(true);
+    },
+  });
+
+  function handleClose() {
+    setForm(EMPTY_FORM);
+    setSubmitted(false);
+    onClose();
+  }
+
+  function set(field: keyof WorkshopFormState, value: string | boolean) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  const errMsg = error instanceof Error ? error.message : null;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={[hostFormStyles.flex, { backgroundColor: colors.background }]}
+      >
+        <View
+          style={[
+            hostFormStyles.header,
+            {
+              backgroundColor: colors.card,
+              borderBottomColor: colors.woodBorder,
+              paddingTop: insets.top + 16,
+            },
+          ]}
+        >
+          <Text style={[hostFormStyles.headerTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+            Host a Workshop
+          </Text>
+          <Pressable onPress={handleClose} hitSlop={10} style={hostFormStyles.closeBtn}>
+            <Ionicons name="close" size={22} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
+
+        {submitted ? (
+          <View style={hostFormStyles.successWrap}>
+            <Text style={hostFormStyles.successEmoji}>🏕</Text>
+            <Text style={[hostFormStyles.successTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+              Workshop Submitted!
+            </Text>
+            <Text style={[hostFormStyles.successBody, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              Your workshop is pending review. The team will approve it shortly and it'll appear on the Workshop Board.
+            </Text>
+            <Pressable
+              onPress={handleClose}
+              style={[hostFormStyles.doneBtn, { backgroundColor: colors.primary }]}
+            >
+              <Text style={[hostFormStyles.doneBtnText, { fontFamily: "DMSans_600SemiBold" }]}>
+                Done
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={[
+              hostFormStyles.formScroll,
+              { paddingBottom: insets.bottom + 32 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={[hostFormStyles.intro, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              Fill in the details below and we'll review your submission before it goes live.
+            </Text>
+
+            <FormField label="Workshop Title *" colors={colors}>
+              <TextInput
+                value={form.title}
+                onChangeText={(v) => set("title", v)}
+                placeholder="e.g. Intro to Food Preservation"
+                placeholderTextColor={colors.mutedForeground}
+                maxLength={120}
+                style={[hostFormStyles.input, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+              />
+            </FormField>
+
+            <FormField label="Description *" colors={colors}>
+              <TextInput
+                value={form.description}
+                onChangeText={(v) => set("description", v)}
+                placeholder="What will attendees learn or do?"
+                placeholderTextColor={colors.mutedForeground}
+                multiline
+                numberOfLines={4}
+                maxLength={2000}
+                style={[hostFormStyles.input, hostFormStyles.multilineInput, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+              />
+            </FormField>
+
+            <FormField label="Your Name *" colors={colors}>
+              <TextInput
+                value={form.hostName}
+                onChangeText={(v) => set("hostName", v)}
+                placeholder="Host name"
+                placeholderTextColor={colors.mutedForeground}
+                style={[hostFormStyles.input, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+              />
+            </FormField>
+
+            <FormField label="Date *" colors={colors} hint="YYYY-MM-DD">
+              <TextInput
+                value={form.eventDate}
+                onChangeText={(v) => set("eventDate", v)}
+                placeholder="2026-09-15"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+                style={[hostFormStyles.input, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+              />
+            </FormField>
+
+            <View style={hostFormStyles.toggleRow}>
+              <Text style={[hostFormStyles.label, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]}>
+                Online Event
+              </Text>
+              <Switch
+                value={form.isOnline}
+                onValueChange={(v) => set("isOnline", v)}
+                trackColor={{ false: colors.muted, true: colors.primary + "88" }}
+                thumbColor={form.isOnline ? colors.primary : colors.mutedForeground}
+              />
+            </View>
+
+            {!form.isOnline && (
+              <FormField label="Location *" colors={colors}>
+                <TextInput
+                  value={form.location}
+                  onChangeText={(v) => set("location", v)}
+                  placeholder="City, State or venue name"
+                  placeholderTextColor={colors.mutedForeground}
+                  style={[hostFormStyles.input, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+                />
+              </FormField>
+            )}
+
+            <FormField label="Price" colors={colors} hint="Leave blank for Free">
+              <TextInput
+                value={form.priceDisplay}
+                onChangeText={(v) => set("priceDisplay", v)}
+                placeholder="Free · $25 · Donation"
+                placeholderTextColor={colors.mutedForeground}
+                maxLength={40}
+                style={[hostFormStyles.input, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+              />
+            </FormField>
+
+            <FormField label="Seats Available" colors={colors} hint="Leave blank for unlimited">
+              <TextInput
+                value={form.seats}
+                onChangeText={(v) => set("seats", v.replace(/[^0-9]/g, ""))}
+                placeholder="e.g. 20"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="number-pad"
+                maxLength={5}
+                style={[hostFormStyles.input, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.woodBorder, fontFamily: "DMSans_400Regular" }]}
+              />
+            </FormField>
+
+            {errMsg && (
+              <View style={[hostFormStyles.errorBox, { backgroundColor: "#7f1d1d22", borderColor: "#f87171" }]}>
+                <Ionicons name="alert-circle-outline" size={16} color="#f87171" />
+                <Text style={[hostFormStyles.errorText, { fontFamily: "DMSans_400Regular" }]}>
+                  {errMsg}
+                </Text>
+              </View>
+            )}
+
+            <Pressable
+              onPress={() => submit()}
+              disabled={isPending}
+              style={({ pressed }) => [
+                hostFormStyles.submitBtn,
+                {
+                  backgroundColor: colors.primary,
+                  opacity: isPending || pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              {isPending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={[hostFormStyles.submitBtnText, { fontFamily: "DMSans_600SemiBold" }]}>
+                  Submit Workshop
+                </Text>
+              )}
+            </Pressable>
+          </ScrollView>
+        )}
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function FormField({
+  label,
+  hint,
+  children,
+  colors,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={hostFormStyles.fieldWrap}>
+      <View style={hostFormStyles.labelRow}>
+        <Text style={[hostFormStyles.label, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]}>
+          {label}
+        </Text>
+        {hint && (
+          <Text style={[hostFormStyles.hint, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            {hint}
+          </Text>
+        )}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+const hostFormStyles = StyleSheet.create({
+  flex: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    position: "relative",
+  },
+  headerTitle: { fontSize: 20 },
+  closeBtn: { position: "absolute", right: 20, bottom: 16 },
+  formScroll: { paddingHorizontal: 20, paddingTop: 20, gap: 4 },
+  intro: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  fieldWrap: { marginBottom: 16 },
+  labelRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: 6 },
+  label: { fontSize: 14 },
+  hint: { fontSize: 12 },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  multilineInput: {
+    minHeight: 100,
+    textAlignVertical: "top",
+    paddingTop: 12,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingVertical: 4,
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: { flex: 1, fontSize: 13, color: "#f87171" },
+  submitBtn: {
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  submitBtnText: { fontSize: 16, color: "#fff" },
+  successWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  successEmoji: { fontSize: 56 },
+  successTitle: { fontSize: 24, textAlign: "center" },
+  successBody: { fontSize: 15, lineHeight: 22, textAlign: "center" },
+  doneBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 14,
+    marginTop: 8,
+  },
+  doneBtnText: { fontSize: 16, color: "#fff" },
 });
 
 function getTimeColors(hour: number): readonly [string, string] {
@@ -513,6 +886,7 @@ export default function StompScreen() {
   const [showRename, setShowRename] = useState(false);
   const [showReflect, setShowReflect] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showHostForm, setShowHostForm] = useState(false);
   const [hour, setHour] = useState(() => new Date().getHours());
 
   const prevStompedToday = useRef(state.stompedToday);
@@ -728,6 +1102,31 @@ export default function StompScreen() {
         {/* Upcoming Workshops */}
         <WorkshopsSection />
 
+        {/* Host a Workshop CTA */}
+        <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+          <Pressable
+            onPress={() => setShowHostForm(true)}
+            style={({ pressed }) => [
+              styles.hostBtn,
+              {
+                borderColor: colors.woodBorder,
+                backgroundColor: pressed ? colors.muted : colors.card,
+              },
+            ]}
+          >
+            <Ionicons name="hammer-outline" size={18} color={colors.amberGold} />
+            <Text style={[styles.hostBtnText, { color: colors.foreground, fontFamily: "DMSans_600SemiBold" }]}>
+              Host a Workshop
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
+
+        <HostWorkshopModal
+          visible={showHostForm}
+          onClose={() => setShowHostForm(false)}
+        />
+
         {/* How it works — field manual */}
         <View style={{ marginTop: 16 }}>
           <FieldNoteCard
@@ -834,4 +1233,14 @@ const styles = StyleSheet.create({
   renameLinkText: { fontSize: 13 },
   howRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 10 },
   howText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  hostBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  hostBtnText: { flex: 1, fontSize: 15 },
 });
