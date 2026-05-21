@@ -1,6 +1,33 @@
+import { useSearch, useLocation } from "wouter";
 import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
+import { WisdomDig } from "@/pages/wisdom-dig";
+import { WishingWell } from "@/pages/wishing-well";
+
+type Tab = "grounds" | "wisdom" | "well";
+
+const TABS: { id: Tab; label: string; emoji: string }[] = [
+  { id: "grounds", label: "Grounds", emoji: "🏡" },
+  { id: "wisdom", label: "Wisdom Dig", emoji: "💎" },
+  { id: "well", label: "Wishing Well", emoji: "🪙" },
+];
 
 export default function StompingGroundsPage() {
+  const search = useSearch();
+  const [, navigate] = useLocation();
+
+  const params = new URLSearchParams(search);
+  const rawTab = params.get("tab");
+  const activeTab: Tab =
+    rawTab === "wisdom" || rawTab === "well" ? rawTab : "grounds";
+
+  function setTab(tab: Tab) {
+    if (tab === "grounds") {
+      navigate("/stomping-grounds");
+    } else {
+      navigate(`/stomping-grounds?tab=${tab}`);
+    }
+  }
+
   return (
     <>
       <style>{`
@@ -47,11 +74,45 @@ export default function StompingGroundsPage() {
               chart your transformation, and let the water wheel earn while you build.
             </p>
           </div>
+
+          {/* Tab bar */}
+          <div className="container mx-auto px-4 md:px-6 relative">
+            <div className="flex items-end gap-1">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-all ${
+                    activeTab === tab.id
+                      ? "bg-[#1C3020] text-white border-t border-x border-white/15"
+                      : "text-white/50 hover:text-white/80 hover:bg-white/5"
+                  }`}
+                >
+                  <span>{tab.emoji}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <StompingGroundsScene />
-
-        <div className="pb-16" />
+        {/* Tab content */}
+        {activeTab === "grounds" && (
+          <>
+            <StompingGroundsScene />
+            <div className="pb-16" />
+          </>
+        )}
+        {activeTab === "wisdom" && (
+          <div className="bg-background min-h-screen">
+            <WisdomDig />
+          </div>
+        )}
+        {activeTab === "well" && (
+          <div className="bg-background min-h-screen">
+            <WishingWell />
+          </div>
+        )}
       </div>
     </>
   );

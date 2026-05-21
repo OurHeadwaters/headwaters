@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,7 +23,6 @@ import TransformPage from "@/pages/transform";
 import { AdminCategories } from "@/pages/admin-categories";
 import { AdminCouncil } from "@/pages/admin-council";
 import { UlgPage } from "@/pages/ulg";
-import { WishingWell } from "@/pages/wishing-well";
 import { AdminWishingWell } from "@/pages/admin-wishing-well";
 import { AdminSeriesHealth } from "@/pages/admin-series-health";
 import { CouncilPage } from "@/pages/council";
@@ -30,11 +30,18 @@ import { CouncilMemberPage } from "@/pages/council-member";
 import { AdminContentGaps } from "@/pages/admin-content-gaps";
 import { AdminGear } from "@/pages/admin-gear";
 import HistoryPage from "@/pages/history";
-import { WisdomDig } from "@/pages/wisdom-dig";
 import StompingGroundsPage from "@/pages/stomping-grounds";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
+
+function Redirect({ to }: { to: string }) {
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    navigate(to, { replace: true });
+  }, [navigate, to]);
+  return null;
+}
 
 function Router() {
   return (
@@ -65,8 +72,12 @@ function Router() {
         <Route path="/admin/series-health" component={AdminSeriesHealth} />
         <Route path="/admin/content-gaps" component={AdminContentGaps} />
         <Route path="/admin/gear" component={AdminGear} />
-        <Route path="/wishing-well" component={WishingWell} />
-        <Route path="/wisdom-dig" component={WisdomDig} />
+        <Route path="/wishing-well">
+          {() => <Redirect to="/stomping-grounds?tab=well" />}
+        </Route>
+        <Route path="/wisdom-dig">
+          {() => <Redirect to="/stomping-grounds?tab=wisdom" />}
+        </Route>
         <Route path="/stomping-grounds" component={StompingGroundsPage} />
         <Route path="/history" component={HistoryPage} />
         <Route component={NotFound} />

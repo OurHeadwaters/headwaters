@@ -1,32 +1,108 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogIn, LogOut, User } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, LogIn, LogOut, User, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
 import { GordGuide } from "./gord-guide";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
 
+const journeyItems = [
+  { href: "/tracks", label: "Tracks", desc: "Structured learning paths through TSP's best content" },
+  { href: "/zones", label: "Zones", desc: "Browse episodes by life-skills topic area" },
+  { href: "/transform", label: "Transform", desc: "Guided paths for real personal transformation" },
+  { href: "/series", label: "Series", desc: "Multi-episode deep dives on a single subject" },
+];
+
+const communityItems = [
+  { href: "/council", label: "Expert Council", desc: "Creators and experts behind The Stomping Path" },
+  { href: "/about", label: "About", desc: "The mission and story of TSP" },
+];
+
+function DropdownMenu({
+  label,
+  items,
+  isActive,
+}: {
+  label: string;
+  items: { href: string; label: string; desc: string }[];
+  isActive: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
+          isActive
+            ? "text-white border-b-2 border-[#D9A066]"
+            : "text-white/65 hover:text-white"
+        }`}
+      >
+        {label}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl py-2 z-50">
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1e3428] border-l border-t border-white/10 rotate-45" />
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors"
+            >
+              <span className="text-sm font-semibold text-white">{item.label}</span>
+              <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [journeyOpen, setJourneyOpen] = useState(false);
+  const [communityOpen, setCommunityOpen] = useState(false);
   const { episode } = usePlayer();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
 
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/library", label: "Library", isNew: true },
-    { href: "/tracks", label: "Tracks" },
-    { href: "/zones", label: "Zones" },
-    { href: "/transform", label: "Transform" },
-    { href: "/council", label: "Creators" },
-    { href: "/stomping-grounds", label: "🏡 Grounds" },
-    { href: "/wisdom-dig", label: "💎 Wisdom" },
-    { href: "/wishing-well", label: "🪙 Well" },
-    { href: "/episodes", label: "Archive" },
-    { href: "/series", label: "Series" },
-    { href: "/about", label: "About" },
-  ];
+  const journeyPaths = journeyItems.map((i) => i.href);
+  const communityPaths = communityItems.map((i) => i.href);
+
+  const isJourneyActive = journeyPaths.some(
+    (p) => location === p || location.startsWith(p + "/")
+  );
+  const isCommunityActive = communityPaths.some(
+    (p) => location === p || location.startsWith(p + "/")
+  );
+  const isGroundsActive =
+    location === "/stomping-grounds" ||
+    location === "/wisdom-dig" ||
+    location === "/wishing-well";
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground font-sans">
@@ -41,29 +117,60 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-5">
-            {navLinks.map((link) => {
-              const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative text-sm font-medium transition-colors flex items-center pb-0.5 ${
-                    isActive
-                      ? "text-white border-b-2 border-[#D9A066]"
-                      : "text-white/65 hover:text-white"
-                  }`}
-                >
-                  {link.label}
-                  {link.isNew && (
-                    <span className="absolute -top-1 -right-4 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D9A066] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#D9A066]"></span>
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="hidden md:flex items-center gap-6">
+            {/* Home */}
+            <Link
+              href="/"
+              className={`relative text-sm font-medium transition-colors pb-0.5 ${
+                location === "/"
+                  ? "text-white border-b-2 border-[#D9A066]"
+                  : "text-white/65 hover:text-white"
+              }`}
+            >
+              Home
+            </Link>
+
+            {/* Journey dropdown */}
+            <DropdownMenu
+              label="Journey"
+              items={journeyItems}
+              isActive={isJourneyActive}
+            />
+
+            {/* Library */}
+            <Link
+              href="/library"
+              className={`relative text-sm font-medium transition-colors flex items-center pb-0.5 ${
+                location === "/library" || location.startsWith("/library/")
+                  ? "text-white border-b-2 border-[#D9A066]"
+                  : "text-white/65 hover:text-white"
+              }`}
+            >
+              Library
+              <span className="absolute -top-1 -right-4 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D9A066] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#D9A066]"></span>
+              </span>
+            </Link>
+
+            {/* Community dropdown */}
+            <DropdownMenu
+              label="Community"
+              items={communityItems}
+              isActive={isCommunityActive}
+            />
+
+            {/* Grounds */}
+            <Link
+              href="/stomping-grounds"
+              className={`relative text-sm font-medium transition-colors pb-0.5 ${
+                isGroundsActive
+                  ? "text-white border-b-2 border-[#D9A066]"
+                  : "text-white/65 hover:text-white"
+              }`}
+            >
+              Grounds
+            </Link>
 
             {/* Auth button */}
             {!authLoading && (
@@ -110,28 +217,117 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden bg-[#1e3428] border-t border-white/10 py-4 px-4 flex flex-col gap-1 shadow-xl absolute w-full left-0">
-            {navLinks.map((link) => {
-              const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center ${
-                    isActive
-                      ? "bg-white/10 text-white"
-                      : "text-white/70 hover:text-white hover:bg-white/5"
-                  }`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
-                  {link.isNew && (
-                    <span className="ml-2 bg-[#D9A066] text-[#2C4A36] text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
-                      New
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+            {/* Home */}
+            <Link
+              href="/"
+              className={`text-base font-medium px-3 py-2.5 rounded-md ${
+                location === "/"
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Home
+            </Link>
+
+            {/* Journey accordion */}
+            <div>
+              <button
+                onClick={() => setJourneyOpen((v) => !v)}
+                className={`w-full flex items-center justify-between text-base font-medium px-3 py-2.5 rounded-md ${
+                  isJourneyActive
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                Journey
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${journeyOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {journeyOpen && (
+                <div className="mt-1 ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                  {journeyItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`text-sm font-medium px-2 py-2 rounded-md ${
+                        location === item.href || location.startsWith(item.href + "/")
+                          ? "text-white bg-white/8"
+                          : "text-white/60 hover:text-white hover:bg-white/5"
+                      }`}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Library */}
+            <Link
+              href="/library"
+              className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
+                location === "/library" || location.startsWith("/library/")
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Library
+              <span className="bg-[#D9A066] text-[#2C4A36] text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
+                New
+              </span>
+            </Link>
+
+            {/* Community accordion */}
+            <div>
+              <button
+                onClick={() => setCommunityOpen((v) => !v)}
+                className={`w-full flex items-center justify-between text-base font-medium px-3 py-2.5 rounded-md ${
+                  isCommunityActive
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                Community
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${communityOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {communityOpen && (
+                <div className="mt-1 ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                  {communityItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`text-sm font-medium px-2 py-2 rounded-md ${
+                        location === item.href || location.startsWith(item.href + "/")
+                          ? "text-white bg-white/8"
+                          : "text-white/60 hover:text-white hover:bg-white/5"
+                      }`}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Grounds */}
+            <Link
+              href="/stomping-grounds"
+              className={`text-base font-medium px-3 py-2.5 rounded-md ${
+                isGroundsActive
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Grounds
+            </Link>
 
             {/* Mobile auth */}
             {!authLoading && (
