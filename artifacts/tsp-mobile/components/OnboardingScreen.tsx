@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -146,6 +146,16 @@ export function OnboardingScreen({ visible, onDone }: OnboardingScreenProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (visible) {
+      fadeAnim.setValue(1);
+      setActiveIndex(0);
+      requestAnimationFrame(() => {
+        flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+      });
+    }
+  }, [visible, fadeAnim]);
 
   const dismiss = useCallback(async () => {
     Animated.timing(fadeAnim, {

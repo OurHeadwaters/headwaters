@@ -21,6 +21,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { OnboardingScreen, ONBOARDING_KEY } from "@/components/OnboardingScreen";
+import { OnboardingProvider } from "@/context/OnboardingContext";
 import { HistoryProvider } from "@/context/HistoryContext";
 import { DownloadProvider } from "@/context/DownloadContext";
 import { PlayerProvider } from "@/context/PlayerContext";
@@ -89,21 +90,23 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <DownloadProvider>
-                <HistoryProvider>
-                  <V4VProvider>
-                    <StompProvider>
-                      <PlayerProvider>
-                        <RootLayoutNav />
-                        <OnboardingScreen
-                          visible={showOnboarding}
-                          onDone={() => setShowOnboarding(false)}
-                        />
-                      </PlayerProvider>
-                    </StompProvider>
-                  </V4VProvider>
-                </HistoryProvider>
-              </DownloadProvider>
+              <OnboardingProvider onReplay={() => setShowOnboarding(true)}>
+                <DownloadProvider>
+                  <HistoryProvider>
+                    <V4VProvider>
+                      <StompProvider>
+                        <PlayerProvider>
+                          <RootLayoutNav />
+                          <OnboardingScreen
+                            visible={showOnboarding}
+                            onDone={() => setShowOnboarding(false)}
+                          />
+                        </PlayerProvider>
+                      </StompProvider>
+                    </V4VProvider>
+                  </HistoryProvider>
+                </DownloadProvider>
+              </OnboardingProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

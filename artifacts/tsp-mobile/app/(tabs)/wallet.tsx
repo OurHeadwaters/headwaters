@@ -16,12 +16,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useV4V } from "@/context/V4VContext";
+import { useOnboarding } from "@/context/OnboardingContext";
 import { WoodCard } from "@/components/homestead/WoodCard";
 
 export default function WalletScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { wallet, isSupporter, stats, connectLightning, connectXrpl, disconnectWallet } = useV4V();
+  const { replayTour } = useOnboarding();
 
   const [tab, setTab] = useState<"lightning" | "xrpl">("lightning");
   const [lightningInput, setLightningInput] = useState("");
@@ -331,6 +333,33 @@ export default function WalletScreen() {
             </Text>
           </Pressable>
         </View>
+
+        {/* About / Settings */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+            About
+          </Text>
+          <WoodCard>
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                replayTour();
+              }}
+              style={styles.aboutRow}
+            >
+              <Ionicons name="play-circle-outline" size={20} color={colors.amberGold} />
+              <View style={styles.aboutRowText}>
+                <Text style={[styles.aboutRowLabel, { color: colors.foreground, fontFamily: "DMSans_600SemiBold" }]}>
+                  Replay welcome tour
+                </Text>
+                <Text style={[styles.aboutRowSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                  See the intro again from the beginning
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+            </Pressable>
+          </WoodCard>
+        </View>
       </View>
     </ScrollView>
   );
@@ -430,4 +459,10 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1, paddingVertical: 14, alignItems: "center",
   },
   p2pBtnText: { fontSize: 14 },
+  aboutRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+  },
+  aboutRowText: { flex: 1, gap: 2 },
+  aboutRowLabel: { fontSize: 15 },
+  aboutRowSub: { fontSize: 12 },
 });
