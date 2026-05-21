@@ -2,16 +2,18 @@ import {
   pgTable,
   serial,
   text,
-  timestamp,
+  boolean,
   integer,
+  timestamp,
   index,
 } from "drizzle-orm/pg-core";
 
 /**
  * Ground Events — community workshops hosted at / associated with The Stomping Path.
  *
- * Events have a title, description, host name, location, date, optional price,
- * and an RSVP count. Status: "upcoming" | "past" | "cancelled".
+ * New submissions land with is_approved=false (pending queue).
+ * Admin approves or rejects; featured events sort first on the public board.
+ * Price is display-only text ("Free" or "$25") — no payment processing in MVP.
  */
 export const groundEventsTable = pgTable(
   "ground_events",
@@ -20,15 +22,15 @@ export const groundEventsTable = pgTable(
     title: text("title").notNull(),
     description: text("description").notNull(),
     hostName: text("host_name").notNull(),
-    location: text("location").notNull(),
     eventDate: text("event_date").notNull(),
-    priceCents: integer("price_cents").notNull().default(0),
-    currency: text("currency").notNull().default("USD"),
-    capacity: integer("capacity"),
+    location: text("location").notNull(),
+    isOnline: boolean("is_online").notNull().default(false),
+    priceDisplay: text("price_display").notNull().default("Free"),
+    seats: integer("seats"),
+    contactEmail: text("contact_email"),
+    isApproved: boolean("is_approved").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
     rsvpCount: integer("rsvp_count").notNull().default(0),
-    status: text("status").notNull().default("upcoming"),
-    tags: text("tags"),
-    externalUrl: text("external_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -37,7 +39,8 @@ export const groundEventsTable = pgTable(
       .defaultNow(),
   },
   (t) => [
-    index("ground_events_status_idx").on(t.status),
+    index("ground_events_is_approved_idx").on(t.isApproved),
+    index("ground_events_is_featured_idx").on(t.isFeatured),
     index("ground_events_event_date_idx").on(t.eventDate),
     index("ground_events_created_at_idx").on(t.createdAt),
   ],
@@ -45,28 +48,3 @@ export const groundEventsTable = pgTable(
 
 export type GroundEvent = typeof groundEventsTable.$inferSelect;
 export type InsertGroundEvent = typeof groundEventsTable.$inferInsert;
-
-/**
- * RSVP records for ground events.
- * One row per (eventId + sessionId) pair — anonymous-friendly.
- */
-export const groundEventRsvpsTable = pgTable(
-  "ground_event_rsvps",
-  {
-    id: serial("id").primaryKey(),
-    eventId: integer("event_id").notNull(),
-    sessionId: text("session_id").notNull(),
-    attendeeName: text("attendee_name"),
-    attendeeEmail: text("attendee_email"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => [
-    index("ground_event_rsvps_event_id_idx").on(t.eventId),
-    index("ground_event_rsvps_session_idx").on(t.sessionId),
-  ],
-);
-
-export type GroundEventRsvp = typeof groundEventRsvpsTable.$inferSelect;
-export type InsertGroundEventRsvp = typeof groundEventRsvpsTable.$inferInsert;

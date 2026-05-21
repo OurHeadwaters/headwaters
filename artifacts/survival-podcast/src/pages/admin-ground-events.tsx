@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Hammer, Trash2, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -12,27 +12,18 @@ interface GroundEvent {
   title: string;
   description: string;
   hostName: string;
-  location: string;
   eventDate: string;
-  priceCents: number;
-  currency: string;
-  capacity: number | null;
+  location: string;
+  isOnline: boolean;
+  priceDisplay: string;
+  seats: number | null;
+  contactEmail: string | null;
+  isApproved: boolean;
+  isFeatured: boolean;
   rsvpCount: number;
-  status: string;
-  tags: string | null;
-  externalUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
-
-interface Rsvp {
-  id: number;
-  attendeeName: string | null;
-  attendeeEmail: string | null;
-  createdAt: string;
-}
-
-const STATUSES = ["upcoming", "past", "cancelled"];
 
 async function fetchEvents(): Promise<GroundEvent[]> {
   const res = await fetch(apiUrl("/admin/ground-events"), { credentials: "include" });
@@ -40,12 +31,13 @@ async function fetchEvents(): Promise<GroundEvent[]> {
   return res.json();
 }
 
-async function patchEvent(data: { id: number; updates: Partial<GroundEvent> }): Promise<GroundEvent> {
+async function patchEvent(data: { id: number; action?: string; updates?: Partial<GroundEvent> }): Promise<GroundEvent> {
+  const body = data.action ? { action: data.action } : data.updates;
   const res = await fetch(apiUrl(`/admin/ground-events/${data.id}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(data.updates),
+    body: JSON.stringify(body),
   });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed to update");
@@ -60,14 +52,6 @@ async function deleteEvent(id: number): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete event");
 }
 
-async function fetchRsvps(id: number): Promise<{ rsvps: Rsvp[]; total: number }> {
-  const res = await fetch(apiUrl(`/admin/ground-events/${id}/rsvps`), {
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to load RSVPs");
-  return res.json();
-}
-
 function formatDate(d: string): string {
   try {
     return new Date(d).toLocaleDateString("en-US", {
@@ -80,65 +64,33 @@ function formatDate(d: string): string {
   }
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    upcoming: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    past: "bg-slate-100 text-slate-600 border-slate-200",
-    cancelled: "bg-red-100 text-red-600 border-red-200",
-  };
+function StatusBadge({ event }: { event: GroundEvent }) {
+  if (event.isFeatured) {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+        <Star className="w-2.5 h-2.5" />Featured
+      </span>
+    );
+  }
+  if (event.isApproved) {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+        <CheckCircle className="w-2.5 h-2.5" />Approved
+      </span>
+    );
+  }
   return (
-    <span
-      className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${styles[status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
-    >
-      {status}
+    <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+      <Clock className="w-2.5 h-2.5" />Pending
     </span>
-  );
-}
-
-function RsvpDrawer({ eventId }: { eventId: number }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-event-rsvps", eventId],
-    queryFn: () => fetchRsvps(eventId),
-  });
-
-  if (isLoading) {
-    return <p className="text-xs text-muted-foreground py-2">Loading RSVPs…</p>;
-  }
-
-  const rsvps = data?.rsvps ?? [];
-  if (rsvps.length === 0) {
-    return <p className="text-xs text-muted-foreground py-2">No RSVPs yet.</p>;
-  }
-
-  return (
-    <div className="mt-3 space-y-1.5">
-      {rsvps.map((r) => (
-        <div
-          key={r.id}
-          className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-muted/60"
-        >
-          <span className="font-medium text-foreground">
-            {r.attendeeName ?? "Anonymous"}
-          </span>
-          {r.attendeeEmail && (
-            <span className="text-muted-foreground">· {r.attendeeEmail}</span>
-          )}
-          <span className="ml-auto text-muted-foreground">
-            {formatDate(r.createdAt)}
-          </span>
-        </div>
-      ))}
-    </div>
   );
 }
 
 function EventRow({ event }: { event: GroundEvent }) {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(false);
-  const [showRsvps, setShowRsvps] = useState(false);
-  const [editStatus, setEditStatus] = useState(event.status);
 
-  const patchMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: patchEvent,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-ground-events"] }),
   });
@@ -148,60 +100,82 @@ function EventRow({ event }: { event: GroundEvent }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-ground-events"] }),
   });
 
-  const handleStatusChange = (newStatus: string) => {
-    setEditStatus(newStatus);
-    patchMutation.mutate({ id: event.id, updates: { status: newStatus } });
-  };
+  const act = (action: string) => mutation.mutate({ id: event.id, action });
+  const busy = mutation.isPending;
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <StatusBadge status={editStatus} />
+            <StatusBadge event={event} />
             <span className="text-xs text-muted-foreground">{event.eventDate}</span>
             <span className="text-xs text-muted-foreground">·</span>
-            <span className="text-xs text-muted-foreground">{event.location}</span>
+            <span className="text-xs text-muted-foreground">
+              {event.isOnline ? "Online" : event.location}
+            </span>
+            <span className="text-xs font-semibold text-[#2C4A36]">{event.priceDisplay}</span>
           </div>
           <h3 className="font-semibold text-foreground leading-snug">{event.title}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             By {event.hostName}
-            {event.priceCents > 0
-              ? ` · $${(event.priceCents / 100).toFixed(0)}`
-              : " · Free"}
-            {event.capacity !== null && ` · Cap: ${event.capacity}`}
+            {event.contactEmail && <> · <a href={`mailto:${event.contactEmail}`} className="text-[#2C4A36] hover:underline">{event.contactEmail}</a></>}
+            {event.seats !== null && ` · ${event.seats} seats`}
+            {` · ${event.rsvpCount} RSVPs`}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Users className="w-3 h-3" />
-            <span>{event.rsvpCount}</span>
-          </div>
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+          {!event.isApproved && (
+            <button
+              onClick={() => act("approve")}
+              disabled={busy}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              Approve
+            </button>
+          )}
 
-          <select
-            value={editStatus}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={patchMutation.isPending}
-            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-[#2C4A36] disabled:opacity-50"
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          {event.isApproved && !event.isFeatured && (
+            <button
+              onClick={() => act("feature")}
+              disabled={busy}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+            >
+              <Star className="w-3.5 h-3.5" />
+              Feature
+            </button>
+          )}
+
+          {event.isFeatured && (
+            <button
+              onClick={() => act("unfeature")}
+              disabled={busy}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
+            >
+              <Star className="w-3.5 h-3.5" />
+              Unfeature
+            </button>
+          )}
+
+          {event.isApproved && (
+            <button
+              onClick={() => act("reject")}
+              disabled={busy}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              Reject
+            </button>
+          )}
 
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label={expanded ? "Collapse" : "Expand"}
           >
-            {expanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
           <button
@@ -222,34 +196,9 @@ function EventRow({ event }: { event: GroundEvent }) {
       {expanded && (
         <div className="px-4 pb-4 border-t border-border/50 pt-3">
           <p className="text-sm text-foreground leading-relaxed mb-3">{event.description}</p>
-          {event.tags && (
-            <p className="text-xs text-muted-foreground mb-2">
-              <span className="font-medium">Tags:</span> {event.tags}
-            </p>
-          )}
-          {event.externalUrl && (
-            <p className="text-xs text-muted-foreground mb-3">
-              <span className="font-medium">Link:</span>{" "}
-              <a
-                href={event.externalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#2C4A36] underline"
-              >
-                {event.externalUrl}
-              </a>
-            </p>
-          )}
-
-          <button
-            onClick={() => setShowRsvps((v) => !v)}
-            className="flex items-center gap-1.5 text-xs font-medium text-[#2C4A36] hover:underline"
-          >
-            <Users className="w-3.5 h-3.5" />
-            {showRsvps ? "Hide" : "Show"} RSVPs ({event.rsvpCount})
-          </button>
-
-          {showRsvps && <RsvpDrawer eventId={event.id} />}
+          <p className="text-xs text-muted-foreground">
+            Submitted {formatDate(event.createdAt)}
+          </p>
         </div>
       )}
     </div>
@@ -263,19 +212,17 @@ export function AdminGroundEvents() {
   });
 
   const events = data ?? [];
-  const upcoming = events.filter((e) => e.status === "upcoming");
-  const other = events.filter((e) => e.status !== "upcoming");
+  const pending = events.filter((e) => !e.isApproved);
+  const approved = events.filter((e) => e.isApproved);
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 max-w-4xl">
       <div className="flex items-center gap-3 mb-8">
         <Hammer className="w-6 h-6 text-[#2C4A36]" />
         <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">
-            Ground Events Admin
-          </h1>
+          <h1 className="font-serif text-3xl font-bold text-foreground">Ground Events Admin</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Review and manage community workshop submissions.
+            Review and approve community workshop submissions.
           </p>
         </div>
         <a
@@ -299,35 +246,33 @@ export function AdminGroundEvents() {
       ) : events.length === 0 ? (
         <div className="text-center py-20 border border-dashed border-border rounded-xl">
           <div className="text-4xl mb-3">🔨</div>
-          <p className="font-medium text-foreground mb-1">No workshops yet</p>
+          <p className="font-medium text-foreground mb-1">No workshop submissions yet</p>
           <p className="text-sm text-muted-foreground">
-            Submissions from the Workshop Board will appear here.
+            When community members submit via the Workshop Board, they'll appear here for review.
           </p>
         </div>
       ) : (
         <div className="space-y-8">
-          {upcoming.length > 0 && (
+          {pending.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Upcoming ({upcoming.length})
+              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" />
+                Pending Review ({pending.length})
               </h2>
               <div className="space-y-3">
-                {upcoming.map((e) => (
-                  <EventRow key={e.id} event={e} />
-                ))}
+                {pending.map((e) => <EventRow key={e.id} event={e} />)}
               </div>
             </section>
           )}
 
-          {other.length > 0 && (
+          {approved.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Past / Cancelled ({other.length})
+              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Approved ({approved.length})
               </h2>
               <div className="space-y-3">
-                {other.map((e) => (
-                  <EventRow key={e.id} event={e} />
-                ))}
+                {approved.map((e) => <EventRow key={e.id} event={e} />)}
               </div>
             </section>
           )}

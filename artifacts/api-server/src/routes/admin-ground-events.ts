@@ -1,16 +1,14 @@
 import { Router, type IRouter } from "express";
-import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { db, groundEventsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
 
-const VALID_STATUSES = ["upcoming", "past", "cancelled"];
-
 /**
  * GET /api/admin/ground-events
- * Returns all events, ordered newest first, with RSVP counts.
+ * Returns all events (pending + approved + rejected), ordered newest first.
  */
 router.get("/admin/ground-events", requireEditor, async (_req, res) => {
   try {
@@ -28,7 +26,16 @@ router.get("/admin/ground-events", requireEditor, async (_req, res) => {
 
 /**
  * PATCH /api/admin/ground-events/:id
- * Update any field on an event (title, description, status, date, price, etc.).
+ * Approve, feature, or reject an event.
+ * Also allows updating any other field (title, description, etc.).
+ *
+ * Special actions via body:
+ *   { action: "approve" }  — sets is_approved=true, is_rejected=false
+ *   { action: "feature" }  — sets is_approved=true, is_featured=true
+ *   { action: "reject" }   — sets is_approved=false, is_featured=false
+ *   { action: "unfeature" }— sets is_featured=false (stays approved)
+ *
+ * Or pass explicit fields (isApproved, isFeatured, title, description, etc.)
  */
 router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
   try {
@@ -39,100 +46,101 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
     }
 
     const body = req.body as Record<string, unknown>;
-
     const updates: Partial<typeof groundEventsTable.$inferInsert> = {
       updatedAt: new Date(),
     };
 
-    if ("title" in body) {
-      const v = typeof body.title === "string" ? body.title.trim() : "";
-      if (!v || v.length < 3) {
-        res.status(400).json({ error: "title must be at least 3 characters" });
+    if ("action" in body) {
+      const action = body.action as string;
+      if (action === "approve") {
+        updates.isApproved = true;
+      } else if (action === "feature") {
+        updates.isApproved = true;
+        updates.isFeatured = true;
+      } else if (action === "reject") {
+        updates.isApproved = false;
+        updates.isFeatured = false;
+      } else if (action === "unfeature") {
+        updates.isFeatured = false;
+      } else {
+        res.status(400).json({ error: "Unknown action. Valid: approve, feature, reject, unfeature" });
         return;
       }
-      updates.title = v;
-    }
-
-    if ("description" in body) {
-      const v =
-        typeof body.description === "string" ? body.description.trim() : "";
-      if (!v || v.length < 10) {
-        res
-          .status(400)
-          .json({ error: "description must be at least 10 characters" });
-        return;
+    } else {
+      if ("isApproved" in body) {
+        updates.isApproved = Boolean(body.isApproved);
       }
-      updates.description = v;
-    }
-
-    if ("hostName" in body) {
-      const v = typeof body.hostName === "string" ? body.hostName.trim() : "";
-      if (!v) {
-        res.status(400).json({ error: "hostName cannot be empty" });
-        return;
+      if ("isFeatured" in body) {
+        updates.isFeatured = Boolean(body.isFeatured);
       }
-      updates.hostName = v;
-    }
 
-    if ("location" in body) {
-      const v = typeof body.location === "string" ? body.location.trim() : "";
-      if (!v) {
-        res.status(400).json({ error: "location cannot be empty" });
-        return;
+      if ("title" in body) {
+        const v = typeof body.title === "string" ? body.title.trim() : "";
+        if (!v || v.length < 3) {
+          res.status(400).json({ error: "title must be at least 3 characters" });
+          return;
+        }
+        updates.title = v;
       }
-      updates.location = v;
-    }
 
-    if ("eventDate" in body) {
-      const v =
-        typeof body.eventDate === "string" ? body.eventDate.trim() : "";
-      if (!v) {
-        res.status(400).json({ error: "eventDate cannot be empty" });
-        return;
+      if ("description" in body) {
+        const v = typeof body.description === "string" ? body.description.trim() : "";
+        if (!v || v.length < 10) {
+          res.status(400).json({ error: "description must be at least 10 characters" });
+          return;
+        }
+        updates.description = v;
       }
-      updates.eventDate = v;
-    }
 
-    if ("status" in body) {
-      const v = typeof body.status === "string" ? body.status.trim() : "";
-      if (!VALID_STATUSES.includes(v)) {
-        res
-          .status(400)
-          .json({ error: `status must be one of: ${VALID_STATUSES.join(", ")}` });
-        return;
+      if ("hostName" in body) {
+        const v = typeof body.hostName === "string" ? body.hostName.trim() : "";
+        if (!v) {
+          res.status(400).json({ error: "hostName cannot be empty" });
+          return;
+        }
+        updates.hostName = v;
       }
-      updates.status = v;
-    }
 
-    if ("priceCents" in body) {
-      const v = Number(body.priceCents);
-      if (!Number.isFinite(v) || v < 0) {
-        res.status(400).json({ error: "priceCents must be a non-negative number" });
-        return;
+      if ("eventDate" in body) {
+        const v = typeof body.eventDate === "string" ? body.eventDate.trim() : "";
+        if (!v) {
+          res.status(400).json({ error: "eventDate cannot be empty" });
+          return;
+        }
+        updates.eventDate = v;
       }
-      updates.priceCents = Math.floor(v);
-    }
 
-    if ("currency" in body) {
-      const v = typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "";
-      if (v) updates.currency = v.slice(0, 8);
-    }
+      if ("location" in body) {
+        const v = typeof body.location === "string" ? body.location.trim() : "";
+        if (!v) {
+          res.status(400).json({ error: "location cannot be empty" });
+          return;
+        }
+        updates.location = v;
+      }
 
-    if ("capacity" in body) {
-      updates.capacity =
-        body.capacity === null ? null : Math.floor(Number(body.capacity));
-    }
+      if ("isOnline" in body) {
+        updates.isOnline = Boolean(body.isOnline);
+      }
 
-    if ("tags" in body) {
-      updates.tags =
-        typeof body.tags === "string" ? body.tags.trim().slice(0, 200) : null;
-    }
+      if ("priceDisplay" in body) {
+        updates.priceDisplay =
+          typeof body.priceDisplay === "string"
+            ? body.priceDisplay.trim().slice(0, 40) || "Free"
+            : "Free";
+      }
 
-    if ("externalUrl" in body) {
-      updates.externalUrl =
-        typeof body.externalUrl === "string"
-          ? body.externalUrl.trim().slice(0, 500) || null
-          : null;
+      if ("seats" in body) {
+        updates.seats =
+          body.seats === null ? null : Math.max(1, Math.floor(Number(body.seats)));
+      }
+
+      if ("contactEmail" in body) {
+        updates.contactEmail =
+          typeof body.contactEmail === "string"
+            ? body.contactEmail.trim().slice(0, 160) || null
+            : null;
+      }
     }
 
     const [row] = await db
@@ -146,6 +154,7 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
       return;
     }
 
+    logger.info({ id, updates }, "admin-ground-events: event updated");
     res.json(row);
   } catch (err) {
     logger.error({ err }, "admin-ground-events: PATCH failed");
@@ -155,7 +164,7 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
 
 /**
  * DELETE /api/admin/ground-events/:id
- * Hard-delete an event and its RSVPs.
+ * Hard-delete an event.
  */
 router.delete("/admin/ground-events/:id", requireEditor, async (req, res) => {
   try {
@@ -165,50 +174,12 @@ router.delete("/admin/ground-events/:id", requireEditor, async (req, res) => {
       return;
     }
 
-    await db
-      .delete(groundEventRsvpsTable)
-      .where(eq(groundEventRsvpsTable.eventId, id));
     await db.delete(groundEventsTable).where(eq(groundEventsTable.id, id));
-
     res.json({ ok: true });
   } catch (err) {
     logger.error({ err }, "admin-ground-events: DELETE failed");
     res.status(500).json({ error: "Failed to delete event" });
   }
 });
-
-/**
- * GET /api/admin/ground-events/:id/rsvps
- * Returns the full RSVP list for a single event.
- */
-router.get(
-  "/admin/ground-events/:id/rsvps",
-  requireEditor,
-  async (req, res) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (!Number.isFinite(id)) {
-        res.status(400).json({ error: "Invalid event id" });
-        return;
-      }
-
-      const rsvps = await db
-        .select()
-        .from(groundEventRsvpsTable)
-        .where(eq(groundEventRsvpsTable.eventId, id))
-        .orderBy(desc(groundEventRsvpsTable.createdAt));
-
-      const [{ count }] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(groundEventRsvpsTable)
-        .where(eq(groundEventRsvpsTable.eventId, id));
-
-      res.json({ rsvps, total: count });
-    } catch (err) {
-      logger.error({ err }, "admin-ground-events: GET /rsvps failed");
-      res.status(500).json({ error: "Failed to load RSVPs" });
-    }
-  },
-);
 
 export default router;

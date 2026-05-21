@@ -1,19 +1,10 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Calendar, Users, DollarSign, ExternalLink, ChevronDown, ChevronUp, Hammer } from "lucide-react";
+import { MapPin, Calendar, Users, ExternalLink, ChevronDown, ChevronUp, Hammer, Wifi, Star } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return `${base}/api${path}`;
-}
-
-function getOrCreateSessionId(): string {
-  let id = sessionStorage.getItem("ge_session_id");
-  if (!id) {
-    id = crypto.randomUUID();
-    sessionStorage.setItem("ge_session_id", id);
-  }
-  return id;
 }
 
 interface GroundEvent {
@@ -21,51 +12,38 @@ interface GroundEvent {
   title: string;
   description: string;
   hostName: string;
-  location: string;
   eventDate: string;
-  priceCents: number;
-  currency: string;
-  capacity: number | null;
+  location: string;
+  isOnline: boolean;
+  priceDisplay: string;
+  seats: number | null;
+  contactEmail: string | null;
+  isApproved: boolean;
+  isFeatured: boolean;
   rsvpCount: number;
-  status: string;
-  tags: string | null;
-  externalUrl: string | null;
   createdAt: string;
 }
 
 interface EventsResponse {
   events: GroundEvent[];
   total: number;
-  limit: number;
-  offset: number;
 }
 
 async function fetchEvents(): Promise<EventsResponse> {
-  const res = await fetch(apiUrl("/ground-events?status=upcoming&limit=50"));
+  const res = await fetch(apiUrl("/ground-events?limit=50"));
   if (!res.ok) throw new Error("Failed to load events");
   return res.json();
 }
 
-async function submitRsvp(data: {
-  eventId: number;
-  sessionId: string;
-  attendeeName?: string;
-  attendeeEmail?: string;
-}): Promise<{ eventId: number; rsvpCount: number }> {
-  const { eventId, ...body } = data;
+async function postRsvp(eventId: number): Promise<{ eventId: number; rsvpCount: number }> {
   const res = await fetch(apiUrl(`/ground-events/${eventId}/rsvp`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(body),
+    body: JSON.stringify({}),
   });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    if ((j as { alreadyRsvped?: boolean }).alreadyRsvped) {
-      return { eventId, rsvpCount: -1 };
-    }
-    throw new Error((j as { error?: string }).error ?? "Failed to RSVP");
-  }
+  if (!res.ok) throw new Error((j as { error?: string }).error ?? "RSVP failed");
   return j as { eventId: number; rsvpCount: number };
 }
 
@@ -73,11 +51,12 @@ async function submitEvent(data: {
   title: string;
   description: string;
   hostName: string;
-  location: string;
   eventDate: string;
-  priceCents: number;
-  tags?: string;
-  externalUrl?: string;
+  location: string;
+  isOnline: boolean;
+  priceDisplay: string;
+  seats: number | null;
+  contactEmail: string;
 }): Promise<GroundEvent> {
   const res = await fetch(apiUrl("/ground-events"), {
     method: "POST",
@@ -103,29 +82,20 @@ function formatDate(d: string): string {
   }
 }
 
-function formatPrice(cents: number, currency: string): string {
-  if (cents === 0) return "Free";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency === "USD" ? "USD" : "USD",
-    minimumFractionDigits: 0,
-  }).format(cents / 100);
-}
-
 function ChalkboardEmpty({ onHostClick }: { onHostClick: () => void }) {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden flex flex-col items-center justify-center py-20 px-8 text-center"
+      className="relative rounded-2xl overflow-hidden flex flex-col items-center justify-center py-24 px-8 text-center"
       style={{
         background: "linear-gradient(160deg, #1C2A1E 0%, #243028 60%, #1A2820 100%)",
-        border: "3px solid #3A5040",
-        boxShadow: "inset 0 2px 20px rgba(0,0,0,0.5), 0 4px 24px rgba(0,0,0,0.3)",
+        border: "4px solid #3A5040",
+        boxShadow: "inset 0 2px 24px rgba(0,0,0,0.55), 0 4px 24px rgba(0,0,0,0.3)",
       }}
     >
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.06]"
+        className="absolute inset-0 pointer-events-none opacity-[0.05]"
         style={{
-          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(255,255,255,0.4) 27px, rgba(255,255,255,0.4) 28px)`,
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(255,255,255,0.5) 27px, rgba(255,255,255,0.5) 28px)`,
         }}
       />
       <div
@@ -133,18 +103,18 @@ function ChalkboardEmpty({ onHostClick }: { onHostClick: () => void }) {
         style={{ background: "linear-gradient(180deg, #4A6850 0%, transparent 100%)" }}
       />
       <div
-        className="absolute inset-x-0 bottom-0 h-8"
-        style={{ background: "linear-gradient(0deg, #3A2A1A 0%, transparent 100%)", borderTop: "4px solid #5A3818" }}
+        className="absolute inset-x-0 bottom-0 h-10"
+        style={{ background: "linear-gradient(0deg, #3A2A1A 0%, transparent 100%)", borderTop: "5px solid #5A3818" }}
       />
 
       <div className="relative z-10">
-        <div className="text-5xl mb-5" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.6))" }}>🔨</div>
+        <div className="text-5xl mb-5" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.6))" }}>🔨</div>
         <h2
           className="text-2xl font-bold mb-3 leading-snug"
           style={{
-            fontFamily: "Georgia, serif",
+            fontFamily: "Georgia, 'Times New Roman', serif",
             color: "#E8E0C8",
-            textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+            textShadow: "0 1px 4px rgba(0,0,0,0.7)",
             letterSpacing: "0.03em",
           }}
         >
@@ -152,10 +122,10 @@ function ChalkboardEmpty({ onHostClick }: { onHostClick: () => void }) {
         </h2>
         <p
           className="text-sm leading-relaxed max-w-md mx-auto mb-8"
-          style={{ color: "#A8B8A0", textShadow: "0 1px 2px rgba(0,0,0,0.4)" }}
+          style={{ color: "#9AB89A", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
         >
-          Got a skill worth sharing? Host a workshop — fermentation, foraging, off-grid
-          power, food preservation, animal husbandry. The community is listening.
+          Be the first host. Share what you know — fermentation, foraging, off-grid
+          power, food preservation, animal husbandry. This community is ready to learn.
         </p>
         <button
           onClick={onHostClick}
@@ -164,7 +134,7 @@ function ChalkboardEmpty({ onHostClick }: { onHostClick: () => void }) {
             background: "linear-gradient(135deg, #7A5030 0%, #5A3818 100%)",
             color: "#F2CA8C",
             border: "1.5px solid #9A6840",
-            boxShadow: "0 3px 12px rgba(0,0,0,0.4)",
+            boxShadow: "0 3px 14px rgba(0,0,0,0.45)",
           }}
         >
           <Hammer className="w-4 h-4" />
@@ -185,92 +155,86 @@ function EventCard({
   onRsvp: (id: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const isFull = event.seats !== null && event.rsvpCount >= event.seats;
+  const seatsLeft = event.seats !== null ? event.seats - event.rsvpCount : null;
   const capacityPct =
-    event.capacity && event.capacity > 0
-      ? Math.min(100, (event.rsvpCount / event.capacity) * 100)
+    event.seats && event.seats > 0
+      ? Math.min(100, (event.rsvpCount / event.seats) * 100)
       : null;
-  const isFull = event.capacity !== null && event.rsvpCount >= event.capacity;
-  const tags = event.tags
-    ? event.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
-    : [];
 
   return (
     <div
       className="rounded-2xl overflow-hidden transition-all duration-200"
       style={{
-        background: "linear-gradient(150deg, #2C3E30 0%, #243028 100%)",
-        border: "1.5px solid #3A5040",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+        background: event.isFeatured
+          ? "linear-gradient(150deg, #2C3E24 0%, #1E3018 100%)"
+          : "linear-gradient(150deg, #242E26 0%, #1A2820 100%)",
+        border: event.isFeatured ? "1.5px solid #5A8040" : "1.5px solid #2E4432",
+        boxShadow: event.isFeatured
+          ? "0 3px 18px rgba(44,74,36,0.3)"
+          : "0 2px 10px rgba(0,0,0,0.2)",
       }}
     >
       <div
-        className="px-5 py-3 flex items-center gap-2"
+        className="px-5 py-3 flex items-center gap-2 flex-wrap"
         style={{
           background: "linear-gradient(90deg, #3A2A14 0%, #4A3420 100%)",
           borderBottom: "1px solid #5A3818",
         }}
       >
+        {event.isFeatured && (
+          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+            style={{ background: "rgba(217,160,102,0.25)", color: "#D9A066", border: "1px solid rgba(217,160,102,0.5)" }}>
+            <Star className="w-2.5 h-2.5" />Featured
+          </span>
+        )}
         <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "#D9A066" }} />
         <span className="text-xs font-semibold" style={{ color: "#D9A066" }}>
           {formatDate(event.eventDate)}
         </span>
         <span className="ml-auto">
           <span
-            className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+            className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
             style={{
-              background: event.priceCents === 0 ? "rgba(44,74,54,0.7)" : "rgba(217,160,102,0.2)",
-              color: event.priceCents === 0 ? "#6DBA8A" : "#D9A066",
-              border: `1px solid ${event.priceCents === 0 ? "#3A7A50" : "#D9A066"}`,
+              background: event.priceDisplay.toLowerCase() === "free"
+                ? "rgba(44,100,54,0.6)"
+                : "rgba(217,160,102,0.2)",
+              color: event.priceDisplay.toLowerCase() === "free" ? "#6DCA8A" : "#D9A066",
+              border: `1px solid ${event.priceDisplay.toLowerCase() === "free" ? "rgba(44,100,54,0.8)" : "rgba(217,160,102,0.5)"}`,
             }}
           >
-            {formatPrice(event.priceCents, event.currency)}
+            {event.priceDisplay}
           </span>
         </span>
       </div>
 
       <div className="p-5">
         <h3
-          className="font-bold text-lg leading-snug mb-1"
-          style={{ fontFamily: "Georgia, serif", color: "#F2E8D0" }}
+          className="font-bold text-lg leading-snug mb-1.5"
+          style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#F2E8D0" }}
         >
           {event.title}
         </h3>
 
-        <div className="flex items-center gap-1.5 mb-3">
-          <MapPin className="w-3 h-3 shrink-0" style={{ color: "#8AB88A" }} />
-          <span className="text-xs" style={{ color: "#8AB88A" }}>
-            {event.location}
-          </span>
-          <span className="text-xs" style={{ color: "#5A7860" }}>·</span>
-          <span className="text-xs font-medium" style={{ color: "#A8B8A0" }}>
-            Hosted by {event.hostName}
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mb-3">
+          {event.isOnline ? (
+            <span className="flex items-center gap-1 text-xs" style={{ color: "#7AB0D0" }}>
+              <Wifi className="w-3 h-3" />Online
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-xs" style={{ color: "#8AB88A" }}>
+              <MapPin className="w-3 h-3" />{event.location}
+            </span>
+          )}
+          <span className="text-xs" style={{ color: "#3A5A40" }}>·</span>
+          <span className="text-xs" style={{ color: "#9AB09A" }}>
+            Hosted by <span style={{ color: "#C4D8C4" }}>{event.hostName}</span>
           </span>
         </div>
 
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                style={{
-                  background: "rgba(44,74,54,0.5)",
-                  color: "#7AB88A",
-                  border: "1px solid rgba(58,90,64,0.6)",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
         <p
           className="text-sm leading-relaxed mb-3"
-          style={{ color: "#A8B8A0" }}
+          style={{ color: "#9AB09A" }}
         >
           {expanded || event.description.length <= 160
             ? event.description
@@ -283,28 +247,34 @@ function EventCard({
             style={{ color: "#7AB88A" }}
           >
             {expanded ? (
-              <>
-                <ChevronUp className="w-3 h-3" /> Show less
-              </>
+              <><ChevronUp className="w-3 h-3" />Show less</>
             ) : (
-              <>
-                <ChevronDown className="w-3 h-3" /> Read more
-              </>
+              <><ChevronDown className="w-3 h-3" />Read more</>
             )}
           </button>
         )}
 
-        <div className="flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid rgba(58,90,64,0.4)" }}>
+        <div
+          className="flex items-center justify-between gap-3 pt-3"
+          style={{ borderTop: "1px solid rgba(58,80,64,0.4)" }}
+        >
           <div className="flex flex-col gap-1.5 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: "#7A9880" }}>
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: "#6A8870" }}>
               <Users className="w-3 h-3 shrink-0" />
               <span>
                 {event.rsvpCount} {event.rsvpCount === 1 ? "person" : "people"} going
-                {event.capacity !== null && ` · ${event.capacity} cap`}
+                {seatsLeft !== null && (
+                  <> · <span style={{ color: seatsLeft <= 5 ? "#D9A066" : "#6A8870" }}>
+                    {seatsLeft > 0 ? `${seatsLeft} seats left` : "Full"}
+                  </span></>
+                )}
               </span>
             </div>
             {capacityPct !== null && (
-              <div className="h-1.5 w-28 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+              <div
+                className="h-1.5 w-28 rounded-full overflow-hidden"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+              >
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -320,49 +290,47 @@ function EventCard({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {event.externalUrl && (
+            {event.contactEmail && (
               <a
-                href={event.externalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`mailto:${event.contactEmail}`}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
                 style={{
                   color: "#D9A066",
-                  border: "1px solid rgba(217,160,102,0.35)",
-                  background: "rgba(217,160,102,0.08)",
+                  border: "1px solid rgba(217,160,102,0.3)",
+                  background: "rgba(217,160,102,0.07)",
                 }}
               >
                 <ExternalLink className="w-3 h-3" />
-                Details
+                Contact
               </a>
             )}
             <button
               onClick={() => !rsvped && !isFull && onRsvp(event.id)}
               disabled={rsvped || isFull}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
               style={
                 rsvped
                   ? {
-                      background: "rgba(44,74,54,0.6)",
+                      background: "rgba(44,74,54,0.55)",
                       color: "#6DBA8A",
-                      border: "1px solid rgba(44,74,54,0.8)",
+                      border: "1px solid rgba(44,74,54,0.75)",
                       cursor: "default",
                     }
                   : isFull
                   ? {
-                      background: "rgba(100,50,30,0.3)",
+                      background: "rgba(100,50,30,0.25)",
                       color: "#A87060",
-                      border: "1px solid rgba(166,75,54,0.3)",
+                      border: "1px solid rgba(166,75,54,0.25)",
                       cursor: "not-allowed",
                     }
                   : {
                       background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)",
                       color: "#A8D8A8",
-                      border: "1px solid rgba(44,74,54,0.8)",
+                      border: "1px solid rgba(58,90,64,0.8)",
                     }
               }
             >
-              {rsvped ? "✓ Going" : isFull ? "Full" : "I'm Going"}
+              {rsvped ? "✓ I'm Going" : isFull ? "Full" : "I'm Going"}
             </button>
           </div>
         </div>
@@ -375,12 +343,13 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [hostName, setHostName] = useState("");
-  const [location, setLocation] = useState("");
   const [eventDate, setEventDate] = useState("");
+  const [location, setLocation] = useState("");
+  const [isOnline, setIsOnline] = useState(false);
   const [isFree, setIsFree] = useState(true);
-  const [priceStr, setPriceStr] = useState("");
-  const [tags, setTags] = useState("");
-  const [externalUrl, setExternalUrl] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
+  const [seatsStr, setSeatsStr] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const mutation = useMutation({
@@ -391,25 +360,24 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
     },
   });
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     background: "rgba(255,255,255,0.05)",
-    border: "1.5px solid rgba(90,120,90,0.4)",
+    border: "1.5px solid rgba(90,120,90,0.35)",
     color: "#E8E0C8",
     borderRadius: "10px",
     padding: "10px 14px",
     fontSize: "14px",
     outline: "none",
     width: "100%",
-    transition: "border-color 0.2s",
   };
 
-  const labelStyle = {
+  const labelStyle: React.CSSProperties = {
     display: "block",
     fontSize: "11px",
     fontWeight: 700,
-    textTransform: "uppercase" as const,
+    textTransform: "uppercase",
     letterSpacing: "0.07em",
-    color: "#8AB8A0",
+    color: "#7AB8A0",
     marginBottom: "6px",
   };
 
@@ -430,18 +398,27 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           Workshop submitted!
         </h3>
         <p className="text-sm mb-6" style={{ color: "#8AB8A0" }}>
-          We'll review your workshop and post it to the board. Thanks for contributing to the community.
+          Your workshop is in the pending queue. The admin will review and approve it — 
+          then it'll appear on the board for the community to RSVP.
         </p>
-        <button
-          onClick={onCancel}
-          className="text-xs underline transition-colors"
-          style={{ color: "#7A9880" }}
-        >
+        <button onClick={onCancel} className="text-xs underline" style={{ color: "#7A9880" }}>
           Back to events
         </button>
       </div>
     );
   }
+
+  const priceDisplay = isFree ? "Free" : (paidAmount.trim() ? `$${paidAmount.trim()}` : "");
+  const seatsVal = seatsStr.trim() ? parseInt(seatsStr, 10) : null;
+  const canSubmit =
+    title.trim().length >= 3 &&
+    description.trim().length >= 10 &&
+    hostName.trim().length >= 2 &&
+    eventDate.trim() &&
+    location.trim().length >= 2 &&
+    (isFree || paidAmount.trim()) &&
+    contactEmail.trim().includes("@") &&
+    !mutation.isPending;
 
   return (
     <div
@@ -466,11 +443,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
         >
           Host a Workshop
         </h3>
-        <button
-          onClick={onCancel}
-          className="ml-auto text-xs transition-colors"
-          style={{ color: "#8A7860" }}
-        >
+        <button onClick={onCancel} className="ml-auto text-xs" style={{ color: "#8A7860" }}>
           Cancel
         </button>
       </div>
@@ -479,7 +452,11 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
         {mutation.isError && (
           <div
             className="p-3 rounded-lg text-sm"
-            style={{ background: "rgba(166,75,54,0.15)", color: "#E87060", border: "1px solid rgba(166,75,54,0.3)" }}
+            style={{
+              background: "rgba(166,75,54,0.15)",
+              color: "#E87060",
+              border: "1px solid rgba(166,75,54,0.3)",
+            }}
           >
             {mutation.error instanceof Error ? mutation.error.message : "Something went wrong"}
           </div>
@@ -510,13 +487,13 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
             />
           </div>
           <div>
-            <label style={labelStyle}>Location *</label>
+            <label style={labelStyle}>Contact email *</label>
             <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Austin, TX or Online"
-              maxLength={120}
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="you@example.com"
+              maxLength={160}
               style={inputStyle}
             />
           </div>
@@ -528,10 +505,38 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
             type="date"
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
-            style={{
-              ...inputStyle,
-              colorScheme: "dark",
-            }}
+            style={{ ...inputStyle, colorScheme: "dark" }}
+          />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Format *</label>
+          <div className="flex items-center gap-3 mb-3">
+            {[
+              { val: false, label: "In-person" },
+              { val: true, label: "Online" },
+            ].map(({ val, label }) => (
+              <button
+                key={String(val)}
+                onClick={() => setIsOnline(val)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={
+                  isOnline === val
+                    ? { background: "rgba(44,74,54,0.6)", color: "#6DBA8A", border: "1px solid rgba(44,74,54,0.9)" }
+                    : { background: "transparent", color: "#5A7860", border: "1px solid rgba(58,90,64,0.35)" }
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder={isOnline ? "e.g. Zoom (link sent after RSVP)" : "e.g. Austin, TX"}
+            maxLength={120}
+            style={inputStyle}
           />
         </div>
 
@@ -540,108 +545,82 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What will people learn? What should they bring? What level of experience is expected?"
+            placeholder="What will people learn? What should they bring? What experience level is expected?"
             maxLength={2000}
             rows={4}
-            style={{ ...inputStyle, resize: "vertical" as const }}
+            style={{ ...inputStyle, resize: "vertical" }}
           />
-          <div className="text-right text-xs mt-0.5" style={{ color: "#5A7860" }}>
+          <div className="text-right text-xs mt-0.5" style={{ color: "#4A6850" }}>
             {description.length}/2000
           </div>
         </div>
 
-        <div>
-          <label style={labelStyle}>Topics / tags</label>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="fermentation, foraging, off-grid (comma separated)"
-            maxLength={200}
-            style={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label style={labelStyle}>Price</label>
-          <div className="flex items-center gap-3 mb-2">
-            <button
-              onClick={() => setIsFree(true)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-              style={
-                isFree
-                  ? { background: "rgba(44,74,54,0.7)", color: "#6DBA8A", border: "1px solid rgba(44,74,54,0.9)" }
-                  : { background: "transparent", color: "#5A7860", border: "1px solid rgba(58,90,64,0.4)" }
-              }
-            >
-              Free
-            </button>
-            <button
-              onClick={() => setIsFree(false)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-              style={
-                !isFree
-                  ? { background: "rgba(217,160,102,0.2)", color: "#D9A066", border: "1px solid rgba(217,160,102,0.5)" }
-                  : { background: "transparent", color: "#5A7860", border: "1px solid rgba(58,90,64,0.4)" }
-              }
-            >
-              Paid
-            </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label style={labelStyle}>Seats available</label>
+            <input
+              type="number"
+              value={seatsStr}
+              onChange={(e) => setSeatsStr(e.target.value)}
+              placeholder="Leave blank for unlimited"
+              min="1"
+              step="1"
+              style={inputStyle}
+            />
           </div>
-          {!isFree && (
-            <div className="relative">
-              <DollarSign
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                style={{ color: "#8AB8A0" }}
-              />
-              <input
-                type="number"
-                value={priceStr}
-                onChange={(e) => setPriceStr(e.target.value)}
-                placeholder="25"
-                min="0"
-                step="1"
-                style={{ ...inputStyle, paddingLeft: "36px" }}
-              />
+          <div>
+            <label style={labelStyle}>Price *</label>
+            <div className="flex items-center gap-2 mb-2">
+              {[true, false].map((free) => (
+                <button
+                  key={String(free)}
+                  onClick={() => setIsFree(free)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                  style={
+                    isFree === free
+                      ? { background: "rgba(44,74,54,0.6)", color: "#6DBA8A", border: "1px solid rgba(44,74,54,0.9)" }
+                      : { background: "transparent", color: "#5A7860", border: "1px solid rgba(58,90,64,0.35)" }
+                  }
+                >
+                  {free ? "Free" : "Paid"}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-
-        <div>
-          <label style={labelStyle}>External link (optional)</label>
-          <input
-            type="url"
-            value={externalUrl}
-            onChange={(e) => setExternalUrl(e.target.value)}
-            placeholder="https://eventbrite.com/your-event"
-            maxLength={500}
-            style={inputStyle}
-          />
+            {!isFree && (
+              <div className="relative">
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold"
+                  style={{ color: "#8AB8A0" }}
+                >$</span>
+                <input
+                  type="number"
+                  value={paidAmount}
+                  onChange={(e) => setPaidAmount(e.target.value)}
+                  placeholder="25"
+                  min="1"
+                  step="1"
+                  style={{ ...inputStyle, paddingLeft: "28px" }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <button
-          onClick={() => {
-            const priceCents = isFree ? 0 : Math.max(0, Math.floor(parseFloat(priceStr || "0") * 100));
+          onClick={() =>
             mutation.mutate({
               title: title.trim(),
               description: description.trim(),
               hostName: hostName.trim(),
+              eventDate: eventDate.trim(),
               location: location.trim(),
-              eventDate,
-              priceCents,
-              tags: tags.trim() || undefined,
-              externalUrl: externalUrl.trim() || undefined,
-            });
-          }}
-          disabled={
-            !title.trim() ||
-            !description.trim() ||
-            !hostName.trim() ||
-            !location.trim() ||
-            !eventDate ||
-            description.trim().length < 10 ||
-            mutation.isPending
+              isOnline,
+              priceDisplay,
+              seats: seatsVal,
+              contactEmail: contactEmail.trim(),
+            })
           }
+          disabled={!canSubmit}
           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
           style={{
             background: "linear-gradient(135deg, #7A5030 0%, #5A3818 100%)",
@@ -652,7 +631,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           <Hammer className="w-4 h-4" />
           {mutation.isPending ? "Submitting…" : "Submit Workshop"}
         </button>
-        <p className="text-xs text-center" style={{ color: "#5A7860" }}>
+        <p className="text-xs text-center" style={{ color: "#4A6850" }}>
           Submissions are reviewed before going live on the board.
         </p>
       </div>
@@ -671,22 +650,15 @@ export function WorkshopBoard() {
   });
 
   const rsvpMutation = useMutation({
-    mutationFn: submitRsvp,
+    mutationFn: postRsvp,
     onSuccess: (result) => {
-      if (result.rsvpCount === -1) {
-        setRsvped((prev) => new Set(prev).add(result.eventId));
-        return;
-      }
       setRsvped((prev) => new Set(prev).add(result.eventId));
       qc.invalidateQueries({ queryKey: ["ground-events"] });
     },
   });
 
   const handleRsvp = useCallback(
-    (eventId: number) => {
-      const sessionId = getOrCreateSessionId();
-      rsvpMutation.mutate({ eventId, sessionId });
-    },
+    (eventId: number) => rsvpMutation.mutate(eventId),
     [rsvpMutation],
   );
 
@@ -700,7 +672,7 @@ export function WorkshopBoard() {
           <div className="text-4xl mb-3">🔨</div>
           <h1
             className="text-4xl font-bold mb-3"
-            style={{ fontFamily: "Georgia, serif", color: "#F2E8D0" }}
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#F2E8D0" }}
           >
             Workshop Board
           </h1>
@@ -731,7 +703,7 @@ export function WorkshopBoard() {
           <HostForm
             onSuccess={() => {
               qc.invalidateQueries({ queryKey: ["ground-events"] });
-              setTimeout(() => setShowForm(false), 3200);
+              setTimeout(() => setShowForm(false), 3500);
             }}
             onCancel={() => setShowForm(false)}
           />
@@ -741,7 +713,11 @@ export function WorkshopBoard() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl animate-pulse" style={{ background: "rgba(44,74,54,0.15)" }} />
+            <div
+              key={i}
+              className="h-64 rounded-2xl animate-pulse"
+              style={{ background: "rgba(44,74,54,0.12)" }}
+            />
           ))}
         </div>
       ) : isError ? (
@@ -766,20 +742,22 @@ export function WorkshopBoard() {
           <div
             className="mt-10 p-5 rounded-xl text-center"
             style={{
-              border: "1px dashed rgba(217,160,102,0.35)",
-              background: "rgba(217,160,102,0.05)",
+              border: "1px dashed rgba(217,160,102,0.3)",
+              background: "rgba(217,160,102,0.04)",
             }}
           >
             <p className="text-sm" style={{ color: "#8AB8A0" }}>
               <span style={{ color: "#D9A066", fontWeight: 600 }}>Know something worth teaching?</span>{" "}
               Workshops are community-led — anyone can host.{" "}
-              <button
-                onClick={() => setShowForm(true)}
-                className="underline transition-colors"
-                style={{ color: "#D9A066" }}
-              >
-                Submit yours →
-              </button>
+              {!showForm && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="underline transition-colors"
+                  style={{ color: "#D9A066" }}
+                >
+                  Submit yours →
+                </button>
+              )}
             </p>
           </div>
         </>

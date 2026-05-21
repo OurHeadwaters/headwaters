@@ -385,6 +385,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link href="/admin/wisdom" className="hover:text-white/70 transition-colors">
                 Wisdom Scraper
               </Link>
+              <Link href="/admin/ground-events" className="hover:text-white/70 transition-colors">
+                Ground Events
+              </Link>
               <span>Built for people building a life worth defending.</span>
             </div>
           </div>
