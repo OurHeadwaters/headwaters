@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, groundEventsTable } from "@workspace/db";
+import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
@@ -21,6 +21,97 @@ router.get("/admin/ground-events", requireEditor, async (_req, res) => {
   } catch (err) {
     logger.error({ err }, "admin-ground-events: GET failed");
     res.status(500).json({ error: "Failed to load events" });
+  }
+});
+
+/**
+ * GET /api/admin/ground-events/:id/rsvps
+ * Returns the RSVP list for a given event as JSON.
+ */
+router.get("/admin/ground-events/:id/rsvps", requireEditor, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const rsvps = await db
+      .select()
+      .from(groundEventRsvpsTable)
+      .where(eq(groundEventRsvpsTable.eventId, id))
+      .orderBy(desc(groundEventRsvpsTable.createdAt));
+
+    res.json(rsvps);
+  } catch (err) {
+    logger.error({ err }, "admin-ground-events: GET /rsvps failed");
+    res.status(500).json({ error: "Failed to load RSVPs" });
+  }
+});
+
+/**
+ * GET /api/admin/ground-events/:id/rsvps.csv
+ * Streams the RSVP list for a given event as a CSV download.
+ */
+router.get("/admin/ground-events/:id/rsvps.csv", requireEditor, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const [event, rsvps] = await Promise.all([
+      db
+        .select({ title: groundEventsTable.title })
+        .from(groundEventsTable)
+        .where(eq(groundEventsTable.id, id))
+        .limit(1),
+      db
+        .select()
+        .from(groundEventRsvpsTable)
+        .where(eq(groundEventRsvpsTable.eventId, id))
+        .orderBy(desc(groundEventRsvpsTable.createdAt)),
+    ]);
+
+    if (!event[0]) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    const safeTitle = event[0].title.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+    const filename = `rsvps_${id}_${safeTitle}.csv`;
+
+    const csvEscape = (v: string | null | undefined): string => {
+      if (v == null) return "";
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+
+    const header = "id,attendee_name,attendee_email,rsvp_date\n";
+    const rows = rsvps
+      .map(
+        (r) =>
+          [
+            r.id,
+            csvEscape(r.attendeeName),
+            csvEscape(r.attendeeEmail),
+            csvEscape(r.createdAt.toISOString()),
+          ].join(","),
+      )
+      .join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(header + rows);
+
+    logger.info({ id, count: rsvps.length }, "admin-ground-events: CSV exported");
+  } catch (err) {
+    logger.error({ err }, "admin-ground-events: GET /rsvps.csv failed");
+    res.status(500).json({ error: "Failed to export RSVPs" });
   }
 });
 
@@ -113,6 +204,12 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
             ? body.priceDisplay.trim().slice(0, 40) || "Free"
             : "Free";
       }
+      if ("externalUrl" in body) {
+        updates.externalUrl =
+          typeof body.externalUrl === "string" && body.externalUrl.trim()
+            ? body.externalUrl.trim().slice(0, 500)
+            : null;
+      }
       if ("seats" in body) {
         updates.seats =
           body.seats === null ? null : Math.max(1, Math.floor(Number(body.seats)));
@@ -146,7 +243,7 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
 
 /**
  * DELETE /api/admin/ground-events/:id
- * Hard-delete an event.
+ * Hard-delete an event (cascades to RSVPs).
  */
 router.delete("/admin/ground-events/:id", requireEditor, async (req, res) => {
   try {

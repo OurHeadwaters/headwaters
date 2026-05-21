@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Calendar, Users, ExternalLink, ChevronDown, ChevronUp, Hammer, Wifi, Star } from "lucide-react";
+import { MapPin, Calendar, Users, ExternalLink, ChevronDown, ChevronUp, Hammer, Wifi, Star, Ticket, X } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -16,6 +16,7 @@ interface GroundEvent {
   location: string;
   isOnline: boolean;
   priceDisplay: string;
+  externalUrl: string | null;
   seats: number | null;
   contactEmail: string | null;
   isApproved: boolean;
@@ -35,16 +36,23 @@ async function fetchEvents(): Promise<EventsResponse> {
   return res.json();
 }
 
-async function postRsvp(eventId: number): Promise<{ eventId: number; rsvpCount: number }> {
-  const res = await fetch(apiUrl(`/ground-events/${eventId}/rsvp`), {
+async function postRsvp(data: {
+  eventId: number;
+  attendeeEmail: string;
+  attendeeName: string;
+}): Promise<{ eventId: number; rsvpCount: number; rsvpId: number }> {
+  const res = await fetch(apiUrl(`/ground-events/${data.eventId}/rsvp`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({}),
+    body: JSON.stringify({
+      attendeeEmail: data.attendeeEmail,
+      attendeeName: data.attendeeName,
+    }),
   });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((j as { error?: string }).error ?? "RSVP failed");
-  return j as { eventId: number; rsvpCount: number };
+  return j as { eventId: number; rsvpCount: number; rsvpId: number };
 }
 
 async function submitEvent(data: {
@@ -55,6 +63,7 @@ async function submitEvent(data: {
   location: string;
   isOnline: boolean;
   priceDisplay: string;
+  externalUrl: string | null;
   seats: number | null;
   contactEmail: string;
 }): Promise<GroundEvent> {
@@ -145,6 +154,135 @@ function ChalkboardEmpty({ onHostClick }: { onHostClick: () => void }) {
   );
 }
 
+function RsvpModal({
+  event,
+  onConfirm,
+  onClose,
+  isPending,
+  error,
+}: {
+  event: GroundEvent;
+  onConfirm: (name: string, email: string) => void;
+  onClose: () => void;
+  isPending: boolean;
+  error: string | null;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  const canSubmit = email.trim().includes("@") && !isPending;
+
+  const inputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.05)",
+    border: "1.5px solid rgba(90,120,90,0.35)",
+    color: "#E8E0C8",
+    borderRadius: "10px",
+    padding: "9px 13px",
+    fontSize: "14px",
+    outline: "none",
+    width: "100%",
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.65)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl overflow-hidden"
+        style={{
+          background: "linear-gradient(150deg, #1E2E22 0%, #1A2820 100%)",
+          border: "1.5px solid #3A5040",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+        }}
+      >
+        <div
+          className="px-5 py-4 flex items-center gap-2"
+          style={{
+            background: "linear-gradient(90deg, #3A2A14 0%, #4A3420 100%)",
+            borderBottom: "1px solid #5A3818",
+          }}
+        >
+          <Hammer className="w-4 h-4 shrink-0" style={{ color: "#D9A066" }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold" style={{ color: "#D9A066" }}>I'm Going</p>
+            <p className="text-xs truncate" style={{ color: "#9A7850" }}>{event.title}</p>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg transition-colors hover:bg-white/10">
+            <X className="w-4 h-4" style={{ color: "#8A7860" }} />
+          </button>
+        </div>
+
+        <div className="p-5 flex flex-col gap-4">
+          {error && (
+            <div
+              className="p-3 rounded-lg text-sm"
+              style={{
+                background: "rgba(166,75,54,0.15)",
+                color: "#E87060",
+                border: "1px solid rgba(166,75,54,0.3)",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label
+              className="block text-[11px] font-bold uppercase tracking-widest mb-1.5"
+              style={{ color: "#7AB8A0" }}
+            >
+              Your name (optional)
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Jane from Colorado"
+              maxLength={120}
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-[11px] font-bold uppercase tracking-widest mb-1.5"
+              style={{ color: "#7AB8A0" }}
+            >
+              Your email *
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              maxLength={160}
+              style={inputStyle}
+            />
+            <p className="text-xs mt-1.5" style={{ color: "#4A6850" }}>
+              Shared with the host so they can send details.
+            </p>
+          </div>
+
+          <button
+            onClick={() => canSubmit && onConfirm(name.trim(), email.trim())}
+            disabled={!canSubmit}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+            style={{
+              background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)",
+              color: "#A8D8A8",
+              border: "1px solid rgba(58,90,64,0.8)",
+            }}
+          >
+            {isPending ? "Saving…" : "Confirm RSVP"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EventCard({
   event,
   rsvped,
@@ -152,9 +290,10 @@ function EventCard({
 }: {
   event: GroundEvent;
   rsvped: boolean;
-  onRsvp: (id: number) => void;
+  onRsvp: (id: number, name: string, email: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showRsvpModal, setShowRsvpModal] = useState(false);
   const isFull = event.seats !== null && event.rsvpCount >= event.seats;
   const seatsLeft = event.seats !== null ? event.seats - event.rsvpCount : null;
   const capacityPct =
@@ -163,179 +302,210 @@ function EventCard({
       : null;
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden transition-all duration-200"
-      style={{
-        background: event.isFeatured
-          ? "linear-gradient(150deg, #2C3E24 0%, #1E3018 100%)"
-          : "linear-gradient(150deg, #242E26 0%, #1A2820 100%)",
-        border: event.isFeatured ? "1.5px solid #5A8040" : "1.5px solid #2E4432",
-        boxShadow: event.isFeatured
-          ? "0 3px 18px rgba(44,74,36,0.3)"
-          : "0 2px 10px rgba(0,0,0,0.2)",
-      }}
-    >
+    <>
+      {showRsvpModal && (
+        <RsvpModal
+          event={event}
+          onConfirm={(name, email) => {
+            onRsvp(event.id, name, email);
+            setShowRsvpModal(false);
+          }}
+          onClose={() => setShowRsvpModal(false)}
+          isPending={false}
+          error={null}
+        />
+      )}
+
       <div
-        className="px-5 py-3 flex items-center gap-2 flex-wrap"
+        className="rounded-2xl overflow-hidden transition-all duration-200"
         style={{
-          background: "linear-gradient(90deg, #3A2A14 0%, #4A3420 100%)",
-          borderBottom: "1px solid #5A3818",
+          background: event.isFeatured
+            ? "linear-gradient(150deg, #2C3E24 0%, #1E3018 100%)"
+            : "linear-gradient(150deg, #242E26 0%, #1A2820 100%)",
+          border: event.isFeatured ? "1.5px solid #5A8040" : "1.5px solid #2E4432",
+          boxShadow: event.isFeatured
+            ? "0 3px 18px rgba(44,74,36,0.3)"
+            : "0 2px 10px rgba(0,0,0,0.2)",
         }}
       >
-        {event.isFeatured && (
-          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-            style={{ background: "rgba(217,160,102,0.25)", color: "#D9A066", border: "1px solid rgba(217,160,102,0.5)" }}>
-            <Star className="w-2.5 h-2.5" />Featured
-          </span>
-        )}
-        <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "#D9A066" }} />
-        <span className="text-xs font-semibold" style={{ color: "#D9A066" }}>
-          {formatDate(event.eventDate)}
-        </span>
-        <span className="ml-auto">
-          <span
-            className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
-            style={{
-              background: event.priceDisplay.toLowerCase() === "free"
-                ? "rgba(44,100,54,0.6)"
-                : "rgba(217,160,102,0.2)",
-              color: event.priceDisplay.toLowerCase() === "free" ? "#6DCA8A" : "#D9A066",
-              border: `1px solid ${event.priceDisplay.toLowerCase() === "free" ? "rgba(44,100,54,0.8)" : "rgba(217,160,102,0.5)"}`,
-            }}
-          >
-            {event.priceDisplay}
-          </span>
-        </span>
-      </div>
-
-      <div className="p-5">
-        <h3
-          className="font-bold text-lg leading-snug mb-1.5"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#F2E8D0" }}
+        <div
+          className="px-5 py-3 flex items-center gap-2 flex-wrap"
+          style={{
+            background: "linear-gradient(90deg, #3A2A14 0%, #4A3420 100%)",
+            borderBottom: "1px solid #5A3818",
+          }}
         >
-          {event.title}
-        </h3>
-
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mb-3">
-          {event.isOnline ? (
-            <span className="flex items-center gap-1 text-xs" style={{ color: "#7AB0D0" }}>
-              <Wifi className="w-3 h-3" />Online
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-xs" style={{ color: "#8AB88A" }}>
-              <MapPin className="w-3 h-3" />{event.location}
+          {event.isFeatured && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(217,160,102,0.25)", color: "#D9A066", border: "1px solid rgba(217,160,102,0.5)" }}>
+              <Star className="w-2.5 h-2.5" />Featured
             </span>
           )}
-          <span className="text-xs" style={{ color: "#3A5A40" }}>·</span>
-          <span className="text-xs" style={{ color: "#9AB09A" }}>
-            Hosted by <span style={{ color: "#C4D8C4" }}>{event.hostName}</span>
+          <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "#D9A066" }} />
+          <span className="text-xs font-semibold" style={{ color: "#D9A066" }}>
+            {formatDate(event.eventDate)}
+          </span>
+          <span className="ml-auto flex items-center gap-2">
+            <span
+              className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+              style={{
+                background: event.priceDisplay.toLowerCase() === "free"
+                  ? "rgba(44,100,54,0.6)"
+                  : "rgba(217,160,102,0.2)",
+                color: event.priceDisplay.toLowerCase() === "free" ? "#6DCA8A" : "#D9A066",
+                border: `1px solid ${event.priceDisplay.toLowerCase() === "free" ? "rgba(44,100,54,0.8)" : "rgba(217,160,102,0.5)"}`,
+              }}
+            >
+              {event.priceDisplay}
+            </span>
           </span>
         </div>
 
-        <p
-          className="text-sm leading-relaxed mb-3"
-          style={{ color: "#9AB09A" }}
-        >
-          {expanded || event.description.length <= 160
-            ? event.description
-            : `${event.description.slice(0, 160)}…`}
-        </p>
-        {event.description.length > 160 && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 text-xs mb-3 transition-colors"
-            style={{ color: "#7AB88A" }}
+        <div className="p-5">
+          <h3
+            className="font-bold text-lg leading-snug mb-1.5"
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "#F2E8D0" }}
           >
-            {expanded ? (
-              <><ChevronUp className="w-3 h-3" />Show less</>
-            ) : (
-              <><ChevronDown className="w-3 h-3" />Read more</>
-            )}
-          </button>
-        )}
+            {event.title}
+          </h3>
 
-        <div
-          className="flex items-center justify-between gap-3 pt-3"
-          style={{ borderTop: "1px solid rgba(58,80,64,0.4)" }}
-        >
-          <div className="flex flex-col gap-1.5 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: "#6A8870" }}>
-              <Users className="w-3 h-3 shrink-0" />
-              <span>
-                {event.rsvpCount} {event.rsvpCount === 1 ? "person" : "people"} going
-                {seatsLeft !== null && (
-                  <> · <span style={{ color: seatsLeft <= 5 ? "#D9A066" : "#6A8870" }}>
-                    {seatsLeft > 0 ? `${seatsLeft} seats left` : "Full"}
-                  </span></>
-                )}
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mb-3">
+            {event.isOnline ? (
+              <span className="flex items-center gap-1 text-xs" style={{ color: "#7AB0D0" }}>
+                <Wifi className="w-3 h-3" />Online
               </span>
-            </div>
-            {capacityPct !== null && (
-              <div
-                className="h-1.5 w-28 rounded-full overflow-hidden"
-                style={{ background: "rgba(255,255,255,0.08)" }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${capacityPct}%`,
-                    background:
-                      capacityPct >= 90
-                        ? "linear-gradient(90deg, #A64B36, #C8503A)"
-                        : "linear-gradient(90deg, #2C4A36, #4A8A5A)",
-                  }}
-                />
-              </div>
+            ) : (
+              <span className="flex items-center gap-1 text-xs" style={{ color: "#8AB88A" }}>
+                <MapPin className="w-3 h-3" />{event.location}
+              </span>
             )}
+            <span className="text-xs" style={{ color: "#3A5A40" }}>·</span>
+            <span className="text-xs" style={{ color: "#9AB09A" }}>
+              Hosted by <span style={{ color: "#C4D8C4" }}>{event.hostName}</span>
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {event.contactEmail && (
-              <a
-                href={`mailto:${event.contactEmail}`}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-                style={{
-                  color: "#D9A066",
-                  border: "1px solid rgba(217,160,102,0.3)",
-                  background: "rgba(217,160,102,0.07)",
-                }}
-              >
-                <ExternalLink className="w-3 h-3" />
-                Contact
-              </a>
-            )}
+          <p
+            className="text-sm leading-relaxed mb-3"
+            style={{ color: "#9AB09A" }}
+          >
+            {expanded || event.description.length <= 160
+              ? event.description
+              : `${event.description.slice(0, 160)}…`}
+          </p>
+          {event.description.length > 160 && (
             <button
-              onClick={() => !rsvped && !isFull && onRsvp(event.id)}
-              disabled={rsvped || isFull}
-              className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
-              style={
-                rsvped
-                  ? {
-                      background: "rgba(44,74,54,0.55)",
-                      color: "#6DBA8A",
-                      border: "1px solid rgba(44,74,54,0.75)",
-                      cursor: "default",
-                    }
-                  : isFull
-                  ? {
-                      background: "rgba(100,50,30,0.25)",
-                      color: "#A87060",
-                      border: "1px solid rgba(166,75,54,0.25)",
-                      cursor: "not-allowed",
-                    }
-                  : {
-                      background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)",
-                      color: "#A8D8A8",
-                      border: "1px solid rgba(58,90,64,0.8)",
-                    }
-              }
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1 text-xs mb-3 transition-colors"
+              style={{ color: "#7AB88A" }}
             >
-              {rsvped ? "✓ I'm Going" : isFull ? "Full" : "I'm Going"}
+              {expanded ? (
+                <><ChevronUp className="w-3 h-3" />Show less</>
+              ) : (
+                <><ChevronDown className="w-3 h-3" />Read more</>
+              )}
             </button>
+          )}
+
+          <div
+            className="flex items-center justify-between gap-3 pt-3"
+            style={{ borderTop: "1px solid rgba(58,80,64,0.4)" }}
+          >
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: "#6A8870" }}>
+                <Users className="w-3 h-3 shrink-0" />
+                <span>
+                  {event.rsvpCount} {event.rsvpCount === 1 ? "person" : "people"} going
+                  {seatsLeft !== null && (
+                    <> · <span style={{ color: seatsLeft <= 5 ? "#D9A066" : "#6A8870" }}>
+                      {seatsLeft > 0 ? `${seatsLeft} seats left` : "Full"}
+                    </span></>
+                  )}
+                </span>
+              </div>
+              {capacityPct !== null && (
+                <div
+                  className="h-1.5 w-28 rounded-full overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.08)" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${capacityPct}%`,
+                      background:
+                        capacityPct >= 90
+                          ? "linear-gradient(90deg, #A64B36, #C8503A)"
+                          : "linear-gradient(90deg, #2C4A36, #4A8A5A)",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {event.externalUrl && (
+                <a
+                  href={event.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                  style={{
+                    color: "#D9A066",
+                    border: "1px solid rgba(217,160,102,0.3)",
+                    background: "rgba(217,160,102,0.07)",
+                  }}
+                >
+                  <Ticket className="w-3 h-3" />
+                  Tickets
+                </a>
+              )}
+              {!event.externalUrl && event.contactEmail && (
+                <a
+                  href={`mailto:${event.contactEmail}`}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                  style={{
+                    color: "#D9A066",
+                    border: "1px solid rgba(217,160,102,0.3)",
+                    background: "rgba(217,160,102,0.07)",
+                  }}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Contact
+                </a>
+              )}
+              <button
+                onClick={() => !rsvped && !isFull && setShowRsvpModal(true)}
+                disabled={rsvped || isFull}
+                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
+                style={
+                  rsvped
+                    ? {
+                        background: "rgba(44,74,54,0.55)",
+                        color: "#6DBA8A",
+                        border: "1px solid rgba(44,74,54,0.75)",
+                        cursor: "default",
+                      }
+                    : isFull
+                    ? {
+                        background: "rgba(100,50,30,0.25)",
+                        color: "#A87060",
+                        border: "1px solid rgba(166,75,54,0.25)",
+                        cursor: "not-allowed",
+                      }
+                    : {
+                        background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)",
+                        color: "#A8D8A8",
+                        border: "1px solid rgba(58,90,64,0.8)",
+                      }
+                }
+              >
+                {rsvped ? "✓ I'm Going" : isFull ? "Full" : "I'm Going"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -348,6 +518,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
   const [isOnline, setIsOnline] = useState(false);
   const [isFree, setIsFree] = useState(true);
   const [paidAmount, setPaidAmount] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
   const [seatsStr, setSeatsStr] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -606,6 +777,21 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           </div>
         </div>
 
+        <div>
+          <label style={labelStyle}>Ticket / Payment URL <span style={{ color: "#4A6850", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+          <input
+            type="url"
+            value={externalUrl}
+            onChange={(e) => setExternalUrl(e.target.value)}
+            placeholder="https://eventbrite.com/e/your-event or Stripe link"
+            maxLength={500}
+            style={inputStyle}
+          />
+          <p className="text-xs mt-1" style={{ color: "#4A6850" }}>
+            Link to Eventbrite, a Stripe payment page, or any external ticketing site.
+          </p>
+        </div>
+
         <button
           onClick={() =>
             mutation.mutate({
@@ -616,6 +802,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
               location: location.trim(),
               isOnline,
               priceDisplay,
+              externalUrl: externalUrl.trim() || null,
               seats: seatsVal,
               contactEmail: contactEmail.trim(),
             })
@@ -658,7 +845,8 @@ export function WorkshopBoard() {
   });
 
   const handleRsvp = useCallback(
-    (eventId: number) => rsvpMutation.mutate(eventId),
+    (eventId: number, attendeeName: string, attendeeEmail: string) =>
+      rsvpMutation.mutate({ eventId, attendeeName, attendeeEmail }),
     [rsvpMutation],
   );
 

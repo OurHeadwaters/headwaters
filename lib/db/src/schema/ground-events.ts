@@ -16,6 +16,7 @@ import {
  *            Reject (is_rejected=true, is_approved=false), or Unfeature.
  * Public board only shows approved (and not rejected) events: featured first, then chronological.
  * Price is display-only text ("Free" or "$25") — no payment processing in MVP.
+ * externalUrl: optional link to an external ticketing/payment page (Eventbrite, Stripe, etc.)
  */
 export const groundEventsTable = pgTable(
   "ground_events",
@@ -28,6 +29,7 @@ export const groundEventsTable = pgTable(
     location: text("location").notNull(),
     isOnline: boolean("is_online").notNull().default(false),
     priceDisplay: text("price_display").notNull().default("Free"),
+    externalUrl: text("external_url"),
     seats: integer("seats"),
     contactEmail: text("contact_email"),
     isApproved: boolean("is_approved").notNull().default(false),

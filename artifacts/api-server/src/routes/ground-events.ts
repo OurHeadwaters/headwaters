@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, groundEventsTable } from "@workspace/db";
+import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
 import { eq, sql, and, desc, asc, gte } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
@@ -58,7 +58,7 @@ router.get("/ground-events", async (req, res) => {
  * POST /api/ground-events
  * Public submission — "Host a Workshop" form.
  * Creates event with is_approved=false (pending queue).
- * Body: { title, description, hostName, eventDate, location, isOnline?, priceDisplay?, seats?, contactEmail? }
+ * Body: { title, description, hostName, eventDate, location, isOnline?, priceDisplay?, externalUrl?, seats?, contactEmail? }
  */
 router.post("/ground-events", async (req, res) => {
   try {
@@ -113,6 +113,11 @@ router.post("/ground-events", async (req, res) => {
         ? body.priceDisplay.trim().slice(0, 40)
         : "Free";
 
+    const externalUrl =
+      typeof body.externalUrl === "string" && body.externalUrl.trim()
+        ? body.externalUrl.trim().slice(0, 500)
+        : null;
+
     const seats =
       typeof body.seats === "number" && body.seats > 0
         ? Math.floor(body.seats)
@@ -135,6 +140,7 @@ router.post("/ground-events", async (req, res) => {
         location,
         isOnline,
         priceDisplay,
+        externalUrl,
         seats,
         contactEmail,
         isApproved: false,
@@ -152,11 +158,9 @@ router.post("/ground-events", async (req, res) => {
 
 /**
  * POST /api/ground-events/:id/rsvp
- * Increment rsvp_count on an approved event.
- * Body (optional): { sessionId?: string } — a stable device/session identifier
- *   that is logged alongside the RSVP for attribution. Clients that do not send
- *   a sessionId are still accepted (anonymous RSVP). Server-side deduplication
- *   per session is not yet implemented; clients should gate repeat calls locally.
+ * Record an RSVP for an approved event.
+ * Stores the attendee's name + email so the host can follow up.
+ * Body: { attendeeEmail, attendeeName? }
  */
 router.post("/ground-events/:id/rsvp", async (req, res) => {
   try {
@@ -167,9 +171,15 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
     }
 
     const body = req.body as Record<string, unknown>;
-    const sessionId =
-      typeof body.sessionId === "string" && body.sessionId.trim()
-        ? body.sessionId.trim().slice(0, 128)
+    const attendeeEmail =
+      typeof body.attendeeEmail === "string" ? body.attendeeEmail.trim() : "";
+    if (!attendeeEmail || !attendeeEmail.includes("@")) {
+      res.status(400).json({ error: "attendeeEmail is required" });
+      return;
+    }
+    const attendeeName =
+      typeof body.attendeeName === "string" && body.attendeeName.trim()
+        ? body.attendeeName.trim().slice(0, 120)
         : null;
 
     const [event] = await db
@@ -188,14 +198,20 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       return;
     }
 
-    const [updated] = await db
-      .update(groundEventsTable)
-      .set({ rsvpCount: sql`${groundEventsTable.rsvpCount} + 1` })
-      .where(eq(groundEventsTable.id, id))
-      .returning();
+    const [rsvp, [updated]] = await Promise.all([
+      db.insert(groundEventRsvpsTable).values({ eventId: id, attendeeEmail, attendeeName }).returning(),
+      db
+        .update(groundEventsTable)
+        .set({ rsvpCount: sql`${groundEventsTable.rsvpCount} + 1` })
+        .where(eq(groundEventsTable.id, id))
+        .returning(),
+    ]);
 
-    logger.info({ id, sessionId, rsvpCount: updated.rsvpCount }, "ground-events: RSVP recorded");
-    res.status(201).json({ eventId: id, rsvpCount: updated.rsvpCount });
+    logger.info(
+      { id, rsvpCount: updated.rsvpCount, attendeeEmail },
+      "ground-events: RSVP recorded",
+    );
+    res.status(201).json({ eventId: id, rsvpCount: updated.rsvpCount, rsvpId: rsvp[0].id });
   } catch (err) {
     logger.error({ err }, "ground-events: POST /rsvp failed");
     res.status(500).json({ error: "Failed to record RSVP" });

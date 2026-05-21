@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock, Download } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -16,6 +16,7 @@ interface GroundEvent {
   location: string;
   isOnline: boolean;
   priceDisplay: string;
+  externalUrl: string | null;
   seats: number | null;
   contactEmail: string | null;
   isApproved: boolean;
@@ -109,6 +110,16 @@ function EventRow({ event }: { event: GroundEvent }) {
   const act = (action: string) => mutation.mutate({ id: event.id, action });
   const busy = mutation.isPending;
 
+  const downloadRsvpsCsv = () => {
+    const url = apiUrl(`/admin/ground-events/${event.id}/rsvps.csv`);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
@@ -139,9 +150,32 @@ function EventRow({ event }: { event: GroundEvent }) {
             {event.seats !== null && ` · ${event.seats} seats`}
             {` · ${event.rsvpCount} RSVPs`}
           </p>
+          {event.externalUrl && (
+            <p className="text-xs mt-0.5">
+              <a
+                href={event.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#2C4A36] hover:underline"
+              >
+                Ticket link →
+              </a>
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+          {event.rsvpCount > 0 && (
+            <button
+              onClick={downloadRsvpsCsv}
+              title="Download RSVP list as CSV"
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+            >
+              <Download className="w-3.5 h-3.5" />
+              RSVPs
+            </button>
+          )}
+
           {!event.isApproved && !event.isRejected && (
             <button
               onClick={() => act("approve")}
