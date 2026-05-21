@@ -191,17 +191,37 @@ function autoTag(
 }
 
 /**
+ * Extract the first <img> src from raw HTML content as a fallback image source.
+ */
+function extractFirstImgSrc(html: string): string | null {
+  const match = html.match(/<img\b[^>]+\bsrc=["']([^"']+)["']/i);
+  return match?.[1] ?? null;
+}
+
+/**
  * Extract the best available image URL from a WP post with _embedded media.
+ * Falls back to extracting the first <img> src from the post content HTML
+ * for older posts that don't have a featured image set.
  */
 function extractImageUrl(post: WPPost): string | null {
   const media = post._embedded?.["wp:featuredmedia"]?.[0];
-  if (!media) return null;
-  const sizes = media.media_details?.sizes;
-  if (sizes) {
-    const preferred = sizes["medium_large"] || sizes["medium"] || sizes["large"] || sizes["full"];
-    if (preferred?.source_url) return preferred.source_url;
+  if (media) {
+    const sizes = media.media_details?.sizes;
+    if (sizes) {
+      const preferred = sizes["medium_large"] || sizes["medium"] || sizes["large"] || sizes["full"];
+      if (preferred?.source_url) return preferred.source_url;
+    }
+    if (media.source_url) return media.source_url;
   }
-  return media.source_url ?? null;
+
+  // Fallback: first <img> in post content
+  const contentHtml = rendered(post.content);
+  if (contentHtml) {
+    const src = extractFirstImgSrc(contentHtml);
+    if (src) return src;
+  }
+
+  return null;
 }
 
 export type ProductImportResult = {
