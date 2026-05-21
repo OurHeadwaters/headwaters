@@ -1,0 +1,152 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { GordBird } from "./gord-bird";
+import {
+  gordTips,
+  routeKeyFromPath,
+  hasSeenGord,
+  markGordSeen,
+  type GordRouteKey,
+} from "@/lib/gord-tips";
+
+interface GordGuideProps {
+  path: string;
+}
+
+export function GordGuide({ path }: GordGuideProps) {
+  const [routeKey, setRouteKey] = useState<GordRouteKey | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [perchVisible, setPerchVisible] = useState(false);
+
+  useEffect(() => {
+    const key = routeKeyFromPath(path);
+    setRouteKey(key);
+
+    if (!key) {
+      setVisible(false);
+      setPerchVisible(false);
+      return;
+    }
+
+    const seen = hasSeenGord(key);
+    if (!seen) {
+      const timer = setTimeout(() => {
+        setVisible(true);
+        setPerchVisible(false);
+      }, 600);
+      return () => clearTimeout(timer);
+    } else {
+      setVisible(false);
+      setPerchVisible(true);
+    }
+  }, [path]);
+
+  function dismiss() {
+    if (routeKey) {
+      markGordSeen(routeKey);
+    }
+    setVisible(false);
+    setTimeout(() => setPerchVisible(true), 400);
+  }
+
+  function recall() {
+    setPerchVisible(false);
+    setVisible(true);
+  }
+
+  if (!routeKey) return null;
+
+  const tip = gordTips[routeKey];
+
+  return (
+    <>
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            key="gord-guide"
+            initial={{ x: 120, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 140, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="fixed bottom-24 right-4 z-[60] flex flex-col items-end gap-2 pointer-events-none"
+            style={{ maxWidth: "calc(100vw - 2rem)" }}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 24 }}
+              className="pointer-events-auto relative bg-[#FDF6EC] border border-[#D9A066]/60 rounded-2xl shadow-xl px-4 py-3 max-w-[280px] sm:max-w-[320px]"
+            >
+              <div
+                className="absolute bottom-[-10px] right-12 w-0 h-0"
+                style={{
+                  borderLeft: "10px solid transparent",
+                  borderRight: "10px solid transparent",
+                  borderTop: "10px solid #FDF6EC",
+                  filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.08))",
+                }}
+              />
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#D9A066]">
+                  Gord&rsquo;s on Board!
+                </p>
+                <button
+                  onClick={dismiss}
+                  className="text-[#8B6F47]/60 hover:text-[#8B6F47] transition-colors shrink-0 -mt-0.5"
+                  aria-label="Dismiss Gord"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <p className="text-sm font-semibold text-[#2C1810] leading-snug mb-1">
+                {tip.heading}
+              </p>
+              <p className="text-xs text-[#5A3E2B]/80 leading-relaxed">
+                {tip.body}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ delay: 0.05, type: "spring", stiffness: 220, damping: 20 }}
+              className="pointer-events-auto"
+            >
+              <GordBird size={90} variant="full" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {perchVisible && !visible && (
+          <motion.button
+            key="gord-perch"
+            initial={{ x: 80, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 280, damping: 24 }}
+            onClick={recall}
+            aria-label="Recall Gord"
+            className="fixed bottom-24 right-0 z-[60] flex items-center cursor-pointer group"
+            style={{ transform: "translateX(8px)" }}
+          >
+            <motion.div
+              whileHover={{ x: -6 }}
+              transition={{ type: "spring", stiffness: 320, damping: 20 }}
+              className="flex items-center"
+            >
+              <div className="bg-[#FDF6EC] border border-[#D9A066]/50 rounded-l-xl shadow-md px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 mr-1 shrink-0">
+                <span className="text-[10px] font-bold text-[#D9A066] whitespace-nowrap">Gord&rsquo;s on Board</span>
+              </div>
+              <GordBird size={44} variant="head" className="shrink-0" />
+            </motion.div>
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

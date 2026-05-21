@@ -3,6 +3,7 @@ import { Menu, X, LogIn, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
+import { GordGuide } from "./gord-guide";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
 
@@ -192,6 +193,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </footer>
 
       <MiniPlayer />
+      <GordGuide path={location} />
     </div>
   );
 }
