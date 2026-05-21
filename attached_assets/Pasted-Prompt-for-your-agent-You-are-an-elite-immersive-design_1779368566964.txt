@@ -1,0 +1,36 @@
+Prompt for your agent:You are an elite immersive designer for The Survival Podcast universe. We are redesigning the Mobile page (https://xrpl-design-hub.replit.app/mobile/) to feel like a true extension of the Stomping Grounds homestead — warm, self-reliant, hand-crafted, and deeply aligned with TSP’s rugged, practical, prepared lifestyle.Brand Alignment (Must Feel Like TSP)Same rich homestead palette: deep forest greens (#1C3020, #243A28), warm wood browns (#8B6F47), golden amber accents (#D9A066), earth tones, and soft lantern glows.
+Tone: Practical, empowering, no-nonsense but hopeful — like a trusted tool you’d keep in your bug-out bag or on the homestead.
+Overall feeling: You just walked into the workshop and picked up a well-made, reliable piece of gear.
+
+Current Problems
+The page feels generic/techy and disconnected from the rest of the Stomping Grounds experience. It needs to become a beautiful, branded showcase for mobile preparedness and self-reliance.New Vision: “Mobile Homestead – Staying Connected on the Stomping Path”Overall AtmosphereWarm workshop / field-command background with subtle wood grain, soft lantern lighting, and very gentle animated elements (floating dust motes or ember particles).
+Generous whitespace and rugged, tactile textures.
+
+Page Structure & Visual ImprovementsHero BannerFull-bleed hero image or custom illustration: a sturdy hand holding a rugged phone, set against a homestead landscape at golden hour, with subtle signal waves turning into sprouting plants or secure paths.
+Bold, hand-burned title: “Mobile on the Stomping Path”
+Subtitle: “Stay connected, stay sovereign, stay prepared — even off-grid.”
+Gord the Bird perched on the phone or flying nearby, occasionally “tapping” the screen.
+Main Content Sections
+Turn the content into a series of well-crafted homestead tool stations:Signal & Connectivity → Styled as a radio shack corner with antenna diagrams and warm signal strength visuals.
+Secure Apps & Tools → Presented as items neatly arranged on a wooden workbench.
+Off-Grid & Prep Features → Framed like a field manual page with illustrated checklists.
+Recommended Gear → Beautiful product-style cards that look like they’re sitting on a barn shelf (wooden frames, subtle shadows, “field-tested” badges).
+Visual LanguageAll cards and sections should have thick wooden borders, subtle bevels, and inner glows.
+Icons: Hand-drawn / engraved style (walkie-talkie, encrypted lock, solar charger, mesh network nodes, etc.).
+Progress/indicator elements styled as old-school analog gauges or lantern fill levels.
+Typography: Strong serif headings + clear, readable sans body text.
+Interactive & Delight ElementsGord flies across the page and perches on different sections as the user scrolls.
+Hover/tap states with soft wood-creak or metal-click feedback (visual + optional subtle audio).
+“Field Test” buttons that expand with practical tips in a handwritten-note style.
+Smooth scroll reveals and warm lantern-glow animations on section entry.
+Mobile ExperienceThe page itself must feel excellent on mobile — clean, touch-friendly, and fast.
+Cards stack naturally like tools laid out on a table.
+Technical RequirementsNext.js / React + TypeScript
+Use the latest flying/perching Gord component.
+Keep all existing functionality (links, comparisons, etc.) intact.
+Fully responsive, accessible, and performant.
+Deliver the complete updated page component with comments explaining the homestead theming and Gord integration.
+
+Goal
+Make this the most inspiring and trustworthy mobile preparedness page in the survival/prepper space — one that feels like official TSP gear. Users should finish the page feeling more capable and excited to implement what they learned.This page must feel 100% at home next to the Stomping Grounds map and other homestead experiences.
+

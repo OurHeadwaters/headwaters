@@ -1,0 +1,39 @@
+Prompt for your agent:You are an elite frontend designer and immersive experience craftsman. We are dramatically improving the CodeTry — Digital Self-Reliance page (https://xrpl-design-hub.replit.app/codetry/) to make it feel like a flagship experience within the XRPL Design Hub, while staying true to the warm, homestead, self-reliant aesthetic of the broader Stomping Grounds universe.Current Issues
+The page feels like a generic code playground dropped into the site. It lacks the crafted, earthy, alive feeling of the rest of the Stomping Grounds / homestead ecosystem. The design is flat, technical, and disconnected.New Vision: “CodeTry Forge” – A Digital Homestead WorkshopOverall AtmosphereDeep forest homestead palette: rich dark greens (#1C3020, #243A28), warm wood browns/ambers (#8B6F47, #D9A066), soft cream/off-white text.
+Subtle animated background: very gentle wood-grain texture, floating wood shavings or ember particles, soft lantern glow.
+Feel like you’ve stepped into a well-loved workshop on the homestead — tools on the wall, warm light, smell of pine and solder.
+
+Page Structure & Visual ImprovementsHero / HeaderStrong, illustrated banner with a custom SVG or detailed illustration: anvil + glowing code lines + sprouting plant (symbolizing code that grows food/security).
+Large, hand-crafted title: “CodeTry — Digital Self-Reliance”
+Warm tagline: “Build, learn, and own your tools — no one can take away what you code yourself.”
+Include the living Gord the Bird (scrawny, flying/perching version) perched on a tool shelf or occasionally flying across the header.
+Main Playground Area (The Forge)Frame the entire code editor + preview in a beautiful wooden workbench container:Thick wooden border with subtle grain texture and beveled edges
+Metal corner brackets or rivet details
+Soft inner glow like a lit workbench
+Split layout (editor left, live preview right) with a draggable or resizable divider styled as a leather strap or tool handle.
+Code editor:Dark theme with warm syntax highlighting (forest greens, amber accents, soft blues)
+Line numbers styled like handwritten tally marks
+Top toolbar looks like a tool rack (Run, Save, Share, Templates buttons as hand-forged tools)
+Live preview pane: framed like an old window looking out onto a homestead scene, or a glowing blueprint on the bench.
+Sidebar / Workshop ToolsLeft or right “Tool Wall” sidebar with:Templates / Snippets as hanging wooden plaques
+XRPL component library as neatly organized drawers
+Learning resources as open field-journal pages
+Each item gets a warm hover lift + soft shadow, like picking up a real tool.
+Bottom / Supporting Sections“Why CodeTry?” section with earthy illustrated cards (self-reliance, sovereignty, community building).
+Example projects gallery styled as project blueprints rolled on the bench.
+“Community Forge” — recent shared projects with homestead-style avatars.
+Micro-Interactions & DelightRun button pulses with warm amber glow and subtle hammer-strike animation.
+Successful code execution triggers gentle particle burst (sparks or sprouting leaves).
+Gord occasionally flies in, lands on the toolbar, and “watches” the preview.
+Smooth transitions and paper/wood creak easing on panel opens.
+Mobile: Clean stacked layout with collapsible tool wall.
+
+Technical RequirementsNext.js / React + TypeScript
+Keep all existing CodeTry functionality (editor, preview, execution, etc.) fully intact.
+Use the latest flying/perching Gord component.
+Performant, accessible, responsive.
+Deliver complete updated page file(s) with comments on theming and workbench styling.
+
+Goal
+Make this the most beautiful, inviting, and inspiring code playground on the internet — a place that makes people feel empowered and at home. It should feel like a natural extension of the Stomping Grounds homestead: warm, crafted, alive, and deeply purposeful.This page should make users want to linger, learn, and build.
+
