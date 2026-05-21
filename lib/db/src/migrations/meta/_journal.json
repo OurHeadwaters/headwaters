@@ -71,6 +71,13 @@
       "when": 1748500000000,
       "tag": "0009_stripe_connect_workshops",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1748600000000,
+      "tag": "0010_ground_event_rsvps_token",
+      "breakpoints": true
     }
   ]
 }

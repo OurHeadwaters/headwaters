@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
-import { eq, sql, and, desc, asc, gte } from "drizzle-orm";
+import { eq, sql, and, desc, asc, gte, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -10,15 +10,21 @@ const router: IRouter = Router();
  * Returns only approved (and not rejected) events.
  * Featured events appear first, then sorted chronologically.
  * Query params:
- *   limit  (1-50, default 20)
- *   offset (default 0)
- *   status "upcoming" — restrict to events whose event_date >= today
+ *   limit     (1-50, default 20)
+ *   offset    (default 0)
+ *   status    "upcoming" — restrict to events whose event_date >= today (YYYY-MM-DD)
+ *   sessionId — stable device/session token; when provided each event gains hasRsvped boolean
  */
 router.get("/ground-events", async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const offset = Math.max(0, Number(req.query.offset) || 0);
     const upcomingOnly = req.query.status === "upcoming";
+    const sessionId =
+      typeof req.query.sessionId === "string" && req.query.sessionId.trim()
+        ? req.query.sessionId.trim().slice(0, 128)
+        : null;
+
     const today = new Date().toISOString().slice(0, 10);
 
     const whereClause = upcomingOnly
@@ -50,7 +56,28 @@ router.get("/ground-events", async (req, res) => {
         .where(whereClause),
     ]);
 
-    res.json({ events, total: count, limit, offset });
+    // If a sessionId was provided, look up which of these events the session has RSVPed
+    let rsvpedEventIds = new Set<number>();
+    if (sessionId && events.length > 0) {
+      const eventIds = events.map((e) => e.id);
+      const rsvpRows = await db
+        .select({ eventId: groundEventRsvpsTable.eventId })
+        .from(groundEventRsvpsTable)
+        .where(
+          and(
+            inArray(groundEventRsvpsTable.eventId, eventIds),
+            eq(groundEventRsvpsTable.token, sessionId),
+          ),
+        );
+      rsvpedEventIds = new Set(rsvpRows.map((r) => r.eventId));
+    }
+
+    const eventsWithRsvp = events.map((e) => ({
+      ...e,
+      hasRsvped: rsvpedEventIds.has(e.id),
+    }));
+
+    res.json({ events: eventsWithRsvp, total: count, limit, offset });
   } catch (err) {
     logger.error({ err }, "ground-events: GET failed");
     res.status(500).json({ error: "Failed to load events" });
@@ -197,8 +224,14 @@ router.post("/ground-events", async (req, res) => {
 
 /**
  * POST /api/ground-events/:id/rsvp
- * Record a free RSVP for an approved event.
+ * Idempotent free RSVP for an approved event.
  * For paid events use the /checkout endpoint instead.
+ * Body (all optional):
+ *   sessionId     — stable device/session token for deduplication; a given token can only
+ *                   increment rsvp_count once per event regardless of reinstalls.
+ *   attendeeEmail — attendee's email so the host can follow up (stored for host contact).
+ *   attendeeName  — attendee's display name (stored for host contact).
+ * When sessionId is present, duplicate RSVPs from the same token are silently ignored.
  */
 router.post("/ground-events/:id/rsvp", async (req, res) => {
   try {
@@ -209,12 +242,14 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
     }
 
     const body = req.body as Record<string, unknown>;
+    const sessionId =
+      typeof body.sessionId === "string" && body.sessionId.trim()
+        ? body.sessionId.trim().slice(0, 128)
+        : null;
     const attendeeEmail =
-      typeof body.attendeeEmail === "string" ? body.attendeeEmail.trim() : "";
-    if (!attendeeEmail || !attendeeEmail.includes("@")) {
-      res.status(400).json({ error: "attendeeEmail is required" });
-      return;
-    }
+      typeof body.attendeeEmail === "string" && body.attendeeEmail.trim()
+        ? body.attendeeEmail.trim().slice(0, 254)
+        : null;
     const attendeeName =
       typeof body.attendeeName === "string" && body.attendeeName.trim()
         ? body.attendeeName.trim().slice(0, 120)
@@ -237,6 +272,7 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       return;
     }
 
+    // Paid events must go through the /checkout endpoint
     if (event.ticketPriceCents && event.ticketPriceCents > 0 && event.stripeConnectedAccountId) {
       res.status(400).json({
         error: "This is a paid event — use the /checkout endpoint to purchase a ticket",
@@ -244,7 +280,48 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       return;
     }
 
-    const [rsvp, [updated]] = await Promise.all([
+    // With a sessionId: deduplicate — only count the first RSVP per token per event
+    if (sessionId) {
+      const existing = await db
+        .select({ id: groundEventRsvpsTable.id })
+        .from(groundEventRsvpsTable)
+        .where(
+          and(
+            eq(groundEventRsvpsTable.eventId, id),
+            eq(groundEventRsvpsTable.token, sessionId),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Already RSVPed — return current count without incrementing
+        logger.info({ id, sessionId, rsvpCount: event.rsvpCount }, "ground-events: duplicate RSVP ignored");
+        res.status(200).json({ eventId: id, rsvpCount: event.rsvpCount, alreadyRsvped: true });
+        return;
+      }
+
+      // New RSVP — record the token (+ optional contact info) and increment counter atomically
+      const [updated] = await db.transaction(async (tx) => {
+        await tx.insert(groundEventRsvpsTable).values({
+          eventId: id,
+          token: sessionId,
+          attendeeEmail,
+          attendeeName,
+        });
+        return tx
+          .update(groundEventsTable)
+          .set({ rsvpCount: sql`${groundEventsTable.rsvpCount} + 1` })
+          .where(eq(groundEventsTable.id, id))
+          .returning();
+      });
+
+      logger.info({ id, sessionId, rsvpCount: updated.rsvpCount }, "ground-events: RSVP recorded");
+      res.status(201).json({ eventId: id, rsvpCount: updated.rsvpCount, alreadyRsvped: false });
+      return;
+    }
+
+    // No sessionId — email-based or anonymous RSVP, no deduplication
+    const [rsvpRow, [updated]] = await Promise.all([
       db
         .insert(groundEventRsvpsTable)
         .values({ eventId: id, attendeeEmail, attendeeName })
@@ -257,10 +334,15 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
     ]);
 
     logger.info(
-      { id, rsvpCount: updated.rsvpCount, attendeeEmail },
+      { id, attendeeEmail, rsvpCount: updated.rsvpCount },
       "ground-events: RSVP recorded",
     );
-    res.status(201).json({ eventId: id, rsvpCount: updated.rsvpCount, rsvpId: rsvp[0].id });
+    res.status(201).json({
+      eventId: id,
+      rsvpCount: updated.rsvpCount,
+      rsvpId: rsvpRow[0].id,
+      alreadyRsvped: false,
+    });
   } catch (err) {
     logger.error({ err }, "ground-events: POST /rsvp failed");
     res.status(500).json({ error: "Failed to record RSVP" });

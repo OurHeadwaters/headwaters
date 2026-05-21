@@ -43,6 +43,7 @@ interface GroundEvent {
   seats: number | null;
   rsvpCount: number;
   isFeatured: boolean;
+  hasRsvped: boolean;
   createdAt: string;
 }
 
@@ -70,7 +71,9 @@ async function getSessionId(): Promise<string> {
 }
 
 async function fetchUpcomingEvents(): Promise<GroundEvent[]> {
-  const res = await fetch(`${API_BASE}/api/ground-events?status=upcoming&limit=5`);
+  const sessionId = await getSessionId();
+  const url = `${API_BASE}/api/ground-events?status=upcoming&limit=5&sessionId=${encodeURIComponent(sessionId)}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to load workshops");
   const data = await res.json();
   return data.events as GroundEvent[];
@@ -101,13 +104,23 @@ function formatEventDate(d: string): string {
 
 function useWorkshopRsvp(event: GroundEvent) {
   const queryClient = useQueryClient();
-  const [rsvped, setRsvped] = useState(false);
+  // Server is the source of truth — hasRsvped comes from the GET response.
+  // AsyncStorage is kept as a write-through cache so the button reflects the
+  // RSVP state instantly on next open even before the query resolves.
+  const [rsvped, setRsvped] = useState(event.hasRsvped);
 
   useEffect(() => {
-    AsyncStorage.getItem(RSVP_KEY(event.id)).then((val) => {
-      if (val === "1") setRsvped(true);
-    });
-  }, [event.id]);
+    // Sync: if server says RSVPed, persist locally too so it survives offline opens.
+    if (event.hasRsvped) {
+      AsyncStorage.setItem(RSVP_KEY(event.id), "1");
+    } else {
+      // Server didn't find the RSVP — check local cache in case we're offline or
+      // the server lost the token (e.g. fresh DB), so at least we don't confuse the user.
+      AsyncStorage.getItem(RSVP_KEY(event.id)).then((val) => {
+        if (val === "1") setRsvped(true);
+      });
+    }
+  }, [event.id, event.hasRsvped]);
 
   const { mutate: doRsvp, isPending } = useMutation({
     mutationFn: () => postRsvp(event.id),
