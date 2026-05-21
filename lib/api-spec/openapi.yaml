@@ -78,6 +78,12 @@ paths:
             type: string
             enum: [newest, oldest, popular]
             default: newest
+        - name: hasHistory
+          in: query
+          required: false
+          description: "When present, filter to only episodes that have a detectable 'This Day in History' segment"
+          schema:
+            type: boolean
       responses:
         "200":
           description: Episodes page
@@ -551,7 +557,7 @@ components:
         tipUrl: { type: ["string", "null"] }
     Episode:
       type: object
-      required: [slug, guid, episodeNumber, title, link, pubDate, summary, categories]
+      required: [slug, guid, episodeNumber, title, link, pubDate, summary, categories, tags]
       properties:
         slug: { type: string }
         guid: { type: string }
@@ -567,6 +573,10 @@ components:
         categories:
           type: array
           items: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+          description: "Episode keywords/tags from the podcast feed or content database"
     HistorySegment:
       type: object
       required: [startSeconds, endSeconds, lessonText]

@@ -54,11 +54,14 @@ function useTransformations() {
 function matchTransformations(
   episodeCategories: string[],
   transformations: TransformationDef[],
+  episodeTags?: string[],
 ): TransformationDef[] {
   const lowerCats = episodeCategories.map((c) => c.toLowerCase());
+  const lowerTags = (episodeTags ?? []).map((t) => t.toLowerCase());
+  const episodeTerms = [...lowerCats, ...lowerTags];
   return transformations.filter((t) => {
     const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
-    return lowerCats.some((c) => tLower.includes(c));
+    return episodeTerms.some((term) => tLower.includes(term));
   });
 }
 
@@ -337,7 +340,7 @@ export default function EpisodeDetailScreen() {
   const showNotes = episode.descriptionHtml ? stripHtml(episode.descriptionHtml) : episode.summary;
   const matchedTransformations =
     episode.categories && transformations
-      ? matchTransformations(episode.categories, transformations)
+      ? matchTransformations(episode.categories, transformations, episode.tags)
       : [];
 
   return (

@@ -24,4 +24,6 @@ export interface Episode {
   /** @nullable */
   artworkUrl?: string | null;
   categories: string[];
+  /** Episode keywords/tags from the podcast feed or content database */
+  tags: string[];
 }

@@ -274,6 +274,7 @@ export function libraryRowToRssEpisode(row: LibraryRow): RssEpisode {
     audioType: row.audioType ?? null,
     artworkUrl: row.artworkUrl ?? null,
     categories: row.categories,
+    tags: row.tags,
   };
 }
 

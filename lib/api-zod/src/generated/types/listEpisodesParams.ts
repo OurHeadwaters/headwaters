@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ListEpisodesSort } from './listEpisodesSort';
 
 export type ListEpisodesParams = {
 /**
@@ -22,4 +23,12 @@ category?: string;
  * One or more topic tags to filter by (sent as tags[] array)
  */
 tags?: string[];
+/**
+ * Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)
+ */
+sort?: ListEpisodesSort;
+/**
+ * When present, filter to only episodes that have a detectable 'This Day in History' segment
+ */
+hasHistory?: boolean;
 };

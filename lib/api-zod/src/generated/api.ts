@@ -38,12 +38,12 @@ export const GetFeedResponse = zod.object({
  * @summary List episodes
  */
 export const listEpisodesQueryLimitDefault = 20;
-export const listEpisodesQueryLimitMax = 2000;
+export const listEpisodesQueryLimitMax = 100;
 
 export const listEpisodesQueryOffsetDefault = 0;
 export const listEpisodesQueryOffsetMin = 0;
 
-
+export const listEpisodesQuerySortDefault = `newest`;
 
 export const ListEpisodesQueryParams = zod.object({
   "limit": zod.coerce.number().min(1).max(listEpisodesQueryLimitMax).default(listEpisodesQueryLimitDefault),
@@ -51,8 +51,8 @@ export const ListEpisodesQueryParams = zod.object({
   "q": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
   "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)'),
-  "sort": zod.enum(["newest", "oldest", "popular"]).default("newest").optional().describe('Sort order: newest (default), oldest, or popular (foundational/evergreen episodes first by episode number ascending, nulls last)'),
-  "hasHistory": zod.coerce.boolean().optional().describe('When true, return only episodes that have a detected history segment')
+  "sort": zod.enum(['newest', 'oldest', 'popular']).default(listEpisodesQuerySortDefault).describe('Sort order: newest (default), oldest, or popular (foundational\/evergreen episodes first by episode number ascending, nulls last)'),
+  "hasHistory": zod.coerce.boolean().optional().describe('When present, filter to only episodes that have a detectable \'This Day in History\' segment')
 })
 
 export const ListEpisodesResponse = zod.object({
@@ -68,7 +68,8 @@ export const ListEpisodesResponse = zod.object({
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
   "artworkUrl": zod.string().nullish(),
-  "categories": zod.array(zod.string())
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string()).describe('Episode keywords\/tags from the podcast feed or content database')
 })),
   "total": zod.number(),
   "limit": zod.number(),
@@ -91,12 +92,6 @@ export const GetThisDayEpisodesQueryParams = zod.object({
   "day": zod.coerce.number().min(1).max(getThisDayEpisodesQueryDayMax).optional()
 })
 
-export const HistorySegmentSchema = zod.object({
-  "startSeconds": zod.number(),
-  "endSeconds": zod.number(),
-  "lessonText": zod.string()
-})
-
 export const GetThisDayEpisodesResponseItem = zod.object({
   "slug": zod.string(),
   "guid": zod.string(),
@@ -109,17 +104,32 @@ export const GetThisDayEpisodesResponseItem = zod.object({
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
   "artworkUrl": zod.string().nullish(),
-  "categories": zod.array(zod.string())
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string()).describe('Episode keywords\/tags from the podcast feed or content database')
 }).and(zod.object({
   "historyTimestamp": zod.number().nullish().describe('Seconds into the episode where the \'This Day in History\' segment begins, if detected in the show notes'),
-  "historyImageUrl": zod.string().nullish().describe('Wikipedia thumbnail URL for the history topic, or null if unavailable'),
-  "lessonQuote": zod.string().nullish().describe('A pull-quote distilling the core lesson from the episode show notes'),
-  "bulletPoints": zod.array(zod.string()).optional().describe('Up to 6 short insight bullets extracted from the episode show notes'),
+  "historyImageUrl": zod.string().nullish().describe('Wikipedia thumbnail image URL — used only as a low-opacity background wash, never as a featured image'),
+  "lessonQuote": zod.string().nullish().describe('Deprecated — kept for backward compatibility; no longer rendered on tile face'),
+  "bulletPoints": zod.array(zod.string()).optional().describe('Deprecated — kept for backward compatibility; no longer rendered on tile face'),
   "sourceLinks": zod.array(zod.object({
-    "label": zod.string(),
-    "url": zod.string()
-  })).optional().describe('1–3 Wikipedia reference links related to the history topic'),
-  "historySegment": HistorySegmentSchema.nullish()
+  "label": zod.string(),
+  "url": zod.string()
+})).optional().describe('Deprecated — Wikipedia links kept for backward compatibility; removed from tile face'),
+  "historySegment": zod.object({
+  "startSeconds": zod.number(),
+  "endSeconds": zod.number(),
+  "lessonText": zod.string()
+}).nullish().describe('Scoped history segment data with start\/end timestamps and Jack\'s extracted lesson text'),
+  "ulgCrossLink": zod.object({
+  "title": zod.string(),
+  "slug": zod.string(),
+  "url": zod.string()
+}).nullish().describe('A related Unloose the Goose episode touching the same historical topic, if found'),
+  "expertLink": zod.object({
+  "title": zod.string(),
+  "slug": zod.string(),
+  "url": zod.string()
+}).nullish().describe('A TSP episode featuring the Expert Council historian, if relevant to this topic')
 }))
 export const GetThisDayEpisodesResponse = zod.array(GetThisDayEpisodesResponseItem)
 
@@ -139,7 +149,8 @@ export const GetFeaturedEpisodesResponseItem = zod.object({
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
   "artworkUrl": zod.string().nullish(),
-  "categories": zod.array(zod.string())
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string()).describe('Episode keywords\/tags from the podcast feed or content database')
 })
 export const GetFeaturedEpisodesResponse = zod.array(GetFeaturedEpisodesResponseItem)
 
@@ -156,7 +167,9 @@ export const GetEpisodeStatsResponse = zod.object({
   "topCategories": zod.array(zod.object({
   "name": zod.string(),
   "count": zod.number(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "autoDescriptionStale": zod.boolean().optional(),
+  "descriptionUpdatedAt": zod.string().nullish()
 })),
   "publishHistogram": zod.array(zod.object({
   "month": zod.string(),
@@ -184,12 +197,12 @@ export const GetEpisodeResponse = zod.object({
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
   "artworkUrl": zod.string().nullish(),
-  "categories": zod.array(zod.string())
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string()).describe('Episode keywords\/tags from the podcast feed or content database')
 }).and(zod.object({
   "descriptionHtml": zod.string(),
   "seriesSlug": zod.string().nullish(),
-  "positionInSeries": zod.number().nullish(),
-  "historySegment": HistorySegmentSchema.nullish()
+  "positionInSeries": zod.number().nullish()
 }))
 
 
@@ -199,7 +212,9 @@ export const GetEpisodeResponse = zod.object({
 export const ListCategoriesResponseItem = zod.object({
   "name": zod.string(),
   "count": zod.number(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "autoDescriptionStale": zod.boolean().optional(),
+  "descriptionUpdatedAt": zod.string().nullish()
 })
 export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
 
@@ -267,12 +282,16 @@ export const GetLibraryStatsResponse = zod.object({
   "topCategories": zod.array(zod.object({
   "name": zod.string(),
   "count": zod.number(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "autoDescriptionStale": zod.boolean().optional(),
+  "descriptionUpdatedAt": zod.string().nullish()
 })),
   "topTags": zod.array(zod.object({
   "name": zod.string(),
   "count": zod.number(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "autoDescriptionStale": zod.boolean().optional(),
+  "descriptionUpdatedAt": zod.string().nullish()
 })),
   "sync": zod.array(zod.object({
   "source": zod.string(),
@@ -300,7 +319,9 @@ export const ListLibraryTagsQueryParams = zod.object({
 export const ListLibraryTagsResponseItem = zod.object({
   "name": zod.string(),
   "count": zod.number(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "autoDescriptionStale": zod.boolean().optional(),
+  "descriptionUpdatedAt": zod.string().nullish()
 })
 export const ListLibraryTagsResponse = zod.array(ListLibraryTagsResponseItem)
 
@@ -357,12 +378,17 @@ export const GetLibraryItemResponse = zod.object({
 /**
  * @summary List all episode series with episode counts
  */
+export const ListSeriesQueryParams = zod.object({
+  "orderBy": zod.enum(['episodeCount:desc', 'episodeCount:asc', 'featured']).optional().describe('Sort order: episodeCount:desc (default), episodeCount:asc, featured (featured entries first, then by episode count)')
+})
+
 export const ListSeriesResponseItem = zod.object({
   "slug": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
   "iconEmoji": zod.string(),
   "episodeCount": zod.number(),
+  "featured": zod.boolean(),
   "latestPubDate": zod.string().nullish(),
   "sampleArtworkUrl": zod.string().nullish()
 })
@@ -396,6 +422,7 @@ export const GetSeriesEpisodesResponse = zod.object({
   "description": zod.string(),
   "iconEmoji": zod.string(),
   "episodeCount": zod.number(),
+  "featured": zod.boolean(),
   "latestPubDate": zod.string().nullish(),
   "sampleArtworkUrl": zod.string().nullish()
 }),
@@ -411,7 +438,8 @@ export const GetSeriesEpisodesResponse = zod.object({
   "audioUrl": zod.string().nullish(),
   "audioType": zod.string().nullish(),
   "artworkUrl": zod.string().nullish(),
-  "categories": zod.array(zod.string())
+  "categories": zod.array(zod.string()),
+  "tags": zod.array(zod.string()).describe('Episode keywords\/tags from the podcast feed or content database')
 })),
   "total": zod.number(),
   "limit": zod.number(),

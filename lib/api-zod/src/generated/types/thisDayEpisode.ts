@@ -6,18 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Episode } from './episode';
+import type { HistoryCrossLink } from './historyCrossLink';
 import type { HistorySegment } from './historySegment';
-
-export type ThisDayEpisodeSourceLinksItem = {
-  label: string;
-  url: string;
-};
-
-export type HistoryCrossLink = {
-  title: string;
-  slug: string;
-  url: string;
-};
+import type { ThisDayEpisodeSourceLinksItem } from './thisDayEpisodeSourceLinksItem';
 
 export type ThisDayEpisode = Episode & ({
   /**
@@ -26,33 +17,23 @@ export type ThisDayEpisode = Episode & ({
      */
   historyTimestamp?: number | null;
   /**
-   * Wikipedia thumbnail image URL — used only as a low-opacity background wash, never as a featured image
-   * @nullable
-   */
+     * Wikipedia thumbnail image URL — used only as a low-opacity background wash, never as a featured image
+     * @nullable
+     */
   historyImageUrl?: string | null;
   /**
-   * Deprecated — kept for backward compatibility; no longer rendered on tile face
-   * @nullable
-   */
+     * Deprecated — kept for backward compatibility; no longer rendered on tile face
+     * @nullable
+     */
   lessonQuote?: string | null;
-  /**
-   * Deprecated — kept for backward compatibility; no longer rendered on tile face
-   */
+  /** Deprecated — kept for backward compatibility; no longer rendered on tile face */
   bulletPoints?: string[];
-  /**
-   * Deprecated — Wikipedia links kept for backward compatibility; removed from tile face
-   */
+  /** Deprecated — Wikipedia links kept for backward compatibility; removed from tile face */
   sourceLinks?: ThisDayEpisodeSourceLinksItem[];
-  /** @nullable */
+  /** Scoped history segment data with start/end timestamps and Jack's extracted lesson text */
   historySegment?: HistorySegment | null;
-  /**
-   * A related Unloose the Goose episode touching the same historical topic, if found
-   * @nullable
-   */
+  /** A related Unloose the Goose episode touching the same historical topic, if found */
   ulgCrossLink?: HistoryCrossLink | null;
-  /**
-   * A TSP episode featuring the Expert Council historian, if relevant to this topic
-   * @nullable
-   */
+  /** A TSP episode featuring the Expert Council historian, if relevant to this topic */
   expertLink?: HistoryCrossLink | null;
 });

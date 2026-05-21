@@ -213,6 +213,7 @@ router.get("/episodes", async (req, res) => {
             audioType: row.audioType,
             artworkUrl: row.artworkUrl,
             categories: row.categories ?? [],
+            tags: row.tags ?? [],
             historySegment,
           });
         }
@@ -319,6 +320,7 @@ router.get("/episodes", async (req, res) => {
               audioType: row.audioType,
               artworkUrl: row.artworkUrl,
               categories: row.categories,
+              tags: row.tags ?? [],
             });
           }
 
@@ -405,6 +407,7 @@ router.get("/episodes/this-day", async (req, res) => {
       audioType: string | null;
       artworkUrl: string | null;
       categories: string[];
+      tags: string[];
       historyTimestamp: number | null;
       historySegment: HistorySegmentData | null;
       _descriptionHtml?: string | null;
@@ -498,6 +501,7 @@ router.get("/episodes/this-day", async (req, res) => {
           audioType: row.audioType,
           artworkUrl: row.artworkUrl,
           categories: row.categories,
+          tags: row.tags ?? [],
           historyTimestamp,
           historySegment,
           _descriptionHtml: row.bodyHtml,

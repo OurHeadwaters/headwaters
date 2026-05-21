@@ -90,7 +90,7 @@ export async function getSeriesConsistencyReport(
       for (const slug of sqlSlugs) {
         if (!libraryDetectSlugs.has(slug) && !detectSlugs.has(slug)) {
           const sqlRow = await db
-            .select({ slug: contentItemsTable.slug, title: contentItemsTable.title, summary: contentItemsTable.summary, bodyHtml: contentItemsTable.bodyHtml, categories: contentItemsTable.categories })
+            .select({ slug: contentItemsTable.slug, title: contentItemsTable.title, summary: contentItemsTable.summary, bodyHtml: contentItemsTable.bodyHtml, categories: contentItemsTable.categories, tags: contentItemsTable.tags })
             .from(contentItemsTable)
             .where(inArray(contentItemsTable.slug, [slug]))
             .limit(1);
@@ -109,6 +109,7 @@ export async function getSeriesConsistencyReport(
               audioType: null,
               artworkUrl: null,
               categories: sqlRow[0].categories,
+              tags: sqlRow[0].tags,
             };
             if (!seriesDef.detect(ep)) {
               missedByDetect.push(slug);
@@ -238,6 +239,7 @@ function rowToEpisode(row: LibraryRow): RssEpisode {
     audioType: row.audioType ?? null,
     artworkUrl: row.artworkUrl ?? null,
     categories: row.categories,
+    tags: row.tags,
   };
 }
 

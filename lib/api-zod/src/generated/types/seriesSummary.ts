@@ -12,6 +12,7 @@ export interface SeriesSummary {
   description: string;
   iconEmoji: string;
   episodeCount: number;
+  featured: boolean;
   /** @nullable */
   latestPubDate?: string | null;
   /** @nullable */

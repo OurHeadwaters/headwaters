@@ -19,6 +19,7 @@ export type RssEpisode = {
   audioType: string | null;
   artworkUrl: string | null;
   categories: string[];
+  tags: string[];
 };
 
 export type RssFeed = {
@@ -219,6 +220,13 @@ export function parseChannel(xml: string): RssFeed {
     const categories = asArray(item["category"])
       .map((c) => stripHtml(textOf(c)))
       .filter((c) => c && c.toLowerCase() !== "podcasts");
+    const keywordsRaw = textOf(item["itunes:keywords"]);
+    const tags = keywordsRaw
+      ? keywordsRaw
+          .split(",")
+          .map((k) => k.trim())
+          .filter((k) => k.length > 0)
+      : [];
     const episodeNumber = parseEpisodeNumber(rawTitle);
     const title = cleanTitle(rawTitle);
     const slug = slugFromLink(link, guid);
@@ -236,6 +244,7 @@ export function parseChannel(xml: string): RssFeed {
       audioType,
       artworkUrl,
       categories,
+      tags,
     };
   });
 
