@@ -12,6 +12,12 @@ uri = "file://artifacts/tsp-mobile/assets/images/splash-icon.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "c5ZLWNThCJhNnolJGHnfo"
+uri = "file://artifacts/survival-podcast/public/homestead-map.png"
+type = "image"
+title = "homestead map illustration"
+
 [[outputs]]
 id = "x47XEXk6V1JkJ7tGQ1AhY"
 uri = "file://attached_assets/parrs-jars-candidate-1.webp"

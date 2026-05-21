@@ -495,113 +495,18 @@ function StationHotspot({
 // ─── Scene background ───────────────────────────────────────────────────────────
 
 function SceneBackground() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
-    <svg
-      viewBox="0 0 800 440"
-      className="absolute inset-0 w-full h-full"
-      preserveAspectRatio="xMidYMid slice"
+    <img
+      src={`${base}/homestead-map.png`}
+      alt=""
+      className="absolute inset-0 w-full h-full object-cover"
       aria-hidden="true"
-    >
-      {/* Sky gradient */}
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#C8D9CC" />
-          <stop offset="100%" stopColor="#E8F0E4" />
-        </linearGradient>
-        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3D6B45" />
-          <stop offset="100%" stopColor="#2C4A36" />
-        </linearGradient>
-        <linearGradient id="stream" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#2C6A8A" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#4A9ABA" stopOpacity="0.5" />
-        </linearGradient>
-        <linearGradient id="path-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#C4A96A" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#A88E50" stopOpacity="0.5" />
-        </linearGradient>
-      </defs>
-
-      {/* Sky */}
-      <rect width="800" height="220" fill="url(#sky)" />
-
-      {/* Distant hills */}
-      <ellipse cx="150" cy="220" rx="200" ry="70" fill="#4A7A3A" opacity="0.5" />
-      <ellipse cx="500" cy="225" rx="250" ry="80" fill="#3D6840" opacity="0.4" />
-      <ellipse cx="750" cy="220" rx="160" ry="60" fill="#4A7A3A" opacity="0.45" />
-
-      {/* Slow drifting clouds */}
-      <g opacity="0.6">
-        <ellipse cx="120" cy="70" rx="55" ry="22" fill="white">
-          <animateTransform attributeName="transform" type="translate" values="0 0; 8 0; 0 0" dur="18s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="150" cy="62" rx="38" ry="18" fill="white">
-          <animateTransform attributeName="transform" type="translate" values="0 0; 8 0; 0 0" dur="18s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="580" cy="90" rx="70" ry="24" fill="white">
-          <animateTransform attributeName="transform" type="translate" values="0 0; -6 0; 0 0" dur="22s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="620" cy="82" rx="45" ry="18" fill="white">
-          <animateTransform attributeName="transform" type="translate" values="0 0; -6 0; 0 0" dur="22s" repeatCount="indefinite" />
-        </ellipse>
-      </g>
-
-      {/* Ground */}
-      <rect y="215" width="800" height="225" fill="url(#ground)" />
-
-      {/* Footpath / trail across the grounds */}
-      <path d="M 0 310 Q 200 295 400 320 Q 600 345 800 330" stroke="url(#path-grad)" strokeWidth="22" fill="none" opacity="0.5" strokeLinecap="round" />
-      <path d="M 0 310 Q 200 295 400 320 Q 600 345 800 330" stroke="#C4A96A" strokeWidth="4" fill="none" opacity="0.3" strokeLinecap="round" strokeDasharray="12 8" />
-
-      {/* Stream (for water wheel) */}
-      <path d="M 630 440 Q 620 380 610 340 Q 600 300 590 260" stroke="url(#stream)" strokeWidth="18" fill="none" strokeLinecap="round" />
-      <path d="M 630 440 Q 620 380 610 340 Q 600 300 590 260" stroke="white" strokeWidth="3" fill="none" opacity="0.2" strokeLinecap="round" strokeDasharray="8 12" />
-
-      {/* Mine shaft entrance (Wisdom Dig) */}
-      <rect x="145" y="245" width="50" height="35" rx="4" fill="#3A2A1A" opacity="0.8" />
-      <path d="M 130 248 L 170 228 L 210 248" fill="#5A3A20" opacity="0.7" />
-      <rect x="155" y="255" width="20" height="25" rx="3" fill="#1A1008" />
-      <line x1="170" y1="228" x2="170" y2="212" stroke="#5A3A20" strokeWidth="4" />
-      <rect x="162" y="208" width="16" height="7" rx="1" fill="#8A6040" />
-
-      {/* Well (Wishing Well) */}
-      <rect x="348" y="254" width="44" height="28" rx="4" fill="#7A5A3A" opacity="0.9" />
-      <ellipse cx="370" cy="254" rx="24" ry="7" fill="#9A7A5A" opacity="0.85" />
-      <line x1="348" y1="242" x2="348" y2="270" stroke="#5A3A1A" strokeWidth="4" />
-      <line x1="392" y1="242" x2="392" y2="270" stroke="#5A3A1A" strokeWidth="4" />
-      <path d="M 340 244 L 370 228 L 400 244" fill="#9A6A3A" opacity="0.8" />
-      <line x1="370" y1="228" x2="370" y2="218" stroke="#5A3A1A" strokeWidth="3" />
-      <rect x="362" y="214" width="16" height="6" rx="1.5" fill="#8A6040" />
-
-      {/* Trail arch (Transformation Trail) */}
-      <path d="M 175 340 Q 220 298 265 340" fill="none" stroke="#8A6A3A" strokeWidth="6" strokeLinecap="round" />
-      <path d="M 178 340 Q 220 302 262 340" fill="none" stroke="#C4A96A" strokeWidth="3" strokeLinecap="round" strokeDasharray="5 4" />
-      <rect x="172" y="336" width="10" height="22" rx="2" fill="#6A4A24" />
-      <rect x="258" y="336" width="10" height="22" rx="2" fill="#6A4A24" />
-
-      {/* Trees scattered */}
-      {([
-        [50, 230], [80, 218], [720, 225], [750, 235], [760, 218],
-        [300, 222], [330, 230], [500, 218], [530, 228],
-      ] as [number, number][]).map(([x, y], i) => (
-        <g key={i}>
-          <rect x={x - 3} y={y + 28} width={6} height={16} fill="#5A3A20" />
-          <ellipse cx={x} cy={y + 14} rx={16} ry={20} fill="#2C5A28" opacity={0.85} />
-          <ellipse cx={x} cy={y + 8} rx={10} ry={13} fill="#3A7A32" opacity={0.75} />
-        </g>
-      ))}
-
-      {/* Fence posts along path */}
-      {[80, 160, 240, 320, 400, 480, 560, 640, 720].map((x, i) => (
-        <g key={i}>
-          <rect x={x} y={304} width={4} height={18} rx={1} fill="#8A6A40" opacity={0.5} />
-          <rect x={x - 1} y={303} width={6} height={3} rx={1} fill="#A08050" opacity={0.5} />
-        </g>
-      ))}
-      <line x1="82" y1="308" x2="722" y2="315" stroke="#8A6A40" strokeWidth="2" opacity="0.3" />
-    </svg>
+      draggable={false}
+    />
   );
 }
+
 
 // ─── Main page ──────────────────────────────────────────────────────────────────
 
@@ -624,7 +529,7 @@ export default function StompingGroundsPage() {
       badge: gemCount != null ? String(gemCount) : null,
       color: "#2C4A36",
       glowColor: "#4A9A5A",
-      position: { top: "57%", left: "20%" },
+      position: { top: "54%", left: "15%" },
       mobileOrder: 0,
     },
     {
@@ -635,7 +540,7 @@ export default function StompingGroundsPage() {
       badge: pot != null ? String(pot.totalUnits) : null,
       color: "#B5853A",
       glowColor: "#D9A066",
-      position: { top: "60%", left: "48%" },
+      position: { top: "57%", left: "47%" },
       mobileOrder: 1,
     },
     {
@@ -646,7 +551,7 @@ export default function StompingGroundsPage() {
       badge: transformations ? String(transformations.length) : null,
       color: "#4A7A3A",
       glowColor: "#6AAA5A",
-      position: { top: "80%", left: "28%" },
+      position: { top: "80%", left: "22%" },
       mobileOrder: 2,
     },
     {
@@ -657,7 +562,7 @@ export default function StompingGroundsPage() {
       badge: null,
       color: "#2C6A8A",
       glowColor: "#4A9ABA",
-      position: { top: "62%", left: "76%" },
+      position: { top: "66%", left: "73%" },
       mobileOrder: 3,
     },
   ];
