@@ -54,9 +54,16 @@ async function fetchAdminGear(offset: number): Promise<AdminGearListResponse> {
   return res.json();
 }
 
+class ImportInProgressError extends Error {
+  constructor() {
+    super("An import is already running — check back in a moment.");
+  }
+}
+
 async function triggerImport(): Promise<{ ok: boolean; seen: number; upserted: number }> {
   const res = await fetch(apiUrl("/admin/gear/import"), { method: "POST" });
   const body = await res.json();
+  if (res.status === 409) throw new ImportInProgressError();
   if (!res.ok) throw new Error(body.error ?? "Import failed");
   return body;
 }
@@ -278,7 +285,7 @@ export function AdminGear() {
   const qc = useQueryClient();
   const [offset, setOffset] = useState(0);
   const [visFilter, setVisFilter] = useState<VisibilityFilter>("all");
-  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string; info?: boolean } | null>(null);
 
   const LIMIT = 50;
 
@@ -303,7 +310,11 @@ export function AdminGear() {
       setTimeout(() => setImportMsg(null), 8000);
     },
     onError: (err: Error) => {
-      setImportMsg({ ok: false, text: `Import failed: ${err.message}` });
+      if (err instanceof ImportInProgressError) {
+        setImportMsg({ ok: true, text: err.message, info: true });
+      } else {
+        setImportMsg({ ok: false, text: `Import failed: ${err.message}` });
+      }
       setTimeout(() => setImportMsg(null), 8000);
     },
   });
@@ -349,14 +360,16 @@ export function AdminGear() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           <RefreshCw className={`w-4 h-4 ${runImport.isPending ? "animate-spin" : ""}`} />
-          {runImport.isPending ? "Importing…" : "Re-import from TSP"}
+          {runImport.isPending ? "Importing…" : "Refresh Gear"}
         </button>
       </div>
 
       {importMsg && (
         <div
           className={`mb-6 p-4 rounded-lg border text-sm font-medium ${
-            importMsg.ok
+            importMsg.info
+              ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/40"
+              : importMsg.ok
               ? "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/40"
               : "bg-destructive/10 text-destructive border-destructive/20"
           }`}
