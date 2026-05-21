@@ -6,6 +6,7 @@ import { syncWordPressArchive } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
 import { syncUlg, correctUlgDiscoveredDates } from "./sources/ulg";
 import { parseChannel } from "./rss";
+import { findUlgCrossLink, findExpertLink } from "./history-enrichment";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
 const BATCH_SIZE = 200;
@@ -204,6 +205,89 @@ async function syncAllCouncilFeeds(): Promise<{ itemsSeen: number; itemsUpserted
   return { itemsSeen: totalSeen, itemsUpserted: totalUpserted };
 }
 
+const CROSS_LINK_BATCH = 20;
+
+/**
+ * Background enrichment pass: for every history episode in the DB that does
+ * not yet have pre-computed cross-links, run the ULG and expert lookups and
+ * persist the results in `extra.ulgCrossLink` / `extra.expertLink`.
+ *
+ * This runs AFTER the main sync so that ULG content is already present.
+ * It is deliberately serial (batched) to avoid hammering the DB with
+ * concurrent full-text searches.
+ */
+async function precomputeHistoryCrossLinks(): Promise<void> {
+  let offset = 0;
+  let processed = 0;
+  let updated = 0;
+
+  for (;;) {
+    const rows = await db
+      .select({
+        id: contentItemsTable.id,
+        title: contentItemsTable.title,
+        extra: contentItemsTable.extra,
+      })
+      .from(contentItemsTable)
+      .where(
+        sql`${contentItemsTable.kind} = 'audio'
+          AND (
+            ${contentItemsTable.bodyHtml} ILIKE '%this day in history%'
+            OR ${contentItemsTable.bodyText} ILIKE '%this day in history%'
+          )
+          AND (
+            ${contentItemsTable.extra}->>'ulgCrossLink' IS NULL
+            OR ${contentItemsTable.extra}->>'expertLink' IS NULL
+          )`,
+      )
+      .limit(CROSS_LINK_BATCH)
+      .offset(offset);
+
+    if (rows.length === 0) break;
+
+    for (const row of rows) {
+      const extra = (row.extra as Record<string, unknown> | null) ?? {};
+      const needsUlg = extra.ulgCrossLink === undefined;
+      const needsExpert = extra.expertLink === undefined;
+
+      if (!needsUlg && !needsExpert) {
+        processed++;
+        continue;
+      }
+
+      try {
+        const patch: Record<string, unknown> = {};
+        const [ulg, expert] = await Promise.all([
+          needsUlg ? findUlgCrossLink(row.title) : Promise.resolve(undefined),
+          needsExpert ? findExpertLink(row.title) : Promise.resolve(undefined),
+        ]);
+
+        if (needsUlg) patch.ulgCrossLink = ulg ?? null;
+        if (needsExpert) patch.expertLink = expert ?? null;
+
+        if (Object.keys(patch).length > 0) {
+          await db
+            .update(contentItemsTable)
+            .set({
+              extra: sql`${contentItemsTable.extra} || ${JSON.stringify(patch)}::jsonb`,
+              updatedAt: new Date(),
+            })
+            .where(eq(contentItemsTable.id, row.id));
+          updated++;
+        }
+      } catch (err) {
+        logger.debug({ err, title: row.title }, "precomputeHistoryCrossLinks: lookup failed for episode");
+      }
+      processed++;
+    }
+
+    offset += rows.length;
+    if (rows.length < CROSS_LINK_BATCH) break;
+  }
+
+  logger.info({ processed, updated }, "precomputeHistoryCrossLinks: complete");
+}
+
 export type RefreshSummary = {
   wordpress: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   youtube: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
@@ -248,6 +332,13 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
       recordRun("council", syncAllCouncilFeeds),
     ]);
     logger.info({ wp, yt, ulg, council }, "Library refresh complete");
+
+    // After sync is done (ULG content is now up-to-date), pre-compute cross-links
+    // for any history episodes that don't yet have them cached in `extra`.
+    precomputeHistoryCrossLinks().catch((err) => {
+      logger.warn({ err }, "precomputeHistoryCrossLinks failed");
+    });
+
     return { wordpress: wp, youtube: yt, ulg, council };
   })();
   try {

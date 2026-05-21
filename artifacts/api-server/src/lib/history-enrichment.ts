@@ -211,7 +211,7 @@ function extractLessonQuote(descriptionHtml: string): string | null {
  * Uses full-text search against ULG episode titles and body text.
  * Returns null if the DB is unavailable or no match is found.
  */
-async function findUlgCrossLink(
+export async function findUlgCrossLink(
   title: string,
 ): Promise<HistoryCrossLink | null> {
   const keywords = extractHistoryTopicKeywords(title);
@@ -270,7 +270,7 @@ const CJ_KILMER_SLUG_PREFIXES = [
   "cj-kilmer",
 ];
 
-async function findExpertLink(
+export async function findExpertLink(
   title: string,
 ): Promise<HistoryCrossLink | null> {
   const keywords = extractHistoryTopicKeywords(title);
@@ -343,11 +343,17 @@ async function findExpertLink(
   return null;
 }
 
+export interface PrecomputedCrossLinks {
+  ulgCrossLink?: HistoryCrossLink | null;
+  expertLink?: HistoryCrossLink | null;
+}
+
 export async function enrichHistoryEpisode(
   slug: string,
   title: string,
   descriptionHtml: string | null,
   summary: string,
+  precomputed?: PrecomputedCrossLinks,
 ): Promise<HistoryEnrichment> {
   const cached = CACHE.get(slug);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
@@ -357,11 +363,14 @@ export async function enrichHistoryEpisode(
   const htmlContent = descriptionHtml ?? summary ?? "";
   const query = buildSearchQuery(title);
 
+  const hasPrecomputedUlg = precomputed != null && "ulgCrossLink" in precomputed;
+  const hasPrecomputedExpert = precomputed != null && "expertLink" in precomputed;
+
   const [historyImageUrl, sourceLinks, ulgCrossLink, expertLink] = await Promise.all([
     fetchWikipediaImage(query),
     fetchWikipediaSourceLinks(query),
-    findUlgCrossLink(title),
-    findExpertLink(title),
+    hasPrecomputedUlg ? Promise.resolve(precomputed!.ulgCrossLink ?? null) : findUlgCrossLink(title),
+    hasPrecomputedExpert ? Promise.resolve(precomputed!.expertLink ?? null) : findExpertLink(title),
   ]);
 
   const bulletPoints = extractBulletPoints(htmlContent);
