@@ -3,8 +3,22 @@ import { useLocation, useSearch, Link } from "wouter";
 import { useListEpisodes, useListCategories, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import { EpisodeCard } from "@/components/episode-card";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useTransformations } from "@/hooks/use-transformations";
+import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight, Compass, X } from "lucide-react";
+
+function matchTransformations(
+  episodeCategories: string[],
+  transformations: Transformation[],
+  episodeTags?: string[],
+): Transformation[] {
+  const lowerCats = episodeCategories.map((c) => c.toLowerCase());
+  const lowerTags = (episodeTags ?? []).map((t) => t.toLowerCase());
+  const episodeTerms = [...lowerCats, ...lowerTags];
+  return transformations.filter((t) => {
+    const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
+    return episodeTerms.some((term) => tLower.includes(term));
+  });
+}
 
 export function Archive() {
   const [location, setLocation] = useLocation();
@@ -312,9 +326,16 @@ export function Archive() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {episodePage?.items.map((episode) => (
-              <EpisodeCard key={episode.guid} episode={episode} transformation={activeTransformation} />
-            ))}
+            {episodePage?.items.map((episode) => {
+              const episodeTransformation = activeTransformation
+                ? activeTransformation
+                : transformations
+                  ? (matchTransformations(episode.categories ?? [], transformations, episode.tags ?? [])[0] ?? null)
+                  : null;
+              return (
+                <EpisodeCard key={episode.guid} episode={episode} transformation={episodeTransformation} />
+              );
+            })}
           </div>
 
           {totalPages > 1 && (

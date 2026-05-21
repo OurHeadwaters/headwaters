@@ -5,8 +5,10 @@ import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/us
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { ProductShelf, type ReviewedProduct } from "@/components/product-shelf";
+import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect, useRef } from "react";
+
 import {
   Mic,
   FileText,
@@ -28,6 +30,20 @@ import {
 import { formatDuration } from "@/components/episode-card";
 
 const PAGE_SIZE = 24;
+
+function matchTransformations(
+  episodeCategories: string[],
+  transformations: Transformation[],
+  episodeTags?: string[],
+): Transformation[] {
+  const lowerCats = episodeCategories.map((c) => c.toLowerCase());
+  const lowerTags = (episodeTags ?? []).map((t) => t.toLowerCase());
+  const episodeTerms = [...lowerCats, ...lowerTags];
+  return transformations.filter((t) => {
+    const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
+    return episodeTerms.some((term) => tLower.includes(term));
+  });
+}
 
 const ZONE_LABELS = ["Zone 0", "Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5"];
 
@@ -76,6 +92,7 @@ type TrackItemCardProps = {
   isDone: boolean;
   onToggleDone: (id: number) => void;
   isSharedView: boolean;
+  transformation?: Transformation | null;
 };
 
 function TrackItemCard({
@@ -86,6 +103,7 @@ function TrackItemCard({
   isDone,
   onToggleDone,
   isSharedView,
+  transformation,
 }: TrackItemCardProps) {
   const position = globalOffset + index + 1;
   const href =
@@ -188,6 +206,23 @@ function TrackItemCard({
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {item.summary.replace(/^https?:\/\/\S+\n\n?/, "").slice(0, 180)}
           </p>
+        )}
+        {transformation && (
+          <div className="mt-1.5">
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-sm"
+              style={{
+                color: transformation.color,
+                background: `${transformation.color}18`,
+                border: `1px solid ${transformation.color}44`,
+              }}
+            >
+              <span>{transformation.icon}</span>
+              <span>{transformation.from}</span>
+              <span className="opacity-50 font-normal">→</span>
+              <span>{transformation.to}</span>
+            </span>
+          </div>
         )}
       </Link>
     </div>
@@ -532,6 +567,8 @@ export default function TrackDetailPage() {
     staleTime: 10 * 60 * 1000,
     enabled: !!slug,
   });
+
+  const { data: transformations } = useTransformations();
 
   const track = data?.track;
   const items = data?.items ?? [];
@@ -1001,18 +1038,24 @@ export default function TrackDetailPage() {
         <div
           className={`flex flex-col gap-3 transition-opacity duration-200 ${isFetching ? "opacity-60" : "opacity-100"}`}
         >
-          {items.map((item, i) => (
-            <TrackItemCard
-              key={item.id}
-              item={item}
-              trackColor={track.color}
-              index={i}
-              globalOffset={offset}
-              isDone={isDone(item.id)}
-              onToggleDone={progress.toggleDone}
-              isSharedView={isSharedView}
-            />
-          ))}
+          {items.map((item, i) => {
+            const itemTransformation = transformations
+              ? (matchTransformations(item.categories ?? [], transformations, item.tags ?? [])[0] ?? null)
+              : null;
+            return (
+              <TrackItemCard
+                key={item.id}
+                item={item}
+                trackColor={track.color}
+                index={i}
+                globalOffset={offset}
+                isDone={isDone(item.id)}
+                onToggleDone={progress.toggleDone}
+                isSharedView={isSharedView}
+                transformation={itemTransformation}
+              />
+            );
+          })}
         </div>
 
         {/* Pagination */}
