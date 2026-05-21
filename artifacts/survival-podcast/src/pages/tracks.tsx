@@ -181,9 +181,10 @@ export default function TracksPage() {
           </h1>
 
           <p className="text-lg leading-relaxed max-w-2xl mb-6" style={{ color: "#C8D4C0" }}>
-            Sixteen years of episodes, organized as structured learning paths. Each track follows
-            the permaculture zone framework — starting from the self and working outward — so you
-            build knowledge the same way you build resilience.
+            Sixteen years of episodes, organized as seven structured learning paths. The tracks
+            follow the permaculture zone framework — starting from the self and working outward —
+            so you build knowledge the same way you build resilience. Zone 0 offers two tracks,
+            reflecting the depth of work that starts closest to home.
           </p>
 
           <p className="text-sm leading-relaxed max-w-xl" style={{ color: "#8FA883" }}>
@@ -219,7 +220,7 @@ export default function TracksPage() {
           <div>
             <h2 className="font-serif text-2xl font-bold text-foreground mb-1">The seven tracks</h2>
             <p className="text-sm text-muted-foreground">
-              One for each zone — from self-sovereignty to wilderness contingency.
+              Zone-informed paths — from self-sovereignty to wilderness contingency.
             </p>
           </div>
           <Link
