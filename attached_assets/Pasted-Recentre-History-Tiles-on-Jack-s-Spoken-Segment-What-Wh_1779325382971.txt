@@ -1,0 +1,34 @@
+Recentre History Tiles on Jack's Spoken Segment
+What & Why
+The "This Day in History" tiles were built with Wikipedia enrichment as the visual and content centrepiece — external photos, sourced bullet points, "threads to pull" Wikipedia links. But the feature's real value is Jack's own spoken history segment: his framing, his vantage point, his lesson. The tiles need to be rebuilt so Jack's words and his audio clip are the entire experience, with Wikipedia imagery demoted to background texture only.
+
+Done looks like
+The tile headline is Jack's own framing of the historical topic, drawn from the lessonText field (history detection engine output) — not the episode title and not a heuristic sentence extraction
+The audio clip is the visual hero of the tile: a prominent scoped player showing the segment duration (e.g. "4 min history segment"), with a single bold "Play" button that seeks directly to historyTimestamp
+Jack's extracted lesson text (from show notes, his actual words) is the primary body copy — displayed as a readable paragraph, not fragmented into bullets
+Wikipedia thumbnail image (if present) is used only as a low-opacity background wash — it does not appear as a featured image or dominate the tile visually
+"Threads to pull" Wikipedia links are removed from the tile entirely, or collapsed into a small "go deeper" disclosure that is closed by default
+Tiles without a detected history segment (historyTimestamp absent) are either excluded from the row or shown with a clear "segment not yet detected" state — they do not fall back to showing generic show notes content
+The year badge, episode number, and "X years ago" label remain as secondary metadata
+The date-picker browsing behaviour is unchanged
+Out of scope
+Changing the history detection engine or how segments are extracted
+Adding new enrichment sources
+Changing the homepage layout or tile grid/scroll behaviour
+Steps
+Audit the current tile data — Review what lessonText, lessonQuote, and bulletPoints actually contain for a sample of 10–15 episodes to confirm lessonText (from the detection engine) is Jack's genuine words and is the right field to surface.
+
+Redesign the tile layout — Replace the current layout (image hero + quote headline + bullets + Wikipedia pills) with: scoped audio player as the primary element, lessonText as body paragraph below it, year/episode badge as secondary metadata. Wikipedia image becomes CSS background-image at low opacity only.
+
+Remove Wikipedia-primary UI elements — Strip out the "Threads to pull" pill links from the tile face. Remove lessonQuote heuristic extraction as the headline source; use the history topic from lessonText instead (or the episode title as a true last resort).
+
+Handle missing-segment tiles — When historyTimestamp is null or detection confidence is low, either filter the episode out of the This Day in History row entirely, or show a minimal "segment not confirmed" tile variant — never fall back to showing full show notes content as if it were a history segment.
+
+Verify on a spread of episodes — Spot-check tiles for early episodes (2006–2012) where the history segment is well-documented in show notes, and confirm the tile reads as Jack's voice, not an encyclopedia entry.
+
+Relevant files
+artifacts/survival-podcast/src/components/this-day-in-history.tsx
+artifacts/api-server/src/routes/episodes.ts:367-532
+artifacts/api-server/src/lib/history-enrichment.ts
+artifacts/api-server/src/lib/history-detection.ts
+artifacts/survival-podcast/src/pages/home.tsx:693-694
