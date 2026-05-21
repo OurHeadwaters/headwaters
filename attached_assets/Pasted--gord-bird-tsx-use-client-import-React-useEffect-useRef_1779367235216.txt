@@ -1,0 +1,217 @@
+// gord-bird.tsx
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
+
+interface GordBirdProps {
+  className?: string;
+  style?: React.CSSProperties;
+  perchElementId?: string; // Optional: ID of a nearby block/element to perch on
+}
+
+export const GordBird: React.FC<GordBirdProps> = ({
+  className,
+  style,
+  perchElementId,
+}) => {
+  const birdRef = useRef<HTMLDivElement>(null);
+  const [isFlying, setIsFlying] = useState(true);
+  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [rotation, setRotation] = useState(0);
+  const [perched, setPerched] = useState(false);
+  const velocityRef = useRef({ vx: 0, vy: 0 });
+  const targetRef = useRef({ x: 0, y: 0 });
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Scrawny owl body proportions + improved beak from previous version
+  const HeadSVG = () => (
+    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Dark outer head */}
+      <ellipse cx="30" cy="31" rx="24" ry="23" fill="#8B6F47" />
+      {/* Tan face */}
+      <ellipse cx="30" cy="31" rx="17.5" ry="18" fill="#C4965A" />
+
+      {/* Scrawny ear tufts (more pointed) */}
+      <ellipse cx="11" cy="13" rx="6" ry="12" transform="rotate(-45 11 13)" fill="#8B6F47" />
+      <ellipse cx="12" cy="14" rx="3.5" ry="7.5" transform="rotate(-45 12 14)" fill="#C4965A" />
+      <ellipse cx="49" cy="13" rx="6" ry="12" transform="rotate(45 49 13)" fill="#8B6F47" />
+      <ellipse cx="48" cy="14" rx="3.5" ry="7.5" transform="rotate(45 48 14)" fill="#C4965A" />
+
+      {/* Eyes */}
+      <ellipse cx="21" cy="27" rx="5" ry="6" fill="white" />
+      <ellipse cx="39" cy="27" rx="5" ry="6" fill="white" />
+      <ellipse cx="21" cy="27" rx="2.6" ry="3" fill="#2C1810" />
+      <ellipse cx="39" cy="27" rx="2.6" ry="3" fill="#2C1810" />
+      <circle cx="19.8" cy="25" r="1" fill="white" />
+      <circle cx="37.8" cy="25" r="1" fill="white" />
+
+      {/* Improved owl beak */}
+      <polygon points="30,29 23.5,37 36.5,37" fill="#E8B97F" stroke="#6B4E2A" strokeWidth="1.5" />
+      <polygon points="30,35.5 25.5,39 34.5,39" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1" />
+      <line x1="30" y1="29" x2="30" y2="37" stroke="#6B4E2A" strokeWidth="1" />
+
+      {/* Tiny smile when perched */}
+      <path d="M21 46 Q30 48.5 39 46" fill="none" stroke="#2C1810" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+
+  const FullBodySVG = () => (
+    <svg width="80" height="120" viewBox="0 0 80 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Legs (scrawny) */}
+      <line x1="35" y1="95" x2="30" y2="118" stroke="#6B4E2A" strokeWidth="5" strokeLinecap="round" />
+      <line x1="45" y1="95" x2="50" y2="118" stroke="#6B4E2A" strokeWidth="5" strokeLinecap="round" />
+
+      {/* Feet */}
+      <path d="M25 118 L35 118 L32 125" stroke="#6B4E2A" strokeWidth="3" strokeLinecap="round" />
+      <path d="M35 118 L45 117 L44 124" stroke="#6B4E2A" strokeWidth="3" strokeLinecap="round" />
+
+      {/* Scrawny body */}
+      <ellipse cx="40" cy="85" rx="19" ry="32" fill="#8B6F47" />
+      <ellipse cx="40" cy="88" rx="13" ry="24" fill="#C4965A" />
+
+      {/* Wings (flapping ready) */}
+      <path d="M25 75 Q10 55 8 85 Q18 105 28 95 Z" fill="#6B4E2A" />
+      <path d="M55 75 Q70 55 72 85 Q62 105 52 95 Z" fill="#6B4E2A" />
+
+      {/* Head */}
+      <ellipse cx="40" cy="48" rx="23" ry="24" fill="#8B6F47" />
+      <ellipse cx="40" cy="47" rx="17" ry="18" fill="#C4965A" />
+
+      {/* Ear tufts */}
+      <ellipse cx="21" cy="29" rx="7" ry="11" transform="rotate(-40 21 29)" fill="#8B6F47" />
+      <ellipse cx="59" cy="29" rx="7" ry="11" transform="rotate(40 59 29)" fill="#8B6F47" />
+
+      {/* Eyes + beak (same improved version) */}
+      <ellipse cx="31" cy="45" rx="5" ry="6" fill="white" />
+      <ellipse cx="49" cy="45" rx="5" ry="6" fill="white" />
+      <ellipse cx="31" cy="45" rx="2.6" ry="3" fill="#2C1810" />
+      <ellipse cx="49" cy="45" rx="2.6" ry="3" fill="#2C1810" />
+      <circle cx="29.5" cy="43" r="1" fill="white" />
+      <circle cx="47.5" cy="43" r="1" fill="white" />
+
+      <polygon points="40,46 33,55 47,55" fill="#E8B97F" stroke="#6B4E2A" strokeWidth="2" />
+      <polygon points="40,53 35,57 45,57" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1.2" />
+    </svg>
+  );
+
+  // Mouse following + physics-based flight
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (perched) return;
+      targetRef.current = { x: e.clientX - 30, y: e.clientY - 30 };
+      setIsFlying(true);
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      if (!birdRef.current) return;
+
+      const rect = birdRef.current.getBoundingClientRect();
+      const dist = Math.hypot(e.clientX - rect.left - 30, e.clientY - rect.top - 40);
+
+      if (dist < 80) {
+        // Click near Gord → force perch mode briefly
+        setPerched(true);
+        setTimeout(() => setPerched(false), 2200);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('click', handleClick);
+    };
+  }, [perched]);
+
+  // Perch on nearby block if ID is provided
+  useEffect(() => {
+    if (!perchElementId) return;
+
+    const perchEl = document.getElementById(perchElementId);
+    if (!perchEl) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !perched) {
+          const rect = perchEl.getBoundingClientRect();
+          setPosition({
+            x: rect.left + rect.width / 2 - 35,
+            y: rect.top - 65,
+          });
+          setPerched(true);
+          setTimeout(() => setPerched(false), 1800);
+        }
+      },
+      { threshold: 0.6 }
+    );
+
+    observer.observe(perchEl);
+    return () => observer.disconnect();
+  }, [perchElementId, perched]);
+
+  // Smooth flight physics
+  useEffect(() => {
+    const animate = () => {
+      if (perched) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      const bird = birdRef.current;
+      if (!bird) return;
+
+      const dx = targetRef.current.x - position.x;
+      const dy = targetRef.current.y - position.y;
+
+      velocityRef.current.vx = velocityRef.current.vx * 0.82 + dx * 0.028;
+      velocityRef.current.vy = velocityRef.current.vy * 0.82 + dy * 0.028;
+
+      const newX = position.x + velocityRef.current.vx;
+      const newY = position.y + velocityRef.current.vy;
+
+      const speed = Math.hypot(velocityRef.current.vx, velocityRef.current.vy);
+      const newRotation = Math.min(Math.max(velocityRef.current.vx * 1.8, -35), 35);
+
+      setPosition({ x: newX, y: newY });
+      setRotation(newRotation);
+
+      if (speed < 1.5) setIsFlying(false);
+      else setIsFlying(true);
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [position, perched]);
+
+  return (
+    <div
+      ref={birdRef}
+      className={`fixed pointer-events-auto transition-transform duration-75 ${className || ''}`}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: `rotate(${rotation}deg) scale(${perched ? 1.05 : 1})`,
+        zIndex: 9999,
+        filter: perched ? 'drop-shadow(0 8px 6px rgba(0,0,0,0.3))' : 'drop-shadow(4px 6px 8px rgba(0,0,0,0.25))',
+        ...style,
+      }}
+    >
+      <div className={`transition-all duration-200 ${isFlying ? 'animate-[wingFlap_180ms_ease-in-out_infinite]' : ''}`}>
+        {isFlying || !perched ? <FullBodySVG /> : <HeadSVG />}
+      </div>
+
+      {/* Perch indicator when landed */}
+      {perched && (
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#6B4E2A] rounded-full" />
+      )}
+    </div>
+  );
+};
+
+export default GordBird;

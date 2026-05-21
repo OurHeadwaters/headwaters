@@ -1,0 +1,23 @@
+Prompt for your agent:You are an elite frontend animation engineer and character designer. Completely abandon the old static Gord the Bird. We are building a brand new, show-stopping version that feels magical and alive.Core Character Vision – “Forest Gord”
+Gord is now a scrawny, curious little owl who looks like he just flew out of an enchanted forest. He is noticeably thin and leggy, with slightly unkempt feathers, big expressive eyes, and prominent ear tufts that give him personality. He should feel like a living creature you’d actually encounter — not a stiff mascot.Requirements – This must feel breathtaking:Movement & Physics: Gord smoothly follows the user’s mouse cursor with realistic inertia, momentum, and gentle bobbing. He tilts his body and head naturally in the direction of travel (like a real bird banking). When moving quickly he flaps his wings; when slowing down the flaps become softer.
+Flying State: Full-body scrawny flying pose with animated wings (subtle CSS or Framer Motion wing flap). Add very light feather particles or motion blur trails when he accelerates.
+Perching State: When he reaches a designated perch area (or after a click), he lands gracefully, folds his wings, tucks his legs, and switches to a cute head + body perched pose. He should occasionally turn his head, blink, or ruffle feathers while perched. Show a tiny branch or perch line under his feet.
+Auto-perch behavior: If a perchElementId is provided, he intelligently flies over and perches on that element (top edge) when it’s in view.
+Click interaction: Clicking near Gord makes him playfully dart away then return and perch for a moment.
+Immersion: The entire experience should feel like “you just walked into a sun-dappled forest and a friendly little owl is curiously following you.” Soft shadows, gentle floating, and life-like timing are critical.
+
+Visual Style:Keep the warm forest color palette (#8B6F47 dark brown, #C4965A tan face, #E8B97F golden beak, deep greens and earth tones for accents).
+Highly detailed but clean SVG-based character (or inline SVGs inside React).
+Expressive eyes with glints that follow cursor slightly.
+Improved 3D-ish beak with clear upper/lower mandible and subtle shadow.
+Scrawny proportions: narrow body, longer thin legs, expressive wings.
+
+Technical Requirements:Pure React + TypeScript component (gord-bird.tsx) with 'use client'.
+Use refs, requestAnimationFrame, and smooth physics (no heavy libraries unless absolutely necessary — prefer native + Framer Motion if needed for wing flaps).
+Fully responsive, performant (60fps), accessible (aria labels), and works on mobile (touch follow with slight offset).
+Include subtle random idle animations (head tilt, blink, feather ruffle) even when perched.
+Optional: very soft chirping sound on hover/landing (with user gesture unlock and volume control).
+
+Deliverables:
+Return the complete, self-contained gord-bird.tsx file with usage example. Include detailed comments explaining the key animation systems. Make this the most charming, delightful interactive mascot on the internet — the kind users screenshot and share.This is not just an icon. This is a living forest friend.
+
