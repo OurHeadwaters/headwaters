@@ -179,7 +179,36 @@ router.get("/admin/gear", requireEditor, async (req, res) => {
 
 /* ─────────────────── POST /api/admin/gear/import ─────────────────── */
 
+const GEAR_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
 let importInflight = false;
+
+async function runGearImport(): Promise<void> {
+  if (importInflight) {
+    logger.info("Gear import already in progress — skipping");
+    return;
+  }
+  importInflight = true;
+  try {
+    const result = await importProductReviews({ upsertBatch: upsertProductBatch });
+    logger.info(result, "Gear import complete");
+  } catch (err) {
+    logger.error({ err }, "Gear import failed");
+  } finally {
+    importInflight = false;
+  }
+}
+
+/**
+ * Kick off a gear import immediately on server start, then repeat every 24 h.
+ * Never blocks incoming requests — fires and forgets.
+ */
+export function startGearSchedule(): void {
+  void runGearImport();
+  setInterval(() => {
+    void runGearImport();
+  }, GEAR_REFRESH_INTERVAL_MS).unref();
+}
 
 router.post("/admin/gear/import", requireEditor, async (_req, res) => {
   if (importInflight) {

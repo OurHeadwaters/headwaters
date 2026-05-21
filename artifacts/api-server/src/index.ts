@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startBackgroundRefresh } from "./lib/library";
+import { startGearSchedule } from "./routes/gear";
 import { getFeedCached } from "./lib/rss";
 import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-consistency";
 
@@ -29,6 +30,7 @@ app.listen(port, (err) => {
   validateSeriesRegistry();
 
   startBackgroundRefresh();
+  startGearSchedule();
 
   getFeedCached()
     .then((feed) => checkSeriesConsistency(feed.episodes))
