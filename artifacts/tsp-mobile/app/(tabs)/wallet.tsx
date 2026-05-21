@@ -270,6 +270,9 @@ export default function WalletScreen() {
                   🔷 Open Xaman to sign in
                 </Text>
               </Pressable>
+              <Text style={[styles.hint, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                XRP is decentralized with no central issuer — like Bitcoin, it's a tool for sovereign value transfer. Fast and feeless for the platform layer.
+              </Text>
             </View>
           )}
 
