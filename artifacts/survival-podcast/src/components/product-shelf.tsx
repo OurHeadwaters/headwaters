@@ -48,10 +48,10 @@ function ProductCard({ product }: { product: ReviewedProduct }) {
           href={product.externalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-auto pt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+          className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
-          View
+          Check Price
           <ExternalLink className="w-3 h-3 shrink-0" />
         </a>
       </div>
