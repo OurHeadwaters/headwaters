@@ -703,7 +703,7 @@ export default function TrackDetailPage() {
             All Learning Tracks
           </Link>
 
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
             <span className="text-3xl leading-none">{track.icon}</span>
             <div
               className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border-2"
@@ -711,6 +711,21 @@ export default function TrackDetailPage() {
             >
               {ZONE_LABELS[track.zoneNumber]} · Learning Track
             </div>
+            {total > 0 && (
+              <div
+                className="text-xs font-bold px-3 py-1 rounded-full border-2 flex items-center gap-1.5"
+                style={{ borderColor: track.color + "60", color: track.color, background: track.color + "12" }}
+              >
+                {isFiltering ? (
+                  <>
+                    {total.toLocaleString()} matching
+                    <span className="opacity-50 font-normal">/ filtered</span>
+                  </>
+                ) : (
+                  <>{total.toLocaleString()} episodes</>
+                )}
+              </div>
+            )}
           </div>
 
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-2">
