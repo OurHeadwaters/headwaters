@@ -12,11 +12,11 @@ export function About() {
         <div className="mb-12 flex flex-col items-center text-center">
           <img 
             src={tspLogo} 
-            alt="The Survival Podcast Logo" 
+            alt="The Stomping Path Logo" 
             className="w-32 h-32 md:w-48 md:h-48 rounded-2xl shadow-lg border-2 border-border mb-8"
           />
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
-            {feed?.title || "The Survival Podcast"}
+            {feed?.title || "The Stomping Path"}
           </h1>
           <p className="text-xl text-muted-foreground font-medium max-w-xl text-balance">
             "Helping you live a better life, if times get tough or even if they don't."

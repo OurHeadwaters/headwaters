@@ -102,7 +102,7 @@ function buildOgMiddleware(base: string): Connect.NextHandleFunction {
         const pageUrl = resolveCanonicalUrl(req, base, `/tracks/${slug}`);
 
         const html = buildOgHtml({
-          title: `${track.title} — TSP Learning Track`,
+          title: `${track.title} — Stomping Path Learning Track`,
           description: track.description,
           image,
           url: pageUrl,
@@ -174,8 +174,8 @@ function buildOgMiddleware(base: string): Connect.NextHandleFunction {
         const pageUrl = resolveCanonicalUrl(req, base, `/library/${slug}`);
 
         const html = buildOgHtml({
-          title: `${item.title} — TSP Library`,
-          description: item.summary || "From the TSP knowledge library.",
+          title: `${item.title} — Stomping Path Library`,
+          description: item.summary || "From The Stomping Path knowledge library.",
           image: item.artworkUrl ?? undefined,
           url: pageUrl,
         });

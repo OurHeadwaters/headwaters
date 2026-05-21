@@ -77,7 +77,7 @@ export function OdysseyBridge({ variant = "full" }: OdysseyBridgeProps) {
           </p>
 
           <p className="text-sm leading-relaxed mb-8" style={{ color: "#8FA883" }}>
-            TSP gives you the theory and the skills. The Odyssey is where those skills meet other
+            The Stomping Path gives you the theory and the skills. The Odyssey is where those skills meet other
             people doing the same work — structured as a year-long journey through land, water,
             food, and governance.
           </p>

@@ -6,8 +6,8 @@ const PATHWAY_STEPS = [
   {
     icon: Radio,
     label: "Step 1",
-    title: "The Survival Podcast",
-    body: "Since 2008, Jack Spirko has been building one of the largest practical self-reliance archives anywhere. Over 3,000 episodes covering permaculture, food production, financial independence, bushcraft, homesteading, natural medicine, and a dozen other disciplines that actually matter to people building real lives.",
+    title: "The Stomping Path",
+    body: "Since 2008, this archive has grown into one of the largest practical self-reliance collections anywhere. Over 3,000 episodes covering permaculture, food production, financial independence, bushcraft, homesteading, natural medicine, and a dozen other disciplines that actually matter to people building real lives.",
     cta: null,
     accentColor: "#4A7A3A",
   },
@@ -23,7 +23,7 @@ const PATHWAY_STEPS = [
     icon: Mountain,
     label: "Step 3",
     title: "The Headwaters Odyssey",
-    body: "TSP gives you the theory and the skills. The Headwaters Odyssey — offered through Codetry — is for people who've done that work and are ready to build community-scale resilience with others in their watershed. A year-long structured journey through land, water, food, governance, and the relationships that make self-reliance possible at scale.",
+    body: "The Stomping Path gives you the theory and the skills. The Headwaters Odyssey — offered through Codetry — is for people who've done that work and are ready to build community-scale resilience with others in their watershed. A year-long structured journey through land, water, food, governance, and the relationships that make self-reliance possible at scale.",
     cta: {
       href: "https://ourheadwaters.ca/odyssey",
       label: "Learn about the Odyssey",
@@ -105,7 +105,7 @@ export default function StartPage() {
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <p className="text-base text-muted-foreground leading-relaxed mb-4">
-                Forget the bunker stereotype. The Survival Podcast is Jack Spirko's argument that
+                Forget the bunker stereotype. The Stomping Path (TSP) is built on the argument that
                 resilience and abundance aren't opposites — that you can build a genuinely good
                 life <em>and</em> be prepared for the hard parts.
               </p>

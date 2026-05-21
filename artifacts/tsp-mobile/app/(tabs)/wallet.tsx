@@ -345,7 +345,7 @@ export default function WalletScreen() {
           Podcasting 2.0
         </Text>
         <Text style={[styles.p2pText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-          TSP is part of the Podcasting 2.0 movement. Open the feed in Fountain, Breez, or Podverse
+          The Stomping Path is part of the Podcasting 2.0 movement. Open the feed in Fountain, Breez, or Podverse
           to stream sats natively with full V4V support.
         </Text>
         <Pressable

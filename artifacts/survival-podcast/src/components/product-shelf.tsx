@@ -51,7 +51,7 @@ function ProductCard({ product }: { product: ReviewedProduct }) {
           className="mt-auto pt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
-          See on TSP
+          View
           <ExternalLink className="w-3 h-3 shrink-0" />
         </a>
       </div>

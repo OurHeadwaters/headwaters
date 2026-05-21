@@ -520,7 +520,7 @@ export default function HomeScreen() {
               EST. 2008
             </Text>
             <Text style={[styles.heroTitle, { color: colors.primaryForeground, fontFamily: "DMSans_700Bold" }]}>
-              {feed?.title ?? "The Survival Podcast"}
+              {feed?.title ?? "The Stomping Path"}
             </Text>
             {feed?.totalEpisodes != null && (
               <Text style={[styles.heroSub, { color: colors.primaryForeground, opacity: 0.75, fontFamily: "DMSans_400Regular" }]}>

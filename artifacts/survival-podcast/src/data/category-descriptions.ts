@@ -1,7 +1,7 @@
 /**
  * Short topic summaries shown on the category-filtered archive view.
  * Keys are lowercase to match case-insensitive category lookups.
- * Voice: practical, specific, never corporate — TSP style.
+ * Voice: practical, specific, never corporate — The Stomping Path style.
  */
 const descriptions: Record<string, string> = {
   permaculture:
@@ -101,7 +101,7 @@ const descriptions: Record<string, string> = {
   "guest interview":
     "Deep-dive conversations with farmers, entrepreneurs, doctors, veterans, and experts from every corner of the self-reliance world.",
   philosophy:
-    "The 'why' behind TSP — personal freedom, responsibility, thinking for yourself, and building a life that doesn't depend on any single system.",
+    "The 'why' behind The Stomping Path — personal freedom, responsibility, thinking for yourself, and building a life that doesn't depend on any single system.",
   "the tsp back forty":
     "Jack's personal homestead — behind-the-scenes updates on what's growing, what's failing, and what he's learning in real time on his own land.",
   "back forty":

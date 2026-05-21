@@ -255,7 +255,7 @@ export function UlgPage() {
             Unloose the Goose
           </h1>
           <p className="text-amber-100/70 max-w-xl leading-relaxed text-base">
-            A companion podcast to The Survival Podcast — candid conversations, field reports, and follow-up discussions with Jack Spirko and guests. Raw, unfiltered, and straight to the point.
+            A companion podcast to The Stomping Path — candid conversations, field reports, and follow-up discussions. Raw, unfiltered, and straight to the point.
           </p>
 
           {data && (

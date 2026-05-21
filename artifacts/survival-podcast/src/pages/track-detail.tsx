@@ -402,7 +402,7 @@ function ExportPdfButton({
   </thead>
   <tbody>${rows}</tbody>
 </table>
-<div class="footer">Exported ${dateStr} · The Survival Podcast Learning Tracks</div>
+<div class="footer">Exported ${dateStr} · The Stomping Path Learning Tracks</div>
 </body>
 </html>`;
 
@@ -580,7 +580,7 @@ export default function TrackDetailPage() {
       title: track ? `${track.title} — TSP Learning Track` : "TSP Learning Track",
       text: track
         ? `${track.title}: ${track.description}`
-        : "Check out this learning track on The Survival Podcast.",
+        : "Check out this learning track on The Stomping Path.",
       url: trackUrl,
     };
 
@@ -1075,7 +1075,7 @@ export default function TrackDetailPage() {
 
         {/* Print-only footer */}
         <div className="hidden print:block mt-8 pt-6 border-t border-gray-300 text-xs text-gray-500">
-          <p>Printed from The Survival Podcast · thesurvivialpodcast.com</p>
+          <p>Printed from The Stomping Path</p>
           <p className="mt-0.5">Episodes shown: page {page} of {totalPages} (up to {PAGE_SIZE} per page)</p>
         </div>
       </div>

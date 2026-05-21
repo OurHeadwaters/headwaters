@@ -268,7 +268,7 @@ export default function EpisodeDetailScreen() {
     try {
       await Share.share({
         title: episode.title,
-        message: `${episode.title} — The Survival Podcast\n${episode.link ?? ""}`,
+        message: `${episode.title} — The Stomping Path\n${episode.link ?? ""}`,
         url: episode.link ?? undefined,
       });
       // Auto-boost 50 sats on share
