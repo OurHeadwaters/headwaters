@@ -162,7 +162,7 @@ router.get("/admin/gear", requireEditor, async (req, res) => {
     const limit = safeInt(req.query.limit, 50, 1, 200);
     const offset = safeInt(req.query.offset, 0, 0, 1_000_000);
 
-    const [rows, countResult] = await Promise.all([
+    const [rows, countResult, lastImportResult] = await Promise.all([
       db
         .select()
         .from(reviewedProductsTable)
@@ -170,10 +170,14 @@ router.get("/admin/gear", requireEditor, async (req, res) => {
         .limit(limit)
         .offset(offset),
       db.execute(sql`SELECT count(*)::int AS count FROM reviewed_products`),
+      db.execute(sql`SELECT max(imported_at) AS last_imported_at FROM reviewed_products`),
     ]);
 
     const total = (countResult.rows[0] as { count: number } | undefined)?.count ?? 0;
-    res.json({ products: rows, total, limit, offset });
+    const lastImportedAt =
+      (lastImportResult.rows[0] as { last_imported_at?: string | null } | undefined)
+        ?.last_imported_at ?? null;
+    res.json({ products: rows, total, limit, offset, lastImportedAt });
   } catch (err) {
     logger.error({ err }, "admin/gear: GET failed");
     res.status(500).json({ error: "Failed to load products" });

@@ -37,6 +37,7 @@ interface AdminGearListResponse {
   total: number;
   limit: number;
   offset: number;
+  lastImportedAt: string | null;
 }
 
 class ApiError extends Error {
@@ -329,6 +330,18 @@ export function AdminGear() {
           <p className="text-sm text-muted-foreground mt-1">
             Jack's reviewed products — sourced from TSP WordPress. Links always go to Jack's site.
           </p>
+          {data?.lastImportedAt && (
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              Last imported{" "}
+              {new Date(data.lastImportedAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+          )}
         </div>
         <button
           onClick={() => runImport.mutate()}
