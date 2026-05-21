@@ -118,6 +118,7 @@ function stripHtml(html: string): string {
  */
 async function findProductCategoryIds(): Promise<number[]> {
   const PRODUCT_CATEGORY_SLUGS = [
+    "amazon-reviews",
     "item-of-the-day",
     "tsp-az",
     "tspaz",
@@ -221,6 +222,23 @@ export type ProductInsert = {
 };
 
 /**
+ * Paginate through a WP taxonomy endpoint (tags or categories) and return
+ * all items. Caps at 50 pages (5 000 items) to be safe.
+ */
+async function fetchAllTaxonomy<T extends { id: number }>(baseUrl: string): Promise<T[]> {
+  const all: T[] = [];
+  let page = 1;
+  while (page <= 50) {
+    const { data, headers } = await fetchJson<T[]>(`${baseUrl}&page=${page}`);
+    all.push(...data);
+    const totalPages = Number(headers.get("x-wp-totalpages") ?? "1");
+    if (page >= totalPages || data.length === 0) break;
+    page++;
+  }
+  return all;
+}
+
+/**
  * Page through TSP WordPress API product review posts and yield batches
  * to the provided upsert function.
  */
@@ -238,16 +256,17 @@ export async function importProductReviews(options: {
 
   const zoneKeywordMap = buildZoneKeywordMap();
 
-  // Fetch all tags once for name lookup
+  // Fetch ALL tags by paginating (TSP has ~2000 tags; cap at 50 pages for safety)
   let tagMap = new Map<number, { slug: string; name: string }>();
   let catMap = new Map<number, { slug: string; name: string }>();
   try {
-    const [tagRes, catRes] = await Promise.all([
-      fetchJson<WPTag[]>(`${WP_BASE}/tags?per_page=100&_fields=id,slug,name`),
-      fetchJson<WPCategory[]>(`${WP_BASE}/categories?per_page=100&_fields=id,slug,name`),
+    const [allTags, allCats] = await Promise.all([
+      fetchAllTaxonomy<WPTag>(`${WP_BASE}/tags?per_page=100&_fields=id,slug,name`),
+      fetchAllTaxonomy<WPCategory>(`${WP_BASE}/categories?per_page=100&_fields=id,slug,name`),
     ]);
-    for (const t of tagRes.data) tagMap.set(t.id, { slug: t.slug, name: t.name });
-    for (const c of catRes.data) catMap.set(c.id, { slug: c.slug, name: c.name });
+    for (const t of allTags) tagMap.set(t.id, { slug: t.slug, name: t.name });
+    for (const c of allCats) catMap.set(c.id, { slug: c.slug, name: c.name });
+    logger.info({ tags: tagMap.size, categories: catMap.size }, "WP taxonomy prefetch complete");
   } catch (err) {
     logger.warn({ err }, "Could not prefetch WP tags/categories for product import");
   }
