@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, wisdomGemsTable, wisdomNuggetsTable, contentItemsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { extractGems } from "../lib/wisdom-extraction";
 
@@ -12,16 +12,76 @@ const EXTRACTION_LIMIT = 30;
 /**
  * GET /api/wisdom/gems
  * Returns gems (auto-extracted + admin nuggets) sorted by anchor count desc, then date desc.
- * Query params: limit (1-100, default 40), offset (default 0), featured (true/false)
+ * Query params:
+ *   limit    (1-100, default 40)
+ *   offset   (default 0)
+ *   featured (true/false)
+ *   source   ("episode" | "website" | "x" | "council") — when set, returns
+ *            only from the gems table with that source filter; nuggets are
+ *            omitted when a source filter is active. "council" matches
+ *            website + x gems together.
  *
- * Admin nuggets are merged in and always included (featured filter does not exclude them).
- * Each item includes `isNugget` (boolean) and `attribution` fields.
+ * When no source filter: admin nuggets are merged in and always included
+ * (featured filter does not exclude them). Each item includes `isNugget`
+ * (boolean) and `attribution` fields.
  */
 router.get("/wisdom/gems", async (req, res) => {
   try {
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 40));
     const offset = Math.max(0, Number(req.query.offset) || 0);
     const onlyFeatured = req.query.featured === "true";
+    const sourceFilter = req.query.source as string | undefined;
+    const hasSourceFilter = sourceFilter && sourceFilter !== "all";
+
+    if (hasSourceFilter) {
+      const buildConditions = () => {
+        const conditions = [];
+        if (onlyFeatured) {
+          conditions.push(eq(wisdomGemsTable.featured, true));
+        }
+        if (sourceFilter === "council") {
+          conditions.push(sql`${wisdomGemsTable.source} IN ('website', 'x')`);
+        } else {
+          conditions.push(eq(wisdomGemsTable.source, sourceFilter));
+        }
+        return conditions;
+      };
+
+      const conditions = buildConditions();
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const gemsQuery = whereClause
+        ? db
+            .select()
+            .from(wisdomGemsTable)
+            .where(whereClause)
+            .orderBy(desc(wisdomGemsTable.anchorCount), desc(wisdomGemsTable.extractedAt))
+            .limit(limit)
+            .offset(offset)
+        : db
+            .select()
+            .from(wisdomGemsTable)
+            .orderBy(desc(wisdomGemsTable.anchorCount), desc(wisdomGemsTable.extractedAt))
+            .limit(limit)
+            .offset(offset);
+
+      const countQuery = whereClause
+        ? db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(wisdomGemsTable)
+            .where(whereClause)
+        : db.select({ count: sql<number>`count(*)::int` }).from(wisdomGemsTable);
+
+      const [gems, [{ count }]] = await Promise.all([gemsQuery, countQuery]);
+
+      const items = gems.map((g) => ({
+        ...g,
+        isNugget: false,
+      }));
+
+      res.json({ gems: items, total: count, limit, offset });
+      return;
+    }
 
     const [gems, nuggets, [gemsCount], [nuggetsCount]] = await Promise.all([
       onlyFeatured
@@ -47,6 +107,8 @@ router.get("/wisdom/gems", async (req, res) => {
       gemText: n.text,
       anchorCount: 0,
       featured: false,
+      source: "nugget",
+      sourceUrl: null,
       extractedAt: n.createdAt.toISOString(),
       isNugget: true,
       attribution: n.attribution,
@@ -55,7 +117,6 @@ router.get("/wisdom/gems", async (req, res) => {
     const gemItems = gems.map((g) => ({
       ...g,
       isNugget: false,
-      attribution: null as string | null,
     }));
 
     const combined = [...nuggetItems, ...gemItems]
@@ -112,8 +173,9 @@ router.post("/wisdom/extract", async (_req, res) => {
   try {
     const existingSlugs = await db
       .selectDistinct({ slug: wisdomGemsTable.episodeSlug })
-      .from(wisdomGemsTable);
-    const done = new Set(existingSlugs.map((r) => r.slug));
+      .from(wisdomGemsTable)
+      .where(eq(wisdomGemsTable.source, "episode"));
+    const done = new Set(existingSlugs.map((r) => r.slug).filter(Boolean));
 
     const episodes = await db
       .select({
@@ -147,6 +209,7 @@ router.post("/wisdom/extract", async (_req, res) => {
           episodeSlug: ep.slug,
           episodeTitle: ep.title,
           gemText,
+          source: "episode",
         })),
       );
       totalInserted += gems.length;

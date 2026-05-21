@@ -8,17 +8,18 @@ import zonesRouter from "./zones";
 import expertsRouter from "./experts";
 import tracksRouter from "./tracks";
 import transformationsRouter from "./transformations";
-import adminCategoriesRouter from "./admin-categories";
 import trackProgressRouter from "./track-progress";
-import adminCouncilRouter from "./admin-council";
 import wishingWellRouter from "./wishing-well";
 import v4vRouter from "./v4v";
 import ogRouter from "./og";
 import gapsRouter from "./gaps";
 import wisdomRouter from "./wisdom";
+import adminWisdomRouter from "./admin-wisdom";
 import gearRouter from "./gear";
 import waterWheelRouter from "./water-wheel";
 import adminNuggetsRouter from "./admin-nuggets";
+import adminCategoriesRouter from "./admin-categories";
+import adminCouncilRouter from "./admin-council";
 
 const router: IRouter = Router();
 
@@ -33,14 +34,15 @@ router.use(tracksRouter);
 router.use(transformationsRouter);
 router.use(gapsRouter);
 router.use(gearRouter);
-router.use(adminCategoriesRouter);
 router.use(trackProgressRouter);
-router.use(adminCouncilRouter);
 router.use(wishingWellRouter);
 router.use(v4vRouter);
 router.use(ogRouter);
 router.use(wisdomRouter);
+router.use(adminWisdomRouter);
 router.use(waterWheelRouter);
 router.use(adminNuggetsRouter);
+router.use(adminCategoriesRouter);
+router.use(adminCouncilRouter);
 
 export default router;

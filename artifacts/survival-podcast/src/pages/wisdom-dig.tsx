@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Anchor, Sparkles, RefreshCw, ExternalLink, BookOpen } from "lucide-react";
+import { Anchor, Sparkles, RefreshCw, ExternalLink, BookOpen, Globe, Twitter, Users } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -15,9 +15,11 @@ interface WisdomGem {
   gemText: string;
   anchorCount: number;
   featured: boolean;
+  source: string;
+  attribution: string | null;
+  sourceUrl: string | null;
   extractedAt: string;
   isNugget?: boolean;
-  attribution?: string | null;
 }
 
 interface GemsResponse {
@@ -27,8 +29,17 @@ interface GemsResponse {
   offset: number;
 }
 
-async function fetchGems(offset = 0): Promise<GemsResponse> {
-  const res = await fetch(apiUrl(`/wisdom/gems?limit=40&offset=${offset}`));
+type SourceFilter = "all" | "episode" | "council";
+
+const FILTER_TABS: { id: SourceFilter; label: string; icon: React.ReactNode }[] = [
+  { id: "all", label: "All Gems", icon: <Sparkles className="w-3.5 h-3.5" /> },
+  { id: "episode", label: "From Episodes", icon: <BookOpen className="w-3.5 h-3.5" /> },
+  { id: "council", label: "From the Council", icon: <Users className="w-3.5 h-3.5" /> },
+];
+
+async function fetchGems(offset = 0, source: SourceFilter = "all"): Promise<GemsResponse> {
+  const sourceParam = source !== "all" ? `&source=${source}` : "";
+  const res = await fetch(apiUrl(`/wisdom/gems?limit=40&offset=${offset}${sourceParam}`));
   if (!res.ok) throw new Error("Failed to load gems");
   return res.json();
 }
@@ -59,6 +70,26 @@ const GEM_PALETTE = [
   "from-[#2C4A36]/8 border-[#2C4A36]/20",
 ];
 
+function SourceBadge({ source, attribution }: { source: string; attribution: string | null }) {
+  if (source === "x") {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-sky-600 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">
+        <Twitter className="w-2.5 h-2.5" />
+        {attribution ?? "X Post"}
+      </span>
+    );
+  }
+  if (source === "website") {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[#2C4A36] bg-[#2C4A36]/10 border border-[#2C4A36]/20 px-1.5 py-0.5 rounded-full">
+        <Globe className="w-2.5 h-2.5" />
+        {attribution ?? "Council"}
+      </span>
+    );
+  }
+  return null;
+}
+
 function GemCard({
   gem,
   anchored,
@@ -70,6 +101,7 @@ function GemCard({
 }) {
   const idxForPalette = gem.isNugget ? (gem.nuggetId ?? 0) : gem.id;
   const palette = GEM_PALETTE[Math.abs(idxForPalette) % GEM_PALETTE.length];
+  const isScraped = gem.source === "website" || gem.source === "x";
 
   return (
     <div
@@ -86,15 +118,39 @@ function GemCard({
         </div>
       )}
 
+      {isScraped && gem.attribution && (
+        <div className="mb-0.5">
+          <SourceBadge source={gem.source} attribution={gem.attribution} />
+        </div>
+      )}
+
       <p className="font-serif text-base leading-relaxed text-foreground italic">
         "{gem.gemText}"
       </p>
 
-      <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/40">
+      <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/40 gap-2">
         {gem.isNugget ? (
           <span className="flex items-center gap-1.5 text-xs font-semibold text-[#B5853A]">
             — {gem.attribution ?? "Jack Spirko"}
           </span>
+        ) : isScraped && gem.sourceUrl ? (
+          <a
+            href={gem.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#2C4A36] transition-colors max-w-[65%] truncate"
+            title={`Source: ${gem.sourceUrl}`}
+          >
+            {gem.source === "x" ? (
+              <Twitter className="w-3 h-3 shrink-0 text-sky-500" />
+            ) : (
+              <Globe className="w-3 h-3 shrink-0" />
+            )}
+            <span className="truncate">
+              {gem.attribution ?? "Council Member"}
+            </span>
+            <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
+          </a>
         ) : (
           <a
             href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/episodes/${gem.episodeSlug}`}
@@ -112,7 +168,7 @@ function GemCard({
             onClick={() => !anchored && onAnchor(gem.id)}
             disabled={anchored}
             aria-label={anchored ? "Anchored" : "Anchor this gem"}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
               anchored
                 ? "bg-[#2C4A36] text-white border-[#2C4A36] cursor-default"
                 : "border-[#2C4A36]/40 text-[#2C4A36] hover:bg-[#2C4A36] hover:text-white"
@@ -157,10 +213,11 @@ export function WisdomDig() {
   const qc = useQueryClient();
   const [anchored, setAnchored] = useState<Set<number>>(new Set());
   const [extractResult, setExtractResult] = useState<{ extracted: number; episodes: number } | null>(null);
+  const [activeFilter, setActiveFilter] = useState<SourceFilter>("all");
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["wisdom-gems"],
-    queryFn: () => fetchGems(0),
+    queryKey: ["wisdom-gems", activeFilter],
+    queryFn: () => fetchGems(0, activeFilter),
   });
 
   const anchorMutation = useMutation({
@@ -195,10 +252,27 @@ export function WisdomDig() {
         <div className="text-5xl mb-4">💎</div>
         <h1 className="font-serif text-4xl font-bold text-foreground mb-3">Wisdom Dig</h1>
         <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
-          Gems of wisdom mined from 6,000+ episodes of The Stomping Path. Each phrase
-          is a signal worth anchoring — pulled from Jack's best moments of insight.
+          Gems of wisdom mined from 6,000+ episodes of The Stomping Path and the Expert Council —
+          principle-language pulled from Jack's best moments and the people he trusts most.
         </p>
       </header>
+
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveFilter(tab.id)}
+            className={`flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full border transition-all ${
+              activeFilter === tab.id
+                ? "bg-[#2C4A36] text-white border-[#2C4A36]"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         {hasGems && (
@@ -234,10 +308,22 @@ export function WisdomDig() {
           Failed to load gems. Try refreshing.
         </div>
       ) : !hasGems ? (
-        <EmptyState
-          onExtract={() => extractMutation.mutate()}
-          extracting={extractMutation.isPending}
-        />
+        activeFilter !== "all" ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <div className="text-4xl mb-4">🔍</div>
+            <p className="font-medium text-foreground mb-1">No gems found for this filter</p>
+            <p className="text-sm">
+              {activeFilter === "council"
+                ? "Council gems appear after running a scrape from the Wisdom Scraper admin page."
+                : "Episode gems appear after running the extraction."}
+            </p>
+          </div>
+        ) : (
+          <EmptyState
+            onExtract={() => extractMutation.mutate()}
+            extracting={extractMutation.isPending}
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {gems.map((gem) => (
@@ -256,7 +342,7 @@ export function WisdomDig() {
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Wisdom Dig is always growing.</span>{" "}
             Each run mines 30 more episodes. Anchor gems you want to revisit — the most
-            anchored rise to the top.
+            anchored rise to the top. Council gems come from member sites and X posts.
           </p>
         </div>
       )}

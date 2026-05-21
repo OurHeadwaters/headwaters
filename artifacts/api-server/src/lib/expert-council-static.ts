@@ -10,6 +10,7 @@ export type ExpertCouncilMember = {
   role: string;
   description: string;
   url: string;
+  xHandle?: string;
   zones: string[];
 };
 
@@ -30,6 +31,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "The go-to expert on backup power, fuel systems, and energy independence at the home and homestead scale. Steven has appeared on TSP more than any other guest.",
     url: "https://www.1234energy.com",
+    xHandle: "1234energy",
     zones: ["zone-1", "zone-3"],
   },
   {
@@ -39,6 +41,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Founder of The Grow Network. Marjory teaches growing and preparing food for health and resilience — practical, proven systems for gardens big and small.",
     url: "https://www.thegrownetwork.com",
+    xHandle: "MarjoryWildcraft",
     zones: ["zone-2", "zone-3"],
   },
   {
@@ -48,6 +51,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Founder of Permies.com and the richsoil homestead. Paul is a leading voice on permaculture design, natural building, and building a working homestead from the ground up.",
     url: "https://www.permies.com",
+    xHandle: "paulwheaton",
     zones: ["zone-2", "zone-3"],
   },
   {
@@ -57,6 +61,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Physician and natural health advocate. Dr. Mercola focuses on taking ownership of your health through nutrition, supplementation, and avoiding the pitfalls of conventional medicine.",
     url: "https://www.mercola.com",
+    xHandle: "mercola",
     zones: ["zone-0", "zone-1"],
   },
   {
@@ -66,6 +71,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "The 'most famous farmer in America.' Joel runs Polyface Farm and has been teaching ecological, beyond-organic farming to the world for decades.",
     url: "https://www.polyfacefarms.com",
+    xHandle: "JoelSalatin",
     zones: ["zone-3"],
   },
   {
@@ -84,6 +90,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Founder of Warrior Poet Society. John is a former Army Ranger and firearms instructor who teaches practical self-defense and the warrior mindset.",
     url: "https://www.warriorpoetsociety.us",
+    xHandle: "JohnBLovell",
     zones: ["zone-1", "zone-5"],
   },
   {
@@ -93,6 +100,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Founder of Peak Prosperity. Chris covers the intersection of economics, energy, and environment — helping people build financial resilience outside the conventional system.",
     url: "https://www.peakprosperity.com",
+    xHandle: "ChrisMartenson",
     zones: ["zone-0"],
   },
   {
@@ -111,6 +119,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Jack Spirko has been teaching modern survivalism since 2008 — practical self-reliance, permaculture, financial independence, and building a life so good it's worth protecting.",
     url: "https://www.thesurvivalpodcast.com",
+    xHandle: "JackSpirok",
     zones: ["zone-0", "zone-1", "zone-2", "zone-3", "zone-4", "zone-5"],
   },
   {
@@ -147,6 +156,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     description:
       "Designer and author of The Resilient Farm and Homestead. Ben integrates permaculture design at the property scale — food forests, water systems, and multi-layered production landscapes.",
     url: "https://www.wholesystemsdesign.com",
+    xHandle: "WholeSystemsD",
     zones: ["zone-2", "zone-3", "zone-4"],
   },
   {
