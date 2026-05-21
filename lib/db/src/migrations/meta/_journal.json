@@ -43,6 +43,13 @@
       "when": 1779328080991,
       "tag": "0005_water_wheel_state",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779367036190,
+      "tag": "0006_unusual_the_renegades",
+      "breakpoints": true
     }
   ]
 }

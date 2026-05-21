@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, wisdomGemsTable, contentItemsTable } from "@workspace/db";
+import { db, wisdomGemsTable, wisdomNuggetsTable, contentItemsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { extractGems } from "../lib/wisdom-extraction";
@@ -11,8 +11,11 @@ const EXTRACTION_LIMIT = 30;
 
 /**
  * GET /api/wisdom/gems
- * Returns gems sorted by anchor count desc, then extracted_at desc.
+ * Returns gems (auto-extracted + admin nuggets) sorted by anchor count desc, then date desc.
  * Query params: limit (1-100, default 40), offset (default 0), featured (true/false)
+ *
+ * Admin nuggets are merged in and always included (featured filter does not exclude them).
+ * Each item includes `isNugget` (boolean) and `attribution` fields.
  */
 router.get("/wisdom/gems", async (req, res) => {
   try {
@@ -20,29 +23,53 @@ router.get("/wisdom/gems", async (req, res) => {
     const offset = Math.max(0, Number(req.query.offset) || 0);
     const onlyFeatured = req.query.featured === "true";
 
-    let query = db
-      .select()
-      .from(wisdomGemsTable)
-      .orderBy(desc(wisdomGemsTable.anchorCount), desc(wisdomGemsTable.extractedAt))
-      .limit(limit)
-      .offset(offset);
+    const [gems, nuggets, [gemsCount], [nuggetsCount]] = await Promise.all([
+      onlyFeatured
+        ? db
+            .select()
+            .from(wisdomGemsTable)
+            .where(eq(wisdomGemsTable.featured, true))
+            .orderBy(desc(wisdomGemsTable.anchorCount), desc(wisdomGemsTable.extractedAt))
+        : db
+            .select()
+            .from(wisdomGemsTable)
+            .orderBy(desc(wisdomGemsTable.anchorCount), desc(wisdomGemsTable.extractedAt)),
+      db.select().from(wisdomNuggetsTable).orderBy(desc(wisdomNuggetsTable.createdAt)),
+      db.select({ count: sql<number>`count(*)::int` }).from(wisdomGemsTable),
+      db.select({ count: sql<number>`count(*)::int` }).from(wisdomNuggetsTable),
+    ]);
 
-    if (onlyFeatured) {
-      query = db
-        .select()
-        .from(wisdomGemsTable)
-        .where(eq(wisdomGemsTable.featured, true))
-        .orderBy(desc(wisdomGemsTable.anchorCount), desc(wisdomGemsTable.extractedAt))
-        .limit(limit)
-        .offset(offset);
-    }
+    const nuggetItems = nuggets.map((n) => ({
+      id: -(n.id),
+      nuggetId: n.id,
+      episodeSlug: "",
+      episodeTitle: null,
+      gemText: n.text,
+      anchorCount: 0,
+      featured: false,
+      extractedAt: n.createdAt.toISOString(),
+      isNugget: true,
+      attribution: n.attribution,
+    }));
 
-    const gems = await query;
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(wisdomGemsTable);
+    const gemItems = gems.map((g) => ({
+      ...g,
+      isNugget: false,
+      attribution: null as string | null,
+    }));
 
-    res.json({ gems, total: count, limit, offset });
+    const combined = [...nuggetItems, ...gemItems]
+      .sort((a, b) => {
+        if (a.isNugget && !b.isNugget) return -1;
+        if (!a.isNugget && b.isNugget) return 1;
+        if (b.anchorCount !== a.anchorCount) return b.anchorCount - a.anchorCount;
+        return new Date(b.extractedAt).getTime() - new Date(a.extractedAt).getTime();
+      })
+      .slice(offset, offset + limit);
+
+    const total = gemsCount.count + nuggetsCount.count;
+
+    res.json({ gems: combined, total, limit, offset });
   } catch (err) {
     logger.error({ err }, "wisdom: GET /gems failed");
     res.status(500).json({ error: "Failed to load wisdom gems" });

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { sql } from "drizzle-orm";
-import { db } from "@workspace/db";
+import { sql, eq } from "drizzle-orm";
+import { db, wisdomNuggetsTable } from "@workspace/db";
 import { TRACKS, trackBySlug } from "../lib/tracks";
 import { logger } from "../lib/logger";
 
@@ -211,6 +211,11 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
 
     const topTags = (topTagsRow.rows as { tag: string; cnt: number }[]).map((r) => r.tag);
 
+    const nuggets = await db
+      .select()
+      .from(wisdomNuggetsTable)
+      .where(eq(wisdomNuggetsTable.trackSlug, track.slug));
+
     res.json({
       track: {
         slug: track.slug,
@@ -228,6 +233,12 @@ router.get("/tracks/:slug/episodes", async (req, res) => {
       limit,
       offset,
       topTags,
+      nuggets: nuggets.map((n) => ({
+        id: n.id,
+        text: n.text,
+        attribution: n.attribution,
+        trackPosition: n.trackPosition,
+      })),
     });
   } catch (err) {
     logger.error({ err }, "track episodes failed");

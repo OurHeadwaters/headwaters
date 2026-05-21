@@ -1,6 +1,6 @@
 import { Link, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useGetTrackEpisodes, fetchAllTrackEpisodes } from "@/hooks/use-tracks";
+import { useGetTrackEpisodes, fetchAllTrackEpisodes, type TrackNugget } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -225,6 +225,36 @@ function TrackItemCard({
           </div>
         )}
       </Link>
+    </div>
+  );
+}
+
+function NuggetWaypointCard({
+  nugget,
+  trackColor,
+}: {
+  nugget: TrackNugget;
+  trackColor: string;
+}) {
+  return (
+    <div
+      className="rounded-xl px-5 py-4 flex flex-col gap-2 print:hidden"
+      style={{
+        background: `${trackColor}10`,
+        border: `1.5px solid ${trackColor}30`,
+      }}
+    >
+      <div
+        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest"
+        style={{ color: trackColor }}
+      >
+        <span>💎</span>
+        <span>Jack's Insight</span>
+      </div>
+      <p className="font-serif text-sm leading-relaxed text-foreground italic">
+        "{nugget.text}"
+      </p>
+      <p className="text-xs font-semibold text-muted-foreground">— {nugget.attribution}</p>
     </div>
   );
 }
@@ -1038,24 +1068,68 @@ export default function TrackDetailPage() {
         <div
           className={`flex flex-col gap-3 transition-opacity duration-200 ${isFetching ? "opacity-60" : "opacity-100"}`}
         >
-          {items.map((item, i) => {
-            const itemTransformation = transformations
-              ? (matchTransformations(item.categories ?? [], transformations, item.tags ?? [])[0] ?? null)
-              : null;
-            return (
-              <TrackItemCard
-                key={item.id}
-                item={item}
-                trackColor={track.color}
-                index={i}
-                globalOffset={offset}
-                isDone={isDone(item.id)}
-                onToggleDone={progress.toggleDone}
-                isSharedView={isSharedView}
-                transformation={itemTransformation}
-              />
-            );
-          })}
+          {(() => {
+            const nuggets = data?.nuggets ?? [];
+            const beginningNuggets = nuggets.filter((n) => n.trackPosition === "beginning");
+            const middleNuggets = nuggets.filter((n) => n.trackPosition === "middle");
+            const endNuggets = nuggets.filter((n) => n.trackPosition === "end");
+            const isFirstPage = offset === 0;
+            const isLastPage = page >= totalPages;
+
+            // Middle position: the single page that contains the global midpoint episode.
+            // globalMidIdx is zero-based index in the full sorted list.
+            const globalMidIdx = total > 1 ? Math.floor(total / 2) : -1;
+            // Local index within the current page (-1 if not on this page)
+            const localMidIdx =
+              !isFiltering &&
+              globalMidIdx >= offset &&
+              globalMidIdx < offset + items.length
+                ? globalMidIdx - offset
+                : -1;
+
+            const rendered: React.ReactNode[] = [];
+            items.forEach((item, i) => {
+              const itemTransformation = transformations
+                ? (matchTransformations(item.categories ?? [], transformations, item.tags ?? [])[0] ?? null)
+                : null;
+              rendered.push(
+                <TrackItemCard
+                  key={item.id}
+                  item={item}
+                  trackColor={track.color}
+                  index={i}
+                  globalOffset={offset}
+                  isDone={isDone(item.id)}
+                  onToggleDone={progress.toggleDone}
+                  isSharedView={isSharedView}
+                  transformation={itemTransformation}
+                />
+              );
+
+              if (!isFiltering && isFirstPage && i === 0) {
+                beginningNuggets.forEach((n) =>
+                  rendered.push(
+                    <NuggetWaypointCard key={`nugget-b-${n.id}`} nugget={n} trackColor={track.color} />
+                  )
+                );
+              }
+              if (localMidIdx !== -1 && i === localMidIdx) {
+                middleNuggets.forEach((n) =>
+                  rendered.push(
+                    <NuggetWaypointCard key={`nugget-m-${n.id}`} nugget={n} trackColor={track.color} />
+                  )
+                );
+              }
+              if (!isFiltering && isLastPage && i === items.length - 1) {
+                endNuggets.forEach((n) =>
+                  rendered.push(
+                    <NuggetWaypointCard key={`nugget-e-${n.id}`} nugget={n} trackColor={track.color} />
+                  )
+                );
+              }
+            });
+            return rendered;
+          })()}
         </div>
 
         {/* Pagination */}

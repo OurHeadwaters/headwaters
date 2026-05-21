@@ -18,6 +18,7 @@ import gapsRouter from "./gaps";
 import wisdomRouter from "./wisdom";
 import gearRouter from "./gear";
 import waterWheelRouter from "./water-wheel";
+import adminNuggetsRouter from "./admin-nuggets";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(v4vRouter);
 router.use(ogRouter);
 router.use(wisdomRouter);
 router.use(waterWheelRouter);
+router.use(adminNuggetsRouter);
 
 export default router;

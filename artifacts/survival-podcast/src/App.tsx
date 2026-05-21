@@ -29,6 +29,7 @@ import { CouncilPage } from "@/pages/council";
 import { CouncilMemberPage } from "@/pages/council-member";
 import { AdminContentGaps } from "@/pages/admin-content-gaps";
 import { AdminGear } from "@/pages/admin-gear";
+import { AdminNuggets } from "@/pages/admin-nuggets";
 import HistoryPage from "@/pages/history";
 import StompingGroundsPage from "@/pages/stomping-grounds";
 import NotFound from "@/pages/not-found";
@@ -72,6 +73,7 @@ function Router() {
         <Route path="/admin/series-health" component={AdminSeriesHealth} />
         <Route path="/admin/content-gaps" component={AdminContentGaps} />
         <Route path="/admin/gear" component={AdminGear} />
+        <Route path="/admin/nuggets" component={AdminNuggets} />
         <Route path="/wishing-well">
           {() => <Redirect to="/stomping-grounds?tab=well" />}
         </Route>

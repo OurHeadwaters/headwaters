@@ -37,6 +37,13 @@ export type TrackItem = {
   trackScore: number;
 };
 
+export type TrackNugget = {
+  id: number;
+  text: string;
+  attribution: string;
+  trackPosition: string | null;
+};
+
 export type TrackEpisodePage = {
   track: Omit<TrackSummary, "episodeCount" | "sampleArtwork">;
   items: TrackItem[];
@@ -44,6 +51,7 @@ export type TrackEpisodePage = {
   limit: number;
   offset: number;
   topTags: string[];
+  nuggets: TrackNugget[];
 };
 
 async function fetchTracks(): Promise<TrackSummary[]> {

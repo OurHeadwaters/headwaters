@@ -9,12 +9,15 @@ function apiUrl(path: string): string {
 
 interface WisdomGem {
   id: number;
+  nuggetId?: number;
   episodeSlug: string;
   episodeTitle: string | null;
   gemText: string;
   anchorCount: number;
   featured: boolean;
   extractedAt: string;
+  isNugget?: boolean;
+  attribution?: string | null;
 }
 
 interface GemsResponse {
@@ -65,12 +68,19 @@ function GemCard({
   anchored: boolean;
   onAnchor: (id: number) => void;
 }) {
-  const palette = GEM_PALETTE[gem.id % GEM_PALETTE.length];
+  const idxForPalette = gem.isNugget ? (gem.nuggetId ?? 0) : gem.id;
+  const palette = GEM_PALETTE[Math.abs(idxForPalette) % GEM_PALETTE.length];
+
   return (
     <div
       className={`relative rounded-2xl border bg-gradient-to-br ${palette} to-transparent p-5 shadow-sm flex flex-col gap-3 card-lift`}
     >
-      {gem.featured && (
+      {gem.isNugget && (
+        <div className="absolute -top-2 -right-2 bg-[#D9A066] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow">
+          💎 Jack's Insight
+        </div>
+      )}
+      {!gem.isNugget && gem.featured && (
         <div className="absolute -top-2 -right-2 bg-[#D9A066] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow">
           ✦ Featured
         </div>
@@ -81,30 +91,38 @@ function GemCard({
       </p>
 
       <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/40">
-        <a
-          href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/episodes/${gem.episodeSlug}`}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#2C4A36] transition-colors max-w-[65%] truncate"
-          title={gem.episodeTitle ?? gem.episodeSlug}
-        >
-          <BookOpen className="w-3 h-3 shrink-0" />
-          <span className="truncate">{gem.episodeTitle ?? gem.episodeSlug}</span>
-          <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
-        </a>
+        {gem.isNugget ? (
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-[#B5853A]">
+            — {gem.attribution ?? "Jack Spirko"}
+          </span>
+        ) : (
+          <a
+            href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/episodes/${gem.episodeSlug}`}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#2C4A36] transition-colors max-w-[65%] truncate"
+            title={gem.episodeTitle ?? gem.episodeSlug}
+          >
+            <BookOpen className="w-3 h-3 shrink-0" />
+            <span className="truncate">{gem.episodeTitle ?? gem.episodeSlug}</span>
+            <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
+          </a>
+        )}
 
-        <button
-          onClick={() => !anchored && onAnchor(gem.id)}
-          disabled={anchored}
-          aria-label={anchored ? "Anchored" : "Anchor this gem"}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
-            anchored
-              ? "bg-[#2C4A36] text-white border-[#2C4A36] cursor-default"
-              : "border-[#2C4A36]/40 text-[#2C4A36] hover:bg-[#2C4A36] hover:text-white"
-          }`}
-        >
-          <Anchor className="w-3 h-3" />
-          {gem.anchorCount > 0 && <span>{gem.anchorCount}</span>}
-          {anchored ? "Anchored" : "Anchor"}
-        </button>
+        {!gem.isNugget && (
+          <button
+            onClick={() => !anchored && onAnchor(gem.id)}
+            disabled={anchored}
+            aria-label={anchored ? "Anchored" : "Anchor this gem"}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${
+              anchored
+                ? "bg-[#2C4A36] text-white border-[#2C4A36] cursor-default"
+                : "border-[#2C4A36]/40 text-[#2C4A36] hover:bg-[#2C4A36] hover:text-white"
+            }`}
+          >
+            <Anchor className="w-3 h-3" />
+            {gem.anchorCount > 0 && <span>{gem.anchorCount}</span>}
+            {anchored ? "Anchored" : "Anchor"}
+          </button>
+        )}
       </div>
     </div>
   );
