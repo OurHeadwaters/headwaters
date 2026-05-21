@@ -217,7 +217,7 @@ export default function TracksPage() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex items-end justify-between mb-8">
           <div>
-            <h2 className="font-serif text-2xl font-bold text-foreground mb-1">The six tracks</h2>
+            <h2 className="font-serif text-2xl font-bold text-foreground mb-1">The seven tracks</h2>
             <p className="text-sm text-muted-foreground">
               One for each zone — from self-sovereignty to wilderness contingency.
             </p>

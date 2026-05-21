@@ -197,6 +197,40 @@ export const TRACKS: TrackDef[] = [
     order: "asc",
     icon: "⚡",
   },
+  {
+    slug: "escape-the-grindstone",
+    zoneSlug: "zone-0",
+    zoneNumber: 0,
+    title: "Escape the Grindstone",
+    subtitle: "Zone 0 — From squeezed to sovereign",
+    description:
+      "You know the drill. New job, new system. Consultant arrives, new software. Update drops, new training. Your brain was the raw material and the grindstone never stopped turning. This track follows the arc Jack has mapped for years: from dependent and exhausted inside someone else's machine, to owning your tools, your skills, and your calendar. No MBA required. No permission needed.",
+    whatYouWillKnow:
+      "A framework for deciding which technologies to master versus which to escape. Clarity on the career and lifestyle moves that reduce systemic dependence. The mental models for building skills that no update cycle can take away. A realistic plan for the transition — whether you're still in the grind or already out.",
+    tags: [
+      "technology",
+      "career",
+      "social media",
+      "digital privacy",
+      "online privacy",
+      "systemic dependence",
+      "automation",
+      "future technology",
+      "consulting",
+      "internet",
+      "lifestyle design",
+      "lifestyle planning",
+      "freedom",
+      "liberty",
+      "business",
+      "entrepreneurship",
+      "education",
+    ],
+    categories: ["Blogs"],
+    color: "#5C3D2E",
+    order: "asc",
+    icon: "⚙️",
+  },
 ];
 
 export function trackBySlug(slug: string): TrackDef | undefined {
