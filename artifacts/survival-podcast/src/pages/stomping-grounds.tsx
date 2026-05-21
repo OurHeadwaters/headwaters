@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, Droplets, Pause, Play, RefreshCw } from "lucide-react";
+import { ArrowRight, Droplets, Pause, Play, RefreshCw, Anchor, Coins, Layers } from "lucide-react";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 
 function apiUrl(path: string): string {
@@ -803,6 +803,322 @@ export default function StompingGroundsPage() {
   );
 }
 
+// ─── Wisdom Dig inline panel ────────────────────────────────────────────────────
+
+interface InlineGem {
+  id: number;
+  episodeSlug: string;
+  episodeTitle: string | null;
+  gemText: string;
+  anchorCount: number;
+  featured: boolean;
+}
+
+async function fetchTopGems(): Promise<InlineGem[]> {
+  const res = await fetch(apiUrl("/wisdom/gems?limit=40&offset=0"));
+  if (!res.ok) throw new Error("Failed to load gems");
+  const data: { gems: InlineGem[] } = await res.json();
+  return [...data.gems].sort((a, b) => b.anchorCount - a.anchorCount).slice(0, 5);
+}
+
+async function anchorGemInline(id: number): Promise<{ anchorCount: number }> {
+  const res = await fetch(apiUrl(`/wisdom/gems/anchor/${id}`), {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to anchor");
+  return res.json();
+}
+
+function WisdomDigInlinePanel() {
+  const qc = useQueryClient();
+  const [anchored, setAnchored] = useState<Set<number>>(new Set());
+
+  const { data: gems = [], isLoading } = useQuery({
+    queryKey: ["stomping-gems-top"],
+    queryFn: fetchTopGems,
+    staleTime: 60_000,
+  });
+
+  const anchorMut = useMutation({
+    mutationFn: anchorGemInline,
+    onSuccess: (_d, id) => {
+      setAnchored((prev) => new Set(prev).add(id));
+      qc.invalidateQueries({ queryKey: ["stomping-gems-top"] });
+      qc.invalidateQueries({ queryKey: ["stomping-gem-count"] });
+    },
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 rounded-lg bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      ) : gems.length === 0 ? (
+        <p className="text-white/50 text-sm text-center py-4">
+          No gems yet — open the dig to start mining.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {gems.map((gem) => {
+            const isAnchored = anchored.has(gem.id);
+            return (
+              <div
+                key={gem.id}
+                className="rounded-xl border border-white/10 bg-white/5 p-3 flex flex-col gap-2"
+              >
+                <p className="font-serif text-sm leading-relaxed text-white/85 italic line-clamp-3">
+                  "{gem.gemText}"
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-white/40 truncate">
+                    {gem.episodeTitle ?? gem.episodeSlug}
+                  </span>
+                  <button
+                    onClick={() => !isAnchored && anchorMut.mutate(gem.id)}
+                    disabled={isAnchored}
+                    className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-all ${
+                      isAnchored
+                        ? "bg-[#2C4A36] text-white border-[#2C4A36] cursor-default"
+                        : "border-white/30 text-white/70 hover:bg-[#2C4A36] hover:text-white hover:border-[#2C4A36]"
+                    }`}
+                  >
+                    <Anchor className="w-3 h-3" />
+                    {gem.anchorCount > 0 && <span>{gem.anchorCount}</span>}
+                    {isAnchored ? "Anchored" : "Anchor"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Link
+        href="/wisdom-dig"
+        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#2C4A36] hover:opacity-90 transition-opacity"
+      >
+        💎 See full page <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </div>
+  );
+}
+
+// ─── Wishing Well inline panel ──────────────────────────────────────────────────
+
+interface InlineWish {
+  id: number;
+  amountUnits: number;
+  wishText: string;
+  listenerName: string | null;
+  stackCount: number;
+  founderMatchTriggered: boolean;
+}
+
+interface InlinePot {
+  totalUnits: number;
+  tipCount: number;
+  drawn: boolean;
+}
+
+async function fetchInlinePot(): Promise<InlinePot> {
+  const res = await fetch(apiUrl("/wishing-well/pot/today"));
+  if (!res.ok) throw new Error("Failed to load pot");
+  return res.json();
+}
+
+async function fetchInlineWishes(): Promise<InlineWish[]> {
+  const res = await fetch(apiUrl("/wishing-well/wishes"));
+  if (!res.ok) throw new Error("Failed to load wishes");
+  const data: { wishes: InlineWish[] } = await res.json();
+  return data.wishes;
+}
+
+async function submitMiniTip(data: {
+  amountUnits: number;
+  wishText: string;
+  listenerName: string;
+  currency: string;
+}): Promise<unknown> {
+  const res = await fetch(apiUrl("/wishing-well/tip"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    throw new Error((j as { error?: string }).error ?? "Failed to submit tip");
+  }
+  return res.json();
+}
+
+function WishingWellInlinePanel() {
+  const qc = useQueryClient();
+  const [wishText, setWishText] = useState("");
+  const [listenerName, setListenerName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const { data: pot } = useQuery({
+    queryKey: ["stomping-ww-pot"],
+    queryFn: fetchInlinePot,
+    staleTime: 30_000,
+  });
+
+  const { data: wishes = [] } = useQuery({
+    queryKey: ["stomping-ww-wishes"],
+    queryFn: fetchInlineWishes,
+    staleTime: 30_000,
+  });
+
+  const tipMut = useMutation({
+    mutationFn: submitMiniTip,
+    onSuccess: () => {
+      setSubmitted(true);
+      qc.invalidateQueries({ queryKey: ["stomping-ww-pot"] });
+      qc.invalidateQueries({ queryKey: ["stomping-ww-wishes"] });
+      qc.invalidateQueries({ queryKey: ["stomping-pot-today"] });
+    },
+  });
+
+  const topWishes = wishes.slice(0, 4);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Pot total */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#B5853A]/15 border border-[#D9A066]/25">
+        <Coins className="w-5 h-5 text-[#D9A066] shrink-0" />
+        <div>
+          <div className="text-lg font-bold text-white font-serif leading-none">
+            {pot != null ? pot.totalUnits : "—"}
+            <span className="text-sm font-sans font-normal text-white/60 ml-1.5">
+              coins in pot
+            </span>
+          </div>
+          <div className="text-[10px] text-white/50 mt-0.5">
+            {pot
+              ? `${pot.tipCount} wish${pot.tipCount !== 1 ? "es" : ""} today${pot.drawn ? " · Draw complete" : ""}`
+              : "Loading…"}
+          </div>
+        </div>
+      </div>
+
+      {/* Mini wish form */}
+      {submitted ? (
+        <div className="rounded-xl border border-[#2C4A36]/40 bg-[#2C4A36]/15 p-4 text-center">
+          <div className="text-2xl mb-1">🪙</div>
+          <p className="text-white/80 text-sm font-serif">Your coin is in the well!</p>
+          <button
+            onClick={() => {
+              setSubmitted(false);
+              setWishText("");
+              setListenerName("");
+            }}
+            className="mt-2 text-xs text-white/40 hover:text-white/70 underline"
+          >
+            Toss another
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <input
+            type="text"
+            value={listenerName}
+            onChange={(e) => setListenerName(e.target.value)}
+            placeholder="Your name (optional)"
+            maxLength={80}
+            className="w-full rounded-lg border border-white/15 bg-white/8 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#D9A066]"
+          />
+          <textarea
+            value={wishText}
+            onChange={(e) => setWishText(e.target.value)}
+            placeholder="Make a wish…"
+            maxLength={280}
+            rows={2}
+            className="w-full rounded-lg border border-white/15 bg-white/8 px-3 py-2 text-sm text-white placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-[#D9A066]"
+          />
+          {tipMut.isError && (
+            <p className="text-xs text-red-400">
+              {tipMut.error instanceof Error
+                ? tipMut.error.message
+                : "Something went wrong"}
+            </p>
+          )}
+          <button
+            onClick={() =>
+              tipMut.mutate({
+                amountUnits: 1,
+                wishText,
+                listenerName,
+                currency: "BTC",
+              })
+            }
+            disabled={
+              !wishText.trim() ||
+              wishText.trim().length < 3 ||
+              tipMut.isPending
+            }
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#B5853A] hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            🪙 {tipMut.isPending ? "Tossing…" : "Toss a Coin"}
+          </button>
+        </div>
+      )}
+
+      {/* Today's wishes (compact) */}
+      {topWishes.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 flex items-center gap-1.5">
+            <Layers className="w-3 h-3" /> Today's Wishes
+          </div>
+          {topWishes.map((wish) => (
+            <div
+              key={wish.id}
+              className={`rounded-lg border p-2.5 text-xs ${
+                wish.founderMatchTriggered
+                  ? "border-[#D9A066]/40 bg-[#D9A066]/8"
+                  : "border-white/10 bg-white/4"
+              }`}
+            >
+              <p className="font-serif text-white/80 italic line-clamp-2 mb-1">
+                "{wish.wishText}"
+              </p>
+              <div className="flex items-center gap-1.5 text-white/40 flex-wrap">
+                <span>🪙 {wish.amountUnits}</span>
+                {wish.listenerName && (
+                  <>
+                    <span>·</span>
+                    <span>{wish.listenerName}</span>
+                  </>
+                )}
+                {wish.stackCount > 0 && (
+                  <>
+                    <span>·</span>
+                    <span>{wish.stackCount} stacks</span>
+                  </>
+                )}
+                {wish.founderMatchTriggered && (
+                  <span className="text-[#D9A066] font-semibold">⚡ Matched</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Link
+        href="/wishing-well"
+        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white/80 border border-white/20 hover:border-white/40 hover:text-white transition-all"
+      >
+        See full page <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </div>
+  );
+}
+
 // ─── Station content router ─────────────────────────────────────────────────────
 
 function StationContent({
@@ -813,37 +1129,11 @@ function StationContent({
   transformations: Transformation[];
 }) {
   if (stationId === "wisdom-dig") {
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="text-white/65 text-sm leading-relaxed">
-          Wisdom Dig mines key phrases and soundbites from 6,000+ TSP episodes —
-          each one a signal worth anchoring.
-        </p>
-        <Link
-          href="/wisdom-dig"
-          className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#2C4A36] hover:opacity-90 transition-opacity"
-        >
-          💎 Open the Dig <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-    );
+    return <WisdomDigInlinePanel />;
   }
 
   if (stationId === "wishing-well") {
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="text-white/65 text-sm leading-relaxed">
-          Toss a coin, make a wish. Stack the wishes you believe in to build
-          community momentum and unlock the founder match.
-        </p>
-        <Link
-          href="/wishing-well"
-          className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#B5853A] hover:opacity-90 transition-opacity"
-        >
-          🪙 Visit the Well <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-    );
+    return <WishingWellInlinePanel />;
   }
 
   if (stationId === "transform") {
