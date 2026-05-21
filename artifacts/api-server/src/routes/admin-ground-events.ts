@@ -26,16 +26,15 @@ router.get("/admin/ground-events", requireEditor, async (_req, res) => {
 
 /**
  * PATCH /api/admin/ground-events/:id
- * Approve, feature, or reject an event.
- * Also allows updating any other field (title, description, etc.).
+ * Approve, feature, reject, or unfeature an event.
  *
- * Special actions via body:
- *   { action: "approve" }  — sets is_approved=true, is_rejected=false
- *   { action: "feature" }  — sets is_approved=true, is_featured=true
- *   { action: "reject" }   — sets is_approved=false, is_featured=false
- *   { action: "unfeature" }— sets is_featured=false (stays approved)
+ * Action shortcuts (body: { action: "..." }):
+ *   "approve"   — is_approved=true, is_rejected=false
+ *   "feature"   — is_approved=true, is_featured=true, is_rejected=false
+ *   "reject"    — is_approved=false, is_featured=false, is_rejected=true
+ *   "unfeature" — is_featured=false (stays approved)
  *
- * Or pass explicit fields (isApproved, isFeatured, title, description, etc.)
+ * Or pass explicit fields for other edits (title, description, etc.)
  */
 router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
   try {
@@ -54,25 +53,27 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
       const action = body.action as string;
       if (action === "approve") {
         updates.isApproved = true;
+        updates.isRejected = false;
       } else if (action === "feature") {
         updates.isApproved = true;
         updates.isFeatured = true;
+        updates.isRejected = false;
       } else if (action === "reject") {
         updates.isApproved = false;
         updates.isFeatured = false;
+        updates.isRejected = true;
       } else if (action === "unfeature") {
         updates.isFeatured = false;
       } else {
-        res.status(400).json({ error: "Unknown action. Valid: approve, feature, reject, unfeature" });
+        res.status(400).json({
+          error: "Unknown action. Valid: approve, feature, reject, unfeature",
+        });
         return;
       }
     } else {
-      if ("isApproved" in body) {
-        updates.isApproved = Boolean(body.isApproved);
-      }
-      if ("isFeatured" in body) {
-        updates.isFeatured = Boolean(body.isFeatured);
-      }
+      if ("isApproved" in body) updates.isApproved = Boolean(body.isApproved);
+      if ("isFeatured" in body) updates.isFeatured = Boolean(body.isFeatured);
+      if ("isRejected" in body) updates.isRejected = Boolean(body.isRejected);
 
       if ("title" in body) {
         const v = typeof body.title === "string" ? body.title.trim() : "";
@@ -82,7 +83,6 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
         }
         updates.title = v;
       }
-
       if ("description" in body) {
         const v = typeof body.description === "string" ? body.description.trim() : "";
         if (!v || v.length < 10) {
@@ -91,50 +91,32 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
         }
         updates.description = v;
       }
-
       if ("hostName" in body) {
         const v = typeof body.hostName === "string" ? body.hostName.trim() : "";
-        if (!v) {
-          res.status(400).json({ error: "hostName cannot be empty" });
-          return;
-        }
+        if (!v) { res.status(400).json({ error: "hostName cannot be empty" }); return; }
         updates.hostName = v;
       }
-
       if ("eventDate" in body) {
         const v = typeof body.eventDate === "string" ? body.eventDate.trim() : "";
-        if (!v) {
-          res.status(400).json({ error: "eventDate cannot be empty" });
-          return;
-        }
+        if (!v) { res.status(400).json({ error: "eventDate cannot be empty" }); return; }
         updates.eventDate = v;
       }
-
       if ("location" in body) {
         const v = typeof body.location === "string" ? body.location.trim() : "";
-        if (!v) {
-          res.status(400).json({ error: "location cannot be empty" });
-          return;
-        }
+        if (!v) { res.status(400).json({ error: "location cannot be empty" }); return; }
         updates.location = v;
       }
-
-      if ("isOnline" in body) {
-        updates.isOnline = Boolean(body.isOnline);
-      }
-
+      if ("isOnline" in body) updates.isOnline = Boolean(body.isOnline);
       if ("priceDisplay" in body) {
         updates.priceDisplay =
           typeof body.priceDisplay === "string"
             ? body.priceDisplay.trim().slice(0, 40) || "Free"
             : "Free";
       }
-
       if ("seats" in body) {
         updates.seats =
           body.seats === null ? null : Math.max(1, Math.floor(Number(body.seats)));
       }
-
       if ("contactEmail" in body) {
         updates.contactEmail =
           typeof body.contactEmail === "string"
@@ -173,7 +155,6 @@ router.delete("/admin/ground-events/:id", requireEditor, async (req, res) => {
       res.status(400).json({ error: "Invalid event id" });
       return;
     }
-
     await db.delete(groundEventsTable).where(eq(groundEventsTable.id, id));
     res.json({ ok: true });
   } catch (err) {

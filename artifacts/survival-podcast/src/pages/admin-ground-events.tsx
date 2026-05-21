@@ -20,9 +20,9 @@ interface GroundEvent {
   contactEmail: string | null;
   isApproved: boolean;
   isFeatured: boolean;
+  isRejected: boolean;
   rsvpCount: number;
   createdAt: string;
-  updatedAt: string;
 }
 
 async function fetchEvents(): Promise<GroundEvent[]> {
@@ -31,13 +31,12 @@ async function fetchEvents(): Promise<GroundEvent[]> {
   return res.json();
 }
 
-async function patchEvent(data: { id: number; action?: string; updates?: Partial<GroundEvent> }): Promise<GroundEvent> {
-  const body = data.action ? { action: data.action } : data.updates;
+async function patchEvent(data: { id: number; action: string }): Promise<GroundEvent> {
   const res = await fetch(apiUrl(`/admin/ground-events/${data.id}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(body),
+    body: JSON.stringify({ action: data.action }),
   });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed to update");
@@ -65,6 +64,13 @@ function formatDate(d: string): string {
 }
 
 function StatusBadge({ event }: { event: GroundEvent }) {
+  if (event.isRejected) {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200">
+        <XCircle className="w-2.5 h-2.5" />Rejected
+      </span>
+    );
+  }
   if (event.isFeatured) {
     return (
       <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
@@ -119,14 +125,24 @@ function EventRow({ event }: { event: GroundEvent }) {
           <h3 className="font-semibold text-foreground leading-snug">{event.title}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             By {event.hostName}
-            {event.contactEmail && <> · <a href={`mailto:${event.contactEmail}`} className="text-[#2C4A36] hover:underline">{event.contactEmail}</a></>}
+            {event.contactEmail && (
+              <>
+                {" · "}
+                <a
+                  href={`mailto:${event.contactEmail}`}
+                  className="text-[#2C4A36] hover:underline"
+                >
+                  {event.contactEmail}
+                </a>
+              </>
+            )}
             {event.seats !== null && ` · ${event.seats} seats`}
             {` · ${event.rsvpCount} RSVPs`}
           </p>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-          {!event.isApproved && (
+          {!event.isApproved && !event.isRejected && (
             <button
               onClick={() => act("approve")}
               disabled={busy}
@@ -159,7 +175,7 @@ function EventRow({ event }: { event: GroundEvent }) {
             </button>
           )}
 
-          {event.isApproved && (
+          {!event.isRejected && (
             <button
               onClick={() => act("reject")}
               disabled={busy}
@@ -167,6 +183,17 @@ function EventRow({ event }: { event: GroundEvent }) {
             >
               <XCircle className="w-3.5 h-3.5" />
               Reject
+            </button>
+          )}
+
+          {event.isRejected && (
+            <button
+              onClick={() => act("approve")}
+              disabled={busy}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 bg-slate-50 text-slate-600 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              Restore
             </button>
           )}
 
@@ -195,7 +222,7 @@ function EventRow({ event }: { event: GroundEvent }) {
 
       {expanded && (
         <div className="px-4 pb-4 border-t border-border/50 pt-3">
-          <p className="text-sm text-foreground leading-relaxed mb-3">{event.description}</p>
+          <p className="text-sm text-foreground leading-relaxed mb-2">{event.description}</p>
           <p className="text-xs text-muted-foreground">
             Submitted {formatDate(event.createdAt)}
           </p>
@@ -212,8 +239,9 @@ export function AdminGroundEvents() {
   });
 
   const events = data ?? [];
-  const pending = events.filter((e) => !e.isApproved);
+  const pending = events.filter((e) => !e.isApproved && !e.isRejected);
   const approved = events.filter((e) => e.isApproved);
+  const rejected = events.filter((e) => e.isRejected);
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 max-w-4xl">
@@ -273,6 +301,18 @@ export function AdminGroundEvents() {
               </h2>
               <div className="space-y-3">
                 {approved.map((e) => <EventRow key={e.id} event={e} />)}
+              </div>
+            </section>
+          )}
+
+          {rejected.length > 0 && (
+            <section>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                <XCircle className="w-3.5 h-3.5" />
+                Rejected ({rejected.length})
+              </h2>
+              <div className="space-y-3">
+                {rejected.map((e) => <EventRow key={e.id} event={e} />)}
               </div>
             </section>
           )}
