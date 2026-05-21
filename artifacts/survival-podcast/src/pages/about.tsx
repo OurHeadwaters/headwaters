@@ -2,8 +2,19 @@ import { useGetFeed } from "@workspace/api-client-react";
 import { ExternalLink, Coffee, Heart } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
+function stripTagline(html: string): string {
+  const stripped = html
+    .replace(/^[\s"'\u201C\u201D]*Helping you live a better life, if times get tough or even if they don't\.[\s"'\u201C\u201D]*/i, "")
+    .replace(/^(<br\s*\/?>)+/, "")
+    .trim();
+  return stripped;
+}
+
 export function About() {
   const { data: feed, isLoading } = useGetFeed();
+  const descriptionHtml = feed?.description
+    ? stripTagline(feed.description.replace(/\n/g, "<br/>"))
+    : "";
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-20">
@@ -23,20 +34,22 @@ export function About() {
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-8 md:p-12 shadow-sm mb-12">
-          {isLoading ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-4 bg-muted rounded w-full"></div>
-              <div className="h-4 bg-muted rounded w-full"></div>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-            </div>
-          ) : (
-            <div 
-              className="prose prose-stone dark:prose-invert max-w-none text-base md:text-lg leading-relaxed prose-p:text-muted-foreground prose-strong:text-foreground"
-              dangerouslySetInnerHTML={{ __html: feed?.description?.replace(/\n/g, '<br/>') || "" }}
-            />
-          )}
-        </div>
+        {(isLoading || descriptionHtml) && (
+          <div className="bg-card border border-border rounded-2xl p-8 md:p-12 shadow-sm mb-12">
+            {isLoading ? (
+              <div className="space-y-4 animate-pulse">
+                <div className="h-4 bg-muted rounded w-full"></div>
+                <div className="h-4 bg-muted rounded w-full"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </div>
+            ) : (
+              <div
+                className="prose prose-stone dark:prose-invert max-w-none text-base md:text-lg leading-relaxed prose-p:text-muted-foreground prose-strong:text-foreground"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="bg-secondary/50 border border-secondary border-b-4 rounded-xl p-6 flex flex-col items-center text-center gap-4 hover:-translate-y-1 transition-transform">

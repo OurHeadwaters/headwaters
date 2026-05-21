@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { ChevronRight, Layers, AlertTriangle } from "lucide-react";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@workspace/replit-auth-web";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -26,11 +27,12 @@ function useConsistencyWarning() {
 export function SeriesIndex() {
   const { data: seriesList, isLoading, isError } = useListSeries({ orderBy: "episodeCount:desc" });
   const { data: consistency } = useConsistencyWarning();
+  const { isAuthenticated } = useAuth();
   const warningCount = consistency?.series.filter((s) => s.status === "warning").length ?? 0;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col gap-10">
-      {warningCount > 0 && (
+      {isAuthenticated && warningCount > 0 && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
           <p className="flex-1">
