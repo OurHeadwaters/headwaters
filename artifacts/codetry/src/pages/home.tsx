@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { motion, type Variants } from "framer-motion";
+import React, { useState, useRef } from "react";
+import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { CheckSquare, Database, Server, Sprout, HandCoins, ArrowRight, CheckCircle2, Download, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,14 @@ function CodetryWordmark({ className = "" }: { className?: string }) {
 
 export default function Home() {
   const [formspreeState, handleFormspreeSubmit] = useForm("xpzvjdbb");
+
+  const landPhotoRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: landPhotoProgress } = useScroll({
+    target: landPhotoRef,
+    offset: ["start end", "end start"],
+  });
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
+  const landPhotoY = useTransform(landPhotoProgress, [0, 1], isMobile ? ["0%", "0%"] : ["-10%", "10%"]);
 
   const scrollToChecklist = () => {
     document.getElementById("checklist")?.scrollIntoView({ behavior: "smooth" });
@@ -156,17 +164,19 @@ export default function Home() {
 
       {/* Full-bleed 'Life on the Land' Photo */}
       <section
+        ref={landPhotoRef}
         className="relative w-full overflow-hidden"
         style={{ height: "clamp(260px, 45vh, 600px)" }}
         aria-hidden="true"
       >
-        <div
+        <motion.div
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&q=80')",
-            transform: "scale(1.08)",
-            willChange: "transform"
+            scale: 1.2,
+            y: landPhotoY,
+            willChange: "transform",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/40" />
