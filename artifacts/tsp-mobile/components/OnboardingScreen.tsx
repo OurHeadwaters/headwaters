@@ -31,6 +31,7 @@ interface Slide {
   gordSize: number;
   gordDelay: number;
   icon: string;
+  showTrail?: boolean;
 }
 
 const SLIDES: Slide[] = [
@@ -67,7 +68,153 @@ const SLIDES: Slide[] = [
     gordDelay: 500,
     icon: "⚡",
   },
+  {
+    id: "journey",
+    heading: "Your Journey",
+    body: "Every stomp moves you forward. Walk the trail — from your first listen to a thousand episodes.",
+    gordMode: "perch",
+    gordSide: "right",
+    gordTop: 228,
+    gordSize: 36,
+    gordDelay: 900,
+    icon: "🗺️",
+    showTrail: true,
+  },
 ];
+
+const MILESTONES = [
+  { label: "10", sub: "stomps" },
+  { label: "100", sub: "episodes" },
+  { label: "1,000", sub: "episodes" },
+];
+
+function FencePost({ color, capColor }: { color: string; capColor: string }) {
+  return (
+    <View style={fenceStyles.postGroup}>
+      <View style={[fenceStyles.cap, { backgroundColor: capColor }]} />
+      <View style={[fenceStyles.post, { backgroundColor: color }]} />
+    </View>
+  );
+}
+
+function JourneyTrail() {
+  const colors = useColors();
+
+  return (
+    <View style={fenceStyles.wrapper}>
+      <View style={fenceStyles.trailRow}>
+        {MILESTONES.map((m, i) => (
+          <React.Fragment key={i}>
+            <View style={fenceStyles.postAndLabel}>
+              <FencePost color={colors.woodBrown} capColor={colors.woodLight} />
+              <Text style={[fenceStyles.milestoneNum, { color: colors.amberGold, fontFamily: "Fraunces_700Bold" }]}>
+                {m.label}
+              </Text>
+              <Text style={[fenceStyles.milestoneSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                {m.sub}
+              </Text>
+            </View>
+            {i < MILESTONES.length - 1 && (
+              <View style={fenceStyles.railWrapper}>
+                <View style={[fenceStyles.rail, { backgroundColor: colors.woodBorder }]} />
+                <View style={[fenceStyles.rail, fenceStyles.railLower, { backgroundColor: colors.woodBorder }]} />
+              </View>
+            )}
+          </React.Fragment>
+        ))}
+        <View style={fenceStyles.trailEnd}>
+          <View style={[fenceStyles.trailEndLine, { backgroundColor: colors.woodBorder }]} />
+        </View>
+      </View>
+
+      <View style={[fenceStyles.groundLine, { backgroundColor: colors.woodBorder }]} />
+
+      <Text style={[fenceStyles.trailLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+        The Stomping Trail
+      </Text>
+    </View>
+  );
+}
+
+const fenceStyles = StyleSheet.create({
+  wrapper: {
+    marginTop: 20,
+    paddingBottom: 4,
+  },
+  trailRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingHorizontal: 4,
+  },
+  postAndLabel: {
+    alignItems: "center",
+    width: 60,
+  },
+  postGroup: {
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  cap: {
+    width: 18,
+    height: 6,
+    borderRadius: 3,
+  },
+  post: {
+    width: 10,
+    height: 44,
+    borderRadius: 3,
+  },
+  railWrapper: {
+    flex: 1,
+    paddingBottom: 18,
+    gap: 8,
+    justifyContent: "flex-end",
+    paddingHorizontal: 2,
+  },
+  rail: {
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.7,
+  },
+  railLower: {
+    marginBottom: 2,
+  },
+  trailEnd: {
+    flex: 0.4,
+    paddingBottom: 18,
+    justifyContent: "flex-end",
+    paddingHorizontal: 2,
+  },
+  trailEndLine: {
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.45,
+  },
+  groundLine: {
+    height: 3,
+    borderRadius: 2,
+    marginTop: 2,
+    opacity: 0.4,
+  },
+  milestoneNum: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  milestoneSub: {
+    fontSize: 11,
+    lineHeight: 15,
+    opacity: 0.75,
+    textAlign: "center",
+  },
+  trailLabel: {
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 8,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    opacity: 0.6,
+  },
+});
 
 interface SlideItemProps {
   slide: Slide;
@@ -94,6 +241,8 @@ function SlideItem({ slide, isVisible }: SlideItemProps) {
           <Text style={[styles.body, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
             {slide.body}
           </Text>
+
+          {slide.showTrail && <JourneyTrail />}
 
           {isVisible && (
             <GordBird
