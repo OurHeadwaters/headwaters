@@ -4,8 +4,10 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Modal,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +15,7 @@ import {
   Switch,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -96,8 +99,7 @@ function formatEventDate(d: string): string {
   }
 }
 
-function WorkshopCard({ event }: { event: GroundEvent }) {
-  const colors = useColors();
+function useWorkshopRsvp(event: GroundEvent) {
   const queryClient = useQueryClient();
   const [rsvped, setRsvped] = useState(false);
 
@@ -122,52 +124,205 @@ function WorkshopCard({ event }: { event: GroundEvent }) {
     },
   });
 
+  return { rsvped, isPending, doRsvp };
+}
+
+function RsvpButton({ event, style }: { event: GroundEvent; style?: object }) {
+  const colors = useColors();
+  const { rsvped, isPending, doRsvp } = useWorkshopRsvp(event);
+
   return (
-    <WoodCard style={{ marginBottom: 10 }}>
-      {event.isFeatured && (
-        <View style={[workshopStyles.featuredBadge, { backgroundColor: colors.amberGold + "22" }]}>
-          <Text style={[workshopStyles.featuredText, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
-            ⭐ Featured
-          </Text>
-        </View>
+    <Pressable
+      onPress={() => { if (!rsvped && !isPending) doRsvp(); }}
+      disabled={rsvped || isPending}
+      style={({ pressed }) => [
+        workshopStyles.rsvpBtn,
+        {
+          backgroundColor: rsvped
+            ? colors.muted
+            : pressed
+            ? colors.primary + "cc"
+            : colors.primary,
+          opacity: isPending ? 0.6 : 1,
+        },
+        style,
+      ]}
+    >
+      {isPending ? (
+        <ActivityIndicator size="small" color="#fff" />
+      ) : (
+        <Text style={[workshopStyles.rsvpText, { color: rsvped ? colors.mutedForeground : "#fff", fontFamily: "DMSans_600SemiBold" }]}>
+          {rsvped ? "✓ You're Going" : "I'm Going"}
+        </Text>
       )}
-      <Text style={[workshopStyles.title, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
-        {event.title}
-      </Text>
-      <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-        📅 {formatEventDate(event.eventDate)}
-      </Text>
-      <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-        {event.isOnline ? "🌐 Online" : `📍 ${event.location}`}
-        {event.seats ? `  ·  ${event.seats} seats` : ""}
-      </Text>
-      <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-        🎟 {event.priceDisplay}  ·  hosted by {event.hostName}
-      </Text>
-      <Pressable
-        onPress={() => { if (!rsvped && !isPending) doRsvp(); }}
-        disabled={rsvped || isPending}
-        style={({ pressed }) => [
-          workshopStyles.rsvpBtn,
-          {
-            backgroundColor: rsvped
-              ? colors.muted
-              : pressed
-              ? colors.primary + "cc"
-              : colors.primary,
-            opacity: isPending ? 0.6 : 1,
-          },
+    </Pressable>
+  );
+}
+
+function WorkshopDetailSheet({
+  event,
+  visible,
+  onDismiss,
+}: {
+  event: GroundEvent | null;
+  visible: boolean;
+  onDismiss: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const translateY = useRef(new Animated.Value(600)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 22,
+        stiffness: 220,
+      }).start();
+    } else {
+      translateY.setValue(600);
+    }
+  }, [visible]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 8,
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) translateY.setValue(g.dy);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 100 || g.vy > 0.5) {
+          Animated.timing(translateY, {
+            toValue: 700,
+            duration: 220,
+            useNativeDriver: true,
+          }).start(onDismiss);
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            damping: 22,
+            stiffness: 220,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
+  if (!event) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+      statusBarTranslucent
+    >
+      <TouchableWithoutFeedback onPress={onDismiss}>
+        <View style={workshopStyles.backdrop} />
+      </TouchableWithoutFeedback>
+
+      <Animated.View
+        style={[
+          workshopStyles.sheet,
+          { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+          { transform: [{ translateY }] },
         ]}
+        {...panResponder.panHandlers}
       >
-        {isPending ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={[workshopStyles.rsvpText, { color: rsvped ? colors.mutedForeground : "#fff", fontFamily: "DMSans_600SemiBold" }]}>
-            {rsvped ? "✓ You're Going" : "I'm Going"}
+        <View style={[workshopStyles.sheetHandle, { backgroundColor: colors.woodBorder }]} />
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {event.isFeatured && (
+            <View style={[workshopStyles.featuredBadge, { backgroundColor: colors.amberGold + "22" }]}>
+              <Text style={[workshopStyles.featuredText, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
+                ⭐ Featured
+              </Text>
+            </View>
+          )}
+
+          <Text style={[workshopStyles.sheetTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+            {event.title}
           </Text>
+
+          <View style={workshopStyles.metaGroup}>
+            <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              📅 {formatEventDate(event.eventDate)}
+            </Text>
+            <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              {event.isOnline ? "🌐 Online" : `📍 ${event.location}`}
+              {event.seats ? `  ·  ${event.seats} seats` : ""}
+            </Text>
+            <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              🎟 {event.priceDisplay}  ·  hosted by {event.hostName}
+            </Text>
+          </View>
+
+          <View style={[workshopStyles.divider, { backgroundColor: colors.woodBorder }]} />
+
+          <Text style={[workshopStyles.descriptionLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+            About this workshop
+          </Text>
+          <Text style={[workshopStyles.description, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+            {event.description}
+          </Text>
+
+          <RsvpButton event={event} />
+        </ScrollView>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+function WorkshopCard({ event, onPress }: { event: GroundEvent; onPress: () => void }) {
+  const colors = useColors();
+  const { rsvped } = useWorkshopRsvp(event);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+    >
+      <WoodCard style={{ marginBottom: 10 }}>
+        {event.isFeatured && (
+          <View style={[workshopStyles.featuredBadge, { backgroundColor: colors.amberGold + "22" }]}>
+            <Text style={[workshopStyles.featuredText, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
+              ⭐ Featured
+            </Text>
+          </View>
         )}
-      </Pressable>
-    </WoodCard>
+        <View style={workshopStyles.cardTitleRow}>
+          <Text style={[workshopStyles.title, { color: colors.foreground, fontFamily: "Fraunces_700Bold", flex: 1 }]}>
+            {event.title}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} style={{ marginTop: 2 }} />
+        </View>
+        <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+          📅 {formatEventDate(event.eventDate)}
+        </Text>
+        <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+          {event.isOnline ? "🌐 Online" : `📍 ${event.location}`}
+          {event.seats ? `  ·  ${event.seats} seats` : ""}
+        </Text>
+        <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+          🎟 {event.priceDisplay}  ·  hosted by {event.hostName}
+        </Text>
+        {rsvped && (
+          <View style={workshopStyles.rsvpedChip}>
+            <Ionicons name="checkmark-circle" size={13} color="#4ade80" />
+            <Text style={[workshopStyles.rsvpedChipText, { fontFamily: "DMSans_600SemiBold" }]}>
+              You're Going
+            </Text>
+          </View>
+        )}
+      </WoodCard>
+    </Pressable>
   );
 }
 
@@ -180,7 +335,8 @@ const workshopStyles = StyleSheet.create({
     marginBottom: 8,
   },
   featuredText: { fontSize: 11, letterSpacing: 0.3 },
-  title: { fontSize: 16, marginBottom: 6 },
+  cardTitleRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 6 },
+  title: { fontSize: 16 },
   meta: { fontSize: 13, lineHeight: 20 },
   rsvpBtn: {
     marginTop: 12,
@@ -190,10 +346,46 @@ const workshopStyles = StyleSheet.create({
     justifyContent: "center",
   },
   rsvpText: { fontSize: 15 },
+  rsvpedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 10,
+    alignSelf: "flex-start",
+  },
+  rsvpedChipText: { fontSize: 12, color: "#4ade80" },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  sheet: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    maxHeight: "85%",
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 16,
+  },
+  sheetTitle: { fontSize: 22, marginBottom: 12, lineHeight: 28 },
+  metaGroup: { gap: 2, marginBottom: 4 },
+  divider: { height: 1, marginVertical: 16 },
+  descriptionLabel: { fontSize: 11, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 },
+  description: { fontSize: 15, lineHeight: 23, marginBottom: 4 },
 });
 
 function WorkshopsSection() {
   const colors = useColors();
+  const [selectedEvent, setSelectedEvent] = useState<GroundEvent | null>(null);
 
   const { data: events, isLoading, isError } = useQuery({
     queryKey: ["upcoming-workshops"],
@@ -222,7 +414,13 @@ function WorkshopsSection() {
           </View>
         </WoodCard>
       ) : events && events.length > 0 ? (
-        events.map((ev) => <WorkshopCard key={ev.id} event={ev} />)
+        events.map((ev) => (
+          <WorkshopCard
+            key={ev.id}
+            event={ev}
+            onPress={() => setSelectedEvent(ev)}
+          />
+        ))
       ) : (
         <WoodCard style={{ marginTop: 8 }}>
           <View style={sectionStyles.emptyInner}>
@@ -233,6 +431,12 @@ function WorkshopsSection() {
           </View>
         </WoodCard>
       )}
+
+      <WorkshopDetailSheet
+        event={selectedEvent}
+        visible={selectedEvent !== null}
+        onDismiss={() => setSelectedEvent(null)}
+      />
     </View>
   );
 }
