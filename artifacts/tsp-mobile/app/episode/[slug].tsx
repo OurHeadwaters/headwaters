@@ -26,6 +26,7 @@ import { useV4V, type ValueSplit } from "@/context/V4VContext";
 import { useColors } from "@/hooks/useColors";
 import { WishingWellModal } from "@/components/WishingWellModal";
 import { BoostSheet } from "@/components/BoostSheet";
+import { GordBird } from "@/components/GordBird";
 
 type TransformationDef = {
   slug: string;
@@ -119,6 +120,7 @@ export default function EpisodeDetailScreen() {
   const { data: episode, isLoading: epLoading, error } = useGetEpisode(slug ?? "");
   const { data: transformations } = useTransformations();
 
+  const [gordFlying, setGordFlying] = useState(false);
   const [boostVisible, setBoostVisible] = useState(false);
   const [boostDefaultAmount, setBoostDefaultAmount] = useState<number | undefined>(undefined);
   const [splits, setSplits] = useState<ValueSplit[]>([]);
@@ -159,17 +161,20 @@ export default function EpisodeDetailScreen() {
     return () => setOnPlaybackMinute(null);
   }, [wallet, slug, addStreamingSats, setOnPlaybackMinute]);
 
-  // Register episode-complete callback for auto-boost trigger
+  // Register episode-complete callback for auto-boost trigger + Gord fly-across
   useEffect(() => {
     setOnEpisodeFinished((epSlug: string) => {
-      if (epSlug === slug && wallet && splits.length > 0) {
-        // Auto-boost 100 sats on episode complete
-        sendBoost({
-          episodeSlug: epSlug,
-          amountSats: 100,
-          message: "Episode complete — value for value! 🎙️",
-          splits,
-        }).catch(() => {});
+      if (epSlug === slug) {
+        setGordFlying(true);
+        setTimeout(() => setGordFlying(false), 4500);
+        if (wallet && splits.length > 0) {
+          sendBoost({
+            episodeSlug: epSlug,
+            amountSats: 100,
+            message: "Episode complete — value for value! 🎙️",
+            splits,
+          }).catch(() => {});
+        }
       }
     });
     return () => setOnEpisodeFinished(null);
@@ -355,6 +360,7 @@ export default function EpisodeDetailScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
         <View style={[styles.artworkSection, { backgroundColor: colors.forestDeep, paddingTop: topPadding + 8 }]}>
+          <GordBird mode="perch" perchSide="right" perchTop={topPadding + 16} delay={600} size={32} />
           <View style={styles.topBar}>
             <Pressable onPress={() => router.back()} style={styles.backBtn} testID="episode-back-btn">
               <Ionicons name="chevron-back" size={24} color={colors.lanternWarm} />
@@ -674,6 +680,9 @@ export default function EpisodeDetailScreen() {
         onClose={() => setBoostVisible(false)}
         onSuccess={handleBoostSuccess}
       />
+      {gordFlying && (
+        <GordBird mode="fly-across" perchSide="left" perchTop={120} delay={0} size={38} />
+      )}
     </View>
   );
 }
