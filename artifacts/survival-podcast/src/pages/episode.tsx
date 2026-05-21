@@ -13,6 +13,7 @@ import { decodeHtml } from "@/lib/decode-html";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
+import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { matchZones, type ZoneMeta } from "@/lib/zones";
 import { HistorySegmentPlayer } from "@/components/history-segment-player";
 import type { HistorySegment } from "@workspace/api-client-react";
@@ -503,6 +504,8 @@ export function EpisodeDetail() {
               </div>
             </div>
           )}
+
+          <OdysseyBridge variant="compact" />
         </div>
       </div>
     </div>

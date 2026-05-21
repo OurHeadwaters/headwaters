@@ -202,21 +202,11 @@ export default function TransformPage() {
           </div>
         )}
 
-        {/* What comes next */}
-        <div className="mt-14 mb-8">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-            <span className="w-6 h-px bg-border" />
-            After the personal transformation
-          </div>
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-3">
-            Built the skills. Ready to build the community?
-          </h2>
-          <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mb-8">
-            Codetry is the discipline for the "build" phase that follows — turning personal
-            transformation into community-scale systems using precise shared language. The
-            Headwaters Odyssey is where TSP listeners go when they're ready to take that step.
+        {/* Soft next-step nudge — no ask until they're deep in a path */}
+        <div className="mt-14 mb-8 text-center">
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Pick a path above and start listening. When you've made the shift yourself, there's a next step — building it at community scale.
           </p>
-          <OdysseyBridge variant="full" />
         </div>
       </div>
     </div>
