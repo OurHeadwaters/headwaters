@@ -1,3 +1,4 @@
+import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 import { useGetEpisodeStats, useGetFeaturedEpisodes, useGetFeed, useListCategories, useGetLibraryStats, useListSeries, useListZones, ZoneSummary, useGetEpisode } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -687,14 +688,36 @@ export function Home() {
 
   return (
     <div className="flex flex-col w-full">
-      {/* Hero Search — very first thing above the fold */}
+      <style>{`
+        @keyframes station-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 0.6; }
+          50% { box-shadow: 0 0 0 12px transparent; opacity: 0; }
+        }
+        @keyframes ww-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes sweep-ring {
+          0% { opacity: 0.8; transform: scale(0.9); }
+          100% { opacity: 0; transform: scale(1.4); }
+        }
+        @keyframes grounds-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+      `}</style>
+
+      {/* Stomping Grounds scene — first thing above the fold */}
+      <StompingGroundsScene compact />
+
+      {/* Hero Search */}
       <HeroSearch />
 
-      {/* This Day in History — primary front door */}
-      <ThisDayInHistory />
-
-      {/* Explore by Zone strip — secondary nav, below the front door */}
+      {/* Explore by Zone strip */}
       {zones && zones.length > 0 && <ExploreByZoneStrip zones={zones} />}
+
+      {/* This Day in History — moved below the zone strip */}
+      <ThisDayInHistory />
 
       {/* Hero Section */}
       <section className="relative bg-primary text-primary-foreground py-20 md:py-28 overflow-hidden">
