@@ -514,7 +514,7 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-black/30 backdrop-blur-sm mb-6"
+          className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-black/30 backdrop-blur-sm mb-4 md:mb-6"
         >
           <Sparkles className="w-3.5 h-3.5 text-[#D9A066]" />
           <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">A Fan Redesign · The Stomping Path</span>
@@ -524,7 +524,7 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-          className="font-serif text-5xl sm:text-7xl md:text-8xl font-bold text-[#FDFBF7] leading-[0.95] tracking-tight mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)]"
+          className="font-serif text-5xl sm:text-7xl md:text-8xl font-bold text-[#FDFBF7] leading-[0.95] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)]"
         >
           The <span className="italic text-[#D9A066]">Stomping</span><br /> Path
         </motion.h1>
@@ -533,7 +533,7 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="text-lg md:text-xl text-[#FDFBF7]/85 max-w-2xl mb-10 font-light leading-relaxed"
+          className="text-lg md:text-xl text-[#FDFBF7]/85 max-w-2xl mb-6 md:mb-10 font-light leading-relaxed"
         >
           See the problems. Stomp the solutions. <br className="hidden sm:block" />
           Reclaim your sovereignty — one footprint at a time.
@@ -585,7 +585,7 @@ function HeroEntrance() {
 
 function ChapterOnePortal() {
   return (
-    <section className="relative bg-[#0a0e0b] py-20 md:py-28 overflow-hidden border-y border-white/5">
+    <section className="relative bg-[#0a0e0b] py-12 sm:py-16 md:py-28 overflow-hidden border-y border-white/5">
       {/* Cinematic vignette background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(44,74,54,0.18)_0%,transparent_70%)]" />
       <div
