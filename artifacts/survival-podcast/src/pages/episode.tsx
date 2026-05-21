@@ -20,11 +20,14 @@ import type { HistorySegment } from "@workspace/api-client-react";
 function matchTransformations(
   episodeCategories: string[],
   transformations: Transformation[],
+  episodeTags?: string[],
 ): Transformation[] {
   const lowerCats = episodeCategories.map((c) => c.toLowerCase());
+  const lowerTags = (episodeTags ?? []).map((t) => t.toLowerCase());
+  const episodeTerms = [...lowerCats, ...lowerTags];
   return transformations.filter((t) => {
     const tLower = [...t.tags, ...t.categories].map((s) => s.toLowerCase());
-    return lowerCats.some((c) => tLower.includes(c));
+    return episodeTerms.some((term) => tLower.includes(term));
   });
 }
 
@@ -149,7 +152,7 @@ export function EpisodeDetail() {
 
   const matchedTransformations =
     episode && transformations
-      ? matchTransformations(episode.categories, transformations)
+      ? matchTransformations(episode.categories, transformations, episode.tags)
       : [];
 
   const matchedZones: ZoneMeta[] =
