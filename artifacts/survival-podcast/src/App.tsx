@@ -31,6 +31,7 @@ import { AdminContentGaps } from "@/pages/admin-content-gaps";
 import { AdminGear } from "@/pages/admin-gear";
 import { AdminNuggets } from "@/pages/admin-nuggets";
 import { AdminGroundEvents } from "@/pages/admin-ground-events";
+import WorkshopManagePage from "@/pages/workshop-manage";
 import HistoryPage from "@/pages/history";
 import { AdminWisdom } from "@/pages/admin-wisdom";
 import StompingGroundsPage from "@/pages/stomping-grounds";
@@ -78,6 +79,7 @@ function Router() {
         <Route path="/admin/nuggets" component={AdminNuggets} />
         <Route path="/admin/wisdom" component={AdminWisdom} />
         <Route path="/admin/ground-events" component={AdminGroundEvents} />
+        <Route path="/workshops/manage" component={WorkshopManagePage} />
         <Route path="/wishing-well">
           {() => <Redirect to="/stomping-grounds?tab=well" />}
         </Route>

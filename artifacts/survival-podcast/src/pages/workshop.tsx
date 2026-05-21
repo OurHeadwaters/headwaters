@@ -559,16 +559,14 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
   const [externalUrl, setExternalUrl] = useState("");
   const [seatsStr, setSeatsStr] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [createdEventId, setCreatedEventId] = useState<number | null>(null);
+  const [createdEvent, setCreatedEvent] = useState<GroundEvent & { hostToken?: string } | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: submitEvent,
-    onSuccess: (created) => {
-      setCreatedEventId(created.id);
-      setSubmitted(true);
+    onSuccess: (data) => {
+      setCreatedEvent(data as GroundEvent & { hostToken?: string });
       onSuccess();
     },
   });
@@ -594,29 +592,73 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
     marginBottom: "6px",
   };
 
-  if (submitted) {
+  if (createdEvent) {
     const isPaidStripe = !isFree && !externalUrl.trim() && !!paidAmount.trim();
+    const manageUrl =
+      createdEvent.hostToken
+        ? `${window.location.origin}${import.meta.env.BASE_URL}workshops/manage?id=${createdEvent.id}&token=${createdEvent.hostToken}`
+        : null;
+
     return (
       <div
-        className="rounded-2xl p-8 text-center"
+        className="rounded-2xl p-8"
         style={{
           background: "linear-gradient(150deg, #1C3020 0%, #243028 100%)",
           border: "1.5px solid #3A5040",
         }}
       >
-        <div className="text-4xl mb-4">🔨</div>
+        <div className="text-4xl mb-4 text-center">🔨</div>
         <h3
-          className="text-xl font-bold mb-2"
+          className="text-xl font-bold mb-2 text-center"
           style={{ fontFamily: "Georgia, serif", color: "#F2CA8C" }}
         >
           Workshop submitted!
         </h3>
-        <p className="text-sm mb-4" style={{ color: "#8AB8A0" }}>
-          Your workshop is in the pending queue. The admin will review and approve it — 
-          then it'll appear on the board for the community.
+        <p className="text-sm mb-5 text-center" style={{ color: "#8AB8A0" }}>
+          Your workshop is in the pending queue. The admin will review and approve it —
+          then it'll appear on the board for the community to RSVP.
         </p>
 
-        {isPaidStripe && createdEventId && (
+        {manageUrl && (
+          <div
+            className="rounded-xl p-4 mb-5"
+            style={{
+              background: "rgba(0,0,0,0.25)",
+              border: "1px solid rgba(58,90,64,0.5)",
+            }}
+          >
+            <p className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "#6A8870" }}>
+              Your private management link
+            </p>
+            <p className="text-xs mb-3" style={{ color: "#5A7860" }}>
+              Save this link — it lets you view your RSVP list at any time without needing admin access.
+            </p>
+            <div
+              className="rounded-lg px-3 py-2 text-xs font-mono break-all select-all mb-3"
+              style={{
+                background: "rgba(0,0,0,0.3)",
+                color: "#7AB88A",
+                border: "1px solid rgba(46,68,50,0.5)",
+              }}
+            >
+              {manageUrl}
+            </div>
+            <a
+              href={manageUrl}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+              style={{
+                background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)",
+                color: "#A8D8A8",
+                border: "1px solid rgba(58,90,64,0.8)",
+                textDecoration: "none",
+              }}
+            >
+              Open management page →
+            </a>
+          </div>
+        )}
+
+        {isPaidStripe && createdEvent?.id && (
           <div
             className="mb-6 p-4 rounded-xl text-left"
             style={{
@@ -638,7 +680,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
                 setConnectingStripe(true);
                 setConnectError(null);
                 try {
-                  await startStripeConnect(createdEventId);
+                  await startStripeConnect(createdEvent.id);
                 } catch (err) {
                   setConnectError(err instanceof Error ? err.message : "Failed to connect");
                   setConnectingStripe(false);
@@ -658,9 +700,11 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           </div>
         )}
 
-        <button onClick={onCancel} className="text-xs underline" style={{ color: "#7A9880" }}>
-          {isPaidStripe ? "Skip for now" : "Back to events"}
-        </button>
+        <div className="text-center">
+          <button onClick={onCancel} className="text-xs underline" style={{ color: "#7A9880" }}>
+            {isPaidStripe ? "Skip for now" : "Back to events"}
+          </button>
+        </div>
       </div>
     );
   }

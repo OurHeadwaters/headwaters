@@ -1,9 +1,40 @@
 import { Router, type IRouter } from "express";
 import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
 import { eq, sql, and, desc, asc, gte, inArray } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
+
+/**
+ * Public-safe column selection — explicitly excludes hostToken and internal
+ * Stripe account identifiers so they are never returned to unauthenticated
+ * callers via the public listing endpoint.
+ */
+const publicEventColumns = {
+  id: groundEventsTable.id,
+  title: groundEventsTable.title,
+  description: groundEventsTable.description,
+  hostName: groundEventsTable.hostName,
+  eventDate: groundEventsTable.eventDate,
+  location: groundEventsTable.location,
+  isOnline: groundEventsTable.isOnline,
+  priceDisplay: groundEventsTable.priceDisplay,
+  externalUrl: groundEventsTable.externalUrl,
+  seats: groundEventsTable.seats,
+  contactEmail: groundEventsTable.contactEmail,
+  isApproved: groundEventsTable.isApproved,
+  isFeatured: groundEventsTable.isFeatured,
+  isRejected: groundEventsTable.isRejected,
+  rsvpCount: groundEventsTable.rsvpCount,
+  ticketPriceCents: groundEventsTable.ticketPriceCents,
+  breakEvenTickets: groundEventsTable.breakEvenTickets,
+  platformSharePct: groundEventsTable.platformSharePct,
+  // stripeConnectedAccountId intentionally omitted — internal field
+  // hostToken intentionally omitted — auth credential
+  createdAt: groundEventsTable.createdAt,
+  updatedAt: groundEventsTable.updatedAt,
+} as const;
 
 /**
  * GET /api/ground-events
@@ -40,7 +71,7 @@ router.get("/ground-events", async (req, res) => {
 
     const [events, [{ count }]] = await Promise.all([
       db
-        .select()
+        .select(publicEventColumns)
         .from(groundEventsTable)
         .where(whereClause)
         .orderBy(
@@ -189,6 +220,9 @@ router.post("/ground-events", async (req, res) => {
       ? body.priceDisplay.trim().slice(0, 40)
       : "Free";
 
+    // ── Host management token ────────────────────────────────────────────────
+    const hostToken = randomUUID();
+
     const [row] = await db
       .insert(groundEventsTable)
       .values({
@@ -205,6 +239,7 @@ router.post("/ground-events", async (req, res) => {
         ticketPriceCents,
         breakEvenTickets,
         platformSharePct,
+        hostToken,
         isApproved: false,
         isFeatured: false,
         isRejected: false,
@@ -372,6 +407,135 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "ground-events: POST /rsvp failed");
     res.status(500).json({ error: "Failed to record RSVP" });
+  }
+});
+
+/**
+ * GET /api/ground-events/:id/manage
+ * Returns the event and its RSVP list for the host, authenticated by hostToken.
+ * Query params: token=<hostToken>
+ */
+router.get("/ground-events/:id/manage", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const token = typeof req.query.token === "string" ? req.query.token.trim() : "";
+    if (!token) {
+      res.status(401).json({ error: "Missing management token" });
+      return;
+    }
+
+    const [event] = await db
+      .select()
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.id, id))
+      .limit(1);
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.hostToken || event.hostToken !== token) {
+      res.status(403).json({ error: "Invalid management token" });
+      return;
+    }
+
+    const rsvps = await db
+      .select()
+      .from(groundEventRsvpsTable)
+      .where(eq(groundEventRsvpsTable.eventId, id))
+      .orderBy(desc(groundEventRsvpsTable.createdAt));
+
+    // Strip hostToken from the event before returning — it is the auth credential
+    // and must not be echoed back in any response.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { hostToken: _token, ...safeEvent } = event;
+    res.json({ event: safeEvent, rsvps });
+  } catch (err) {
+    logger.error({ err }, "ground-events: GET /manage failed");
+    res.status(500).json({ error: "Failed to load management data" });
+  }
+});
+
+/**
+ * GET /api/ground-events/:id/manage/rsvps.csv
+ * Downloads the RSVP list as CSV for the host, authenticated by hostToken.
+ * Query params: token=<hostToken>
+ */
+router.get("/ground-events/:id/manage/rsvps.csv", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const token = typeof req.query.token === "string" ? req.query.token.trim() : "";
+    if (!token) {
+      res.status(401).json({ error: "Missing management token" });
+      return;
+    }
+
+    const [event] = await db
+      .select()
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.id, id))
+      .limit(1);
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.hostToken || event.hostToken !== token) {
+      res.status(403).json({ error: "Invalid management token" });
+      return;
+    }
+
+    const rsvps = await db
+      .select()
+      .from(groundEventRsvpsTable)
+      .where(eq(groundEventRsvpsTable.eventId, id))
+      .orderBy(desc(groundEventRsvpsTable.createdAt));
+
+    const safeTitle = event.title.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+    const filename = `rsvps_${id}_${safeTitle}.csv`;
+
+    const csvEscape = (v: string | null | undefined): string => {
+      if (v == null) return "";
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+
+    const header = "id,attendee_name,attendee_email,rsvp_date\n";
+    const rows = rsvps
+      .map(
+        (r) =>
+          [
+            r.id,
+            csvEscape(r.attendeeName),
+            csvEscape(r.attendeeEmail),
+            csvEscape(r.createdAt.toISOString()),
+          ].join(","),
+      )
+      .join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(header + rows);
+
+    logger.info({ id, count: rsvps.length }, "ground-events: host CSV exported");
+  } catch (err) {
+    logger.error({ err }, "ground-events: GET /manage/rsvps.csv failed");
+    res.status(500).json({ error: "Failed to export RSVPs" });
   }
 });
 

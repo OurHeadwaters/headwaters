@@ -43,6 +43,7 @@ export const groundEventsTable = pgTable(
     isApproved: boolean("is_approved").notNull().default(false),
     isFeatured: boolean("is_featured").notNull().default(false),
     isRejected: boolean("is_rejected").notNull().default(false),
+    hostToken: text("host_token"),
     rsvpCount: integer("rsvp_count").notNull().default(0),
     // Stripe Connect payment fields
     ticketPriceCents: integer("ticket_price_cents"),

@@ -42,12 +42,12 @@ router.use(wishingWellRouter);
 router.use(v4vRouter);
 router.use(ogRouter);
 router.use(wisdomRouter);
+router.use(groundEventsRouter);
 router.use(adminWisdomRouter);
 router.use(waterWheelRouter);
 router.use(adminNuggetsRouter);
 router.use(adminCategoriesRouter);
 router.use(adminCouncilRouter);
-router.use(groundEventsRouter);
 router.use(adminGroundEventsRouter);
 router.use(stripeWorkshopsRouter);
 
