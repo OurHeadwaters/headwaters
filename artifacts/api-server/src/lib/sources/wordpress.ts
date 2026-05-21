@@ -1,6 +1,7 @@
 import sanitizeHtmlLib from "sanitize-html";
 import { logger } from "../logger";
 import { fetchAudioChapters, extractChapterHistoryTimestamp, pMap } from "../id3-chapters";
+import { extractHistorySegment } from "../history-detection";
 import type { InsertContentItem } from "@workspace/db";
 
 const WP_BASE = "https://www.thesurvivalpodcast.com/wp-json/wp/v2";
@@ -256,6 +257,18 @@ function postToInsert(
     .map((id) => tags.get(id))
     .filter((c): c is string => !!c);
   const publishedAt = new Date(post.date_gmt + "Z");
+
+  // Run history-segment detection at ingest time so tile loads are instant.
+  const historySegment = sanitized ? extractHistorySegment(sanitized) : null;
+  const extra: Record<string, unknown> = {};
+  if (historySegment !== null) {
+    extra.historyTimestamp = historySegment.startSeconds;
+    extra.historyEndTimestamp = historySegment.endSeconds;
+    extra.historyText = historySegment.lessonText;
+    // Mark checked so chapter fetching is skipped for this episode.
+    extra.historyTimestampChecked = true;
+  }
+
   return {
     source: "wordpress",
     sourceId: String(post.id),
@@ -276,7 +289,7 @@ function postToInsert(
     episodeNumber,
     categories: cats,
     tags: tagNames,
-    extra: {},
+    extra,
   };
 }
 
@@ -297,6 +310,9 @@ async function enrichWithChapterTimestamps(
 ): Promise<void> {
   const toEnrich = inserts.filter((item) => {
     if (!item.audioUrl) return false;
+    // Skip if text-based detection already found a history timestamp at ingest time
+    const itemExtra = item.extra as Record<string, unknown> | undefined;
+    if (itemExtra?.historyTimestampChecked) return false;
     const existing = existingExtras.get(item.sourceId);
     // Skip if we've already checked this episode in a previous sync
     return !existing?.historyTimestampChecked;
