@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, type Variants } from "framer-motion";
-import { CheckCircle2, ArrowRight, Zap, Globe, Wrench } from "lucide-react";
+import { CheckCircle2, ArrowRight, Map, Hammer, Network } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Nav from "@/components/Nav";
@@ -15,84 +15,94 @@ const stagger: Variants = {
   visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
 };
 
-const tiers = [
+const engagements = [
   {
-    icon: Globe,
-    name: "Brochure Site",
-    tagline: "Own your corner of the internet.",
-    price: "$800 – $1,500",
-    timeline: "2 – 3 weeks",
+    icon: Map,
+    name: "Zone Assessment",
+    tagline: "Map before you build.",
+    price: "$1,500 – $3,000",
+    timeline: "3 – 5 weeks",
     description:
-      "A clean, fast, hosted-by-you website. No WordPress, no page-builder subscriptions, no mystery fees. You get the code, the domain walkthrough, and the hosting setup — fully handed off.",
+      "A structured analysis of your community economy across the six Headwaters zones. We identify where the capacity is, where the gaps are, and which Zone your community is ready to tackle first. You get a written report and a recommended path — no obligation to proceed.",
     includes: [
-      "Custom domain + DNS walkthrough",
-      "Static or simple CMS-backed site",
-      "Mobile-first, accessible design",
-      "Contact form (no third-party required)",
-      "One round of revisions",
+      "Community listening sessions (in-person or remote)",
+      "Zone-by-zone gap analysis report",
+      "Prioritised tool recommendations",
+      "Capacity and readiness assessment",
+      "Summary presentation for stakeholders",
     ],
     accent: "#D9A066",
-    ideal: "Homesteaders, local tradespeople, small producers",
+    ideal: "First Nations co-operatives, rural municipalities, food hubs starting out",
   },
   {
-    icon: Zap,
-    name: "Local Directory",
-    tagline: "Put your community on the map.",
-    price: "$2,000 – $4,500",
-    timeline: "4 – 8 weeks",
+    icon: Hammer,
+    name: "Hub Implementation",
+    tagline: "Build it. Hand it off. Run it yourselves.",
+    price: "$4,000 – $12,000",
+    timeline: "6 – 14 weeks",
     description:
-      "A searchable, filterable directory of local producers, services, or resources — built for your region, owned by your community. Members can self-list with approval. No SaaS fees.",
+      "Design, build, and hand off a single owned digital tool for your community hub — order management, member portal, producer directory, or community credit module. Scoped to your actual Zone assessment so we're solving the right problem. No retainer. Fully yours at the end.",
     includes: [
-      "Search + filter by category / distance",
-      "Member submission & admin approval flow",
-      "Email notifications baked in",
-      "Export-your-data always on",
-      "Deployment + hand-off documentation",
+      "Scoping session tied to your Zone Assessment",
+      "One purpose-built tool, fully owned codebase",
+      "Admin dashboard your team can operate",
+      "Data export always on — your records, your formats",
+      "60-day support window post-launch",
     ],
     accent: "#D9A066",
-    ideal: "Food hubs, homeschool networks, mutual aid groups",
+    ideal: "Food co-ops, CSA networks, homeschool collectives, local producers",
     featured: true,
   },
   {
-    icon: Wrench,
-    name: "Custom Tooling",
-    tagline: "Built to your exact problem.",
-    price: "From $5,000",
-    timeline: "6 – 12 weeks",
+    icon: Network,
+    name: "Regional Platform",
+    tagline: "Multi-community, multi-zone infrastructure.",
+    price: "From $15,000",
+    timeline: "3 – 6 months",
     description:
-      "Order management, inventory tracking, booking systems, member portals — purpose-built for how your operation actually works. No off-the-shelf assumptions. Scoped together, built clean, handed off completely.",
+      "For communities ready to build at Zone 4 or 5 — a regional platform connecting multiple hubs, producer networks, and community credit systems across a watershed or district. Involves multiple stakeholders, staged delivery, and full capacity training for ongoing operation.",
     includes: [
-      "Discovery & scoping session included",
-      "Fully owned codebase (no license fees)",
-      "Postgres database you control",
-      "Admin dashboard for your team",
-      "90-day support window post-launch",
+      "Multi-stakeholder engagement and facilitation",
+      "Zone 3–5 platform design and build",
+      "Inter-community credit module (optional)",
+      "Regional producer and resource directory",
+      "Full team training and hand-off documentation",
     ],
     accent: "#D9A066",
-    ideal: "Co-ops, CSA farms, homeschool collectives, local businesses",
+    ideal: "Watershed alliances, First Nations networks, regional food hubs, development corps",
   },
+];
+
+const tools = [
+  { name: "Producer directory", desc: "Searchable, filterable registry of local growers and makers. Member-managed with admin approval." },
+  { name: "Order management", desc: "Seasonal order forms, order confirmation emails, and admin tallying — no spreadsheet required." },
+  { name: "Member portal", desc: "Onboarding, profile management, and communication for co-op or hub members." },
+  { name: "Community credit module", desc: "Peer-to-peer exchange ledger for communities building a local currency or time-bank." },
+  { name: "Resource library", desc: "Curated knowledge base for guides, forms, and local expertise — zone-tagged and searchable." },
+  { name: "Booking & scheduling", desc: "Shared equipment, venue, or service booking for community assets." },
+  { name: "Zone dashboard", desc: "Aggregated view of community economy activity across multiple tools and zones." },
 ];
 
 const process = [
   {
     step: "01",
-    title: "30-minute conversation",
-    desc: "No pitch deck. Just a real conversation about what you're trying to do and whether I can help.",
+    title: "Community listening session",
+    desc: "No pitch deck. A real conversation about your community, your current tools, and where the pressure is.",
   },
   {
     step: "02",
-    title: "Written scope + fixed quote",
-    desc: "You get a plain-English document describing exactly what gets built, what it costs, and when it's done.",
+    title: "Zone assessment & written scope",
+    desc: "A plain-language document that maps your economy across the six zones, identifies the gaps, and proposes what to build first.",
   },
   {
     step: "03",
-    title: "Build in the open",
-    desc: "You see progress weekly. No black boxes. If something changes, we talk.",
+    title: "Build with the community, not for it",
+    desc: "You see progress weekly. Key members test as we go. If something doesn't fit how your community actually works, we change it.",
   },
   {
     step: "04",
-    title: "Hand-off, not hold-on",
-    desc: "You get the code, the docs, and a walkthrough. I don't want monthly fees — I want you to own it.",
+    title: "Capacity training & hand-off",
+    desc: "You get the code, the documentation, and a training session. We leave when your team can run it without us.",
   },
 ];
 
@@ -117,15 +127,15 @@ export default function Services() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-serif font-medium leading-tight text-[#FEFDFC]"
           >
-            What gets built. What it costs. What you own.
+            Three ways to work together. All of them end the same way.
           </motion.h1>
           <motion.p variants={fadeInUp} className="text-lg text-[#E3D9CC] max-w-2xl mx-auto leading-relaxed">
-            Every engagement ends the same way: you have the code, you have the docs, and I'm gone. No retainer. No platform lock-in. Just yours.
+            Every engagement ends with your community holding the tools, the data, and the documentation. No retainer. No platform lock-in. Just yours.
           </motion.p>
         </motion.div>
       </section>
 
-      {/* Tiers */}
+      {/* Engagement Types */}
       <section className="py-24 px-6 md:px-12 max-w-6xl mx-auto w-full">
         <motion.div
           initial="hidden"
@@ -134,44 +144,44 @@ export default function Services() {
           variants={stagger}
           className="grid md:grid-cols-3 gap-8"
         >
-          {tiers.map((tier) => (
-            <motion.div key={tier.name} variants={fadeInUp} className="flex">
+          {engagements.map((eng) => (
+            <motion.div key={eng.name} variants={fadeInUp} className="flex">
               <Card
                 className={`flex flex-col w-full border-border/60 hover:border-[#D9A066]/40 transition-colors duration-300 ${
-                  tier.featured ? "ring-2 ring-[#D9A066]/60 shadow-xl" : ""
+                  eng.featured ? "ring-2 ring-[#D9A066]/60 shadow-xl" : ""
                 }`}
               >
-                {tier.featured && (
+                {eng.featured && (
                   <div className="bg-[#D9A066] text-[#2B2825] text-xs font-bold tracking-widest uppercase text-center py-2 rounded-t-xl">
-                    Most requested
+                    Most common starting point
                   </div>
                 )}
                 <CardContent className="p-8 flex flex-col gap-6 flex-1">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-3 rounded-lg text-primary">
-                      <tier.icon className="w-5 h-5" />
+                      <eng.icon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold">{tier.name}</h3>
-                      <p className="text-sm text-[#D9A066] font-medium">{tier.tagline}</p>
+                      <h3 className="text-xl font-bold">{eng.name}</h3>
+                      <p className="text-sm text-[#D9A066] font-medium">{eng.tagline}</p>
                     </div>
                   </div>
 
-                  <p className="text-muted-foreground leading-relaxed">{tier.description}</p>
+                  <p className="text-muted-foreground leading-relaxed">{eng.description}</p>
 
                   <div className="flex gap-6 text-sm">
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Investment</p>
-                      <p className="font-bold text-foreground">{tier.price}</p>
+                      <p className="font-bold text-foreground">{eng.price}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Timeline</p>
-                      <p className="font-bold text-foreground">{tier.timeline}</p>
+                      <p className="font-bold text-foreground">{eng.timeline}</p>
                     </div>
                   </div>
 
                   <ul className="space-y-3 flex-1">
-                    {tier.includes.map((item) => (
+                    {eng.includes.map((item) => (
                       <li key={item} className="flex gap-3 items-start text-sm">
                         <CheckCircle2 className="w-4 h-4 text-[#D9A066] shrink-0 mt-0.5" />
                         <span className="text-foreground/80">{item}</span>
@@ -181,7 +191,7 @@ export default function Services() {
 
                   <div className="pt-4 border-t border-border/50">
                     <p className="text-xs text-muted-foreground mb-4">
-                      <span className="font-semibold text-foreground">Ideal for:</span> {tier.ideal}
+                      <span className="font-semibold text-foreground">Ideal for:</span> {eng.ideal}
                     </p>
                     <Button
                       className="w-full bg-[#D9A066] hover:bg-[#C88E55] text-[#2B2825] font-bold"
@@ -199,6 +209,42 @@ export default function Services() {
         </motion.div>
       </section>
 
+      {/* The Seven Tools */}
+      <section className="py-24 px-6 md:px-12 bg-primary/5 border-y border-border/50">
+        <div className="max-w-5xl mx-auto space-y-16">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="text-center"
+          >
+            <h2 className="text-3xl md:text-5xl font-serif mb-4">The seven tools</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Every Hub Implementation and Regional Platform is built from this toolkit. Your Zone Assessment determines which ones you actually need.</p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid sm:grid-cols-2 gap-6"
+          >
+            {tools.map((tool, i) => (
+              <motion.div key={tool.name} variants={fadeInUp} className="flex gap-4 items-start p-6 rounded-xl border border-border/60 hover:border-[#D9A066]/30 transition-colors">
+                <span className="text-2xl font-serif font-bold text-[#D9A066]/40 leading-none shrink-0 w-8">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div>
+                  <h4 className="font-bold text-foreground mb-1">{tool.name}</h4>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{tool.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section className="py-24 px-6 md:px-12 bg-card border-y border-border/50">
         <div className="max-w-4xl mx-auto space-y-16">
@@ -210,7 +256,7 @@ export default function Services() {
             className="text-center"
           >
             <h2 className="text-3xl md:text-5xl font-serif mb-4">How it works</h2>
-            <p className="text-muted-foreground text-lg">No surprises. No scope creep. Just straight talk from the start.</p>
+            <p className="text-muted-foreground text-lg">No surprises. No scope creep. Straight talk from the first conversation.</p>
           </motion.div>
 
           <motion.div
@@ -245,10 +291,10 @@ export default function Services() {
           className="max-w-2xl mx-auto space-y-8"
         >
           <motion.h2 variants={fadeInUp} className="text-3xl md:text-5xl font-serif">
-            Not sure which tier fits?
+            Not sure which engagement fits?
           </motion.h2>
           <motion.p variants={fadeInUp} className="text-[#E3D9CC] text-lg">
-            Send a one-liner about what you're building. I'll tell you honestly whether it's something I can help with — and roughly what it would cost.
+            Send one paragraph about your community and what you're trying to solve. Bobbie will reply with an honest read on which Zone you're in and what makes sense next.
           </motion.p>
           <motion.div variants={fadeInUp}>
             <Button
@@ -267,8 +313,8 @@ export default function Services() {
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-8 px-6 md:px-12 border-t-4 border-[#D9A066]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-primary-foreground/60">
-          <p>&copy; 2024 Codetry / Above Parr Solutions &mdash; Northwestern Ontario</p>
-          <p className="font-medium tracking-wide text-[#D9A066]">Digital self-reliance. No lock-in. No retainer. Just yours.</p>
+          <p>&copy; 2024 Headwaters / Above Parr Solutions &mdash; Northwestern Ontario</p>
+          <p className="font-medium tracking-wide text-[#D9A066]">Food sovereignty. No lock-in. No retainer. Just yours.</p>
         </div>
       </footer>
     </div>

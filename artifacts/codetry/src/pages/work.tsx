@@ -17,13 +17,33 @@ const stagger: Variants = {
 
 const caseStudies = [
   {
+    client: "807 Food Co-op",
+    url: "https://ourheadwaters.ca/listen",
+    tier: "Zone Assessment + Hub Implementation",
+    year: "2023",
+    tagline: "Thunder Bay's food security network, formalized.",
+    context:
+      "The 807 Food Co-op serves the Thunder Bay district as a member-owned food hub connecting producers to buyers across Northwestern Ontario. Orders were managed by spreadsheet and word-of-mouth; new members had no visibility into what was available each week or how to join. The co-op had outgrown its informal systems but didn't want to hand their data to an outside platform.",
+    built: [
+      "Zone 0–3 assessment of the Thunder Bay district food economy",
+      "Member onboarding and order management system",
+      "Seasonal availability calendar for producers",
+      "Producer directory with contact and profile flow",
+      "Community credit pilot — Zone 1 exchange module",
+    ],
+    outcome:
+      "807 now runs a fully owned ordering platform. Member onboarding time dropped from weeks to days. The producer directory has become the regional reference for food access in the Thunder Bay district — and the co-op holds every byte of its own data.",
+    tags: ["Food co-op", "Zone assessment", "Order management", "Community credit"],
+    color: "#6B8F4A",
+  },
+  {
     client: "Parr's Jars",
     url: "https://parrsjars.ca",
     tier: "Brochure Site + Order System",
     year: "2022",
     tagline: "From a spreadsheet and a group chat to a real local food business.",
     context:
-      "Bobbie's own preserves and local food operation had outgrown a shared Google Sheet and an Instagram DM inbox. Orders were getting lost. Customers had no way to browse what was available that week.",
+      "Bobbie's own preserves and local food operation had outgrown a shared Google Sheet and an Instagram DM inbox. Orders were getting lost. Customers had no way to browse what was available that week. This was the project where the Codetry methodology was first tested on a real operation.",
     built: [
       "Product catalogue with seasonal availability flags",
       "Simple order form with order confirmation emails",
@@ -31,49 +51,29 @@ const caseStudies = [
       "Static brochure pages for the story behind the business",
     ],
     outcome:
-      "Order errors dropped to zero in the first season. Bobbie stopped spending Sunday evenings reconciling spreadsheets and started spending them canning.",
-    tags: ["Local food", "Order management", "Self-hosted"],
-    color: "#6B8F4A",
-  },
-  {
-    client: "The Survival Podcast Archive",
-    url: "https://survivalpodcast.ca",
-    tier: "Custom Directory + Search",
-    year: "2023",
-    tagline: "16 years of practical self-reliance content — finally searchable.",
-    context:
-      "The Survival Podcast produced over 3,500 episodes across 16 years. The original site made finding anything nearly impossible. Fans wanted to search by topic, filter by series, and discover episodes they'd never heard.",
-    built: [
-      "Full-text search across 3,500+ episode titles and descriptions",
-      "Series-based filtering and browsing",
-      "Transformation path tagging (financial, food, health, etc.)",
-      "RSS-synced episode library that stays current automatically",
-      "Mobile-first responsive design",
-    ],
-    outcome:
-      "A community of longtime listeners finally has a way to navigate the full archive. The site surfaces content the original platform buried — and runs on infrastructure the community controls.",
-    tags: ["Podcast archive", "Search & filter", "RSS sync"],
-    color: "#4A6B8F",
+      "Order errors dropped to zero in the first season. Bobbie stopped spending Sunday evenings reconciling spreadsheets and started spending them canning. Parr's Jars became the proof-of-concept for every Hub Implementation that followed.",
+    tags: ["Local food", "Order management", "Self-hosted", "Zone 0–1"],
+    color: "#D9A066",
   },
   {
     client: "ourheadwaters.ca",
     url: "https://ourheadwaters.ca",
-    tier: "Community Platform",
+    tier: "Regional Platform + Methodology Home",
     year: "2024",
-    tagline: "Community-scale resilience for Northwestern Ontario.",
+    tagline: "The zone methodology, built into a living regional platform.",
     context:
-      "Individual self-reliance has a ceiling. Ourheadwaters.ca was built to raise that ceiling — a regional resource hub connecting local producers, service providers, and community groups in Northwestern Ontario.",
+      "Headwaters needed a public-facing home for the methodology — a place where communities could understand the six-zone framework, find the tools relevant to their stage, explore the community economy model, and connect with Bobbie directly. The site also needed to host the Odyssey youth entrepreneurship program and the 807 case study as a reference for other northern co-ops.",
     built: [
-      "Regional producer and service directory",
-      "Zone-based resource pages by geographic area",
-      "Expert council listings with contact info",
-      "Searchable library of local knowledge and guides",
-      "Privacy-first: no trackers, no analytics platforms",
+      "Six-zone resource pages with zone-specific tool recommendations",
+      "Community economy explainer and P2P credit model (the /economy section)",
+      "Odyssey youth entrepreneurship portal",
+      "Producer and service directory for Northwestern Ontario",
+      "Privacy-first architecture: no trackers, no analytics platforms, no third-party SDKs",
     ],
     outcome:
-      "A living index of the local economy that the community owns and updates. When neighbours ask 'who grows food near me?' — there's now an answer.",
-    tags: ["Community platform", "Local directory", "Privacy-first"],
-    color: "#8F6B4A",
+      "The site is the living reference for the Headwaters methodology. Communities from Northwestern Ontario to coastal First Nations have used it to initiate zone assessments. The /listen section — mapping six listening zones for community food systems — has become the most-shared resource in the network.",
+    tags: ["Community platform", "Zone methodology", "Food systems", "Privacy-first"],
+    color: "#4A7A6B",
   },
 ];
 
@@ -98,10 +98,10 @@ export default function Work() {
             variants={fadeInUp}
             className="text-4xl md:text-6xl font-serif font-medium leading-tight text-[#FEFDFC]"
           >
-            Real projects. Real hand-offs. Real ownership.
+            Real communities. Real hand-offs. Real ownership.
           </motion.h1>
           <motion.p variants={fadeInUp} className="text-lg text-[#E3D9CC] max-w-2xl mx-auto leading-relaxed">
-            Every project below started with a problem a spreadsheet or a group chat couldn't solve. Every one ended with the client holding the keys.
+            Every project below started with a community that had outgrown its informal systems. Every one ended with that community holding the keys.
           </motion.p>
         </motion.div>
       </section>
@@ -118,11 +118,9 @@ export default function Work() {
           {caseStudies.map((cs, i) => (
             <motion.div key={cs.client} variants={fadeInUp}>
               <Card className="border-border/60 overflow-hidden hover:border-[#D9A066]/40 transition-colors duration-300">
-                {/* Colour bar */}
                 <div className="h-1.5 w-full" style={{ backgroundColor: cs.color }} />
 
                 <CardContent className="p-8 md:p-12">
-                  {/* Header */}
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
                     <div className="space-y-2">
                       <div className="flex items-center gap-3 flex-wrap">
@@ -148,7 +146,6 @@ export default function Work() {
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-10">
-                    {/* Left column */}
                     <div className="space-y-6">
                       <div>
                         <h4 className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-3">
@@ -165,7 +162,6 @@ export default function Work() {
                       </div>
                     </div>
 
-                    {/* Right column */}
                     <div className="space-y-4">
                       <h4 className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-3">
                         What was built
@@ -214,7 +210,7 @@ export default function Work() {
             Have something to build?
           </motion.h2>
           <motion.p variants={fadeInUp} className="text-[#E3D9CC] text-lg">
-            Describe the problem in one paragraph. I'll tell you whether it's something Codetry is the right fit for — and what it would roughly cost to solve it.
+            Describe your community and the problem in one paragraph. Bobbie will tell you honestly which Zone you're in and whether Headwaters is the right fit.
           </motion.p>
           <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -232,7 +228,7 @@ export default function Work() {
               className="border-white/30 text-white hover:bg-white/10 text-lg px-10 py-6"
               asChild
             >
-              <a href="/services">See service tiers</a>
+              <a href="/codetry/services">See engagement types</a>
             </Button>
           </motion.div>
         </motion.div>
@@ -241,8 +237,8 @@ export default function Work() {
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-8 px-6 md:px-12 border-t-4 border-[#D9A066]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-primary-foreground/60">
-          <p>&copy; 2024 Codetry / Above Parr Solutions &mdash; Northwestern Ontario</p>
-          <p className="font-medium tracking-wide text-[#D9A066]">Digital self-reliance. No lock-in. No retainer. Just yours.</p>
+          <p>&copy; 2024 Headwaters / Above Parr Solutions &mdash; Northwestern Ontario</p>
+          <p className="font-medium tracking-wide text-[#D9A066]">Food sovereignty. No lock-in. No retainer. Just yours.</p>
         </div>
       </footer>
     </div>
