@@ -40,9 +40,9 @@ function NativeTabLayout() {
           <Icon sf={{ default: "bolt.circle", selected: "bolt.circle.fill" }} />
           <Label>Value</Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="privacy-guide">
-          <Icon sf={{ default: "lock.shield", selected: "lock.shield.fill" }} />
-          <Label>Privacy</Label>
+        <NativeTabs.Trigger name="stomp">
+          <Icon sf={{ default: "figure.walk", selected: "figure.walk" }} />
+          <Label>Stomp</Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="bookmarks">
           <Icon sf={{ default: "bookmark", selected: "bookmark.fill" }} />
@@ -167,16 +167,20 @@ function ClassicTabLayout() {
           }}
         />
         <Tabs.Screen
-          name="privacy-guide"
+          name="stomp"
           options={{
-            title: "Privacy",
+            title: "Stomp",
             tabBarIcon: ({ color }) =>
               isIOS ? (
-                <SymbolView name="lock.shield" tintColor={color} size={24} />
+                <SymbolView name="figure.walk" tintColor={color} size={22} />
               ) : (
-                <Feather name="shield" size={22} color={color} />
+                <Feather name="activity" size={22} color={color} />
               ),
           }}
+        />
+        <Tabs.Screen
+          name="privacy-guide"
+          options={{ href: null }}
         />
         <Tabs.Screen
           name="bookmarks"

@@ -27,6 +27,13 @@ import { useColors } from "@/hooks/useColors";
 const PAGE_SIZE = 20;
 const MINI_PLAYER_HEIGHT = 64;
 
+function getTimeHeaderColor(hour: number): string {
+  if (hour >= 5 && hour < 10)  return "#7a5c2a"; // dawn
+  if (hour >= 10 && hour < 17) return "#2c4a36"; // day
+  if (hour >= 17 && hour < 21) return "#7a3a1e"; // dusk
+  return "#1a2814";                               // night
+}
+
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -369,6 +376,12 @@ export default function HomeScreen() {
   const [page, setPage] = useState(0);
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [hour, setHour] = useState(() => new Date().getHours());
+
+  useEffect(() => {
+    const id = setInterval(() => setHour(new Date().getHours()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
@@ -508,7 +521,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Hero */}
-      <View style={[styles.hero, { backgroundColor: colors.primary, paddingTop: topPadding + 16 }]}>
+      <View style={[styles.hero, { backgroundColor: getTimeHeaderColor(hour), paddingTop: topPadding + 16 }]}>
         <View style={styles.heroRow}>
           {feed?.artworkUrl ? (
             <Image source={{ uri: feed.artworkUrl }} style={styles.heroArt} contentFit="cover" />

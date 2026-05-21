@@ -1,0 +1,236 @@
+807 Garden — Complete Technical Overview
+Written for a Replit agent building a similar community companion app
+
+What it is
+A daily-habit companion mobile app (Expo/React Native) that wraps a nature metaphor around three personal intentions. Members name three things they want to tend every day, and the app tracks whether they did it. Points, streaks, a knowledge base, and a rewards economy sit on top of that core loop.
+
+The Three Sisters (Corn, Bean, Squash) is 807's metaphor. Your community can swap this for anything triadic:
+
+Your community	Metaphor	Three things
+Makerspace	Three Tools	Build · Learn · Share
+Fitness co-op	Three Pillars	Move · Rest · Fuel
+Library	Three Practices	Read · Reflect · Connect
+Mental health app	Three Anchors	Body · Mind · Heart
+Faith community	Three Intentions	Prayer · Service · Stillness
+App structure
+Framework: Expo SDK 54 · expo-router (file-based navigation) · React Native 0.81
+
+Bottom tab navigation — 4 tabs:
+
+(tabs)/index.tsx     → Garden Home (the daily check-in screen)
+(tabs)/earn.tsx      → Earn Points (daily activities)
+(tabs)/community.tsx → The Ecosystem (membership tiers)
+(tabs)/profile.tsx   → User Profile (stats, history, rewards)
+Stack routes (modals/full screens):
+
+onboarding.tsx            → First-run + re-entry intention-setter
+knowledge-base.tsx        → Searchable tip/recipe library
+knowledge-base/[id].tsx   → Individual tip detail
+(auth)/sign-in.tsx        → Clerk sign-in
+(auth)/sign-up.tsx        → Clerk sign-up
+The state engine — GardenContext.tsx
+This is the heart of the app. Everything lives here. Key design decisions worth copying:
+
+Local-first with server sync for bookmarks only. The daily habit state (streak, points, tending log, labels) is entirely in AsyncStorage — no server dependency for the core loop. Only bookmarked tips sync to the server. This means the app works offline and feels instant.
+
+// Storage keys — increment version on breaking schema change
+const STORAGE_KEY = "garden_state_v3";
+const LEGACY_KEY  = "garden_state_v2";
+// Per-user bookmark key — avoids cross-user pollution on shared devices
+function tipsKey(userId: string) {
+  return `garden_tips_v1_${userId}`;
+}
+State shape:
+
+interface GardenState {
+  tier: "community" | "sustaining" | "harvest" | "producer" | "sponsor";
+  streak: number;
+  points: number;
+  lastTended: string | null;          // ISO date "2026-05-21"
+  completedActivityIds: string[];     // reset daily via activityDate
+  activityDate: string | null;
+  sisterLabels: [string, string, string];  // user-named intentions
+  sistersChecked: [boolean, boolean, boolean];
+  sistersDate: string | null;
+  tendedDate: string | null;
+  tendedMethod: "watering_can" | "mindful" | null;
+  tendingLog: TendingRecord[];        // last 30 days
+  prunedToday: [boolean, boolean, boolean];
+  pruningDate: string | null;
+  sisterHacks: [string[], string[], string[]];  // personal notes per intention
+  savedTips: SavedTip[];
+}
+Two tending modes — a pattern worth keeping:
+
+"watering_can"  → one tap, all three checked, +10 pts  (quick, frictionless)
+"mindful"       → tap each plant individually, +25 pts  (intentional, rewarded more)
+Streak logic — one function, easy to adapt:
+
+function computeStreak(prev: GardenState, today: string, alreadyTended: boolean): number {
+  if (alreadyTended) return prev.streak;
+  const yesterday = /* ISO date string for yesterday */;
+  return prev.lastTended === yesterday ? prev.streak + 1 : 1;
+}
+Bookmark sync strategy (server-wins on sign-in, best-effort push on toggle):
+
+Server has data → server replaces local (handles reinstalls, device switches)
+Server empty → migrate from local per-user cache, push to server
+Network failure → restore from per-user local key, retry next launch
+Account switch → clear bookmarks immediately, re-sync for new user
+Daily check-in screen — (tabs)/index.tsx
+Time-of-day gradient — no packages needed:
+
+function getGradient(hour: number): readonly [string, string, string] {
+  if (hour >= 5 && hour < 10)  return ["#e8a030", "#a0b840", "#5a8030"]; // dawn
+  if (hour >= 10 && hour < 17) return ["#5a8030", "#3a6020", "#2a4818"]; // day
+  if (hour >= 17 && hour < 21) return ["#c4701a", "#7a4820", "#2a2810"]; // dusk
+  return ["#1a2814", "#0e1a0a", "#080e06"];                               // night
+}
+Weather — free, no API key, no account:
+
+https://api.open-meteo.com/v1/forecast
+  ?latitude=XX.XXXX&longitude=XX.XXXX
+  &current=temperature_2m,weather_code,windspeed_10m
+  &daily=temperature_2m_max,temperature_2m_min
+  &timezone=America%2FToronto
+Cached in AsyncStorage with 30-minute TTL. WMO weather code → icon/label map is included in the file (100 lines, static, no dependency).
+
+7-day streak dots — pure React Native, no library:
+
+// Build last 7 days, check which dates appear in tendingLog
+const days = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(today);
+  d.setDate(d.getDate() - (6 - i));
+  return d.toISOString().split("T")[0];
+});
+Post-tending pruning flow — offered 1.2s after completion:
+
+A PruningPromptSheet appears once per session
+User can accept → PruningCarouselSheet (reflective prompts per intention)
+Or dismiss → a nudge stays visible to re-open it
+Pruning state (prunedToday, pruningDate) resets each day
+Saved tips row — horizontal scroll of bookmarked tip chips. Long-press shows unsave/keep split confirmation (no modal needed).
+
+Garden bed SVG — GardenBed.tsx
+Custom SVG component using react-native-svg. Three plant sprites (Corn, Bean, Squash) animate between states:
+
+State	Visual
+dry (unchecked)	Desaturated, wilted
+watered (watering_can)	Blue tint, water drops
+tended (mindful)	Full colour, glowing
+pruned	Scissor indicator overlay
+Receives: sisterLabels, sistersChecked, gardenTended, tendedMethod, prunedSisters, onToggleSister, onPlantPress, width.
+
+For another community: replace Corn/Bean/Squash SVG paths with your own icons (tools, flames, books, etc.). The animation logic (PlantState, dew drops, reanimated spring) is metaphor-agnostic.
+
+Onboarding — onboarding.tsx
+4-step walkthrough. Importantly, it doubles as a re-entry editor (profile has "About my Three Sisters ↗" which pushes to the same screen).
+
+const STEPS = [
+  { key: "welcome", title: "Your garden is waiting.", sister: null },
+  { key: "corn",    title: "Meet Corn.",   sister: 0,  placeholder: "My Corn is…"   },
+  { key: "bean",    title: "Meet Bean.",   sister: 1,  placeholder: "My Bean is…"   },
+  { key: "squash",  title: "Meet Squash.", sister: 2,  placeholder: "My Squash is…" },
+];
+Pattern worth keeping: the CTA is disabled until the input has content (canAdvance), animated spring on press, haptic feedback at each step. Skip defaults to ["My habit", "My connection", "My joy"] — detected later as "meaningless" so the nudge to name them re-appears on the home screen.
+
+Earn screen — (tabs)/earn.tsx
+Daily activity list. Activities reset each morning (checked via activityDate). Five built-in types:
+
+type ActionKind = "webview" | "recipe_snap" | "market_confirm" | "knowledge_base";
+const ACTIVITIES: Activity[] = [
+  { id: "recipe_snap",    points: 15, actionKind: "recipe_snap"    },
+  { id: "read_guide",     points: 10, actionKind: "webview",  webviewPath: "/guide"    },
+  { id: "browse_knowledge", points: 10, actionKind: "knowledge_base" },
+  { id: "take_learning",  points: 15, actionKind: "webview",  webviewPath: "/learning" },
+  { id: "market_checkin", points: 25, actionKind: "market_confirm"  },
+];
+webview kind opens the web app in an in-app browser (expo-web-browser via openInBrowser()), then awards points when the user returns. No verification — honour system. Points awarded on return, not on actual completion.
+
+market_confirm kind is a simple Alert confirm. Works for location-based actions with no GPS.
+
+recipe_snap kind opens RecipeSnapSheet — camera/image-picker sheet. Currently stores locally; no backend endpoint to submit to.
+
+Community screen — (tabs)/community.tsx
+Static content. One card per membership tier, highlighted if it matches myTier from context. Each tier gets a nature-role label:
+
+// 807's mapping — swap for your community's own metaphors:
+community  → "Pollinators" · Air  · bee icon
+sustaining → "Rain"        · Water · water icon  
+harvest    → "Perennials"  · Deep Roots · tree icon
+producer   → "Plants"      · Growth · sprout icon
+sponsor    → "Soil"        · Foundation · terrain icon
+The isMe highlight (coloured border, shadow, "You" badge) is the only dynamic element.
+
+Profile screen — (tabs)/profile.tsx
+Four sections:
+
+Profile card — tier icon (changes with tier), role label, streak / points / today's count
+My Three Sisters editor — MySistersEditor component (accordion-style inline editor from TendingCards.tsx)
+Tending history — last 30 days from tendingLog, shows date, method dot (green=mindful, blue=watered), sister dots
+Membership tier selector — pill buttons. Currently self-reported (user taps their own tier). Should be synced from API.
+Rewards menu — 4 built-in rewards, redeemReward(cost) deducts from points, shows an Alert to "show to staff"
+Content files — the easiest thing to swap
+lib/sisterCardPrompts.ts — 12 reflective prompts per intention (Corn/Bean/Squash). Replace with your community's prompts. getRandomTip(sisterIndex) avoids repeating the same prompt twice in a row.
+
+lib/pruningTips.ts — 3 gardening tips per plant shown in the post-tending carousel. Completely metaphor-specific — swap for your domain's equivalent micro-advice.
+
+API surface (server side)
+Only three endpoints used by the mobile app:
+
+GET  /api/tips              → paginated tip list (category, search params)
+GET  /api/tips/saved        → { tipIds: number[] } for authenticated user
+PUT  /api/tips/saved        → { tipIds: number[] } — full replace, not patch
+GET  /api/tips/:id          → single tip detail
+Auth: Clerk Bearer token in Authorization header. The API base is https://${EXPO_PUBLIC_DOMAIN}/api.
+
+Key dependencies
+"expo": "~54.0.27",
+"expo-router": "~6.0.17",
+"@clerk/expo": "^3.2.10",
+"react-native-reanimated": "~4.1.1",
+"react-native-svg": "15.12.1",
+"@react-native-async-storage/async-storage": "2.2.0",
+"expo-haptics": "~15.0.8",
+"expo-linear-gradient": "~15.0.8",
+"expo-image-picker": "~17.0.9",
+"expo-web-browser": "~15.0.10",
+"expo-location": "~19.0.8",    ← installed, not yet used
+"@tanstack/react-query": "catalog:"
+Font: DM Sans (400/500/600/700/Bold) via @expo-google-fonts/dm-sans. No serif, all utility sans. Works at every weight.
+
+Colour system — constants/colors.ts
+Two-mode palette (light + dark), accessed via useColors() hook:
+
+primary:   "#4a6822" (light) / "#7a9e3a" (dark)  // forest green
+secondary: "#c47a1e" (both)                        // harvest gold
+background:"#f5f3ef" (light) / "#141414" (dark)
+card:      "#ffffff" (light) / "#1c1c1c" (dark)
+Garden home screen uses inline gradient colours (#86efac green, #f0c785 gold, #fb923c orange) that bypass the theme — deliberate, for the immersive full-screen feel.
+
+Improvements for 807 Garden — compounded back
+These are gaps the codebase reveals, in priority order:
+
+1. Tier sync from the API (medium effort, high value)
+Tier is self-reported in profile. Every member already has a real tier in the 807 Benefits database via Square/Clerk. A GET /api/members/me call on sign-in should set tier authoritatively, not let users self-select. Prevents inflated access in the rewards menu.
+
+2. Weather uses hardcoded Thunder Bay coordinates
+expo-location is already installed but not used. One Location.getCurrentPositionAsync() call on first launch, stored in AsyncStorage, would make the weather genuinely local for members in Sioux Lookout, Dryden, or Deer Lake.
+
+3. Streak validation lives only on device
+A user who changes their phone's clock or reinstalls gets a corrupt streak. Since tendingLog already contains dated records, a simple server endpoint (POST /api/garden/sync-streak) that validates the log against the server's current date would make streaks trustworthy — useful before rewards become real.
+
+4. Reward redemption needs a QR/code flow
+Currently: Alert → "Show this to a staff member". Should generate a short-lived redemption code (server-issued, one-use, time-bounded) that displays as a large number or QR. The server-side model is trivial — a garden_redemptions table with code, userId, rewardId, redeemedAt.
+
+5. Recipe snap has no backend
+RecipeSnapSheet captures an image and title, completes the activity, but sends nothing to the server. A POST /api/garden/recipe-snaps endpoint accepting a base64 or multipart image would let you build a community recipe wall later. The camera flow is already built.
+
+6. Pruning reflections aren't persisted
+sisterHacks: [string[], string[], string[]] exists in state and has an addSisterHack action, but nothing in the pruning carousel calls it. After a pruning session, saving the user's typed response as a hack would give them a personal journal per intention — differentiated enough to be worth surfacing.
+
+7. Push notification for daily streak
+expo-notifications (not yet installed) + a POST /api/garden/register-push-token endpoint. One daily reminder at a user-configured time ("Tend your garden 🌱") would materially improve retention. The streak logic to calculate "hasn't tended today" is already available server-side if you sync the log.
+
+8. Knowledge base offline cache
+Tips are fetched fresh via TanStack Query on every visit. A simple staleTime: Infinity + AsyncStorage-backed persistence layer (or just bumping gcTime) means the knowledge base works on the train. The bookmark sync is already offline-resilient — tips should be too.

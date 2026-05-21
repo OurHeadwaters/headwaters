@@ -23,6 +23,7 @@ import { HistoryProvider } from "@/context/HistoryContext";
 import { DownloadProvider } from "@/context/DownloadContext";
 import { PlayerProvider } from "@/context/PlayerContext";
 import { V4VProvider } from "@/context/V4VContext";
+import { StompProvider } from "@/context/StompContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
@@ -79,9 +80,11 @@ export default function RootLayout() {
               <DownloadProvider>
                 <HistoryProvider>
                   <V4VProvider>
-                    <PlayerProvider>
-                      <RootLayoutNav />
-                    </PlayerProvider>
+                    <StompProvider>
+                      <PlayerProvider>
+                        <RootLayoutNav />
+                      </PlayerProvider>
+                    </StompProvider>
                   </V4VProvider>
                 </HistoryProvider>
               </DownloadProvider>
