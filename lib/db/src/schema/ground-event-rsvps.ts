@@ -6,6 +6,7 @@ import {
   timestamp,
   unique,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { groundEventsTable } from "./ground-events";
 
@@ -46,6 +47,7 @@ export const groundEventRsvpsTable = pgTable(
     index("ground_event_rsvps_session_id_idx").on(t.stripeCheckoutSessionId),
     index("ground_event_rsvps_created_at_idx").on(t.createdAt),
     index("ground_event_rsvps_token_idx").on(t.token),
+    uniqueIndex("ground_event_rsvps_event_id_email_udx").on(t.eventId, t.attendeeEmail),
   ],
 );
 

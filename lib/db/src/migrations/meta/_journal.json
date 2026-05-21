@@ -78,6 +78,13 @@
       "when": 1748600000000,
       "tag": "0010_ground_event_rsvps_token",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779379417411,
+      "tag": "0011_lethal_nuke",
+      "breakpoints": true
     }
   ]
 }

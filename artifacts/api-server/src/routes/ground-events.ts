@@ -230,8 +230,8 @@ router.post("/ground-events", async (req, res) => {
  *   sessionId     — stable device/session token for deduplication; a given token can only
  *                   increment rsvp_count once per event regardless of reinstalls.
  *   attendeeEmail — attendee's email so the host can follow up (stored for host contact).
+ *                   When provided without a sessionId, deduplicated per (event, email).
  *   attendeeName  — attendee's display name (stored for host contact).
- * When sessionId is present, duplicate RSVPs from the same token are silently ignored.
  */
 router.post("/ground-events/:id/rsvp", async (req, res) => {
   try {
@@ -280,7 +280,7 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       return;
     }
 
-    // With a sessionId: deduplicate — only count the first RSVP per token per event
+    // With a sessionId: deduplicate by token — only count the first RSVP per token per event
     if (sessionId) {
       const existing = await db
         .select({ id: groundEventRsvpsTable.id })
@@ -294,7 +294,6 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
         .limit(1);
 
       if (existing.length > 0) {
-        // Already RSVPed — return current count without incrementing
         logger.info({ id, sessionId, rsvpCount: event.rsvpCount }, "ground-events: duplicate RSVP ignored");
         res.status(200).json({ eventId: id, rsvpCount: event.rsvpCount, alreadyRsvped: true });
         return;
@@ -320,29 +319,56 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       return;
     }
 
-    // No sessionId — email-based or anonymous RSVP, no deduplication
-    const [rsvpRow, [updated]] = await Promise.all([
-      db
+    // No sessionId — deduplicate by email via unique index + onConflictDoNothing
+    const result = await db.transaction(async (tx) => {
+      const inserted = await tx
         .insert(groundEventRsvpsTable)
         .values({ eventId: id, attendeeEmail, attendeeName })
-        .returning(),
-      db
+        .onConflictDoNothing()
+        .returning();
+
+      if (inserted.length === 0) {
+        const [[existing], [current]] = await Promise.all([
+          tx
+            .select()
+            .from(groundEventRsvpsTable)
+            .where(
+              and(
+                eq(groundEventRsvpsTable.eventId, id),
+                eq(groundEventRsvpsTable.attendeeEmail, attendeeEmail),
+              ),
+            )
+            .limit(1),
+          tx
+            .select({ rsvpCount: groundEventsTable.rsvpCount })
+            .from(groundEventsTable)
+            .where(eq(groundEventsTable.id, id))
+            .limit(1),
+        ]);
+        return { rsvpId: existing!.id, rsvpCount: current!.rsvpCount, duplicate: true };
+      }
+
+
+      const [updated] = await tx
         .update(groundEventsTable)
         .set({ rsvpCount: sql`${groundEventsTable.rsvpCount} + 1` })
         .where(eq(groundEventsTable.id, id))
-        .returning(),
-    ]);
+        .returning({ rsvpCount: groundEventsTable.rsvpCount });
+
+      return { rsvpId: inserted[0].id, rsvpCount: updated.rsvpCount, duplicate: false };
+    });
+
+    if (result.duplicate) {
+      logger.info({ id, attendeeEmail }, "ground-events: duplicate RSVP ignored");
+      res.status(200).json({ eventId: id, rsvpCount: result.rsvpCount, rsvpId: result.rsvpId, duplicate: true });
+      return;
+    }
 
     logger.info(
-      { id, attendeeEmail, rsvpCount: updated.rsvpCount },
+      { id, rsvpCount: result.rsvpCount, attendeeEmail },
       "ground-events: RSVP recorded",
     );
-    res.status(201).json({
-      eventId: id,
-      rsvpCount: updated.rsvpCount,
-      rsvpId: rsvpRow[0].id,
-      alreadyRsvped: false,
-    });
+    res.status(201).json({ eventId: id, rsvpCount: result.rsvpCount, rsvpId: result.rsvpId });
   } catch (err) {
     logger.error({ err }, "ground-events: POST /rsvp failed");
     res.status(500).json({ error: "Failed to record RSVP" });
