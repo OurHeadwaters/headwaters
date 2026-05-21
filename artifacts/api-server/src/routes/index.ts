@@ -17,6 +17,7 @@ import ogRouter from "./og";
 import gapsRouter from "./gaps";
 import wisdomRouter from "./wisdom";
 import gearRouter from "./gear";
+import waterWheelRouter from "./water-wheel";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(wishingWellRouter);
 router.use(v4vRouter);
 router.use(ogRouter);
 router.use(wisdomRouter);
+router.use(waterWheelRouter);
 
 export default router;

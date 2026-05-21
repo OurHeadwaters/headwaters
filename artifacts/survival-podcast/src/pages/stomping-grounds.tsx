@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { ArrowRight, Droplets, Pause, Play, RefreshCw, Anchor, Coins, Layers } from "lucide-react";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
+import { useAuth } from "@workspace/replit-auth-web";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -166,15 +167,58 @@ const BUCKET_OPTIONS = [
 ];
 
 function WaterWheelPanel() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [state, setState] = useState<WaterWheelState>(loadWWState);
   const [sweepBurst, setSweepBurst] = useState(false);
   const [editingBucket, setEditingBucket] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const serverSyncedRef = useRef(false);
 
-  const persist = useCallback((next: WaterWheelState) => {
-    setState(next);
-    saveWWState(next);
-  }, []);
+  const syncToServer = useCallback(
+    (bucket: string, lifetimeSweeps: number) => {
+      fetch(apiUrl("/water-wheel/state"), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ bucket, lifetimeSweeps }),
+      }).catch(() => {});
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || serverSyncedRef.current) return;
+    serverSyncedRef.current = true;
+    fetch(apiUrl("/water-wheel/state"), { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { bucket: string; lifetimeSweeps: number } | null) => {
+        if (!data) return;
+        setState((prev) => {
+          const merged: WaterWheelState = {
+            ...prev,
+            bucket: data.bucket || prev.bucket,
+            lifetimeSweeps: Math.max(data.lifetimeSweeps, prev.lifetimeSweeps),
+          };
+          saveWWState(merged);
+          return merged;
+        });
+      })
+      .catch(() => {});
+  }, [isAuthenticated, authLoading]);
+
+  const persist = useCallback(
+    (next: WaterWheelState, serverFields?: { bucket?: string; lifetimeSweeps?: number }) => {
+      setState(next);
+      saveWWState(next);
+      if (isAuthenticated && serverFields) {
+        syncToServer(
+          serverFields.bucket ?? next.bucket,
+          serverFields.lifetimeSweeps ?? next.lifetimeSweeps,
+        );
+      }
+    },
+    [isAuthenticated, syncToServer],
+  );
 
   useEffect(() => {
     if (state.running) {
@@ -197,7 +241,8 @@ function WaterWheelPanel() {
 
   const sweep = () => {
     if (state.drops < SWEEP_THRESHOLD) return;
-    persist({ ...state, drops: 0, lifetimeSweeps: state.lifetimeSweeps + 1 });
+    const next = { ...state, drops: 0, lifetimeSweeps: state.lifetimeSweeps + 1 };
+    persist(next, { lifetimeSweeps: next.lifetimeSweeps });
     setSweepBurst(true);
     setTimeout(() => setSweepBurst(false), 1200);
   };
@@ -258,7 +303,7 @@ function WaterWheelPanel() {
               <button
                 key={opt}
                 onClick={() => {
-                  persist({ ...state, bucket: opt });
+                  persist({ ...state, bucket: opt }, { bucket: opt });
                   setEditingBucket(false);
                 }}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${

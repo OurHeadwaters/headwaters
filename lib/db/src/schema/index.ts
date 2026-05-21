@@ -7,3 +7,4 @@ export * from "./value-v4v";
 export * from "./content-gaps";
 export * from "./wisdom-gems";
 export * from "./reviewed-products";
+export * from "./water-wheel";
