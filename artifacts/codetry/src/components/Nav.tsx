@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import CodetryWordmark from "@/components/CodetryWordmark";
 
 const links = [
   { href: "/", label: "Home" },
@@ -27,8 +28,8 @@ export default function Nav() {
     >
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
         <Link href="/">
-          <span className="font-serif text-xl font-medium text-white hover:text-[#D9A066] transition-colors cursor-pointer">
-            Codetry
+          <span className="text-white hover:text-[#D9A066] transition-colors cursor-pointer">
+            <CodetryWordmark iconSize={28} />
           </span>
         </Link>
 

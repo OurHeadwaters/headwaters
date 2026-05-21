@@ -6,21 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useForm, ValidationError } from "@formspree/react";
 import Nav from "@/components/Nav";
+import CodetryWordmark from "@/components/CodetryWordmark";
 
 const BASE = import.meta.env.BASE_URL;
-
-function CodetryWordmark({ className = "" }: { className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <rect width="28" height="28" rx="6" fill="#D9A066" />
-        <path d="M8 14c0-3.314 2.686-6 6-6 1.657 0 3.157.672 4.243 1.757L16.828 11.17A3.978 3.978 0 0 0 14 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.105 0 2.105-.448 2.828-1.172l1.415 1.415A5.978 5.978 0 0 1 14 20c-3.314 0-6-2.686-6-6Z" fill="#1A2C18" />
-        <path d="M18 11h2v6h-2z" fill="#1A2C18" />
-      </svg>
-      <span className="font-serif font-medium tracking-tight text-xl">Codetry</span>
-    </span>
-  );
-}
 
 export default function Home() {
   const [formspreeState, handleFormspreeSubmit] = useForm("xpzvjdbb");
