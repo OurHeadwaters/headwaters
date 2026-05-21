@@ -119,6 +119,7 @@ function stripHtml(html: string): string {
 async function findProductCategoryIds(): Promise<number[]> {
   const PRODUCT_CATEGORY_SLUGS = [
     "amazon-reviews",
+    "picks-clips",
     "item-of-the-day",
     "tsp-az",
     "tspaz",
