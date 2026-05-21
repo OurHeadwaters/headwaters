@@ -26,6 +26,18 @@ const colors = {
 
     border: "#E3D9CC",
     input: "#E3D9CC",
+
+    forestDeep: "#1C3020",
+    forestMid: "#243A28",
+    woodBrown: "#8B6F47",
+    woodLight: "#B8956A",
+    amberGold: "#D4A843",
+    lanternGlow: "#E8B84B",
+    lanternWarm: "#F5C842",
+    woodBorder: "#C4A882",
+    fieldNote: "#F5EDDC",
+    fieldNoteBorder: "#C4A882",
+    emberOrange: "#E07A2A",
   },
 
   dark: {
@@ -55,6 +67,18 @@ const colors = {
 
     border: "#352F28",
     input: "#352F28",
+
+    forestDeep: "#0F1C12",
+    forestMid: "#1C3020",
+    woodBrown: "#6B5030",
+    woodLight: "#8B6F47",
+    amberGold: "#B88A2E",
+    lanternGlow: "#D4A843",
+    lanternWarm: "#E8B84B",
+    woodBorder: "#4A3A28",
+    fieldNote: "#201C14",
+    fieldNoteBorder: "#4A3A28",
+    emberOrange: "#C06020",
   },
 
   radius: 6,

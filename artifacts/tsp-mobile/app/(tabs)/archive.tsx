@@ -208,10 +208,12 @@ export default function ArchiveScreen() {
   const ListHeader = () => (
     <View>
       <View style={[styles.headerSection, { paddingTop: topPadding + 16, backgroundColor: colors.background }]}>
-        <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-          Archive
-        </Text>
-        <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+            Archive
+          </Text>
+        </View>
+        <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.woodBorder }]}>
           <Ionicons name="search" size={16} color={colors.mutedForeground} />
           <TextInput
             testID="archive-search"
@@ -247,8 +249,8 @@ export default function ArchiveScreen() {
                 style={[
                   styles.chip,
                   {
-                    backgroundColor: active ? colors.primary : colors.muted,
-                    borderColor: active ? colors.primary : colors.border,
+                    backgroundColor: active ? colors.woodBrown : colors.muted,
+                    borderColor: active ? colors.woodBrown : colors.woodBorder,
                   },
                 ]}
               >
@@ -257,7 +259,7 @@ export default function ArchiveScreen() {
                     style={[
                       styles.chipText,
                       {
-                        color: active ? colors.primaryForeground : colors.foreground,
+                        color: active ? "#fff" : colors.foreground,
                         fontFamily: "DMSans_500Medium",
                         flex: 1,
                       },
@@ -270,7 +272,7 @@ export default function ArchiveScreen() {
                     style={[
                       styles.chipCount,
                       {
-                        color: active ? colors.primaryForeground : colors.mutedForeground,
+                        color: active ? "rgba(255,255,255,0.8)" : colors.mutedForeground,
                         fontFamily: "DMSans_400Regular",
                       },
                     ]}
@@ -323,8 +325,8 @@ export default function ArchiveScreen() {
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: active ? colors.primary : colors.muted,
-                      borderColor: active ? colors.primary : colors.border,
+                      backgroundColor: active ? colors.woodBrown : colors.muted,
+                      borderColor: active ? colors.woodBrown : colors.woodBorder,
                     },
                   ]}
                 >
@@ -334,7 +336,7 @@ export default function ArchiveScreen() {
                       style={[
                         styles.chipText,
                         {
-                          color: active ? colors.primaryForeground : colors.foreground,
+                          color: active ? "#fff" : colors.foreground,
                           fontFamily: "DMSans_500Medium",
                           flex: 1,
                         },
@@ -347,7 +349,7 @@ export default function ArchiveScreen() {
                       style={[
                         styles.chipCount,
                         {
-                          color: active ? colors.primaryForeground : colors.mutedForeground,
+                          color: active ? "rgba(255,255,255,0.8)" : colors.mutedForeground,
                           fontFamily: "DMSans_400Regular",
                         },
                       ]}

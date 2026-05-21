@@ -354,26 +354,26 @@ export default function EpisodeDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        <View style={[styles.artworkSection, { backgroundColor: colors.primary, paddingTop: topPadding + 8 }]}>
+        <View style={[styles.artworkSection, { backgroundColor: colors.forestDeep, paddingTop: topPadding + 8 }]}>
           <View style={styles.topBar}>
             <Pressable onPress={() => router.back()} style={styles.backBtn} testID="episode-back-btn">
-              <Ionicons name="chevron-back" size={24} color={colors.primaryForeground} />
+              <Ionicons name="chevron-back" size={24} color={colors.lanternWarm} />
             </Pressable>
             <Text
-              style={[styles.topBarTitle, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}
+              style={[styles.topBarTitle, { color: colors.lanternWarm, fontFamily: "DMSans_600SemiBold" }]}
               numberOfLines={1}
             >
               Episode
             </Text>
             <View style={styles.topBarRight}>
               <Pressable onPress={handleShare} style={styles.iconBtn}>
-                <Ionicons name="share-outline" size={22} color={colors.primaryForeground} />
+                <Ionicons name="share-outline" size={22} color={colors.lanternWarm} />
               </Pressable>
               <Pressable onPress={handleToggleBookmark} style={styles.iconBtn} testID="episode-bookmark-btn">
                 <Ionicons
                   name={bookmarked ? "bookmark" : "bookmark-outline"}
                   size={22}
-                  color={bookmarked ? "#fbbf24" : colors.primaryForeground}
+                  color={bookmarked ? colors.amberGold : colors.lanternWarm}
                 />
               </Pressable>
             </View>
@@ -397,7 +397,7 @@ export default function EpisodeDetailScreen() {
         <View style={styles.playerSection}>
           <View style={styles.episodeMeta}>
             {episode.episodeNumber != null && (
-              <Text style={[styles.epNum, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
+              <Text style={[styles.epNum, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
                 EPISODE {episode.episodeNumber}
               </Text>
             )}
@@ -463,13 +463,13 @@ export default function EpisodeDetailScreen() {
               <View
                 style={[
                   styles.progressFill,
-                  { width: `${progress * 100}%`, backgroundColor: colors.primary },
+                  { width: `${progress * 100}%`, backgroundColor: colors.lanternGlow },
                 ]}
               />
               <View
                 style={[
                   styles.progressThumb,
-                  { left: `${progress * 100}%`, backgroundColor: colors.primary },
+                  { left: `${progress * 100}%`, backgroundColor: colors.amberGold },
                 ]}
               />
             </Pressable>
@@ -502,16 +502,16 @@ export default function EpisodeDetailScreen() {
 
             <Pressable
               onPress={handlePlayPause}
-              style={[styles.playBtn, { backgroundColor: colors.primary }]}
+              style={[styles.playBtn, { backgroundColor: colors.amberGold }]}
               testID="episode-play-pause"
             >
               {isLoading && isThisEpisode ? (
-                <ActivityIndicator color={colors.primaryForeground} />
+                <ActivityIndicator color="#1C1008" />
               ) : (
                 <Ionicons
                   name={isThisEpisode && isPlaying ? "pause" : "play"}
                   size={30}
-                  color={colors.primaryForeground}
+                  color="#1C1008"
                   style={{ marginLeft: isThisEpisode && isPlaying ? 0 : 3 }}
                 />
               )}
@@ -632,13 +632,13 @@ export default function EpisodeDetailScreen() {
         </View>
 
         {/* Toss a Coin */}
-        <View style={[styles.wellSection, { borderTopColor: colors.border }]}>
+        <View style={[styles.wellSection, { borderTopColor: colors.woodBorder }]}>
           <Pressable
             onPress={() => {
               if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setWishingWellVisible(true);
             }}
-            style={[styles.wellBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            style={[styles.wellBtn, { backgroundColor: colors.amberGold + "18", borderColor: colors.amberGold + "55" }]}
           >
             <Text style={styles.wellBtnEmoji}>🪙</Text>
             <View style={{ flex: 1 }}>
@@ -653,7 +653,7 @@ export default function EpisodeDetailScreen() {
         </View>
 
         {showNotes && (
-          <View style={[styles.notesSection, { borderTopColor: colors.border }]}>
+          <View style={[styles.notesSection, { borderTopColor: colors.woodBorder }]}>
             <Text style={[styles.notesTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
               Show Notes
             </Text>

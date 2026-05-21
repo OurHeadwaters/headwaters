@@ -3,11 +3,13 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useGetFeaturedEpisodes, useGetFeed, useListEpisodes, useGetThisDayEpisodes } from "@workspace/api-client-react";
 import type { Episode, ThisDayEpisode } from "@workspace/api-client-react";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useHistory } from "@/context/HistoryContext";
 import type { PlaybackRecord } from "@/context/HistoryContext";
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   FlatList,
   Modal,
   Platform,
@@ -21,6 +23,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EpisodeCard } from "@/components/EpisodeCard";
+import { WoodCard } from "@/components/homestead/WoodCard";
+import { GordBird } from "@/components/GordBird";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -28,10 +32,10 @@ const PAGE_SIZE = 20;
 const MINI_PLAYER_HEIGHT = 64;
 
 function getTimeHeaderColor(hour: number): string {
-  if (hour >= 5 && hour < 10)  return "#7a5c2a"; // dawn
-  if (hour >= 10 && hour < 17) return "#2c4a36"; // day
-  if (hour >= 17 && hour < 21) return "#7a3a1e"; // dusk
-  return "#1a2814";                               // night
+  if (hour >= 5 && hour < 10)  return "#7a5c2a";
+  if (hour >= 10 && hour < 17) return "#2c4a36";
+  if (hour >= 17 && hour < 21) return "#7a3a1e";
+  return "#1a2814";
 }
 
 const MONTHS = [
@@ -114,49 +118,22 @@ function WheelPicker({
 }
 
 const wheelStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    overflow: "hidden",
-    position: "relative",
-  },
-  item: {
-    height: ITEM_HEIGHT,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, overflow: "hidden", position: "relative" },
+  item: { height: ITEM_HEIGHT, justifyContent: "center", alignItems: "center" },
   selectedItem: {},
-  itemText: {
-    fontSize: 16,
-    color: "rgba(199, 210, 254, 0.5)",
-  },
-  selectedText: {
-    color: "#e0e7ff",
-    fontSize: 18,
-  },
+  itemText: { fontSize: 16, color: "rgba(199, 210, 254, 0.5)" },
+  selectedText: { color: "#e0e7ff", fontSize: 18 },
   highlightTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2 * ITEM_HEIGHT,
-    background: "linear-gradient(to bottom, #1e1b4b, transparent)",
-    backgroundColor: "rgba(30, 27, 75, 0.7)",
+    position: "absolute", top: 0, left: 0, right: 0,
+    height: 2 * ITEM_HEIGHT, backgroundColor: "rgba(30, 27, 75, 0.7)",
   },
   highlightBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2 * ITEM_HEIGHT,
-    backgroundColor: "rgba(30, 27, 75, 0.7)",
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    height: 2 * ITEM_HEIGHT, backgroundColor: "rgba(30, 27, 75, 0.7)",
   },
   selectionBar: {
-    position: "absolute",
-    top: 2 * ITEM_HEIGHT,
-    left: 8,
-    right: 8,
-    height: 1,
-    backgroundColor: "rgba(99, 102, 241, 0.4)",
+    position: "absolute", top: 2 * ITEM_HEIGHT, left: 8, right: 8,
+    height: 1, backgroundColor: "rgba(99, 102, 241, 0.4)",
   },
 });
 
@@ -165,6 +142,7 @@ function yearsAgo(year: number): number {
 }
 
 function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
+  const colors = useColors();
   const { play, seek } = usePlayer();
   const year = new Date(episode.pubDate).getUTCFullYear();
   const ago = yearsAgo(year);
@@ -172,48 +150,39 @@ function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
   const handlePlay = async () => {
     if (!episode.audioUrl) return;
     await play({
-      slug: episode.slug,
-      title: episode.title,
-      audioUrl: episode.audioUrl,
-      artworkUrl: episode.artworkUrl,
-      durationSeconds: episode.durationSeconds,
+      slug: episode.slug, title: episode.title, audioUrl: episode.audioUrl,
+      artworkUrl: episode.artworkUrl, durationSeconds: episode.durationSeconds,
       episodeNumber: episode.episodeNumber,
     });
     if (episode.historyTimestamp && episode.historyTimestamp > 0) {
-      setTimeout(() => {
-        seek(episode.historyTimestamp! * 1000);
-      }, 800);
+      setTimeout(() => seek(episode.historyTimestamp! * 1000), 800);
     }
-  };
-
-  const handlePress = () => {
-    router.push(`/episode/${episode.slug}`);
   };
 
   return (
     <Pressable
-      onPress={handlePress}
+      onPress={() => router.push(`/episode/${episode.slug}`)}
       style={({ pressed }) => [
         styles.thisDayCard,
-        { backgroundColor: "rgba(79, 70, 229, 0.25)", borderColor: "rgba(99, 102, 241, 0.3)", opacity: pressed ? 0.85 : 1 },
+        { backgroundColor: colors.woodBrown + "22", borderColor: colors.woodBorder, opacity: pressed ? 0.85 : 1 },
       ]}
     >
       <View style={styles.thisDayCardTop}>
         <View style={styles.thisDayYearCol}>
           <View style={styles.thisDayYearRow}>
-            <Text style={[styles.thisDayYear, { color: "#c7d2fe", fontFamily: "DMSans_700Bold" }]}>
+            <Text style={[styles.thisDayYear, { color: colors.amberGold, fontFamily: "DMSans_700Bold" }]}>
               {year}
             </Text>
             {episode.episodeNumber != null && (
-              <View style={[styles.thisDayEpBadge, { backgroundColor: "rgba(79, 70, 229, 0.4)", borderColor: "rgba(99, 102, 241, 0.4)" }]}>
-                <Text style={[styles.thisDayEpNum, { color: "#a5b4fc", fontFamily: "DMSans_600SemiBold" }]}>
+              <View style={[styles.thisDayEpBadge, { backgroundColor: colors.woodBrown + "33", borderColor: colors.woodBrown + "55" }]}>
+                <Text style={[styles.thisDayEpNum, { color: colors.woodLight, fontFamily: "DMSans_600SemiBold" }]}>
                   EP {episode.episodeNumber}
                 </Text>
               </View>
             )}
           </View>
           {ago > 0 && (
-            <Text style={[styles.thisDayAgoText, { color: "rgba(199, 210, 254, 0.5)", fontFamily: "DMSans_400Regular" }]}>
+            <Text style={[styles.thisDayAgoText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
               {ago === 1 ? "1 year ago" : `${ago} years ago`}
             </Text>
           )}
@@ -222,18 +191,18 @@ function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
           <Image source={{ uri: episode.artworkUrl }} style={styles.thisDayArt} contentFit="cover" />
         ) : null}
       </View>
-      <Text style={[styles.thisDayTitle, { color: "#e0e7ff", fontFamily: "DMSans_600SemiBold" }]} numberOfLines={2}>
+      <Text style={[styles.thisDayTitle, { color: colors.foreground, fontFamily: "DMSans_600SemiBold" }]} numberOfLines={2}>
         {episode.title}
       </Text>
       <Pressable
         onPress={handlePlay}
         style={({ pressed }) => [
           styles.thisDayPlayBtn,
-          { backgroundColor: pressed ? "#4338ca" : "#4f46e5" },
+          { backgroundColor: pressed ? colors.woodBrown : colors.amberGold },
         ]}
       >
-        <Ionicons name="play" size={11} color="#fff" />
-        <Text style={[styles.thisDayPlayText, { color: "#fff", fontFamily: "DMSans_600SemiBold" }]}>
+        <Ionicons name="play" size={11} color="#1C1008" />
+        <Text style={[styles.thisDayPlayText, { color: "#1C1008", fontFamily: "DMSans_600SemiBold" }]}>
           {episode.historyTimestamp && episode.historyTimestamp > 0
             ? `Play @ ${formatTimestamp(episode.historyTimestamp)}`
             : "Play"}
@@ -243,15 +212,13 @@ function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
   );
 }
 
-function formatProgress(positionMs: number, durationSeconds?: number | null): string {
+function formatProgress(positionMs: number): string {
   const totalSec = Math.floor(positionMs / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  const pos = h > 0
-    ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-    : `${m}:${String(s).padStart(2, "0")}`;
-  return pos;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function ContinueListeningCard({ record }: { record: PlaybackRecord }) {
@@ -262,109 +229,144 @@ function ContinueListeningCard({ record }: { record: PlaybackRecord }) {
     ? Math.min(1, record.positionMs / (record.durationSeconds * 1000))
     : 0;
 
-  const handlePress = () => {
-    router.push(`/episode/${record.slug}`);
-  };
-
-  const handleResume = async () => {
-    await play({
-      slug: record.slug,
-      title: record.title,
-      audioUrl: record.audioUrl,
-      artworkUrl: record.artworkUrl,
-      durationSeconds: record.durationSeconds,
-      episodeNumber: record.episodeNumber,
-    });
-  };
-
   return (
-    <Pressable
-      onPress={handlePress}
-      style={({ pressed }) => [
-        styles.continueCard,
-        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-      ]}
-    >
-      {record.artworkUrl ? (
-        <Image source={{ uri: record.artworkUrl }} style={styles.continueArt} contentFit="cover" />
-      ) : (
-        <View style={[styles.continueArt, { backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }]}>
-          <Ionicons name="radio" size={20} color={colors.mutedForeground} />
-        </View>
-      )}
-      <View style={styles.continueInfo}>
-        {record.episodeNumber != null && (
-          <Text style={[styles.continueEpNum, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
-            EP {record.episodeNumber}
-          </Text>
-        )}
-        <Text style={[styles.continueTitle, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]} numberOfLines={2}>
-          {record.title}
-        </Text>
-        <View style={[styles.continueProgressTrack, { backgroundColor: colors.muted }]}>
-          <View
-            style={[styles.continueProgressFill, { width: `${progress * 100}%`, backgroundColor: colors.primary }]}
-          />
-        </View>
-        <Text style={[styles.continueTime, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-          {record.durationSeconds && record.durationSeconds > 0
-            ? `${formatProgress(Math.max(0, record.durationSeconds * 1000 - record.positionMs))} left`
-            : `${formatProgress(record.positionMs)} played`}
-        </Text>
-      </View>
+    <WoodCard style={{ marginBottom: 10 }}>
       <Pressable
-        onPress={handleResume}
-        style={[styles.continuePlayBtn, { backgroundColor: colors.primary }]}
-        hitSlop={8}
+        onPress={() => router.push(`/episode/${record.slug}`)}
+        style={({ pressed }) => [
+          styles.continueCardInner,
+          { opacity: pressed ? 0.85 : 1 },
+        ]}
       >
-        <Ionicons name="play" size={14} color="#fff" />
+        {record.artworkUrl ? (
+          <Image source={{ uri: record.artworkUrl }} style={styles.continueArt} contentFit="cover" />
+        ) : (
+          <View style={[styles.continueArt, { backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }]}>
+            <Ionicons name="radio" size={20} color={colors.mutedForeground} />
+          </View>
+        )}
+        <View style={styles.continueInfo}>
+          {record.episodeNumber != null && (
+            <Text style={[styles.continueEpNum, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
+              EP {record.episodeNumber}
+            </Text>
+          )}
+          <Text style={[styles.continueTitle, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]} numberOfLines={2}>
+            {record.title}
+          </Text>
+          <View style={[styles.continueProgressTrack, { backgroundColor: colors.muted }]}>
+            <View
+              style={[styles.continueProgressFill, { width: `${progress * 100}%`, backgroundColor: colors.lanternGlow }]}
+            />
+          </View>
+          <Text style={[styles.continueTime, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            {record.durationSeconds && record.durationSeconds > 0
+              ? `${formatProgress(Math.max(0, record.durationSeconds * 1000 - record.positionMs))} left`
+              : `${formatProgress(record.positionMs)} played`}
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => play({ slug: record.slug, title: record.title, audioUrl: record.audioUrl, artworkUrl: record.artworkUrl, durationSeconds: record.durationSeconds, episodeNumber: record.episodeNumber })}
+          style={[styles.continuePlayBtn, { backgroundColor: colors.primary }]}
+          hitSlop={8}
+        >
+          <Ionicons name="play" size={14} color="#fff" />
+        </Pressable>
       </Pressable>
-    </Pressable>
+    </WoodCard>
   );
 }
 
 function FeaturedCard({ episode }: { episode: Episode }) {
   const colors = useColors();
-
-  const handlePress = () => {
-    router.push(`/episode/${episode.slug}`);
-  };
-
   return (
     <Pressable
-      onPress={handlePress}
+      onPress={() => router.push(`/episode/${episode.slug}`)}
       style={({ pressed }) => [
         styles.featuredCard,
-        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+        { borderColor: colors.woodBorder, opacity: pressed ? 0.9 : 1 },
       ]}
     >
       {episode.artworkUrl ? (
-        <Image
-          source={{ uri: episode.artworkUrl }}
-          style={styles.featuredArt}
-          contentFit="cover"
-        />
+        <Image source={{ uri: episode.artworkUrl }} style={styles.featuredArt} contentFit="cover" />
       ) : (
-        <View style={[styles.featuredArt, { backgroundColor: colors.primary }]} />
+        <View style={[styles.featuredArt, { backgroundColor: colors.forestMid }]} />
       )}
       <View style={styles.featuredOverlay} />
       <View style={styles.featuredContent}>
         {episode.episodeNumber != null && (
-          <Text style={[styles.featuredEpNum, { color: "#fff", fontFamily: "DMSans_600SemiBold" }]}>
+          <Text style={[styles.featuredEpNum, { color: colors.lanternWarm, fontFamily: "DMSans_600SemiBold" }]}>
             EP {episode.episodeNumber}
           </Text>
         )}
         <Text style={[styles.featuredTitle, { color: "#fff", fontFamily: "DMSans_700Bold" }]} numberOfLines={2}>
           {episode.title}
         </Text>
-        <View style={[styles.featuredPlayChip, { backgroundColor: colors.primary }]}>
-          <Ionicons name="play" size={12} color="#fff" />
-          <Text style={[styles.featuredPlayText, { color: "#fff", fontFamily: "DMSans_500Medium" }]}>
+        <View style={[styles.featuredPlayChip, { backgroundColor: colors.amberGold }]}>
+          <Ionicons name="play" size={12} color="#1C1008" />
+          <Text style={[styles.featuredPlayText, { color: "#1C1008", fontFamily: "DMSans_600SemiBold" }]}>
             Play
           </Text>
         </View>
       </View>
     </Pressable>
+  );
+}
+
+function EmberParticles({ count = 8 }: { count?: number }) {
+  const particles = useRef(
+    Array.from({ length: count }, () => ({
+      x: new Animated.Value(Math.random() * 300),
+      y: new Animated.Value(Math.random() * 60),
+      opacity: new Animated.Value(0),
+      size: 2 + Math.random() * 3,
+    }))
+  ).current;
+
+  useEffect(() => {
+    particles.forEach((p, i) => {
+      const animate = () => {
+        p.x.setValue(Math.random() * 300);
+        p.y.setValue(40 + Math.random() * 40);
+        p.opacity.setValue(0);
+        Animated.sequence([
+          Animated.delay(i * 400 + Math.random() * 600),
+          Animated.parallel([
+            Animated.timing(p.opacity, { toValue: 0.7, duration: 400, useNativeDriver: true }),
+            Animated.timing(p.y, {
+              toValue: -10 - Math.random() * 30,
+              duration: 2200 + Math.random() * 1200,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.timing(p.opacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+        ]).start(animate);
+      };
+      animate();
+    });
+    return () => particles.forEach(p => { p.opacity.stopAnimation(); p.y.stopAnimation(); });
+  }, []);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {particles.map((p, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            position: "absolute",
+            left: p.x,
+            top: 0,
+            width: p.size,
+            height: p.size,
+            borderRadius: p.size / 2,
+            backgroundColor: "#E8B84B",
+            opacity: p.opacity,
+            transform: [{ translateY: p.y }],
+          }}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -398,8 +400,7 @@ export default function HomeScreen() {
   const { data: feed } = useGetFeed();
   const { data: featured } = useGetFeaturedEpisodes();
   const { data: thisDayEpisodes, isLoading: thisDayLoading } = useGetThisDayEpisodes({
-    month: selectedMonth,
-    day: selectedDay,
+    month: selectedMonth, day: selectedDay,
   });
   const { data: episodesPage, isLoading, refetch } = useListEpisodes(
     { limit: PAGE_SIZE, offset: page * PAGE_SIZE }
@@ -433,9 +434,7 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const isToday =
-    selectedMonth === today.getMonth() + 1 && selectedDay === today.getDate();
-
+  const isToday = selectedMonth === today.getMonth() + 1 && selectedDay === today.getDate();
   const dateLabel = `${MONTHS[selectedMonth - 1]} ${selectedDay}`;
 
   const openDatePicker = () => {
@@ -467,23 +466,63 @@ export default function HomeScreen() {
 
   const ListHeader = () => (
     <View>
-      {/* This Day in History */}
-      <View style={[styles.thisDaySection, { backgroundColor: "#1e1b4b" }]}>
+      {/* Full-bleed Hero */}
+      <View
+        style={[
+          styles.hero,
+          { backgroundColor: getTimeHeaderColor(hour), paddingTop: topPadding + 16 },
+        ]}
+      >
+        <EmberParticles count={10} />
+        <GordBird mode="perch" perchSide="right" perchTop={topPadding + 8} delay={800} size={40} />
+        <View style={styles.heroRow}>
+          {feed?.artworkUrl ? (
+            <Image source={{ uri: feed.artworkUrl }} style={styles.heroArt} contentFit="cover" />
+          ) : (
+            <View style={[styles.heroArt, { backgroundColor: "rgba(255,255,255,0.12)" }]} />
+          )}
+          <View style={styles.heroText}>
+            <Text style={[styles.heroLabel, { color: "rgba(255,255,255,0.6)", fontFamily: "DMSans_400Regular" }]}>
+              EST. 2008 · THE STOMPING PATH
+            </Text>
+            <Text style={[styles.heroHeading, { color: "#F5C842", fontFamily: "Fraunces_700Bold" }]}>
+              Mobile on the{"\n"}Stomping Path
+            </Text>
+            <Text style={[styles.heroTagline, { color: "rgba(255,255,255,0.8)", fontFamily: "DMSans_400Regular" }]}>
+              Stay connected, stay sovereign, stay prepared — even off-grid.
+            </Text>
+          </View>
+        </View>
+        {feed?.totalEpisodes != null && (
+          <View style={[styles.heroBadge, { backgroundColor: "rgba(0,0,0,0.25)" }]}>
+            <Ionicons name="radio" size={12} color={colors.lanternWarm} />
+            <Text style={[styles.heroBadgeText, { color: colors.lanternWarm, fontFamily: "DMSans_600SemiBold" }]}>
+              {feed.totalEpisodes}+ episodes in the archive
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* This Day in History — tool station */}
+      <View style={[styles.toolStation, { backgroundColor: colors.forestDeep }]}>
+        <View style={styles.stationLabel}>
+          <Ionicons name="time" size={13} color={colors.amberGold} />
+          <Text style={[styles.stationLabelText, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
+            THIS DAY IN HISTORY
+          </Text>
+        </View>
         <View style={styles.thisDaySectionHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.thisDaySectionLabel, { color: "#818cf8", fontFamily: "DMSans_600SemiBold" }]}>
-              THIS DAY IN HISTORY
-            </Text>
             <TouchableOpacity onPress={openDatePicker} style={styles.dateLabelRow} activeOpacity={0.7}>
-              <Text style={[styles.thisDaySectionDate, { color: "#e0e7ff", fontFamily: "DMSans_700Bold" }]}>
+              <Text style={[styles.thisDaySectionDate, { color: colors.lanternWarm, fontFamily: "DMSans_700Bold" }]}>
                 {dateLabel}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="#818cf8" style={{ marginTop: 3 }} />
+              <Ionicons name="chevron-down" size={16} color={colors.amberGold} style={{ marginTop: 3 }} />
             </TouchableOpacity>
             {!isToday && (
               <TouchableOpacity onPress={resetToToday} style={styles.backToTodayBtn} activeOpacity={0.7}>
-                <Ionicons name="refresh" size={11} color="#818cf8" />
-                <Text style={[styles.backToTodayText, { color: "#818cf8", fontFamily: "DMSans_400Regular" }]}>
+                <Ionicons name="refresh" size={11} color={colors.amberGold} />
+                <Text style={[styles.backToTodayText, { color: colors.amberGold, fontFamily: "DMSans_400Regular" }]}>
                   Back to today
                 </Text>
               </TouchableOpacity>
@@ -494,25 +533,21 @@ export default function HomeScreen() {
         {thisDayLoading ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thisDayList}>
             {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={[styles.thisDayCard, { backgroundColor: "rgba(79, 70, 229, 0.15)", borderColor: "rgba(99, 102, 241, 0.2)" }]} />
+              <View key={i} style={[styles.thisDayCard, { backgroundColor: colors.woodBrown + "15", borderColor: colors.woodBorder }]} />
             ))}
           </ScrollView>
         ) : !thisDayEpisodes || thisDayEpisodes.length === 0 ? (
           <View style={styles.thisDayEmpty}>
-            <Ionicons name="time-outline" size={28} color="#818cf8" />
-            <Text style={[styles.thisDayEmptyText, { color: "#818cf8", fontFamily: "DMSans_400Regular" }]}>
+            <Ionicons name="time-outline" size={28} color={colors.mutedForeground} />
+            <Text style={[styles.thisDayEmptyText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
               No episodes on {MONTHS[selectedMonth - 1]} {selectedDay}
               {isToday ? " — check back tomorrow." : "."}
             </Text>
           </View>
         ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.thisDayList}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thisDayList}>
             {[...thisDayEpisodes]
-              .sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear())
+              .sort((a, b) => new Date(a.pubDate).getUTCFullYear() - new Date(b.pubDate).getUTCFullYear())
               .map(ep => (
                 <ThisDayCard key={ep.slug} episode={ep} />
               ))}
@@ -520,51 +555,31 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Hero */}
-      <View style={[styles.hero, { backgroundColor: getTimeHeaderColor(hour), paddingTop: topPadding + 16 }]}>
-        <View style={styles.heroRow}>
-          {feed?.artworkUrl ? (
-            <Image source={{ uri: feed.artworkUrl }} style={styles.heroArt} contentFit="cover" />
-          ) : (
-            <View style={[styles.heroArt, { backgroundColor: "rgba(255,255,255,0.15)" }]} />
-          )}
-          <View style={styles.heroText}>
-            <Text style={[styles.heroLabel, { color: colors.primaryForeground, opacity: 0.7, fontFamily: "DMSans_400Regular" }]}>
-              EST. 2008
-            </Text>
-            <Text style={[styles.heroTitle, { color: colors.primaryForeground, fontFamily: "DMSans_700Bold" }]}>
-              {feed?.title ?? "The Stomping Path"}
-            </Text>
-            {feed?.totalEpisodes != null && (
-              <Text style={[styles.heroSub, { color: colors.primaryForeground, opacity: 0.75, fontFamily: "DMSans_400Regular" }]}>
-                {feed.totalEpisodes}+ episodes
-              </Text>
-            )}
-          </View>
-        </View>
-      </View>
-
+      {/* Continue Listening — tool station */}
       {continueListening.length > 0 && (
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-            Continue Listening
-          </Text>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="headset" size={15} color={colors.woodBrown} />
+            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+              Continue Listening
+            </Text>
+          </View>
           {continueListening.map((record) => (
             <ContinueListeningCard key={record.slug} record={record} />
           ))}
         </View>
       )}
 
+      {/* Latest Episodes — radio shack corner */}
       {featured && featured.length > 0 && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-            Latest
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.featuredList}
-          >
+          <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16 }]}>
+            <Ionicons name="radio" size={15} color={colors.woodBrown} />
+            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+              Latest from the Path
+            </Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredList}>
             {featured.map(ep => (
               <FeaturedCard key={ep.slug} episode={ep} />
             ))}
@@ -572,9 +587,12 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold", marginHorizontal: 16, marginBottom: 8 }]}>
-        All Episodes
-      </Text>
+      <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, marginBottom: 8 }]}>
+        <Ionicons name="albums" size={15} color={colors.woodBrown} />
+        <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+          All Episodes
+        </Text>
+      </View>
 
       {/* Date Picker Modal */}
       <Modal
@@ -584,16 +602,16 @@ export default function HomeScreen() {
         onRequestClose={() => setDatePickerVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setDatePickerVisible(false)}>
-          <Pressable style={[styles.modalSheet, { backgroundColor: "#1e1b4b" }]} onPress={() => {}}>
-            <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { color: "#e0e7ff", fontFamily: "DMSans_700Bold" }]}>
+          <Pressable style={[styles.modalSheet, { backgroundColor: colors.forestDeep, borderColor: colors.woodBorder }]} onPress={() => {}}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.woodBorder }]} />
+            <Text style={[styles.modalTitle, { color: colors.lanternWarm, fontFamily: "DMSans_700Bold" }]}>
               Browse Any Date
             </Text>
-            <Text style={[styles.modalSub, { color: "#818cf8", fontFamily: "DMSans_400Regular" }]}>
+            <Text style={[styles.modalSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
               Scroll to pick a month and day
             </Text>
 
-            <View style={styles.wheelRow}>
+            <View style={[styles.wheelRow, { borderColor: colors.woodBorder + "55", backgroundColor: colors.forestMid }]}>
               <WheelPicker
                 items={MONTHS}
                 selectedIndex={draftMonthIdx}
@@ -613,19 +631,19 @@ export default function HomeScreen() {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 onPress={resetToToday}
-                style={[styles.modalBtnSecondary, { borderColor: "rgba(99, 102, 241, 0.4)" }]}
+                style={[styles.modalBtnSecondary, { borderColor: colors.woodBorder }]}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.modalBtnSecondaryText, { color: "#818cf8", fontFamily: "DMSans_500Medium" }]}>
+                <Text style={[styles.modalBtnSecondaryText, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
                   Today
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={applyDate}
-                style={[styles.modalBtnPrimary, { backgroundColor: "#4f46e5" }]}
+                style={[styles.modalBtnPrimary, { backgroundColor: colors.amberGold }]}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.modalBtnPrimaryText, { color: "#fff", fontFamily: "DMSans_600SemiBold" }]}>
+                <Text style={[styles.modalBtnPrimaryText, { color: "#1C1008", fontFamily: "DMSans_600SemiBold" }]}>
                   Show Episodes
                 </Text>
               </TouchableOpacity>
@@ -678,11 +696,7 @@ export default function HomeScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
         scrollEnabled={!!(allEpisodes.length > 0 || isLoading)}
       />
@@ -691,12 +705,66 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  hero: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    overflow: "hidden",
   },
-  thisDaySection: {
-    paddingTop: 20,
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    marginBottom: 12,
+  },
+  heroArt: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "rgba(212,168,67,0.5)",
+  },
+  heroText: { flex: 1, gap: 4 },
+  heroLabel: {
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  heroHeading: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  heroTagline: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  heroBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 4,
+  },
+  heroBadgeText: { fontSize: 11 },
+  toolStation: {
+    paddingTop: 16,
     paddingBottom: 20,
+  },
+  stationLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    marginBottom: 4,
+  },
+  stationLabelText: {
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
   },
   thisDaySectionHeader: {
     flexDirection: "row",
@@ -705,87 +773,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 14,
   },
-  thisDaySectionLabel: {
-    fontSize: 10,
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    marginBottom: 2,
-  },
-  dateLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  thisDaySectionDate: {
-    fontSize: 22,
-    lineHeight: 26,
-  },
-  backToTodayBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  backToTodayText: {
-    fontSize: 11,
-  },
-  thisDayList: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
+  dateLabelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  thisDaySectionDate: { fontSize: 22, lineHeight: 26 },
+  backToTodayBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  backToTodayText: { fontSize: 11 },
+  thisDayList: { paddingHorizontal: 16, gap: 10 },
   thisDayCard: {
     width: 220,
     minHeight: 130,
     borderRadius: 12,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 1.5,
     padding: 12,
     gap: 6,
   },
-  thisDayCardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  thisDayYearCol: {
-    flexDirection: "column",
-    gap: 2,
-    flex: 1,
-  },
-  thisDayYearRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  thisDayAgoText: {
-    fontSize: 10,
-    lineHeight: 13,
-  },
-  thisDayYear: {
-    fontSize: 20,
-    lineHeight: 24,
-  },
-  thisDayEpBadge: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  thisDayEpNum: {
-    fontSize: 9,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  thisDayArt: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-  },
-  thisDayTitle: {
-    fontSize: 12,
-    lineHeight: 16,
-    flex: 1,
-  },
+  thisDayCardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  thisDayYearCol: { flexDirection: "column", gap: 2, flex: 1 },
+  thisDayYearRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  thisDayAgoText: { fontSize: 10, lineHeight: 13 },
+  thisDayYear: { fontSize: 20, lineHeight: 24 },
+  thisDayEpBadge: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 6, paddingVertical: 2 },
+  thisDayEpNum: { fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase" },
+  thisDayArt: { width: 36, height: 36, borderRadius: 6 },
+  thisDayTitle: { fontSize: 12, lineHeight: 16, flex: 1 },
   thisDayPlayBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -796,74 +806,29 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 4,
   },
-  thisDayPlayText: {
-    fontSize: 11,
-  },
-  thisDayEmpty: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    alignItems: "center",
-    gap: 8,
-  },
-  thisDayEmptyText: {
-    fontSize: 13,
-    textAlign: "center",
-  },
-  hero: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  heroRow: {
+  thisDayPlayText: { fontSize: 11 },
+  thisDayEmpty: { paddingHorizontal: 16, paddingVertical: 20, alignItems: "center", gap: 8 },
+  thisDayEmptyText: { fontSize: 13, textAlign: "center" },
+  section: { paddingTop: 20, paddingBottom: 4 },
+  sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-  },
-  heroArt: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-  },
-  heroText: {
-    flex: 1,
-    gap: 2,
-  },
-  heroLabel: {
-    fontSize: 10,
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-  },
-  heroTitle: {
-    fontSize: 20,
-    lineHeight: 24,
-  },
-  heroSub: {
-    fontSize: 12,
-  },
-  section: {
-    paddingTop: 20,
-    paddingBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 16,
+    gap: 7,
     marginBottom: 12,
   },
-  featuredList: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
+  sectionTitle: { fontSize: 16 },
+  featuredList: { paddingHorizontal: 16, gap: 10 },
   featuredCard: {
     width: 220,
     height: 140,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 2,
   },
-  featuredArt: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  featuredArt: { ...StyleSheet.absoluteFillObject },
   featuredOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   featuredContent: {
     flex: 1,
@@ -871,15 +836,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     gap: 4,
   },
-  featuredEpNum: {
-    fontSize: 10,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  featuredTitle: {
-    fontSize: 13,
-    lineHeight: 17,
-  },
+  featuredEpNum: { fontSize: 10, letterSpacing: 1, textTransform: "uppercase" },
+  featuredTitle: { fontSize: 13, lineHeight: 17 },
   featuredPlayChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -890,130 +848,57 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 2,
   },
-  featuredPlayText: {
-    fontSize: 11,
-  },
-  continueCard: {
+  featuredPlayText: { fontSize: 11 },
+  continueCardInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 10,
-    borderWidth: 1,
     padding: 10,
-    marginBottom: 8,
   },
-  continueArt: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    flexShrink: 0,
-  },
-  continueInfo: {
-    flex: 1,
-    gap: 3,
-  },
-  continueEpNum: {
-    fontSize: 9,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  continueTitle: {
-    fontSize: 13,
-    lineHeight: 17,
-  },
-  continueProgressTrack: {
-    height: 3,
-    borderRadius: 2,
-    marginTop: 4,
-    overflow: "hidden",
-  },
-  continueProgressFill: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    bottom: 0,
-    borderRadius: 2,
-  },
-  continueTime: {
-    fontSize: 10,
-    marginTop: 2,
-  },
+  continueArt: { width: 52, height: 52, borderRadius: 8, flexShrink: 0 },
+  continueInfo: { flex: 1, gap: 3 },
+  continueEpNum: { fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase" },
+  continueTitle: { fontSize: 13, lineHeight: 17 },
+  continueProgressTrack: { height: 4, borderRadius: 2, marginTop: 4, overflow: "hidden" },
+  continueProgressFill: { position: "absolute", top: 0, left: 0, bottom: 0, borderRadius: 2 },
+  continueTime: { fontSize: 10, marginTop: 2 },
   continuePlayBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  center: {
-    padding: 40,
-    alignItems: "center",
-    gap: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
+  center: { padding: 40, alignItems: "center", gap: 8 },
+  emptyText: { fontSize: 14 },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
   modalSheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
     paddingHorizontal: 24,
     paddingBottom: 40,
     paddingTop: 12,
   },
   modalHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(99, 102, 241, 0.4)",
-    alignSelf: "center",
-    marginBottom: 20,
+    width: 36, height: 4, borderRadius: 2,
+    alignSelf: "center", marginBottom: 20,
   },
-  modalTitle: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  modalSub: {
-    fontSize: 13,
-    marginBottom: 24,
-  },
+  modalTitle: { fontSize: 20, marginBottom: 4 },
+  modalSub: { fontSize: 13, marginBottom: 24 },
   wheelRow: {
     flexDirection: "row",
     gap: 8,
     marginBottom: 28,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "rgba(79, 70, 229, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.2)",
     padding: 8,
   },
-  modalButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
+  modalButtons: { flexDirection: "row", gap: 12 },
   modalBtnSecondary: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
+    flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 14, alignItems: "center",
   },
-  modalBtnSecondaryText: {
-    fontSize: 15,
-  },
-  modalBtnPrimary: {
-    flex: 2,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  modalBtnPrimaryText: {
-    fontSize: 15,
-  },
+  modalBtnSecondaryText: { fontSize: 15 },
+  modalBtnPrimary: { flex: 2, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  modalBtnPrimaryText: { fontSize: 15 },
 });

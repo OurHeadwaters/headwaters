@@ -30,14 +30,6 @@ function formatRelativeTime(ts: number): string {
   return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function ProgressBar({ progress, color }: { progress: number; color: string }) {
-  return (
-    <View style={styles.progressTrack}>
-      <View style={[styles.progressFill, { width: `${Math.min(progress * 100, 100)}%` as any, backgroundColor: color }]} />
-    </View>
-  );
-}
-
 function HistoryItem({ record }: { record: PlaybackRecord }) {
   const colors = useColors();
   const isFinished = record.positionMs === 0;
@@ -51,20 +43,24 @@ function HistoryItem({ record }: { record: PlaybackRecord }) {
       onPress={() => router.push(`/episode/${record.slug}`)}
       style={({ pressed }) => [
         styles.item,
-        { borderBottomColor: colors.border, opacity: pressed ? 0.75 : 1 },
+        {
+          borderBottomColor: colors.woodBorder,
+          backgroundColor: pressed ? colors.muted : "transparent",
+          opacity: pressed ? 0.85 : 1,
+        },
       ]}
     >
       {record.artworkUrl ? (
         <Image source={{ uri: record.artworkUrl }} style={styles.artwork} contentFit="cover" />
       ) : (
-        <View style={[styles.artwork, { backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }]}>
-          <Ionicons name="radio" size={20} color={colors.mutedForeground} />
+        <View style={[styles.artwork, { backgroundColor: colors.forestMid, alignItems: "center", justifyContent: "center" }]}>
+          <Ionicons name="radio" size={20} color={colors.amberGold} />
         </View>
       )}
 
       <View style={styles.meta}>
         {record.episodeNumber != null && (
-          <Text style={[styles.epNum, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
+          <Text style={[styles.epNum, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
             EP {record.episodeNumber}
           </Text>
         )}
@@ -75,19 +71,21 @@ function HistoryItem({ record }: { record: PlaybackRecord }) {
           {formatRelativeTime(record.updatedAt)}
         </Text>
         {progress !== null && (
-          <ProgressBar progress={progress} color={colors.primary} />
+          <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
+            <View style={[styles.progressFill, { width: `${Math.min(progress * 100, 100)}%` as any, backgroundColor: colors.lanternGlow }]} />
+          </View>
         )}
       </View>
 
       {isFinished ? (
-        <View style={[styles.badge, { backgroundColor: colors.muted }]}>
+        <View style={[styles.badge, { backgroundColor: colors.primary + "22", borderColor: colors.primary + "44" }]}>
           <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
           <Text style={[styles.badgeText, { color: colors.primary, fontFamily: "DMSans_500Medium" }]}>
             Played
           </Text>
         </View>
       ) : (
-        <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} style={styles.chevron} />
+        <Ionicons name="chevron-forward" size={16} color={colors.woodBorder} style={styles.chevron} />
       )}
     </Pressable>
   );
@@ -113,10 +111,13 @@ export default function HistoryScreen() {
         keyExtractor={(item) => item.slug}
         renderItem={({ item }) => <HistoryItem record={item} />}
         ListHeaderComponent={
-          <View style={[styles.header, { paddingTop: topPadding + 16 }]}>
-            <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-              History
-            </Text>
+          <View style={[styles.header, { paddingTop: topPadding + 16, borderBottomColor: colors.woodBorder, borderBottomWidth: 1.5 }]}>
+            <View style={styles.headerRow}>
+              <Ionicons name="clock" size={18} color={colors.woodBrown} />
+              <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+                History
+              </Text>
+            </View>
             {records.length > 0 && (
               <Text style={[styles.headerSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                 {records.length} episode{records.length !== 1 ? "s" : ""} played
@@ -142,20 +143,16 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingHorizontal: 16,
     paddingBottom: 16,
     gap: 4,
+    marginBottom: 4,
   },
-  headerTitle: {
-    fontSize: 28,
-  },
-  headerSub: {
-    fontSize: 13,
-  },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headerTitle: { fontSize: 28 },
+  headerSub: { fontSize: 13 },
   item: {
     flexDirection: "row",
     alignItems: "center",
@@ -164,39 +161,15 @@ const styles = StyleSheet.create({
     gap: 12,
     borderBottomWidth: 1,
   },
-  artwork: {
-    width: 52,
-    height: 52,
-    borderRadius: 6,
-    flexShrink: 0,
-  },
-  meta: {
-    flex: 1,
-    gap: 3,
-  },
-  epNum: {
-    fontSize: 10,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  title: {
-    fontSize: 14,
-    lineHeight: 19,
-  },
-  timestamp: {
-    fontSize: 11,
-  },
+  artwork: { width: 52, height: 52, borderRadius: 8, flexShrink: 0 },
+  meta: { flex: 1, gap: 3 },
+  epNum: { fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" },
+  title: { fontSize: 14, lineHeight: 19 },
+  timestamp: { fontSize: 11 },
   progressTrack: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: "rgba(128,128,128,0.2)",
-    marginTop: 4,
-    overflow: "hidden",
+    height: 4, borderRadius: 2, marginTop: 4, overflow: "hidden",
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
-  },
+  progressFill: { height: "100%", borderRadius: 2 },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -204,28 +177,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    borderWidth: 1,
     flexShrink: 0,
   },
-  badgeText: {
-    fontSize: 11,
-  },
-  chevron: {
-    flexShrink: 0,
-  },
+  badgeText: { fontSize: 11 },
+  chevron: { flexShrink: 0 },
   empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
-    gap: 12,
+    flex: 1, alignItems: "center", justifyContent: "center", padding: 40, gap: 12,
   },
-  emptyTitle: {
-    fontSize: 17,
-    textAlign: "center",
-  },
-  emptySub: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-  },
+  emptyTitle: { fontSize: 17, textAlign: "center" },
+  emptySub: { fontSize: 14, textAlign: "center", lineHeight: 20 },
 });

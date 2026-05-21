@@ -13,6 +13,8 @@ import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 import { WishingWellModal } from "@/components/WishingWellModal";
+import { WoodCard } from "@/components/homestead/WoodCard";
+import { GordBird } from "@/components/GordBird";
 
 const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 
@@ -55,24 +57,20 @@ async function fetchBoard(): Promise<Board> {
   return res.json();
 }
 
-
 function formatDate(d: string): string {
   try {
     return new Date(d).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+      month: "long", day: "numeric", year: "numeric",
     });
   } catch {
     return d;
   }
 }
 
-
 function WinnerCard({ dist }: { dist: Distribution }) {
   const colors = useColors();
   return (
-    <View style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <WoodCard style={{ marginBottom: 12 }}>
       <View style={cardStyles.row}>
         <Text style={cardStyles.trophy}>🏆</Text>
         <View style={{ flex: 1 }}>
@@ -96,7 +94,7 @@ function WinnerCard({ dist }: { dist: Distribution }) {
           </Text>
         </View>
       ) : null}
-    </View>
+    </WoodCard>
   );
 }
 
@@ -105,7 +103,7 @@ export default function WishingWellScreen() {
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
 
-  const { data: pot, isLoading: potLoading, refetch: refetchPot } = useQuery({
+  const { data: pot, isLoading: potLoading } = useQuery({
     queryKey: ["wishing-well-pot"],
     queryFn: fetchPotToday,
     refetchInterval: 30_000,
@@ -130,35 +128,41 @@ export default function WishingWellScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       >
         {/* Hero */}
-        <View style={[styles.hero, { backgroundColor: colors.primary, paddingTop: topPadding + 16 }]}>
+        <View style={[styles.hero, { backgroundColor: colors.forestDeep, paddingTop: topPadding + 16 }]}>
+          <GordBird mode="perch" perchSide="right" perchTop={topPadding + 4} delay={700} size={38} />
           <Text style={styles.heroEmoji}>🪙</Text>
-          <Text style={[styles.heroTitle, { color: colors.primaryForeground, fontFamily: "DMSans_700Bold" }]}>
+          <Text style={[styles.heroTitle, { color: colors.lanternWarm, fontFamily: "Fraunces_700Bold" }]}>
             The Wishing Well
           </Text>
-          <Text style={[styles.heroSub, { color: colors.primaryForeground, fontFamily: "DMSans_400Regular", opacity: 0.8 }]}>
+          <Text style={[styles.heroSub, { color: "rgba(255,255,255,0.7)", fontFamily: "DMSans_400Regular" }]}>
             Toss a coin, make a wish. Win half the day's pot.
           </Text>
         </View>
 
         <View style={styles.content}>
           {/* Legal notice */}
-          <View style={[styles.notice, { backgroundColor: "#fef3c7", borderColor: "#f59e0b" }]}>
-            <Text style={[styles.noticeText, { color: "#92400e", fontFamily: "DMSans_400Regular" }]}>
-              Preview feature — crypto payouts pending legal review (Ontario). Currency TBA.
-            </Text>
-          </View>
+          <WoodCard>
+            <View style={[styles.notice, { backgroundColor: colors.amberGold + "18" }]}>
+              <Text style={[styles.noticeText, { color: colors.woodBrown, fontFamily: "DMSans_400Regular" }]}>
+                Preview feature — crypto payouts pending legal review (Ontario). Currency TBA.
+              </Text>
+            </View>
+          </WoodCard>
 
           {/* Today's Pot */}
-          <View style={[styles.potCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.potLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+          <WoodCard>
+            <Text style={[styles.potLabel, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
               TODAY'S POT
             </Text>
             {potLoading ? (
               <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />
             ) : pot ? (
               <>
-                <Text style={[styles.potTotal, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-                  {pot.totalUnits} <Text style={[styles.potUnit, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>coins</Text>
+                <Text style={[styles.potTotal, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+                  {pot.totalUnits}{" "}
+                  <Text style={[styles.potUnit, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                    coins
+                  </Text>
                 </Text>
                 <Text style={[styles.potSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
                   from {pot.tipCount} {pot.tipCount === 1 ? "wish" : "wishes"} today
@@ -166,9 +170,9 @@ export default function WishingWellScreen() {
                 </Text>
               </>
             ) : (
-              <Text style={[{ color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>Unable to load</Text>
+              <Text style={{ color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }}>Unable to load</Text>
             )}
-          </View>
+          </WoodCard>
 
           {/* Toss Button */}
           <Pressable
@@ -176,9 +180,12 @@ export default function WishingWellScreen() {
               if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setModalVisible(true);
             }}
-            style={[styles.tossBtn, { backgroundColor: colors.primary }]}
+            style={({ pressed }) => [
+              styles.tossBtn,
+              { backgroundColor: colors.amberGold, opacity: pressed ? 0.85 : 1 },
+            ]}
           >
-            <Text style={[styles.tossBtnText, { color: colors.primaryForeground, fontFamily: "DMSans_700Bold" }]}>
+            <Text style={[styles.tossBtnText, { color: "#1C1008", fontFamily: "DMSans_700Bold" }]}>
               🪙 Toss a Coin
             </Text>
           </Pressable>
@@ -204,12 +211,14 @@ export default function WishingWellScreen() {
               <WinnerCard key={dist.id} dist={dist} />
             ))
           ) : (
-            <View style={[styles.emptyBox, { borderColor: colors.border }]}>
-              <Text style={styles.emptyEmoji}>🪙</Text>
-              <Text style={[styles.emptyText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-                No draws yet — be the first to toss a coin!
-              </Text>
-            </View>
+            <WoodCard>
+              <View style={styles.emptyInner}>
+                <Text style={styles.emptyEmoji}>🪙</Text>
+                <Text style={[styles.emptyText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                  No draws yet — be the first to toss a coin!
+                </Text>
+              </View>
+            </WoodCard>
           )}
         </View>
       </ScrollView>
@@ -223,22 +232,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 28,
     alignItems: "center",
+    overflow: "hidden",
   },
   heroEmoji: { fontSize: 44, marginBottom: 8 },
   heroTitle: { fontSize: 26, marginBottom: 6 },
   heroSub: { fontSize: 14, textAlign: "center", maxWidth: 260 },
-  content: { padding: 20, gap: 16 },
+  content: { padding: 16, gap: 14 },
   notice: {
     padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 8,
   },
   noticeText: { fontSize: 12, lineHeight: 18 },
-  potCard: {
-    padding: 18,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
   potLabel: { fontSize: 11, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 },
   potTotal: { fontSize: 36 },
   potUnit: { fontSize: 16 },
@@ -250,12 +254,9 @@ const styles = StyleSheet.create({
   },
   tossBtnText: { fontSize: 18 },
   sectionTitle: { fontSize: 18, marginTop: 8, marginBottom: 4 },
-  emptyBox: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: 12,
-    padding: 32,
+  emptyInner: {
     alignItems: "center",
+    paddingVertical: 16,
     gap: 10,
   },
   emptyEmoji: { fontSize: 32 },
@@ -263,19 +264,11 @@ const styles = StyleSheet.create({
 });
 
 const cardStyles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    gap: 8,
-  },
-  row: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  row: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 8 },
   trophy: { fontSize: 22, marginTop: 1 },
   name: { fontSize: 15 },
   date: { fontSize: 12, marginTop: 2 },
-  wish: { fontSize: 14, lineHeight: 21, fontStyle: "italic" },
+  wish: { fontSize: 14, lineHeight: 21, fontStyle: "italic", marginBottom: 8 },
   impactBox: { borderRadius: 8, padding: 10 },
   impactText: { fontSize: 13, lineHeight: 20 },
 });
-

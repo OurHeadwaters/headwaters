@@ -14,14 +14,16 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useStomp, DEFAULT_INTENT_LABELS } from "@/context/StompContext";
-
-// ─── Time-of-day gradient colours ─────────────────────────────────────────────
+import { WoodCard } from "@/components/homestead/WoodCard";
+import { FieldNoteCard } from "@/components/homestead/FieldNoteCard";
+import { LanternGauge } from "@/components/homestead/LanternGauge";
+import { GordBird } from "@/components/GordBird";
 
 function getTimeColors(hour: number): readonly [string, string] {
-  if (hour >= 5 && hour < 10)  return ["#7a5c2a", "#4a6822"] as const; // dawn
-  if (hour >= 10 && hour < 17) return ["#2c4a36", "#3a6020"] as const; // day
-  if (hour >= 17 && hour < 21) return ["#7a3a1e", "#4a2c18"] as const; // dusk
-  return ["#1a2814", "#0e1a0a"] as const;                               // night
+  if (hour >= 5 && hour < 10)  return ["#7a5c2a", "#4a6822"] as const;
+  if (hour >= 10 && hour < 17) return ["#2c4a36", "#3a6020"] as const;
+  if (hour >= 17 && hour < 21) return ["#7a3a1e", "#4a2c18"] as const;
+  return ["#1a2814", "#0e1a0a"] as const;
 }
 
 function getGreeting(hour: number): string {
@@ -30,8 +32,6 @@ function getGreeting(hour: number): string {
   if (hour >= 17 && hour < 21) return "Good evening.";
   return "Still up?";
 }
-
-// ─── Reflection prompts ────────────────────────────────────────────────────────
 
 const REFLECT_PROMPTS = [
   "Name one thing you'll do today that nobody can take from you.",
@@ -48,17 +48,13 @@ function getTodayPrompt(): string {
   return REFLECT_PROMPTS[day % REFLECT_PROMPTS.length];
 }
 
-// ─── 7-day streak dots ─────────────────────────────────────────────────────────
-
-function StreakDots({
+function StreakLanterns({
   log,
   streak,
-  stompedToday,
   colors,
 }: {
   log: { date: string; mode: "quick" | "deep" }[];
   streak: number;
-  stompedToday: boolean;
   colors: ReturnType<typeof useColors>;
 }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -70,41 +66,26 @@ function StreakDots({
   const logSet = new Map(log.map((r) => [r.date, r.mode]));
 
   return (
-    <View style={dotStyles.row}>
+    <View style={lanternStyles.row}>
       {days.map((d) => {
         const isToday = d === today;
         const mode = logSet.get(d);
         const done = !!mode;
         const isDeep = mode === "deep";
+        const fillValue = done ? (isDeep ? 1 : 0.6) : isToday ? 0.1 : 0;
+        const dayChar = ["S","M","T","W","T","F","S"][new Date(d + "T12:00:00").getDay()];
         return (
-          <View key={d} style={dotStyles.col}>
-            <View
-              style={[
-                dotStyles.dot,
-                done
-                  ? { backgroundColor: isDeep ? colors.primary : "#60a5fa" }
-                  : isToday
-                  ? { backgroundColor: "transparent", borderWidth: 1.5, borderColor: colors.primary }
-                  : { backgroundColor: colors.muted },
-              ]}
-            >
-              {done && (
-                <Ionicons
-                  name={isDeep ? "footsteps" : "flash"}
-                  size={9}
-                  color="#fff"
-                />
-              )}
-            </View>
-            <Text style={[dotStyles.label, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-              {["S","M","T","W","T","F","S"][new Date(d + "T12:00:00").getDay()]}
-            </Text>
-          </View>
+          <LanternGauge
+            key={d}
+            value={fillValue}
+            size={40}
+            label={dayChar}
+          />
         );
       })}
-      <View style={[dotStyles.streakBadge, { backgroundColor: colors.primary + "22" }]}>
-        <Ionicons name="flame" size={13} color={colors.primary} />
-        <Text style={[dotStyles.streakNum, { color: colors.primary, fontFamily: "DMSans_700Bold" }]}>
+      <View style={[lanternStyles.streakBadge, { backgroundColor: colors.amberGold + "22" }]}>
+        <Ionicons name="flame" size={13} color={colors.amberGold} />
+        <Text style={[lanternStyles.streakNum, { color: colors.amberGold, fontFamily: "DMSans_700Bold" }]}>
           {streak}
         </Text>
       </View>
@@ -112,17 +93,8 @@ function StreakDots({
   );
 }
 
-const dotStyles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 6 },
-  col: { alignItems: "center", gap: 3 },
-  dot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  label: { fontSize: 9, letterSpacing: 0.5 },
+const lanternStyles = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "flex-end", gap: 6, flexWrap: "wrap" },
   streakBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -131,11 +103,10 @@ const dotStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     marginLeft: 4,
+    alignSelf: "center",
   },
   streakNum: { fontSize: 14 },
 });
-
-// ─── Intent tile ───────────────────────────────────────────────────────────────
 
 function IntentTile({
   label,
@@ -155,65 +126,63 @@ function IntentTile({
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
-        tileStyles.tile,
-        {
-          backgroundColor: checked ? colors.primary : colors.muted,
-          borderColor: checked ? colors.primary : colors.border,
-          opacity: pressed ? 0.8 : 1,
-        },
+        tileStyles.tileWrapper,
+        { opacity: pressed ? 0.82 : 1 },
       ]}
     >
-      <View style={tileStyles.row}>
+      <WoodCard style={{ flex: 1 }} noPadding>
         <View
           style={[
-            tileStyles.check,
-            {
-              borderColor: checked ? "#fff" : colors.mutedForeground,
-              backgroundColor: checked ? "#ffffff33" : "transparent",
-            },
+            tileStyles.tileInner,
+            { backgroundColor: checked ? colors.primary : colors.card },
           ]}
         >
-          {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
+          <View style={tileStyles.row}>
+            <View
+              style={[
+                tileStyles.check,
+                {
+                  borderColor: checked ? colors.amberGold : colors.woodBorder,
+                  backgroundColor: checked ? colors.amberGold + "33" : "transparent",
+                },
+              ]}
+            >
+              {checked && <Ionicons name="checkmark" size={14} color={colors.amberGold} />}
+            </View>
+            <Text
+              style={[
+                tileStyles.label,
+                {
+                  color: checked ? colors.primaryForeground : colors.foreground,
+                  fontFamily: "DMSans_500Medium",
+                },
+              ]}
+              numberOfLines={2}
+            >
+              {label}
+            </Text>
+          </View>
         </View>
-        <Text
-          style={[
-            tileStyles.label,
-            {
-              color: checked ? "#fff" : colors.foreground,
-              fontFamily: "DMSans_500Medium",
-            },
-          ]}
-          numberOfLines={2}
-        >
-          {label}
-        </Text>
-      </View>
+      </WoodCard>
     </Pressable>
   );
 }
 
 const tileStyles = StyleSheet.create({
-  tile: {
-    borderRadius: 14,
-    borderWidth: 1,
+  tileWrapper: { flex: 1, minHeight: 64 },
+  tileInner: {
+    borderRadius: 11,
     padding: 14,
-    flex: 1,
-    minHeight: 64,
     justifyContent: "center",
+    minHeight: 64,
   },
   row: { flexDirection: "row", alignItems: "center", gap: 10 },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
+    alignItems: "center", justifyContent: "center",
   },
   label: { flex: 1, fontSize: 14, lineHeight: 19 },
 });
-
-// ─── Rename sheet ──────────────────────────────────────────────────────────────
 
 function RenameSheet({
   intents,
@@ -229,17 +198,17 @@ function RenameSheet({
   const [vals, setVals] = useState<[string, string, string]>([...intents]);
 
   return (
-    <View style={[renameStyles.sheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
-      <View style={renameStyles.handle} />
+    <WoodCard style={{ margin: 16 }}>
+      <View style={[renameStyles.handle, { backgroundColor: colors.woodBorder }]} />
       <Text style={[renameStyles.title, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
         Name Your Three Stomps
       </Text>
       <Text style={[renameStyles.sub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-        What three things do you want to tend every day? Name them anything.
+        What three things do you want to tend every day?
       </Text>
       {([0, 1, 2] as const).map((i) => (
         <View key={i} style={renameStyles.inputRow}>
-          <Text style={[renameStyles.inputNum, { color: colors.primary, fontFamily: "DMSans_700Bold" }]}>
+          <Text style={[renameStyles.inputNum, { color: colors.amberGold, fontFamily: "DMSans_700Bold" }]}>
             {i + 1}
           </Text>
           <TextInput
@@ -256,7 +225,7 @@ function RenameSheet({
               {
                 color: colors.foreground,
                 backgroundColor: colors.muted,
-                borderColor: colors.border,
+                borderColor: colors.woodBorder,
                 fontFamily: "DMSans_400Regular",
               },
             ]}
@@ -264,10 +233,7 @@ function RenameSheet({
         </View>
       ))}
       <View style={renameStyles.buttons}>
-        <Pressable
-          onPress={onDismiss}
-          style={[renameStyles.btnSecondary, { borderColor: colors.border }]}
-        >
+        <Pressable onPress={onDismiss} style={[renameStyles.btnSecondary, { borderColor: colors.woodBorder }]}>
           <Text style={[renameStyles.btnSecondaryText, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
             Cancel
           </Text>
@@ -284,58 +250,36 @@ function RenameSheet({
           </Text>
         </Pressable>
       </View>
-    </View>
+    </WoodCard>
   );
 }
 
 const renameStyles = StyleSheet.create({
-  sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    padding: 24,
-    paddingTop: 12,
-    gap: 14,
-  },
   handle: {
     alignSelf: "center",
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(128,128,128,0.3)",
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  title: { fontSize: 18 },
-  sub: { fontSize: 14, lineHeight: 20, marginBottom: 4 },
-  inputRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  title: { fontSize: 18, marginBottom: 4 },
+  sub: { fontSize: 14, lineHeight: 20, marginBottom: 8 },
+  inputRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 },
   inputNum: { fontSize: 18, width: 20 },
   input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
+    flex: 1, borderWidth: 1, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14,
   },
-  buttons: { flexDirection: "row", gap: 10, marginTop: 4 },
+  buttons: { flexDirection: "row", gap: 10, marginTop: 8 },
   btnSecondary: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
+    flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 14, alignItems: "center",
   },
   btnSecondaryText: { fontSize: 15 },
   btnPrimary: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
+    flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: "center",
   },
   btnPrimaryText: { fontSize: 15 },
 });
-
-// ─── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function StompScreen() {
   const colors = useColors();
@@ -350,9 +294,7 @@ export default function StompScreen() {
   const [bgTop, bgBottom] = getTimeColors(hour);
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
 
-  const usingDefaults = state.intents.every(
-    (v, i) => v === DEFAULT_INTENT_LABELS[i],
-  );
+  const usingDefaults = state.intents.every((v, i) => v === DEFAULT_INTENT_LABELS[i]);
 
   useEffect(() => {
     const id = setInterval(() => setHour(new Date().getHours()), 60_000);
@@ -395,26 +337,22 @@ export default function StompScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
-        {/* ── Header ── */}
-        <View
-          style={[
-            styles.header,
-            { paddingTop: topPadding + 16, backgroundColor: bgTop },
-          ]}
-        >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: topPadding + 16, backgroundColor: bgTop }]}>
           <View style={[styles.headerGradientOverlay, { backgroundColor: bgBottom + "88" }]} />
+          {state.stompedToday && (
+            <GordBird mode="perch" perchSide="right" perchTop={topPadding + 4} delay={600} size={38} />
+          )}
           <View style={styles.headerContent}>
-            <Text
-              style={[styles.greeting, { color: "rgba(255,255,255,0.7)", fontFamily: "DMSans_400Regular" }]}
-            >
+            <Text style={[styles.greeting, { color: "rgba(255,255,255,0.7)", fontFamily: "DMSans_400Regular" }]}>
               {getGreeting(hour)}
             </Text>
-            <Text style={[styles.headerTitle, { color: "#fff", fontFamily: "DMSans_700Bold" }]}>
+            <Text style={[styles.headerTitle, { color: "#fff", fontFamily: "Fraunces_700Bold" }]}>
               Daily Stomp
             </Text>
             <View style={styles.pointsRow}>
-              <Ionicons name="footsteps" size={14} color="#D9A066" />
-              <Text style={[styles.points, { color: "#D9A066", fontFamily: "DMSans_600SemiBold" }]}>
+              <Ionicons name="footsteps" size={14} color={colors.amberGold} />
+              <Text style={[styles.points, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
                 {state.points} pts
               </Text>
               {state.stompedToday && (
@@ -429,32 +367,27 @@ export default function StompScreen() {
           </View>
         </View>
 
-        {/* ── Streak dots ── */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <StreakDots
-            log={state.stompLog}
-            streak={state.streak}
-            stompedToday={state.stompedToday}
-            colors={colors}
-          />
-        </View>
+        {/* Streak lanterns */}
+        <WoodCard style={{ margin: 16 }}>
+          <StreakLanterns log={state.stompLog} streak={state.streak} colors={colors} />
+        </WoodCard>
 
-        {/* ── Default intent nudge ── */}
+        {/* Default intent nudge */}
         {usingDefaults && !state.stompedToday && (
           <Pressable
             onPress={() => setShowRename(true)}
-            style={[styles.nudge, { backgroundColor: "#D9A066" + "22", borderColor: "#D9A066" + "55" }]}
+            style={[styles.nudge, { backgroundColor: colors.amberGold + "18", borderColor: colors.amberGold + "44" }]}
           >
-            <Ionicons name="pencil" size={15} color="#D9A066" />
-            <Text style={[styles.nudgeText, { color: "#D9A066", fontFamily: "DMSans_500Medium" }]}>
+            <Ionicons name="pencil" size={15} color={colors.amberGold} />
+            <Text style={[styles.nudgeText, { color: colors.amberGold, fontFamily: "DMSans_500Medium" }]}>
               Name your three stomps to make this yours →
             </Text>
           </Pressable>
         )}
 
-        {/* ── Mode selector ── */}
+        {/* Mode selector */}
         {!state.stompedToday && (
-          <View style={[styles.modeRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+          <View style={[styles.modeRow, { backgroundColor: colors.muted, borderColor: colors.woodBorder }]}>
             {(["quick", "deep"] as const).map((m) => (
               <Pressable
                 key={m}
@@ -475,10 +408,7 @@ export default function StompScreen() {
                 <Text
                   style={[
                     styles.modeBtnText,
-                    {
-                      color: mode === m ? "#fff" : colors.mutedForeground,
-                      fontFamily: "DMSans_600SemiBold",
-                    },
+                    { color: mode === m ? "#fff" : colors.mutedForeground, fontFamily: "DMSans_600SemiBold" },
                   ]}
                 >
                   {m === "quick" ? "Quick (+10)" : "Deep (+25)"}
@@ -488,7 +418,7 @@ export default function StompScreen() {
           </View>
         )}
 
-        {/* ── Intent tiles (deep mode) ── */}
+        {/* Intent tiles */}
         {(!state.stompedToday && mode === "deep") || state.stompedToday ? (
           <View style={styles.tilesGrid}>
             {([0, 1, 2] as const).map((i) => (
@@ -504,29 +434,30 @@ export default function StompScreen() {
           </View>
         ) : null}
 
-        {/* ── Quick stomp CTA ── */}
+        {/* Quick stomp CTA */}
         {!state.stompedToday && mode === "quick" && (
           <Pressable
             onPress={handleQuickStomp}
             style={({ pressed }) => [
               styles.quickBtn,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+              { backgroundColor: colors.amberGold, opacity: pressed ? 0.85 : 1 },
             ]}
           >
-            <Ionicons name="flash" size={20} color="#fff" />
-            <Text style={[styles.quickBtnText, { color: "#fff", fontFamily: "DMSans_700Bold" }]}>
+            <Ionicons name="flash" size={20} color="#1C1008" />
+            <Text style={[styles.quickBtnText, { color: "#1C1008", fontFamily: "DMSans_700Bold" }]}>
               Stomp All Three
             </Text>
           </Pressable>
         )}
 
-        {/* ── Post-stomp reflection ── */}
+        {/* Post-stomp reflection — field note style */}
         {showReflect && (
-          <View style={[styles.reflectCard, { backgroundColor: colors.card, borderColor: colors.primary + "44" }]}>
-            <Text style={[styles.reflectLabel, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
-              REFLECT
-            </Text>
-            <Text style={[styles.reflectPrompt, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+          <FieldNoteCard
+            title="REFLECT — take a moment"
+            defaultOpen
+            style={{ marginHorizontal: 16, marginTop: 16 }}
+          >
+            <Text style={[styles.reflectPrompt, { color: colors.woodBrown, fontFamily: "DMSans_400Regular" }]}>
               {prompt}
             </Text>
             <Pressable onPress={handleReflectDismiss} style={styles.reflectDismiss}>
@@ -534,15 +465,12 @@ export default function StompScreen() {
                 I've thought about it →
               </Text>
             </Pressable>
-          </View>
+          </FieldNoteCard>
         )}
 
-        {/* ── Rename / rename link ── */}
+        {/* Rename link */}
         {!showRename && (
-          <Pressable
-            onPress={() => setShowRename(true)}
-            style={styles.renameLink}
-          >
+          <Pressable onPress={() => setShowRename(true)} style={styles.renameLink}>
             <Ionicons name="create-outline" size={14} color={colors.mutedForeground} />
             <Text style={[styles.renameLinkText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
               {usingDefaults ? "Rename your intentions" : "Edit intentions"}
@@ -550,7 +478,7 @@ export default function StompScreen() {
           </Pressable>
         )}
 
-        {/* ── Rename sheet ── */}
+        {/* Rename sheet */}
         {showRename && (
           <RenameSheet
             intents={state.intents}
@@ -560,26 +488,26 @@ export default function StompScreen() {
           />
         )}
 
-        {/* ── How it works ── */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-            How it works
-          </Text>
-          <View style={[styles.howCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+        {/* How it works — field manual */}
+        <View style={{ marginTop: 16 }}>
+          <FieldNoteCard
+            title="Field Manual — How Stomping Works"
+            style={{ marginHorizontal: 16 }}
+          >
             {[
               { icon: "flash" as const, text: "Quick Stomp: one tap, all three done. +10 pts." },
               { icon: "footsteps" as const, text: "Deep Stomp: tap each intention you actually tended. +25 pts." },
-              { icon: "flame" as const, text: "Stomp every day to build your streak." },
+              { icon: "flame" as const, text: "Stomp every day to build your streak — watch the lanterns fill." },
               { icon: "pencil" as const, text: "Name your intentions anything — they're yours, not a curriculum." },
             ].map((r, i) => (
               <View key={i} style={styles.howRow}>
-                <Ionicons name={r.icon} size={16} color={colors.primary} style={{ width: 22 }} />
+                <Ionicons name={r.icon} size={16} color={colors.woodBrown} style={{ width: 22 }} />
                 <Text style={[styles.howText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
                   {r.text}
                 </Text>
               </View>
             ))}
-          </View>
+          </FieldNoteCard>
         </View>
       </ScrollView>
     </View>
@@ -594,10 +522,7 @@ const styles = StyleSheet.create({
     gap: 4,
     overflow: "hidden",
   },
-  headerGradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    top: "40%",
-  },
+  headerGradientOverlay: { ...StyleSheet.absoluteFillObject, top: "40%" },
   headerContent: { gap: 4, zIndex: 1 },
   greeting: { fontSize: 13 },
   headerTitle: { fontSize: 28 },
@@ -614,12 +539,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   doneText: { fontSize: 12, color: "#4ade80" },
-  section: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    gap: 10,
-  },
-  sectionTitle: { fontSize: 16, marginBottom: 2 },
   nudge: {
     flexDirection: "row",
     alignItems: "center",
@@ -634,7 +553,7 @@ const styles = StyleSheet.create({
   modeRow: {
     flexDirection: "row",
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.5,
     padding: 4,
     gap: 4,
     marginHorizontal: 16,
@@ -649,11 +568,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   modeBtnText: { fontSize: 14 },
-  tilesGrid: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    gap: 10,
-  },
+  tilesGrid: { marginHorizontal: 16, marginTop: 12, gap: 10 },
   quickBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -665,16 +580,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   quickBtnText: { fontSize: 17 },
-  reflectCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    gap: 10,
-  },
-  reflectLabel: { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase" },
-  reflectPrompt: { fontSize: 15, lineHeight: 22 },
+  reflectPrompt: { fontSize: 15, lineHeight: 22, marginBottom: 10 },
   reflectDismiss: { alignSelf: "flex-start" },
   reflectDismissText: { fontSize: 13 },
   renameLink: {
@@ -686,16 +592,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   renameLinkText: { fontSize: 13 },
-  howCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
-  howRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
+  howRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 10 },
   howText: { flex: 1, fontSize: 14, lineHeight: 20 },
 });
