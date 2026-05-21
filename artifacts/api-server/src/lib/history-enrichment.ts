@@ -2,22 +2,39 @@
  * History enrichment for "This Day in History" episode tiles.
  *
  * For each episode in the this-day endpoint we compute:
- *  - historyImageUrl  – Wikipedia thumbnail for the history topic
- *  - lessonQuote      – the first strong declarative sentence from show notes
- *  - bulletPoints     – up to 6 short insight bullets from show notes
- *  - sourceLinks      – 1–3 Wikipedia links for the history topic
+ *  - historyImageUrl  – Wikipedia thumbnail (used as background wash only, low opacity)
+ *  - lessonQuote      – kept for backward compatibility (no longer rendered on tile face)
+ *  - bulletPoints     – kept for backward compatibility (no longer rendered on tile face)
+ *  - sourceLinks      – kept for backward compatibility (removed from tile face)
+ *  - ulgCrossLink     – a related Unloose the Goose episode on the same historical topic
+ *  - expertLink       – a TSP episode featuring the Expert Council historian, if relevant
  *
- * Results are cached in-memory per episode slug so they are not re-fetched on
- * every request (TTL = 6 hours to balance freshness vs. external API load).
+ * Sourcing priority (per design brief):
+ *   1. Unloose the Goose archive — keyword match against ULG episode titles and body text
+ *   2. Expert Council historian — full-text search for TSP episodes featuring a historian
+ *      whose credentials match the history topic
+ *   3. Wikipedia — demoted to background texture only (image wash, no bullets or links)
+ *
+ * Results are cached in-memory per episode slug (TTL = 6 hours).
  */
 
 import { logger } from "./logger";
+import { db, contentItemsTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
+
+export interface HistoryCrossLink {
+  title: string;
+  slug: string;
+  url: string;
+}
 
 export interface HistoryEnrichment {
   historyImageUrl: string | null;
   lessonQuote: string | null;
   bulletPoints: string[];
   sourceLinks: Array<{ label: string; url: string }>;
+  ulgCrossLink: HistoryCrossLink | null;
+  expertLink: HistoryCrossLink | null;
 }
 
 const CACHE = new Map<string, { fetchedAt: number; data: HistoryEnrichment }>();
@@ -189,6 +206,99 @@ function extractLessonQuote(descriptionHtml: string): string | null {
   return declarative ?? null;
 }
 
+/**
+ * Look for a ULG episode that discusses the same historical topic.
+ * Uses full-text search against ULG episode titles and body text.
+ * Returns null if the DB is unavailable or no match is found.
+ */
+async function findUlgCrossLink(
+  title: string,
+): Promise<HistoryCrossLink | null> {
+  const keywords = extractHistoryTopicKeywords(title);
+  if (keywords.length === 0) return null;
+
+  const queryText = keywords.slice(0, 3).join(" ");
+
+  try {
+    const rows = await db
+      .select({
+        title: contentItemsTable.title,
+        slug: contentItemsTable.slug,
+        link: contentItemsTable.link,
+      })
+      .from(contentItemsTable)
+      .where(
+        sql`${contentItemsTable.source} = 'ulg'
+          AND ${contentItemsTable.kind} = 'audio'
+          AND to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
+            @@ plainto_tsquery('english', ${queryText})`,
+      )
+      .limit(1);
+
+    if (rows[0]) {
+      return {
+        title: rows[0].title,
+        slug: rows[0].slug,
+        url: rows[0].link,
+      };
+    }
+  } catch (err) {
+    logger.debug({ err }, "history-enrichment: ULG cross-link lookup failed");
+  }
+  return null;
+}
+
+/**
+ * Look for a TSP episode featuring the Expert Council historian that is also
+ * relevant to this history topic.
+ *
+ * The history professor's name is not in the static Expert Council registry —
+ * this search finds him by looking for TSP episodes that mention historian
+ * credentials ("historian", "history professor") in their show notes and whose
+ * topic keywords overlap with the current history segment topic.
+ *
+ * Returns null if the DB is unavailable, the professor has no relevant episode,
+ * or no match is found.
+ */
+async function findExpertLink(
+  title: string,
+): Promise<HistoryCrossLink | null> {
+  const keywords = extractHistoryTopicKeywords(title);
+  if (keywords.length === 0) return null;
+
+  const queryText = keywords.slice(0, 3).join(" ");
+
+  try {
+    const rows = await db
+      .select({
+        title: contentItemsTable.title,
+        slug: contentItemsTable.slug,
+        link: contentItemsTable.link,
+      })
+      .from(contentItemsTable)
+      .where(
+        sql`${contentItemsTable.source} != 'ulg'
+          AND ${contentItemsTable.kind} = 'audio'
+          AND to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
+            @@ plainto_tsquery('english', 'historian')
+          AND to_tsvector('english', ${contentItemsTable.title} || ' ' || ${contentItemsTable.bodyText})
+            @@ plainto_tsquery('english', ${queryText})`,
+      )
+      .limit(1);
+
+    if (rows[0]) {
+      return {
+        title: rows[0].title,
+        slug: rows[0].slug,
+        url: `/episodes/${rows[0].slug}`,
+      };
+    }
+  } catch (err) {
+    logger.debug({ err }, "history-enrichment: expert link lookup failed");
+  }
+  return null;
+}
+
 export async function enrichHistoryEpisode(
   slug: string,
   title: string,
@@ -203,9 +313,11 @@ export async function enrichHistoryEpisode(
   const htmlContent = descriptionHtml ?? summary ?? "";
   const query = buildSearchQuery(title);
 
-  const [historyImageUrl, sourceLinks] = await Promise.all([
+  const [historyImageUrl, sourceLinks, ulgCrossLink, expertLink] = await Promise.all([
     fetchWikipediaImage(query),
     fetchWikipediaSourceLinks(query),
+    findUlgCrossLink(title),
+    findExpertLink(title),
   ]);
 
   const bulletPoints = extractBulletPoints(htmlContent);
@@ -216,6 +328,8 @@ export async function enrichHistoryEpisode(
     lessonQuote,
     bulletPoints,
     sourceLinks,
+    ulgCrossLink,
+    expertLink,
   };
 
   CACHE.set(slug, { fetchedAt: Date.now(), data });

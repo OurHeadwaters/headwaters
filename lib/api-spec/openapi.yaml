@@ -567,6 +567,20 @@ components:
         categories:
           type: array
           items: { type: string }
+    HistorySegment:
+      type: object
+      required: [startSeconds, endSeconds, lessonText]
+      properties:
+        startSeconds: { type: integer }
+        endSeconds: { type: integer }
+        lessonText: { type: string }
+    HistoryCrossLink:
+      type: object
+      required: [title, slug, url]
+      properties:
+        title: { type: string }
+        slug: { type: string }
+        url: { type: string }
     ThisDayEpisode:
       allOf:
         - $ref: "#/components/schemas/Episode"
@@ -577,23 +591,38 @@ components:
               description: "Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes"
             historyImageUrl:
               type: ["string", "null"]
-              description: "Wikipedia thumbnail URL for the history topic, or null if unavailable"
+              description: "Wikipedia thumbnail image URL — used only as a low-opacity background wash, never as a featured image"
             lessonQuote:
               type: ["string", "null"]
-              description: "A pull-quote distilling the core lesson from the episode show notes"
+              description: "Deprecated — kept for backward compatibility; no longer rendered on tile face"
             bulletPoints:
               type: array
               items: { type: string }
-              description: "Up to 6 short insight bullets extracted from the episode show notes"
+              description: "Deprecated — kept for backward compatibility; no longer rendered on tile face"
             sourceLinks:
               type: array
-              description: "1–3 Wikipedia reference links related to the history topic"
+              description: "Deprecated — Wikipedia links kept for backward compatibility; removed from tile face"
               items:
                 type: object
                 required: [label, url]
                 properties:
                   label: { type: string }
                   url: { type: string }
+            historySegment:
+              nullable: true
+              allOf:
+                - $ref: "#/components/schemas/HistorySegment"
+              description: "Scoped history segment data with start/end timestamps and Jack's extracted lesson text"
+            ulgCrossLink:
+              nullable: true
+              allOf:
+                - $ref: "#/components/schemas/HistoryCrossLink"
+              description: "A related Unloose the Goose episode touching the same historical topic, if found"
+            expertLink:
+              nullable: true
+              allOf:
+                - $ref: "#/components/schemas/HistoryCrossLink"
+              description: "A TSP episode featuring the Expert Council historian, if relevant to this topic"
     EpisodeDetail:
       allOf:
         - $ref: "#/components/schemas/Episode"

@@ -61,6 +61,12 @@ export interface HistorySegment {
   lessonText: string;
 }
 
+export interface HistoryCrossLink {
+  title: string;
+  slug: string;
+  url: string;
+}
+
 export type ThisDayEpisode = Episode & ({
   /**
      * Seconds into the episode where the 'This Day in History' segment begins, if detected in the show notes
@@ -68,25 +74,35 @@ export type ThisDayEpisode = Episode & ({
      */
   historyTimestamp?: number | null;
   /**
-   * Wikipedia thumbnail URL for the history topic, or null if unavailable
+   * Wikipedia thumbnail image URL — used only as a low-opacity background wash, never as a featured image
    * @nullable
    */
   historyImageUrl?: string | null;
   /**
-   * A pull-quote distilling the core lesson from the episode show notes
+   * Deprecated — kept for backward compatibility; no longer rendered on tile face
    * @nullable
    */
   lessonQuote?: string | null;
   /**
-   * Up to 6 short insight bullets extracted from the episode show notes
+   * Deprecated — kept for backward compatibility; no longer rendered on tile face
    */
   bulletPoints?: string[];
   /**
-   * 1–3 Wikipedia reference links related to the history topic
+   * Deprecated — Wikipedia links kept for backward compatibility; removed from tile face
    */
   sourceLinks?: ThisDayEpisodeSourceLinksItem[];
   /** @nullable */
   historySegment?: HistorySegment | null;
+  /**
+   * A related Unloose the Goose episode touching the same historical topic, if found
+   * @nullable
+   */
+  ulgCrossLink?: HistoryCrossLink | null;
+  /**
+   * A TSP episode featuring the Expert Council historian, if relevant to this topic
+   * @nullable
+   */
+  expertLink?: HistoryCrossLink | null;
 });
 
 export type EpisodeDetail = Episode & ({
