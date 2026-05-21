@@ -9,16 +9,18 @@ import {
   Fraunces_700Bold,
   useFonts as useFramuncesFonts,
 } from "@expo-google-fonts/fraunces";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OnboardingScreen, ONBOARDING_KEY } from "@/components/OnboardingScreen";
 import { HistoryProvider } from "@/context/HistoryContext";
 import { DownloadProvider } from "@/context/DownloadContext";
 import { PlayerProvider } from "@/context/PlayerContext";
@@ -63,13 +65,23 @@ export default function RootLayout() {
   const fontsLoaded = dmSansLoaded && frauncesLoaded;
   const fontError = dmSansError || frauncesError;
 
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
+      setShowOnboarding(value === null);
+      setOnboardingChecked(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && onboardingChecked) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, onboardingChecked]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if ((!fontsLoaded && !fontError) || !onboardingChecked) return null;
 
   return (
     <SafeAreaProvider>
@@ -83,6 +95,10 @@ export default function RootLayout() {
                     <StompProvider>
                       <PlayerProvider>
                         <RootLayoutNav />
+                        <OnboardingScreen
+                          visible={showOnboarding}
+                          onDone={() => setShowOnboarding(false)}
+                        />
                       </PlayerProvider>
                     </StompProvider>
                   </V4VProvider>
