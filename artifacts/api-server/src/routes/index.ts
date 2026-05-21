@@ -16,6 +16,7 @@ import v4vRouter from "./v4v";
 import ogRouter from "./og";
 import gapsRouter from "./gaps";
 import wisdomRouter from "./wisdom";
+import gearRouter from "./gear";
 
 const router: IRouter = Router();
 
@@ -29,6 +30,7 @@ router.use(expertsRouter);
 router.use(tracksRouter);
 router.use(transformationsRouter);
 router.use(gapsRouter);
+router.use(gearRouter);
 router.use(adminCategoriesRouter);
 router.use(trackProgressRouter);
 router.use(adminCouncilRouter);

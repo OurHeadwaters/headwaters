@@ -1,4 +1,5 @@
 import { useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
@@ -6,6 +7,7 @@ import { AudioPlayer } from "@/components/audio-player";
 import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin, BookOpen, Copy, Check } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
+import { ProductShelf, type ReviewedProduct } from "@/components/product-shelf";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
@@ -132,6 +134,18 @@ export function EpisodeDetail() {
   });
 
   const { data: transformations } = useTransformations();
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const { data: gearProducts = [] } = useQuery<ReviewedProduct[]>({
+    queryKey: ["gear-episode", slug],
+    queryFn: async () => {
+      const res = await fetch(`${base}/api/gear?episode=${encodeURIComponent(slug)}&limit=3`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: !!slug,
+  });
 
   const matchedTransformations =
     episode && transformations
@@ -422,6 +436,16 @@ export function EpisodeDetail() {
               </div>
             )}
 
+
+            {gearProducts.length > 0 && (
+              <div className="mb-5">
+                <ProductShelf
+                  products={gearProducts}
+                  heading="Gear mentioned or related"
+                  compact
+                />
+              </div>
+            )}
 
             <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" />

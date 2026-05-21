@@ -28,6 +28,7 @@ import { AdminSeriesHealth } from "@/pages/admin-series-health";
 import { CouncilPage } from "@/pages/council";
 import { CouncilMemberPage } from "@/pages/council-member";
 import { AdminContentGaps } from "@/pages/admin-content-gaps";
+import { AdminGear } from "@/pages/admin-gear";
 import HistoryPage from "@/pages/history";
 import { WisdomDig } from "@/pages/wisdom-dig";
 import NotFound from "@/pages/not-found";
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/admin/wishing-well" component={AdminWishingWell} />
         <Route path="/admin/series-health" component={AdminSeriesHealth} />
         <Route path="/admin/content-gaps" component={AdminContentGaps} />
+        <Route path="/admin/gear" component={AdminGear} />
         <Route path="/wishing-well" component={WishingWell} />
         <Route path="/wisdom-dig" component={WisdomDig} />
         <Route path="/history" component={HistoryPage} />

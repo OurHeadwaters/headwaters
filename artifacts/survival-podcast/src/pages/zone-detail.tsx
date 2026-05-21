@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
+import { ProductShelfSection, type ReviewedProduct } from "@/components/product-shelf";
 import {
   Loader2, Headphones, Users, Building2, ExternalLink,
   ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare,
@@ -192,6 +194,18 @@ export default function ZoneDetailPage() {
   const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
   const { data, isLoading, isError } = useZoneResources(slug, apiSource);
 
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const { data: gearProducts = [] } = useQuery<ReviewedProduct[]>({
+    queryKey: ["gear-zone", slug],
+    queryFn: async () => {
+      const res = await fetch(`${base}/api/gear?zone=${encodeURIComponent(slug)}&limit=6`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: !!slug,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -215,6 +229,7 @@ export default function ZoneDetailPage() {
   }
 
   const { zone, episodes, episodeTotal, experts, businesses } = data;
+
   const idx = zone.number;
   const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
   const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
@@ -387,6 +402,16 @@ export default function ZoneDetailPage() {
               ))}
             </div>
           </section>
+        )}
+
+        {/* Gear shelf */}
+        {gearProducts.length > 0 && (
+          <ProductShelfSection
+            products={gearProducts}
+            heading="Tools you may need"
+            subheading={`Products Jack has reviewed for ${zone.name.toLowerCase()} — links go directly to his site.`}
+            zoneColor={zone.color}
+          />
         )}
 
         {/* Headwaters Odyssey CTA */}

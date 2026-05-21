@@ -1,8 +1,10 @@
 import { Link, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useGetTrackEpisodes, fetchAllTrackEpisodes } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
+import { ProductShelf, type ReviewedProduct } from "@/components/product-shelf";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -519,6 +521,18 @@ export default function TrackDetailPage() {
   const { data, isLoading, isError, isFetching } = useGetTrackEpisodes(slug, queryParams);
   const progress = useTrackProgress(slug);
 
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const { data: gearProducts = [] } = useQuery<ReviewedProduct[]>({
+    queryKey: ["gear-track", slug],
+    queryFn: async () => {
+      const res = await fetch(`${base}/api/gear?track=${encodeURIComponent(slug)}&limit=6`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: !!slug,
+  });
+
   const track = data?.track;
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -1023,6 +1037,17 @@ export default function TrackDetailPage() {
               Next
               <ChevronRight className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {/* Gear shelf — shown at the end of the last page or when not filtering */}
+        {!isFiltering && gearProducts.length > 0 && (
+          <div className="print:hidden mt-10 pt-8 border-t border-border">
+            <ProductShelf
+              products={gearProducts}
+              heading="Gear for this track"
+              subheading="Products Jack has reviewed that are relevant to this subject."
+            />
           </div>
         )}
 
