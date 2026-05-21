@@ -23,6 +23,10 @@ interface GroundEvent {
   isFeatured: boolean;
   rsvpCount: number;
   createdAt: string;
+  ticketPriceCents: number | null;
+  breakEvenTickets: number;
+  platformSharePct: number | null;
+  stripeConnectedAccountId: string | null;
 }
 
 interface EventsResponse {
@@ -66,6 +70,9 @@ async function submitEvent(data: {
   externalUrl: string | null;
   seats: number | null;
   contactEmail: string;
+  ticketPriceCents?: number | null;
+  breakEvenTickets?: number;
+  platformSharePct?: number | null;
 }): Promise<GroundEvent> {
   const res = await fetch(apiUrl("/ground-events"), {
     method: "POST",
@@ -76,6 +83,26 @@ async function submitEvent(data: {
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed to submit event");
   return j as GroundEvent;
+}
+
+async function startStripeConnect(eventId: number): Promise<void> {
+  const res = await fetch(apiUrl(`/ground-events/${eventId}/connect/start`), {
+    method: "POST",
+    credentials: "include",
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed to start Stripe Connect");
+  window.location.href = (j as { url: string }).url;
+}
+
+async function initiateCheckout(eventId: number): Promise<void> {
+  const res = await fetch(apiUrl(`/ground-events/${eventId}/checkout`), {
+    method: "POST",
+    credentials: "include",
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((j as { error?: string }).error ?? "Checkout failed");
+  window.location.href = (j as { url: string }).url;
 }
 
 function formatDate(d: string): string {
@@ -459,7 +486,7 @@ function EventCard({
                   Tickets
                 </a>
               )}
-              {!event.externalUrl && event.contactEmail && (
+              {!event.externalUrl && event.contactEmail && !event.ticketPriceCents && (
                 <a
                   href={`mailto:${event.contactEmail}`}
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
@@ -473,34 +500,43 @@ function EventCard({
                   Contact
                 </a>
               )}
-              <button
-                onClick={() => !rsvped && !isFull && setShowRsvpModal(true)}
-                disabled={rsvped || isFull}
-                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
-                style={
-                  rsvped
-                    ? {
-                        background: "rgba(44,74,54,0.55)",
-                        color: "#6DBA8A",
-                        border: "1px solid rgba(44,74,54,0.75)",
-                        cursor: "default",
-                      }
-                    : isFull
-                    ? {
-                        background: "rgba(100,50,30,0.25)",
-                        color: "#A87060",
-                        border: "1px solid rgba(166,75,54,0.25)",
-                        cursor: "not-allowed",
-                      }
-                    : {
-                        background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)",
-                        color: "#A8D8A8",
-                        border: "1px solid rgba(58,90,64,0.8)",
-                      }
-                }
-              >
-                {rsvped ? "✓ I'm Going" : isFull ? "Full" : "I'm Going"}
-              </button>
+
+              {/* Paid event with Stripe Connect ready → platform checkout */}
+              {event.ticketPriceCents && event.stripeConnectedAccountId && !isFull ? (
+                <button
+                  onClick={() => { if (!rsvped) void initiateCheckout(event.id); }}
+                  disabled={rsvped}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
+                  style={
+                    rsvped
+                      ? { background: "rgba(44,74,54,0.55)", color: "#6DBA8A", border: "1px solid rgba(44,74,54,0.75)", cursor: "default" }
+                      : { background: "linear-gradient(135deg, #7A5030 0%, #5A3818 100%)", color: "#F2CA8C", border: "1.5px solid #9A6840" }
+                  }
+                >
+                  <Ticket className="w-3 h-3" />
+                  {rsvped ? "✓ Ticket Purchased" : `Buy Ticket — ${event.priceDisplay}`}
+                </button>
+              ) : !event.ticketPriceCents || !event.stripeConnectedAccountId ? (
+                /* Free event or paid-but-not-yet-connected → plain RSVP */
+                <button
+                  onClick={() => !rsvped && !isFull && setShowRsvpModal(true)}
+                  disabled={rsvped || isFull}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
+                  style={
+                    rsvped
+                      ? { background: "rgba(44,74,54,0.55)", color: "#6DBA8A", border: "1px solid rgba(44,74,54,0.75)", cursor: "default" }
+                      : isFull
+                      ? { background: "rgba(100,50,30,0.25)", color: "#A87060", border: "1px solid rgba(166,75,54,0.25)", cursor: "not-allowed" }
+                      : { background: "linear-gradient(135deg, #2C4A36 0%, #1C3020 100%)", color: "#A8D8A8", border: "1px solid rgba(58,90,64,0.8)" }
+                  }
+                >
+                  {rsvped ? "✓ I'm Going" : isFull ? "Full" : "I'm Going"}
+                </button>
+              ) : (
+                <span className="text-xs px-3 py-1.5 rounded-lg" style={{ color: "#A87060", border: "1px solid rgba(166,75,54,0.25)" }}>
+                  Full
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -518,14 +554,20 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
   const [isOnline, setIsOnline] = useState(false);
   const [isFree, setIsFree] = useState(true);
   const [paidAmount, setPaidAmount] = useState("");
+  const [breakEvenStr, setBreakEvenStr] = useState("");
+  const [platformShare, setPlatformShare] = useState<5 | 10 | 15>(10);
   const [externalUrl, setExternalUrl] = useState("");
   const [seatsStr, setSeatsStr] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [createdEventId, setCreatedEventId] = useState<number | null>(null);
+  const [connectingStripe, setConnectingStripe] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: submitEvent,
-    onSuccess: () => {
+    onSuccess: (created) => {
+      setCreatedEventId(created.id);
       setSubmitted(true);
       onSuccess();
     },
@@ -553,6 +595,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
   };
 
   if (submitted) {
+    const isPaidStripe = !isFree && !externalUrl.trim() && !!paidAmount.trim();
     return (
       <div
         className="rounded-2xl p-8 text-center"
@@ -568,18 +611,63 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
         >
           Workshop submitted!
         </h3>
-        <p className="text-sm mb-6" style={{ color: "#8AB8A0" }}>
+        <p className="text-sm mb-4" style={{ color: "#8AB8A0" }}>
           Your workshop is in the pending queue. The admin will review and approve it — 
-          then it'll appear on the board for the community to RSVP.
+          then it'll appear on the board for the community.
         </p>
+
+        {isPaidStripe && createdEventId && (
+          <div
+            className="mb-6 p-4 rounded-xl text-left"
+            style={{
+              background: "rgba(217,160,102,0.08)",
+              border: "1px solid rgba(217,160,102,0.25)",
+            }}
+          >
+            <p className="text-sm font-semibold mb-1" style={{ color: "#D9A066" }}>
+              One more step: connect Stripe to collect ticket payments
+            </p>
+            <p className="text-xs mb-3" style={{ color: "#8A7850" }}>
+              You'll be redirected to Stripe to set up your payout account. Takes about 2 minutes.
+            </p>
+            {connectError && (
+              <p className="text-xs mb-2" style={{ color: "#E87060" }}>{connectError}</p>
+            )}
+            <button
+              onClick={async () => {
+                setConnectingStripe(true);
+                setConnectError(null);
+                try {
+                  await startStripeConnect(createdEventId);
+                } catch (err) {
+                  setConnectError(err instanceof Error ? err.message : "Failed to connect");
+                  setConnectingStripe(false);
+                }
+              }}
+              disabled={connectingStripe}
+              className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg transition-all disabled:opacity-50"
+              style={{
+                background: "linear-gradient(135deg, #7A5030 0%, #5A3818 100%)",
+                color: "#F2CA8C",
+                border: "1.5px solid #9A6840",
+              }}
+            >
+              <Ticket className="w-3 h-3" />
+              {connectingStripe ? "Redirecting…" : "Connect Stripe →"}
+            </button>
+          </div>
+        )}
+
         <button onClick={onCancel} className="text-xs underline" style={{ color: "#7A9880" }}>
-          Back to events
+          {isPaidStripe ? "Skip for now" : "Back to events"}
         </button>
       </div>
     );
   }
 
   const priceDisplay = isFree ? "Free" : (paidAmount.trim() ? `$${paidAmount.trim()}` : "");
+  const ticketPriceCents = !isFree && paidAmount.trim() ? Math.round(parseFloat(paidAmount.trim()) * 100) : null;
+  const breakEvenTickets = breakEvenStr.trim() ? Math.max(0, parseInt(breakEvenStr, 10)) : 0;
   const seatsVal = seatsStr.trim() ? parseInt(seatsStr, 10) : null;
   const canSubmit =
     title.trim().length >= 3 &&
@@ -758,20 +846,67 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
               ))}
             </div>
             {!isFree && (
-              <div className="relative">
-                <span
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold"
-                  style={{ color: "#8AB8A0" }}
-                >$</span>
-                <input
-                  type="number"
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(e.target.value)}
-                  placeholder="25"
-                  min="1"
-                  step="1"
-                  style={{ ...inputStyle, paddingLeft: "28px" }}
-                />
+              <div className="flex flex-col gap-3">
+                <div className="relative">
+                  <span
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold"
+                    style={{ color: "#8AB8A0" }}
+                  >$</span>
+                  <input
+                    type="number"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    placeholder="25"
+                    min="1"
+                    step="1"
+                    style={{ ...inputStyle, paddingLeft: "28px" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px" }}>
+                    Break-even at (tickets)
+                  </label>
+                  <input
+                    type="number"
+                    value={breakEvenStr}
+                    onChange={(e) => setBreakEvenStr(e.target.value)}
+                    placeholder="e.g. 10 — first 10 tickets cover your costs"
+                    min="0"
+                    step="1"
+                    style={inputStyle}
+                  />
+                  <p className="text-xs mt-0.5" style={{ color: "#4A6850" }}>
+                    Platform earns a share only on tickets <em>above</em> this number.
+                  </p>
+                </div>
+
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px" }}>
+                    Platform share on surplus tickets
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {([5, 10, 15] as const).map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setPlatformShare(pct)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                        style={
+                          platformShare === pct
+                            ? { background: "rgba(44,74,54,0.6)", color: "#6DBA8A", border: "1px solid rgba(44,74,54,0.9)" }
+                            : { background: "transparent", color: "#5A7860", border: "1px solid rgba(58,90,64,0.35)" }
+                        }
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: "#4A6850" }}>
+                    After break-even, The Stomping Path earns {platformShare}% of each ticket ($
+                    {paidAmount.trim() ? ((parseFloat(paidAmount) * platformShare / 100)).toFixed(2) : "—"} per ticket).
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -805,6 +940,9 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
               externalUrl: externalUrl.trim() || null,
               seats: seatsVal,
               contactEmail: contactEmail.trim(),
+              ticketPriceCents: ticketPriceCents,
+              breakEvenTickets: breakEvenTickets,
+              platformSharePct: !isFree ? platformShare : null,
             })
           }
           disabled={!canSubmit}

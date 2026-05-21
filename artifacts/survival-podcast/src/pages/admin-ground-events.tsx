@@ -24,6 +24,10 @@ interface GroundEvent {
   isRejected: boolean;
   rsvpCount: number;
   createdAt: string;
+  ticketPriceCents: number | null;
+  breakEvenTickets: number;
+  platformSharePct: number | null;
+  stripeConnectedAccountId: string | null;
 }
 
 async function fetchEvents(): Promise<GroundEvent[]> {
@@ -150,6 +154,36 @@ function EventRow({ event }: { event: GroundEvent }) {
             {event.seats !== null && ` · ${event.seats} seats`}
             {` · ${event.rsvpCount} RSVPs`}
           </p>
+
+          {/* Stripe Connect payment summary */}
+          {event.ticketPriceCents && (
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                Stripe Tickets · ${(event.ticketPriceCents / 100).toFixed(2)}
+              </span>
+              {event.breakEvenTickets > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  BE: {event.breakEvenTickets} tickets
+                </span>
+              )}
+              {event.platformSharePct && (
+                <span className="text-[10px] text-muted-foreground">
+                  {event.platformSharePct}% surplus share
+                  {event.rsvpCount > event.breakEvenTickets && (
+                    <> · <strong className="text-[#2C4A36]">
+                      ${((event.rsvpCount - event.breakEvenTickets) * event.ticketPriceCents * event.platformSharePct / 10000).toFixed(2)} earned
+                    </strong></>
+                  )}
+                </span>
+              )}
+              {event.stripeConnectedAccountId ? (
+                <span className="text-[10px] font-semibold text-emerald-700">✓ Stripe connected</span>
+              ) : (
+                <span className="text-[10px] text-amber-600">⚠ Awaiting Stripe Connect</span>
+              )}
+            </div>
+          )}
+
           {event.externalUrl && (
             <p className="text-xs mt-0.5">
               <a

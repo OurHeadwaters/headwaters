@@ -10,8 +10,8 @@ import { groundEventsTable } from "./ground-events";
 
 /**
  * Individual RSVP records for ground events.
- * Each row represents one attendee expressing interest, with their email
- * so the host can coordinate and follow up.
+ * Covers both free RSVPs (payment_status = 'free') and
+ * paid ticket purchases confirmed via Stripe (payment_status = 'paid').
  */
 export const groundEventRsvpsTable = pgTable(
   "ground_event_rsvps",
@@ -22,12 +22,19 @@ export const groundEventRsvpsTable = pgTable(
       .references(() => groundEventsTable.id, { onDelete: "cascade" }),
     attendeeEmail: text("attendee_email").notNull(),
     attendeeName: text("attendee_name"),
+    /** Stripe Checkout Session ID — set for paid tickets, null for free RSVPs */
+    stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+    /** 'free' | 'paid' */
+    paymentStatus: text("payment_status").notNull().default("free"),
+    /** Amount charged in cents (0 or null for free events) */
+    amountPaidCents: integer("amount_paid_cents"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (t) => [
     index("ground_event_rsvps_event_id_idx").on(t.eventId),
+    index("ground_event_rsvps_session_id_idx").on(t.stripeCheckoutSessionId),
     index("ground_event_rsvps_created_at_idx").on(t.createdAt),
   ],
 );

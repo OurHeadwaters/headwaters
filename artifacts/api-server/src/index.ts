@@ -8,15 +8,46 @@ import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-con
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
+  throw new Error("PORT environment variable is required but was not provided.");
 }
 
 const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+// ─── Stripe initialisation (non-blocking) ──────────────────────────────────
+// Runs after the server starts listening so startup is never delayed.
+// Failures are logged as warnings — the app remains functional without Stripe.
+async function initStripe(): Promise<void> {
+  try {
+    const { runMigrations } = await import("stripe-replit-sync");
+    const { getStripeSync } = await import("./stripeClient");
+
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) throw new Error("DATABASE_URL is required");
+
+    logger.info("stripe: running schema migrations…");
+    await runMigrations({ databaseUrl, schema: "stripe" });
+    logger.info("stripe: schema ready");
+
+    const stripeSync = await getStripeSync();
+
+    const webhookBase = `https://${(process.env.REPLIT_DOMAINS ?? "").split(",")[0]}`;
+    await stripeSync.findOrCreateManagedWebhook(`${webhookBase}/api/stripe/webhook`);
+    logger.info("stripe: managed webhook configured");
+
+    // syncBackfill is async and intentionally fire-and-forget
+    stripeSync.syncBackfill().catch((err) =>
+      logger.warn({ err }, "stripe: syncBackfill failed (non-fatal)"),
+    );
+  } catch (err) {
+    logger.warn(
+      { err },
+      "stripe: initialisation skipped — connect Stripe via the Integrations tab to enable payments",
+    );
+  }
 }
 
 app.listen(port, (err) => {
@@ -28,7 +59,6 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 
   validateSeriesRegistry();
-
   startBackgroundRefresh();
   startGearSchedule();
 
@@ -40,4 +70,7 @@ app.listen(port, (err) => {
         "series-consistency: could not fetch RSS feed at startup; skipping consistency check",
       ),
     );
+
+  // Initialise Stripe after server is ready (non-blocking)
+  initStripe();
 });

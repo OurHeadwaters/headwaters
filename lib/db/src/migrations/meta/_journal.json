@@ -64,6 +64,13 @@
       "when": 1779378873800,
       "tag": "0008_cuddly_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1748500000000,
+      "tag": "0009_stripe_connect_workshops",
+      "breakpoints": true
     }
   ]
 }

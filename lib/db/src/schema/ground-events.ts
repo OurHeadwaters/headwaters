@@ -4,6 +4,7 @@ import {
   text,
   boolean,
   integer,
+  smallint,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
@@ -11,12 +12,19 @@ import {
 /**
  * Ground Events — community workshops hosted at / associated with The Stomping Path.
  *
- * New submissions land with is_approved=false, is_rejected=false (pending queue).
- * Admin can: Approve (is_approved=true), Feature (is_approved+is_featured=true),
- *            Reject (is_rejected=true, is_approved=false), or Unfeature.
- * Public board only shows approved (and not rejected) events: featured first, then chronological.
- * Price is display-only text ("Free" or "$25") — no payment processing in MVP.
- * externalUrl: optional link to an external ticketing/payment page (Eventbrite, Stripe, etc.)
+ * Moderation states:
+ *   Pending:  is_approved=false, is_rejected=false
+ *   Approved: is_approved=true
+ *   Featured: is_approved=true, is_featured=true
+ *   Rejected: is_rejected=true, is_approved=false
+ *
+ * Payment model (Stripe Connect):
+ *   Free events: ticket_price_cents=null, platform_share_pct=null
+ *   Paid events: ticket_price_cents > 0, break_even_tickets, platform_share_pct (5/10/15)
+ *   Surplus fee: for every ticket sold above break_even_tickets,
+ *                platform receives (ticket_price_cents * platform_share_pct / 100) cents.
+ *   stripe_connected_account_id: set once host completes Stripe Express onboarding.
+ *   Public checkout only available once stripe_connected_account_id is set.
  */
 export const groundEventsTable = pgTable(
   "ground_events",
@@ -36,6 +44,11 @@ export const groundEventsTable = pgTable(
     isFeatured: boolean("is_featured").notNull().default(false),
     isRejected: boolean("is_rejected").notNull().default(false),
     rsvpCount: integer("rsvp_count").notNull().default(0),
+    // Stripe Connect payment fields
+    ticketPriceCents: integer("ticket_price_cents"),
+    breakEvenTickets: integer("break_even_tickets").notNull().default(0),
+    platformSharePct: smallint("platform_share_pct"),
+    stripeConnectedAccountId: text("stripe_connected_account_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

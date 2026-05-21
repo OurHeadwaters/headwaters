@@ -91,7 +91,7 @@ router.get("/admin/ground-events/:id/rsvps.csv", requireEditor, async (req, res)
       return s;
     };
 
-    const header = "id,attendee_name,attendee_email,rsvp_date\n";
+    const header = "id,attendee_name,attendee_email,payment_status,amount_paid_cents,stripe_session_id,rsvp_date\n";
     const rows = rsvps
       .map(
         (r) =>
@@ -99,6 +99,9 @@ router.get("/admin/ground-events/:id/rsvps.csv", requireEditor, async (req, res)
             r.id,
             csvEscape(r.attendeeName),
             csvEscape(r.attendeeEmail),
+            csvEscape(r.paymentStatus),
+            r.amountPaidCents ?? "",
+            csvEscape(r.stripeCheckoutSessionId),
             csvEscape(r.createdAt.toISOString()),
           ].join(","),
       )

@@ -22,6 +22,7 @@ import adminCategoriesRouter from "./admin-categories";
 import adminCouncilRouter from "./admin-council";
 import groundEventsRouter from "./ground-events";
 import adminGroundEventsRouter from "./admin-ground-events";
+import stripeWorkshopsRouter from "./stripe-workshops";
 
 const router: IRouter = Router();
 
@@ -48,5 +49,6 @@ router.use(adminCategoriesRouter);
 router.use(adminCouncilRouter);
 router.use(groundEventsRouter);
 router.use(adminGroundEventsRouter);
+router.use(stripeWorkshopsRouter);
 
 export default router;
