@@ -438,7 +438,7 @@ export function EpisodeDetail() {
 
 
             {gearProducts.length > 0 && (
-              <div className="mb-5">
+              <div className="mb-5 -mx-6 px-6">
                 <ProductShelf
                   products={gearProducts}
                   heading="Gear mentioned or related"

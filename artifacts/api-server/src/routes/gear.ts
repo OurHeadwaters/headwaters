@@ -118,7 +118,7 @@ router.get("/gear", async (req, res) => {
     }
 
     if (keywordFilters.length > 0) {
-      const rows = await db
+      const matched = await db
         .select()
         .from(reviewedProductsTable)
         .where(
@@ -134,8 +134,11 @@ router.get("/gear", async (req, res) => {
         )
         .orderBy(desc(reviewedProductsTable.importedAt))
         .limit(limit);
-      res.json(rows);
-      return;
+      if (matched.length > 0) {
+        res.json(matched);
+        return;
+      }
+      // No category match — fall through to recent-products fallback below
     }
 
     // Fallback: return most recently imported visible products
