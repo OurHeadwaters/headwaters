@@ -53,3 +53,9 @@ id = "Maea65IG2nP-Wk-rf0jC4"
 uri = "file://attached_assets/parrs-jars-candidate-6.png"
 type = "image"
 title = "Candidate 6 — June 2025 screenshot 2"
+
+[[outputs]]
+id = "e57k-oEDrL-UBXqqkJAPa"
+uri = "file://.local/stomping-path-market-prompt.md"
+type = "text"
+title = "The Stomping Path — Go-to-Market Agent Prompt"
