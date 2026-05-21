@@ -20,6 +20,8 @@ import waterWheelRouter from "./water-wheel";
 import adminNuggetsRouter from "./admin-nuggets";
 import adminCategoriesRouter from "./admin-categories";
 import adminCouncilRouter from "./admin-council";
+import groundEventsRouter from "./ground-events";
+import adminGroundEventsRouter from "./admin-ground-events";
 
 const router: IRouter = Router();
 
@@ -44,5 +46,7 @@ router.use(waterWheelRouter);
 router.use(adminNuggetsRouter);
 router.use(adminCategoriesRouter);
 router.use(adminCouncilRouter);
+router.use(groundEventsRouter);
+router.use(adminGroundEventsRouter);
 
 export default router;

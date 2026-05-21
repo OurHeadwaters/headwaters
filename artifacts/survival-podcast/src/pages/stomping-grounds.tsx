@@ -5,13 +5,15 @@ import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 import { GordBird } from "@/components/gord-bird";
 import { WisdomDig } from "@/pages/wisdom-dig";
 import { WishingWell } from "@/pages/wishing-well";
+import { WorkshopBoard } from "@/pages/workshop";
 
-type Tab = "grounds" | "wisdom" | "well";
+type Tab = "grounds" | "wisdom" | "well" | "workshop";
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "grounds", label: "Grounds", emoji: "🏡" },
   { id: "wisdom", label: "Wisdom Dig", emoji: "💎" },
   { id: "well", label: "Wishing Well", emoji: "🪙" },
+  { id: "workshop", label: "Workshop", emoji: "🔨" },
 ];
 
 function WoodenTab({
@@ -62,7 +64,9 @@ export default function StompingGroundsPage() {
   const params = new URLSearchParams(search);
   const rawTab = params.get("tab");
   const activeTab: Tab =
-    rawTab === "wisdom" || rawTab === "well" ? rawTab : "grounds";
+    rawTab === "wisdom" || rawTab === "well" || rawTab === "workshop"
+      ? rawTab
+      : "grounds";
 
   useEffect(() => {
     const t1 = setTimeout(() => setGordPhase("flying"), 700);
@@ -331,6 +335,11 @@ export default function StompingGroundsPage() {
         {activeTab === "well" && (
           <div className="bg-background min-h-screen">
             <WishingWell />
+          </div>
+        )}
+        {activeTab === "workshop" && (
+          <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #1C3020 0%, #1A2820 100%)" }}>
+            <WorkshopBoard />
           </div>
         )}
       </div>
