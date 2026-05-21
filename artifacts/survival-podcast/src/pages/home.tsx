@@ -340,12 +340,31 @@ function DailyStompOrb() {
 
 function HeroEntrance() {
   const ref = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioMuted, setAudioMuted] = useState(true);
+  const [audioStarted, setAudioStarted] = useState(false);
+
+  function toggleAudio() {
+    const el = audioRef.current;
+    if (!el) return;
+    if (!audioStarted) {
+      el.volume = 0.25;
+      el.play().catch(() => {});
+      el.muted = false;
+      setAudioStarted(true);
+      setAudioMuted(false);
+    } else {
+      el.muted = !el.muted;
+      setAudioMuted(el.muted);
+    }
+  }
+
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const yMountains = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const yMid = useTransform(scrollYProgress, [0, 1], ["0%", "55%"]);
   const yFog = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
-  const headlineY = useTransform(scrollYProgress, [0, 1], ["0%", "120%"]);
-  const headlineOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+  const headlineY = useTransform(scrollYProgress, [0.4, 1], ["0%", "120%"]);
+  const headlineOpacity = useTransform(scrollYProgress, [0.55, 0.92], [1, 0]);
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -504,6 +523,29 @@ function HeroEntrance() {
 
       {/* Vignette */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.55)_100%)]" />
+
+      {/* Freedom ambient audio — muted/paused by default */}
+      <audio ref={audioRef} src={`${import.meta.env.BASE_URL}freedom-ambient.mp3`} loop preload="none" muted />
+
+      {/* Audio toggle button */}
+      <button
+        onClick={toggleAudio}
+        title={audioMuted ? "Play ambient music" : "Mute ambient music"}
+        className="absolute bottom-8 right-6 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 bg-black/30 backdrop-blur-sm text-white/60 hover:text-white hover:border-white/40 transition-all text-[11px] font-semibold uppercase tracking-wider"
+      >
+        {audioMuted ? (
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          </svg>
+        )}
+        {audioMuted ? "Music off" : "Music on"}
+      </button>
 
       {/* HEADLINE */}
       <motion.div

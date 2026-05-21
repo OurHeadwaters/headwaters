@@ -59,3 +59,9 @@ id = "e57k-oEDrL-UBXqqkJAPa"
 uri = "file://.local/stomping-path-market-prompt.md"
 type = "text"
 title = "The Stomping Path — Go-to-Market Agent Prompt"
+
+[[outputs]]
+id = "xtNQc2BqJ_DksSZ9Uho-q"
+uri = "file://artifacts/survival-podcast/public/freedom-ambient.mp3"
+type = "audio"
+title = "freedom_ambient"

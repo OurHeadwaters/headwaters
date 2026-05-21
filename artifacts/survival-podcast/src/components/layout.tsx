@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X, LogIn, LogOut, User } from "lucide-react";
 import { useState } from "react";
-import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full bg-[#2C4A36] shadow-md">
         <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <img src={tspLogo} alt="TSP Logo" className="w-10 h-10 rounded-md object-cover border-2 border-white/20" />
+            <img src={tspLogo} alt="TSP Logo" className="w-10 h-10" />
             <div className="flex flex-col">
               <span className="font-serif font-bold text-lg leading-tight tracking-tight text-white">The Stomping Path</span>
               <span className="text-[10px] uppercase tracking-wider text-white/50 font-semibold leading-none">TSP Community</span>
@@ -166,7 +166,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <img src={tspLogo} alt="TSP Logo" className="w-8 h-8 rounded-sm opacity-80" />
+              <img src={tspLogo} alt="TSP Logo" className="w-8 h-8 opacity-80" />
               <span className="font-serif font-semibold text-white/80">The Stomping Path</span>
             </div>
             <p className="text-sm text-white/60 text-center md:text-right max-w-sm italic">
