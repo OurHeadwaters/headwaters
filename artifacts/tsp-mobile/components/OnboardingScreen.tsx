@@ -97,41 +97,125 @@ function FencePost({ color, capColor }: { color: string; capColor: string }) {
   );
 }
 
-function JourneyTrail() {
+function JourneyTrail({ isVisible }: { isVisible: boolean }) {
   const colors = useColors();
+
+  // Animation slots (in stagger order):
+  //  0: post0, 1: label0, 2: rails0,
+  //  3: post1, 4: label1, 5: rails1,
+  //  6: post2, 7: label2,
+  //  8: trailEnd, 9: groundLine, 10: trailLabel
+  const anims = useRef(
+    Array.from({ length: 11 }, () => new Animated.Value(0))
+  ).current;
+
+  // Each post slides up slightly as it fades in
+  const postTranslates = useRef(
+    Array.from({ length: 3 }, () => new Animated.Value(14))
+  ).current;
+
+  useEffect(() => {
+    if (isVisible) {
+      anims.forEach((a) => a.setValue(0));
+      postTranslates.forEach((a) => a.setValue(14));
+
+      Animated.stagger(110, [
+        Animated.parallel([
+          Animated.timing(anims[0], { toValue: 1, duration: 280, useNativeDriver: true }),
+          Animated.timing(postTranslates[0], { toValue: 0, duration: 280, useNativeDriver: true }),
+        ]),
+        Animated.timing(anims[1], { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(anims[2], { toValue: 1, duration: 260, useNativeDriver: true }),
+        Animated.parallel([
+          Animated.timing(anims[3], { toValue: 1, duration: 280, useNativeDriver: true }),
+          Animated.timing(postTranslates[1], { toValue: 0, duration: 280, useNativeDriver: true }),
+        ]),
+        Animated.timing(anims[4], { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(anims[5], { toValue: 1, duration: 260, useNativeDriver: true }),
+        Animated.parallel([
+          Animated.timing(anims[6], { toValue: 1, duration: 280, useNativeDriver: true }),
+          Animated.timing(postTranslates[2], { toValue: 0, duration: 280, useNativeDriver: true }),
+        ]),
+        Animated.timing(anims[7], { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(anims[8], { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(anims[9], { toValue: 1, duration: 280, useNativeDriver: true }),
+        Animated.timing(anims[10], { toValue: 1, duration: 240, useNativeDriver: true }),
+      ]).start();
+    } else {
+      anims.forEach((a) => a.setValue(0));
+      postTranslates.forEach((a) => a.setValue(14));
+    }
+  }, [isVisible]);
+
+  const postAnims = [anims[0], anims[3], anims[6]];
+  const labelAnims = [anims[1], anims[4], anims[7]];
+  const railAnims = [anims[2], anims[5]];
 
   return (
     <View style={fenceStyles.wrapper}>
       <View style={fenceStyles.trailRow}>
         {MILESTONES.map((m, i) => (
           <React.Fragment key={i}>
-            <View style={fenceStyles.postAndLabel}>
+            <Animated.View
+              style={[
+                fenceStyles.postAndLabel,
+                {
+                  opacity: postAnims[i],
+                  transform: [{ translateY: postTranslates[i] }],
+                },
+              ]}
+            >
               <FencePost color={colors.woodBrown} capColor={colors.woodLight} />
-              <Text style={[fenceStyles.milestoneNum, { color: colors.amberGold, fontFamily: "Fraunces_700Bold" }]}>
+              <Animated.Text
+                style={[
+                  fenceStyles.milestoneNum,
+                  {
+                    color: colors.amberGold,
+                    fontFamily: "Fraunces_700Bold",
+                    opacity: labelAnims[i],
+                  },
+                ]}
+              >
                 {m.label}
-              </Text>
-              <Text style={[fenceStyles.milestoneSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              </Animated.Text>
+              <Animated.Text
+                style={[
+                  fenceStyles.milestoneSub,
+                  {
+                    color: colors.mutedForeground,
+                    fontFamily: "DMSans_400Regular",
+                    opacity: Animated.multiply(labelAnims[i], 0.75) as any,
+                  },
+                ]}
+              >
                 {m.sub}
-              </Text>
-            </View>
+              </Animated.Text>
+            </Animated.View>
             {i < MILESTONES.length - 1 && (
-              <View style={fenceStyles.railWrapper}>
+              <Animated.View style={[fenceStyles.railWrapper, { opacity: railAnims[i] }]}>
                 <View style={[fenceStyles.rail, { backgroundColor: colors.woodBorder }]} />
                 <View style={[fenceStyles.rail, fenceStyles.railLower, { backgroundColor: colors.woodBorder }]} />
-              </View>
+              </Animated.View>
             )}
           </React.Fragment>
         ))}
-        <View style={fenceStyles.trailEnd}>
+        <Animated.View style={[fenceStyles.trailEnd, { opacity: anims[8] }]}>
           <View style={[fenceStyles.trailEndLine, { backgroundColor: colors.woodBorder }]} />
-        </View>
+        </Animated.View>
       </View>
 
-      <View style={[fenceStyles.groundLine, { backgroundColor: colors.woodBorder }]} />
+      <Animated.View
+        style={[fenceStyles.groundLine, { backgroundColor: colors.woodBorder, opacity: anims[9] }]}
+      />
 
-      <Text style={[fenceStyles.trailLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+      <Animated.Text
+        style={[
+          fenceStyles.trailLabel,
+          { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", opacity: anims[10] },
+        ]}
+      >
         The Stomping Trail
-      </Text>
+      </Animated.Text>
     </View>
   );
 }
@@ -242,7 +326,7 @@ function SlideItem({ slide, isVisible }: SlideItemProps) {
             {slide.body}
           </Text>
 
-          {slide.showTrail && <JourneyTrail />}
+          {slide.showTrail && <JourneyTrail isVisible={isVisible} />}
 
           {isVisible && (
             <GordBird
