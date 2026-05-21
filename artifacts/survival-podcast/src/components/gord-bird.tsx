@@ -25,8 +25,9 @@ export function GordBird({ size = 120, className = "", variant = "full" }: GordB
         <circle cx="36" cy="21" r="3" fill="#2C1810" />
         <circle cx="25" cy="20" r="1" fill="white" />
         <circle cx="37" cy="20" r="1" fill="white" />
-        <path d="M27 31 Q30 34 33 31" stroke="#8B6F47" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        <polygon points="30,28 26,32 34,32" fill="#D9A066" />
+        <polygon points="30,28 24,35 36,35" fill="#E8B97F" stroke="#6B4E2A" strokeWidth="1.5" />
+        <polygon points="30,33.5 26,37 34,37" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1" />
+        <line x1="30" y1="28" x2="30" y2="35" stroke="#6B4E2A" strokeWidth="1" />
         <ellipse cx="19" cy="14" rx="5" ry="8" fill="#C4965A" transform="rotate(-20 19 14)" />
         <ellipse cx="41" cy="14" rx="5" ry="8" fill="#C4965A" transform="rotate(20 41 14)" />
         <ellipse cx="19" cy="13" rx="3" ry="5" fill="#8B6F47" transform="rotate(-20 19 13)" />
@@ -73,9 +74,9 @@ export function GordBird({ size = 120, className = "", variant = "full" }: GordB
       <circle cx="44.5" cy="61.5" r="1.5" fill="white" />
       <circle cx="58.5" cy="61.5" r="1.5" fill="white" />
 
-      <path d="M44 74 Q50 78 56 74" stroke="#8B6F47" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-
-      <polygon points="50,70 44,75 56,75" fill="#D9A066" />
+      <polygon points="50,70 43,79 57,79" fill="#E8B97F" stroke="#6B4E2A" strokeWidth="2" />
+      <polygon points="50,77 45,82 55,82" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1.2" />
+      <line x1="50" y1="70" x2="50" y2="79" stroke="#6B4E2A" strokeWidth="1.2" />
 
       <ellipse cx="34" cy="50" rx="7" ry="11" fill="#C4965A" transform="rotate(-15 34 50)" />
       <ellipse cx="66" cy="50" rx="7" ry="11" fill="#C4965A" transform="rotate(15 66 50)" />
