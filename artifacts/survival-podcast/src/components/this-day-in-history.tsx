@@ -1,13 +1,10 @@
 import { useGetThisDayEpisodes } from "@workspace/api-client-react";
 import type { ThisDayEpisode } from "@workspace/api-client-react";
-import { Play, BookOpen, Calendar, ChevronDown, RotateCcw, ExternalLink } from "lucide-react";
+import { BookOpen, Calendar, ChevronDown, Play, RotateCcw } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
-import { usePlayer } from "@/context/player-context";
-import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
-import { HistorySegmentPlayer } from "@/components/history-segment-player";
-import type { HistorySegment } from "@workspace/api-client-react";
+import { usePlayer } from "@/context/player-context";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -18,64 +15,79 @@ function daysInMonth(month: number): number {
   return new Date(2000, month, 0).getDate();
 }
 
-function formatTimestamp(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
 function yearsAgo(year: number): number {
   return new Date().getFullYear() - year;
 }
 
-function HistoryTile({ ep, onPlay }: { ep: ThisDayEpisode; onPlay: (ep: ThisDayEpisode) => void }) {
+function formatSegmentDuration(startSeconds: number, endSeconds: number): string {
+  const secs = Math.max(0, endSeconds - startSeconds);
+  if (secs === 0) return "";
+  const mins = Math.round(secs / 60);
+  if (mins < 1) return `${secs}s history segment`;
+  return mins === 1 ? "1 min history segment" : `${mins} min history segment`;
+}
+
+function HistoryTileConfirmed({ ep }: { ep: ThisDayEpisode }) {
   const year = new Date(ep.pubDate).getUTCFullYear();
   const ago = yearsAgo(year);
   const [imgError, setImgError] = useState(false);
-  const [artworkError, setArtworkError] = useState(false);
+  const { load, seek, audioRef } = usePlayer();
 
-  const bgImage = !imgError && ep.historyImageUrl
-    ? ep.historyImageUrl
-    : (!artworkError && ep.artworkUrl ? ep.artworkUrl : null);
+  const segment = ep.historySegment!;
+  const lessonText = segment.lessonText?.trim() || null;
+  // Headline is Jack's lessonText directly — no heuristic extraction.
+  // Episode title is the true last resort only when lessonText is absent.
+  const headlineText = lessonText ?? decodeHtml(ep.title);
 
-  const bullets = ep.bulletPoints?.filter(Boolean) ?? [];
-  const sources = ep.sourceLinks?.filter(s => s.label && s.url) ?? [];
+  const hasTimedSegment = segment.startSeconds > 0 || segment.endSeconds > 0;
+  const durationLabel = hasTimedSegment
+    ? formatSegmentDuration(segment.startSeconds, segment.endSeconds)
+    : null;
+
+  const handlePlay = () => {
+    if (!ep.audioUrl) return;
+    load(
+      {
+        slug: ep.slug,
+        title: ep.title,
+        audioUrl: ep.audioUrl,
+        artworkUrl: ep.artworkUrl,
+        episodeNumber: ep.episodeNumber,
+        durationSeconds: ep.durationSeconds,
+      },
+      true,
+    );
+    const seekTo = ep.historyTimestamp!;
+    const audio = audioRef.current;
+    if (audio) {
+      audio.addEventListener("canplay", () => seek(seekTo), { once: true });
+    }
+  };
 
   return (
-    <div className="snap-start shrink-0 w-72 md:w-auto relative rounded-xl overflow-hidden border border-white/10 group flex flex-col" style={{ height: "380px" }}>
-      {/* Background image layer */}
-      {bgImage ? (
-        <div className="absolute inset-0">
-          <img
-            src={ep.historyImageUrl && !imgError ? ep.historyImageUrl : (ep.artworkUrl ?? "")}
-            alt=""
-            className="w-full h-full object-cover"
-            onError={() => {
-              if (!imgError && ep.historyImageUrl) {
-                setImgError(true);
-              } else {
-                setArtworkError(true);
-              }
-            }}
-          />
-        </div>
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <img
-            src={tspLogo}
-            alt=""
-            className="w-24 h-24 object-cover rounded-xl opacity-10"
-          />
-        </div>
+    <div
+      className="snap-start shrink-0 w-72 md:w-auto relative rounded-xl overflow-hidden border border-white/10 group flex flex-col"
+      style={{ height: "380px" }}
+    >
+      {/* Base background */}
+      <div className="absolute inset-0 bg-[#1A2E1F]" />
+
+      {/* Wikipedia image — low-opacity wash only */}
+      {!imgError && ep.historyImageUrl && (
+        <img
+          src={ep.historyImageUrl}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover opacity-[0.08]"
+          onError={() => setImgError(true)}
+        />
       )}
 
-      {/* Dark gradient overlay — aggressive for WCAG AA contrast */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/50" />
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
 
-      {/* Content stacked above overlay */}
-      <div className="relative flex flex-col h-full p-4 gap-2">
+      {/* Content */}
+      <div className="relative flex flex-col h-full p-4 gap-3">
 
         {/* Year + episode badge */}
         <div className="flex items-center justify-between gap-2 shrink-0">
@@ -96,79 +108,93 @@ function HistoryTile({ ep, onPlay }: { ep: ThisDayEpisode; onPlay: (ep: ThisDayE
           )}
         </div>
 
-        {/* Pull-quote — headline lesson */}
-        {ep.lessonQuote ? (
-          <blockquote className="text-sm font-semibold text-white leading-snug italic drop-shadow-md shrink-0 line-clamp-3 border-l-2 border-[#D9A066]/60 pl-2">
-            {ep.lessonQuote}
-          </blockquote>
-        ) : (
-          <Link href={`/episodes/${ep.slug}`}>
-            <h3 className="text-sm font-semibold text-white leading-snug line-clamp-3 drop-shadow-md shrink-0">
-              {decodeHtml(ep.title)}
-            </h3>
-          </Link>
-        )}
+        {/* Headline — Jack's framing from lessonText, episode title as fallback */}
+        <h3 className="text-sm font-semibold text-white leading-snug line-clamp-3 drop-shadow-md shrink-0">
+          {headlineText}
+        </h3>
 
-        {/* Accessible title always present even when quote is shown */}
-        {ep.lessonQuote && (
-          <Link href={`/episodes/${ep.slug}`}>
-            <h3 className="text-xs text-white/50 leading-snug line-clamp-2 hover:text-white/80 transition-colors">
-              {decodeHtml(ep.title)}
-            </h3>
-          </Link>
-        )}
+        {/* Scoped audio player — visual hero */}
+        <div className="shrink-0 bg-black/40 rounded-lg p-3 border border-[#D9A066]/20 backdrop-blur-sm">
+          {durationLabel && (
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#D9A066]/70 mb-2">
+              {durationLabel}
+            </p>
+          )}
+          <button
+            onClick={handlePlay}
+            disabled={!ep.audioUrl}
+            className="flex items-center gap-2 bg-[#D9A066] hover:bg-[#c48a4a] disabled:opacity-40 disabled:cursor-not-allowed text-[#1A2E1F] px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-black/50 w-full justify-center"
+          >
+            <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+            Play
+          </button>
+        </div>
 
-        {/* Bullet points */}
-        {bullets.length > 0 && (
-          <ul className="flex flex-col gap-1 overflow-hidden min-h-0 shrink-[2]">
-            {bullets.slice(0, 4).map((b, i) => (
-              <li key={i} className="flex items-start gap-1.5 min-w-0">
-                <span className="text-[#D9A066]/70 mt-0.5 shrink-0 text-xs">▸</span>
-                <span className="text-xs text-white/75 leading-snug line-clamp-2">{b}</span>
-              </li>
-            ))}
-          </ul>
+        {/* Jack's lesson text — primary body copy */}
+        {lessonText && (
+          <p className="text-xs text-white/75 leading-relaxed line-clamp-3 shrink-0">
+            {lessonText}
+          </p>
         )}
 
         {/* Spacer */}
         <div className="flex-1 min-h-0" />
 
-        {/* Threads to pull — source links */}
-        {sources.length > 0 && (
-          <div className="shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#D9A066]/60 mb-1.5">
-              Threads to pull
+        {/* Episode title link — secondary metadata */}
+        <div className="shrink-0">
+          <Link href={`/episodes/${ep.slug}`}>
+            <p className="text-[10px] text-white/35 hover:text-white/60 transition-colors line-clamp-2 leading-snug">
+              {decodeHtml(ep.title)}
             </p>
-            <div className="flex flex-wrap gap-1.5">
-              {sources.map((s, i) => (
-                <a
-                  key={i}
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] font-medium text-white/70 bg-white/10 hover:bg-white/20 hover:text-white border border-white/15 rounded-full px-2 py-0.5 transition-colors backdrop-blur-sm"
-                >
-                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-                  <span className="line-clamp-1 max-w-[100px]">{s.label}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Play button */}
-        <div className="shrink-0 pt-1">
-          <button
-            onClick={() => onPlay(ep)}
-            disabled={!ep.audioUrl}
-            className="flex items-center gap-2 bg-[#D9A066] hover:bg-[#c48a4a] disabled:opacity-40 disabled:cursor-not-allowed text-[#1A2E1F] px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-black/50 w-full justify-center"
-          >
-            <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-            {ep.historyTimestamp && ep.historyTimestamp > 0
-              ? `Play History @ ${formatTimestamp(ep.historyTimestamp)}`
-              : "Play Episode"}
-          </button>
+          </Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function HistoryTileUnconfirmed({ ep }: { ep: ThisDayEpisode }) {
+  const year = new Date(ep.pubDate).getUTCFullYear();
+  const ago = yearsAgo(year);
+
+  return (
+    <div
+      className="snap-start shrink-0 w-72 md:w-auto relative rounded-xl overflow-hidden border border-white/5 flex flex-col opacity-50"
+      style={{ height: "380px" }}
+    >
+      <div className="absolute inset-0 bg-[#1A2E1F]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
+      <div className="relative flex flex-col h-full p-4 gap-3">
+        <div className="flex items-center justify-between gap-2 shrink-0">
+          <div>
+            <span className="text-4xl font-serif font-bold text-[#D9A066]/50 leading-none">
+              {year}
+            </span>
+            {ago >= 1 && (
+              <p className="text-xs text-[#D9A066]/40 font-medium mt-0.5">
+                {ago === 1 ? "1 year ago" : `${ago} years ago`}
+              </p>
+            )}
+          </div>
+          {ep.episodeNumber != null && (
+            <span className="text-xs font-bold uppercase tracking-widest text-white/25 bg-black/30 border border-white/10 px-2 py-0.5 rounded-full shrink-0">
+              EP {ep.episodeNumber}
+            </span>
+          )}
+        </div>
+
+        <Link href={`/episodes/${ep.slug}`}>
+          <h3 className="text-sm font-medium text-white/40 leading-snug line-clamp-3">
+            {decodeHtml(ep.title)}
+          </h3>
+        </Link>
+
+        <div className="flex-1 min-h-0" />
+
+        <p className="text-[10px] text-white/25 italic shrink-0">
+          Segment timestamp not yet detected
+        </p>
       </div>
     </div>
   );
@@ -178,7 +204,6 @@ export function ThisDayInHistory() {
   const today = new Date();
   const searchString = useSearch();
   const [, setLocation] = useLocation();
-  const { load, seek, audioRef } = usePlayer();
 
   const params = new URLSearchParams(searchString);
   const initMonth = params.has("month") ? Number(params.get("month")) : today.getMonth() + 1;
@@ -241,28 +266,6 @@ export function ThisDayInHistory() {
     setDraftDay(d);
     setPickerOpen(false);
     setLocation("/", { replace: true });
-  };
-
-  const handlePlay = (ep: ThisDayEpisode) => {
-    if (!ep.audioUrl) return;
-    load(
-      {
-        slug: ep.slug,
-        title: ep.title,
-        audioUrl: ep.audioUrl,
-        artworkUrl: ep.artworkUrl,
-        episodeNumber: ep.episodeNumber,
-        durationSeconds: ep.durationSeconds,
-      },
-      true,
-    );
-    if (ep.historyTimestamp && ep.historyTimestamp > 0) {
-      const seekTo = ep.historyTimestamp;
-      const audio = audioRef.current;
-      if (audio) {
-        audio.addEventListener("canplay", () => seek(seekTo), { once: true });
-      }
-    }
   };
 
   const dayCount = daysInMonth(draftMonth);
@@ -409,9 +412,18 @@ export function ThisDayInHistory() {
           </div>
         ) : (
           <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:overflow-x-visible">
-            {[...episodes].sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear()).map((ep) => (
-              <HistoryTile key={ep.slug} ep={ep} onPlay={handlePlay} />
-            ))}
+            {[...episodes]
+              .sort((a, b) => new Date(b.pubDate).getUTCFullYear() - new Date(a.pubDate).getUTCFullYear())
+              .map((ep) => {
+                const hasConfirmedSegment =
+                  ep.historyTimestamp != null &&
+                  ep.historySegment != null;
+                return hasConfirmedSegment ? (
+                  <HistoryTileConfirmed key={ep.slug} ep={ep} />
+                ) : (
+                  <HistoryTileUnconfirmed key={ep.slug} ep={ep} />
+                );
+              })}
           </div>
         )}
       </div>
