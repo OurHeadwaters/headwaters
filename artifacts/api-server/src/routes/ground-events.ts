@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, groundEventsTable } from "@workspace/db";
-import { eq, sql, and, desc, asc } from "drizzle-orm";
+import { eq, sql, and, desc, asc, gte } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -12,17 +12,28 @@ const router: IRouter = Router();
  * Query params:
  *   limit  (1-50, default 20)
  *   offset (default 0)
+ *   status "upcoming" — restrict to events whose event_date >= today (YYYY-MM-DD)
  */
 router.get("/ground-events", async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const offset = Math.max(0, Number(req.query.offset) || 0);
+    const upcomingOnly = req.query.status === "upcoming";
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const whereClause = upcomingOnly
+      ? and(
+          eq(groundEventsTable.isApproved, true),
+          gte(groundEventsTable.eventDate, today),
+        )
+      : eq(groundEventsTable.isApproved, true);
 
     const [events, [{ count }]] = await Promise.all([
       db
         .select()
         .from(groundEventsTable)
-        .where(eq(groundEventsTable.isApproved, true))
+        .where(whereClause)
         .orderBy(
           desc(groundEventsTable.isFeatured),
           asc(groundEventsTable.eventDate),
@@ -33,7 +44,7 @@ router.get("/ground-events", async (req, res) => {
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(groundEventsTable)
-        .where(eq(groundEventsTable.isApproved, true)),
+        .where(whereClause),
     ]);
 
     res.json({ events, total: count, limit, offset });
@@ -142,7 +153,10 @@ router.post("/ground-events", async (req, res) => {
 /**
  * POST /api/ground-events/:id/rsvp
  * Increment rsvp_count on an approved event.
- * No auth required — simple interest tracking.
+ * Body (optional): { sessionId?: string } — a stable device/session identifier
+ *   that is logged alongside the RSVP for attribution. Clients that do not send
+ *   a sessionId are still accepted (anonymous RSVP). Server-side deduplication
+ *   per session is not yet implemented; clients should gate repeat calls locally.
  */
 router.post("/ground-events/:id/rsvp", async (req, res) => {
   try {
@@ -151,6 +165,12 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       res.status(400).json({ error: "Invalid event id" });
       return;
     }
+
+    const body = req.body as Record<string, unknown>;
+    const sessionId =
+      typeof body.sessionId === "string" && body.sessionId.trim()
+        ? body.sessionId.trim().slice(0, 128)
+        : null;
 
     const [event] = await db
       .select()
@@ -174,7 +194,7 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       .where(eq(groundEventsTable.id, id))
       .returning();
 
-    logger.info({ id, rsvpCount: updated.rsvpCount }, "ground-events: RSVP recorded");
+    logger.info({ id, sessionId, rsvpCount: updated.rsvpCount }, "ground-events: RSVP recorded");
     res.status(201).json({ eventId: id, rsvpCount: updated.rsvpCount });
   } catch (err) {
     logger.error({ err }, "ground-events: POST /rsvp failed");

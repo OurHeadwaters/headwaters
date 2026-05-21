@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -12,6 +13,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useColors } from "@/hooks/useColors";
 import { useStomp, DEFAULT_INTENT_LABELS } from "@/context/StompContext";
 import { WoodCard } from "@/components/homestead/WoodCard";
@@ -19,6 +22,225 @@ import { FieldNoteCard } from "@/components/homestead/FieldNoteCard";
 import { LanternGauge } from "@/components/homestead/LanternGauge";
 import { GordBird } from "@/components/GordBird";
 import { EmberBurst } from "@/components/EmberParticles";
+
+const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+
+interface GroundEvent {
+  id: number;
+  title: string;
+  description: string;
+  hostName: string;
+  eventDate: string;
+  location: string;
+  isOnline: boolean;
+  priceDisplay: string;
+  seats: number | null;
+  rsvpCount: number;
+  isFeatured: boolean;
+  createdAt: string;
+}
+
+const RSVP_KEY = (id: number) => `workshop_rsvp_${id}`;
+const SESSION_ID_KEY = "tsp_device_session_id";
+
+function generateUUID(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+let _cachedSessionId: string | null = null;
+
+async function getSessionId(): Promise<string> {
+  if (_cachedSessionId) return _cachedSessionId;
+  let id = await AsyncStorage.getItem(SESSION_ID_KEY);
+  if (!id) {
+    id = generateUUID();
+    await AsyncStorage.setItem(SESSION_ID_KEY, id);
+  }
+  _cachedSessionId = id;
+  return id;
+}
+
+async function fetchUpcomingEvents(): Promise<GroundEvent[]> {
+  const res = await fetch(`${API_BASE}/api/ground-events?status=upcoming&limit=5`);
+  if (!res.ok) throw new Error("Failed to load workshops");
+  const data = await res.json();
+  return data.events as GroundEvent[];
+}
+
+async function postRsvp(id: number): Promise<void> {
+  const sessionId = await getSessionId();
+  const res = await fetch(`${API_BASE}/api/ground-events/${id}/rsvp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
+  if (!res.ok) throw new Error("Failed to RSVP");
+}
+
+function formatEventDate(d: string): string {
+  try {
+    return new Date(d + "T12:00:00").toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return d;
+  }
+}
+
+function WorkshopCard({ event }: { event: GroundEvent }) {
+  const colors = useColors();
+  const queryClient = useQueryClient();
+  const [rsvped, setRsvped] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(RSVP_KEY(event.id)).then((val) => {
+      if (val === "1") setRsvped(true);
+    });
+  }, [event.id]);
+
+  const { mutate: doRsvp, isPending } = useMutation({
+    mutationFn: () => postRsvp(event.id),
+    onSuccess: async () => {
+      await AsyncStorage.setItem(RSVP_KEY(event.id), "1");
+      setRsvped(true);
+      queryClient.invalidateQueries({ queryKey: ["upcoming-workshops"] });
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    },
+    onError: () => {
+      Alert.alert("Couldn't RSVP", "Please try again in a moment.");
+    },
+  });
+
+  return (
+    <WoodCard style={{ marginBottom: 10 }}>
+      {event.isFeatured && (
+        <View style={[workshopStyles.featuredBadge, { backgroundColor: colors.amberGold + "22" }]}>
+          <Text style={[workshopStyles.featuredText, { color: colors.amberGold, fontFamily: "DMSans_600SemiBold" }]}>
+            ⭐ Featured
+          </Text>
+        </View>
+      )}
+      <Text style={[workshopStyles.title, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+        {event.title}
+      </Text>
+      <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+        📅 {formatEventDate(event.eventDate)}
+      </Text>
+      <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+        {event.isOnline ? "🌐 Online" : `📍 ${event.location}`}
+        {event.seats ? `  ·  ${event.seats} seats` : ""}
+      </Text>
+      <Text style={[workshopStyles.meta, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+        🎟 {event.priceDisplay}  ·  hosted by {event.hostName}
+      </Text>
+      <Pressable
+        onPress={() => { if (!rsvped && !isPending) doRsvp(); }}
+        disabled={rsvped || isPending}
+        style={({ pressed }) => [
+          workshopStyles.rsvpBtn,
+          {
+            backgroundColor: rsvped
+              ? colors.muted
+              : pressed
+              ? colors.primary + "cc"
+              : colors.primary,
+            opacity: isPending ? 0.6 : 1,
+          },
+        ]}
+      >
+        {isPending ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={[workshopStyles.rsvpText, { color: rsvped ? colors.mutedForeground : "#fff", fontFamily: "DMSans_600SemiBold" }]}>
+            {rsvped ? "✓ You're Going" : "I'm Going"}
+          </Text>
+        )}
+      </Pressable>
+    </WoodCard>
+  );
+}
+
+const workshopStyles = StyleSheet.create({
+  featuredBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 8,
+  },
+  featuredText: { fontSize: 11, letterSpacing: 0.3 },
+  title: { fontSize: 16, marginBottom: 6 },
+  meta: { fontSize: 13, lineHeight: 20 },
+  rsvpBtn: {
+    marginTop: 12,
+    paddingVertical: 11,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rsvpText: { fontSize: 15 },
+});
+
+function WorkshopsSection() {
+  const colors = useColors();
+
+  const { data: events, isLoading, isError } = useQuery({
+    queryKey: ["upcoming-workshops"],
+    queryFn: fetchUpcomingEvents,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  return (
+    <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
+      <Text style={[sectionStyles.heading, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+        🛠 Upcoming Workshops
+      </Text>
+      <Text style={[sectionStyles.sub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+        Community events from the Workshop Board
+      </Text>
+
+      {isLoading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} />
+      ) : isError ? (
+        <WoodCard style={{ marginTop: 8 }}>
+          <View style={sectionStyles.emptyInner}>
+            <Text style={sectionStyles.emptyEmoji}>🌲</Text>
+            <Text style={[sectionStyles.emptyText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              Couldn't load workshops right now
+            </Text>
+          </View>
+        </WoodCard>
+      ) : events && events.length > 0 ? (
+        events.map((ev) => <WorkshopCard key={ev.id} event={ev} />)
+      ) : (
+        <WoodCard style={{ marginTop: 8 }}>
+          <View style={sectionStyles.emptyInner}>
+            <Text style={sectionStyles.emptyEmoji}>🏕</Text>
+            <Text style={[sectionStyles.emptyText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              No workshops coming up yet — check back soon.
+            </Text>
+          </View>
+        </WoodCard>
+      )}
+    </View>
+  );
+}
+
+const sectionStyles = StyleSheet.create({
+  heading: { fontSize: 18, marginBottom: 4 },
+  sub: { fontSize: 13, marginBottom: 12 },
+  emptyInner: { alignItems: "center", paddingVertical: 18, gap: 10 },
+  emptyEmoji: { fontSize: 30 },
+  emptyText: { fontSize: 14, textAlign: "center" },
+});
 
 function getTimeColors(hour: number): readonly [string, string] {
   if (hour >= 5 && hour < 10)  return ["#7a5c2a", "#4a6822"] as const;
@@ -502,6 +724,9 @@ export default function StompScreen() {
             colors={colors}
           />
         )}
+
+        {/* Upcoming Workshops */}
+        <WorkshopsSection />
 
         {/* How it works — field manual */}
         <View style={{ marginTop: 16 }}>
