@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "Drw8YBbKIa2Zocixic3sK"
@@ -12,3 +11,39 @@ id = "4xZKcVHFj9HBWmr5hEkg2"
 uri = "file://artifacts/tsp-mobile/assets/images/splash-icon.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "x47XEXk6V1JkJ7tGQ1AhY"
+uri = "file://attached_assets/parrs-jars-candidate-1.webp"
+type = "image"
+title = "Candidate 1 — webp photo from bobbieshomepreserves.com"
+
+[[outputs]]
+id = "m4bUL-THwHPoK2wBSjKDk"
+uri = "file://attached_assets/parrs-jars-candidate-2.png"
+type = "image"
+title = "Candidate 2 — PNG screenshot from bobbieshomepreserves.com"
+
+[[outputs]]
+id = "AhdGEHv_aI5GAYjCmx2Qe"
+uri = "file://attached_assets/parrs-jars-candidate-3.jpg"
+type = "image"
+title = "Candidate 3"
+
+[[outputs]]
+id = "6HJ3DR77G9Lwhp94lwOz-"
+uri = "file://attached_assets/parrs-jars-candidate-4.png"
+type = "image"
+title = "Candidate 4 — June 2025 screenshot"
+
+[[outputs]]
+id = "nQhMVceqe0_NcneI5eBbG"
+uri = "file://attached_assets/parrs-jars-candidate-5.png"
+type = "image"
+title = "Candidate 5 — Nov 2024 screenshot"
+
+[[outputs]]
+id = "Maea65IG2nP-Wk-rf0jC4"
+uri = "file://attached_assets/parrs-jars-candidate-6.png"
+type = "image"
+title = "Candidate 6 — June 2025 screenshot 2"

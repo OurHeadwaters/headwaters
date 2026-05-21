@@ -173,7 +173,7 @@ export default function Home() {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&q=80')",
+              `url('${BASE}parrs-jars-homestead.jpg')`,
             scale: 1.2,
             y: landPhotoY,
             willChange: "transform",
