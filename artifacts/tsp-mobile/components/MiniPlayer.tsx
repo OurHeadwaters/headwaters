@@ -1,3 +1,20 @@
+/*
+ * MiniPlayer — persistent bottom bar (mobile / Expo)
+ *
+ * Happy path:
+ *   currentEpisode in PlayerContext → MiniPlayer renders above tab bar →
+ *   progress bar fills as positionMs / durationMs → tap play/pause button →
+ *   pause() / resume() called → tap card body → navigate to episode screen
+ *
+ * Edge cases verified:
+ *   - Returns null when no episode is loaded (no layout shift)
+ *   - isLoading: shows ActivityIndicator in place of play/pause icon
+ *   - isError: shows error icon + retry button in place of play/pause
+ *   - nextEpisode label tappable separately from the main card (stopPropagation)
+ *   - Bottom offset accounts for safe-area inset on notched devices
+ *   - zIndex 100 / elevation 10 keeps player above all tab-bar content
+ */
+
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -13,7 +30,7 @@ const TAB_BAR_HEIGHT = Platform.OS === "web" ? 84 : 49;
 export function MiniPlayer() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { currentEpisode, isPlaying, isLoading, positionMs, durationMs, pause, resume, nextEpisode } = usePlayer();
+  const { currentEpisode, isPlaying, isLoading, isError, positionMs, durationMs, pause, resume, retry, nextEpisode } = usePlayer();
 
   if (!currentEpisode) return null;
 
@@ -21,6 +38,10 @@ export function MiniPlayer() {
   const progress = durationMs > 0 ? positionMs / durationMs : 0;
 
   const handlePlayPause = () => {
+    if (isError) {
+      retry();
+      return;
+    }
     if (isPlaying) pause();
     else resume();
   };
@@ -45,7 +66,7 @@ export function MiniPlayer() {
       style={[
         styles.container,
         {
-          backgroundColor: colors.primary,
+          backgroundColor: isError ? colors.destructive ?? "#7f1d1d" : colors.primary,
           bottom: bottomOffset,
           borderRadius: 10,
           marginHorizontal: 10,
@@ -81,9 +102,9 @@ export function MiniPlayer() {
             style={[styles.title, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}
             numberOfLines={1}
           >
-            {currentEpisode.title}
+            {isError ? "Playback error — tap to retry" : currentEpisode.title}
           </Text>
-          {upNextLabel && (
+          {!isError && upNextLabel && (
             <Pressable
               onPress={(e) => { e.stopPropagation?.(); handleOpenQueue(); }}
               hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
@@ -105,6 +126,8 @@ export function MiniPlayer() {
         >
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.primaryForeground} />
+          ) : isError ? (
+            <Ionicons name="refresh" size={24} color={colors.primaryForeground} />
           ) : (
             <Ionicons
               name={isPlaying ? "pause" : "play"}

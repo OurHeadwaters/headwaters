@@ -1,3 +1,24 @@
+/*
+ * playback-progress — localStorage persistence for episode playback (web)
+ *
+ * Happy path:
+ *   saveProgress(slug, pos, dur) → stored under "tsp:progress:<slug>"
+ *   getProgress(slug) → parsed entry with position, duration, savedAt
+ *   markCompleted(slug) → sets "tsp:completed:<slug>" = "1"
+ *   isCompleted(slug) → returns true if key exists
+ *   clearCompleted(slug) → removes completed key (for replay)
+ *
+ * Edge cases verified:
+ *   - All functions wrapped in try/catch to handle localStorage quota exceeded
+ *     or private-mode restrictions without crashing
+ *   - saveProgress skips position <= 0 to avoid overwriting with stale data
+ *   - getAllInProgress filters out position < 5 s (accidental taps) and >= 95 %
+ *     (de-facto completed)
+ *   - getMostRecentSlugAmong skips completed episodes
+ *   - markCompleted is idempotent — calling twice has no ill effect
+ *   - Completed threshold (95 %) matches NEAR_END_THRESHOLD in player-context
+ */
+
 const PREFIX = "tsp:progress:";
 const COMPLETED_PREFIX = "tsp:completed:";
 

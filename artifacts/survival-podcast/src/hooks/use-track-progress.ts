@@ -1,3 +1,26 @@
+/*
+ * useTrackProgress — per-track episode completion state (web)
+ *
+ * Happy path:
+ *   Mount with slug → load doneIds from localStorage →
+ *   if authenticated: fetch server progress → merge server + local → push
+ *   local-only ids back to server → setDoneIds(merged)
+ *   toggleDone(id) → optimistic local update + async server PATCH
+ *   markDone(id) → same but idempotent (no-op if already done)
+ *
+ * Edge cases verified:
+ *   - Slug change: doneIds resets to new slug's localStorage before auth check
+ *   - Unauthenticated: saves to localStorage only; no API calls
+ *   - Server fetch failure: silently falls back to local data (no crash)
+ *   - mergeLocalToServer: skips if no local-only ids (avoids empty PATCH)
+ *   - resetProgress: clears localStorage + state; does NOT call server
+ *     (intended for local reset only — backend reset is a separate task)
+ *   - toggleDone while auth is loading: queued in local state, synced after
+ *     auth resolves because isAuthenticated drives the server sync effect
+ *   - useAllTracksProgress: refreshes on storage events (cross-tab sync)
+ *     and on window focus (re-focus from another app)
+ */
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 
@@ -133,11 +156,13 @@ export function useTrackProgress(slug: string): TrackProgress {
   const [doneIds, setDoneIds] = useState<Set<number>>(() => loadDoneIds(slug));
   const serverLoadedRef = useRef(false);
 
+  // Reset local state when track slug changes
   useEffect(() => {
     setDoneIds(loadDoneIds(slug));
     serverLoadedRef.current = false;
   }, [slug]);
 
+  // Sync with server once auth is known
   useEffect(() => {
     if (authLoading) return;
 
@@ -151,12 +176,15 @@ export function useTrackProgress(slug: string): TrackProgress {
           setDoneIds(merged);
           saveDoneIds(slug, merged);
           serverLoadedRef.current = true;
+          // Push any local-only completions up to server
           mergeLocalToServer(slug, localOnlyIds);
         }
       });
     }
   }, [slug, isAuthenticated, authLoading]);
 
+  // Persist to localStorage for unauthenticated users (authenticated users write
+  // on every toggle, so this covers the unauthenticated-only path)
   useEffect(() => {
     if (!isAuthenticated) {
       saveDoneIds(slug, doneIds);

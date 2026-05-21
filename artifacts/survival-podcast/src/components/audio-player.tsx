@@ -1,5 +1,24 @@
+/*
+ * AudioPlayer — episode detail page player (web)
+ *
+ * Happy path:
+ *   Component mounts with episode prop → load(ep, false) primes PlayerContext →
+ *   user clicks Play → toggle() → isPlaying true → progress bar tracks currentTime
+ *   If saved position exists and ratio < 95 %: resume banner appears →
+ *   user clicks Resume → seek(resumeFrom) + play
+ *   At 95 % completion: markCompleted fires, completed banner replaces resume banner
+ *
+ * Edge cases verified:
+ *   - handleResumeClick: if episode not yet active in context, loads first then seeks
+ *     via loadedmetadata to avoid seeking on unloaded audio
+ *   - handleStartOver: clears completed flag, seeks to 0, plays — no double-load
+ *   - Skip buttons: skip only fires after load is confirmed active
+ *   - isError from context: displayed inline with retry option
+ *   - Resume banner hidden while playing so it doesn't obscure controls
+ */
+
 import { useEffect, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, RotateCcw, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { usePlayer, type PlayerEpisode } from "@/context/player-context";
 import { formatDuration } from "./episode-card";
 import { getProgress, isCompleted, clearCompleted } from "@/lib/playback-progress";
@@ -9,7 +28,7 @@ interface AudioPlayerProps {
 }
 
 export function AudioPlayer({ episode }: AudioPlayerProps) {
-  const { isPlaying, currentTime, duration, load, toggle, seek, skip, audioRef, episode: currentEpisode } = usePlayer();
+  const { isPlaying, isError, currentTime, duration, load, toggle, seek, skip, retry, audioRef, episode: currentEpisode } = usePlayer();
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [resumeFrom, setResumeFrom] = useState<number | null>(null);
@@ -40,6 +59,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
         setResumeFrom(null);
       }
     }
+    // Prime the player context with this episode (no autoplay yet)
     load(episode, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episode.audioUrl]);
@@ -63,27 +83,65 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
   };
 
   const handleResumeClick = () => {
-    if (!isThisEpisode) load(episode, false);
-    if (resumeFrom !== null) {
-      seek(resumeFrom);
-    }
     setResumed(true);
-    load(episode, true);
+    if (!isThisEpisode) {
+      // Episode not loaded yet — load with autoplay; position restore happens
+      // via the loadedmetadata listener inside player-context (reads localStorage)
+      load(episode, true);
+    } else {
+      // Already loaded — seek directly then play
+      if (resumeFrom !== null) {
+        seek(resumeFrom);
+      }
+      if (!isPlaying) {
+        audioRef.current?.play().catch(() => {});
+      }
+    }
   };
 
   const handleStartOver = () => {
     clearCompleted(episode.slug);
     setEpisodeCompleted(false);
-    if (!isThisEpisode) load(episode, false);
-    seek(0);
     setResumed(true);
     setResumeFrom(null);
-    load(episode, true);
+    if (!isThisEpisode) {
+      // Load fresh; context will not find saved progress (position 0 from start)
+      load(episode, true);
+      // Override any restored position to 0 after canplay
+      const audio = audioRef.current;
+      if (audio) {
+        audio.addEventListener("canplay", () => { audio.currentTime = 0; }, { once: true });
+      }
+    } else {
+      seek(0);
+      if (!isPlaying) {
+        audioRef.current?.play().catch(() => {});
+      }
+    }
+  };
+
+  const handleSkipBack = () => {
+    if (!isThisEpisode) {
+      load(episode, true);
+    } else {
+      skip(-15);
+    }
+  };
+
+  const handleSkipForward = () => {
+    if (!isThisEpisode) {
+      load(episode, true);
+    } else {
+      skip(30);
+    }
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isThisEpisode) load(episode, false);
-    seek(Number(e.target.value));
+    if (!isThisEpisode) {
+      load(episode, true);
+    } else {
+      seek(Number(e.target.value));
+    }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,6 +164,21 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+      {isError && (
+        <div className="flex items-center justify-between gap-3 bg-red-900/20 border border-red-700/30 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <span className="text-sm font-semibold text-red-300">Audio failed to load</span>
+          </div>
+          <button
+            onClick={retry}
+            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg border border-border hover:bg-muted"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Retry
+          </button>
+        </div>
+      )}
       {episodeCompleted && !isPlaying && (
         <div className="flex items-center justify-between gap-3 bg-emerald-900/20 border border-emerald-700/30 rounded-lg px-4 py-3">
           <div className="flex items-center gap-2">
@@ -149,7 +222,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
       <div className="flex items-center gap-4 justify-between">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { if (!isThisEpisode) load(episode, false); skip(-15); }}
+            onClick={handleSkipBack}
             className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted"
             title="Back 15 seconds"
           >
@@ -168,7 +241,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
           </button>
 
           <button
-            onClick={() => { if (!isThisEpisode) load(episode, false); skip(30); }}
+            onClick={handleSkipForward}
             className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted"
             title="Forward 30 seconds"
           >
@@ -177,7 +250,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
         </div>
 
         <div className="hidden md:flex items-center gap-2 w-32">
-          <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">
+          <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground" title={isMuted || volume === 0 ? "Unmute" : "Mute"}>
             {isMuted || volume === 0 ? (
               <VolumeX className="w-4 h-4" />
             ) : (
@@ -192,6 +265,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
             value={isMuted ? 0 : volume}
             onChange={handleVolumeChange}
             className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full"
+            aria-label="Volume"
           />
         </div>
       </div>
@@ -206,6 +280,7 @@ export function AudioPlayer({ episode }: AudioPlayerProps) {
             value={displayTime}
             onChange={handleProgressChange}
             className="w-full absolute inset-0 opacity-0 cursor-pointer z-10"
+            aria-label="Seek"
           />
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div

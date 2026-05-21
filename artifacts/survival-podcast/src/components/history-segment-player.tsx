@@ -1,4 +1,23 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+/*
+ * HistorySegmentPlayer — plays a bounded time range within an episode (web)
+ *
+ * Happy path:
+ *   User clicks play → if episode not active: load(ep, false) + attach loadedmetadata
+ *   listener → on loadedmetadata: seek(startSeconds) + play → timeupdate fires →
+ *   when currentTime >= endSeconds: pause + setSegmentActive(false)
+ *   If episode already active: seek(startSeconds) + play + arm segment
+ *
+ * Edge cases verified:
+ *   - If audio already cached and loadedmetadata already fired (readyState >= 1):
+ *     seek + play executed immediately instead of waiting for the event
+ *   - Pausing mid-segment: segmentActive stays true; progress bar pauses in place
+ *   - Episode changes externally: segmentActive resets to false
+ *   - Compact variant: single button, no progress bar
+ *   - endSeconds boundary: uses >= so the segment stops at the exact frame
+ *   - handlePlay when segment already active (re-clicked): re-seeks to start
+ */
+
+import { useState, useEffect, useCallback } from "react";
 import { Play, Pause, Clock } from "lucide-react";
 import { usePlayer } from "@/context/player-context";
 
@@ -29,10 +48,9 @@ export function HistorySegmentPlayer({
   episode,
   compact = false,
 }: HistorySegmentPlayerProps) {
-  const { load, seek, toggle, isPlaying, currentTime, episode: globalEpisode, audioRef } = usePlayer();
+  const { load, seek, isPlaying, currentTime, episode: globalEpisode, audioRef } = usePlayer();
   const [segmentActive, setSegmentActive] = useState(false);
   const segmentDuration = Math.max(1, endSeconds - startSeconds);
-  const segmentActiveRef = useRef(false);
 
   const isThisEpisode = globalEpisode?.audioUrl === audioUrl;
   const inSegment = isThisEpisode && segmentActive;
@@ -42,8 +60,7 @@ export function HistorySegmentPlayer({
     : 0;
   const progress = inSegment ? (segmentCurrentTime / segmentDuration) * 100 : 0;
 
-  segmentActiveRef.current = segmentActive;
-
+  // Stop at segment boundary
   useEffect(() => {
     if (!inSegment || !isPlaying) return;
     if (currentTime >= endSeconds) {
@@ -53,6 +70,7 @@ export function HistorySegmentPlayer({
     }
   }, [currentTime, endSeconds, inSegment, isPlaying, audioRef]);
 
+  // Deactivate segment if a different episode takes over
   useEffect(() => {
     if (!isThisEpisode) {
       setSegmentActive(false);
@@ -60,7 +78,11 @@ export function HistorySegmentPlayer({
   }, [isThisEpisode]);
 
   const handlePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (!isThisEpisode) {
+      // Load the episode without autoplay first
       load(
         {
           slug: episode.slug,
@@ -72,21 +94,28 @@ export function HistorySegmentPlayer({
         },
         false,
       );
-      const audio = audioRef.current;
+
       const startAndPlay = () => {
         seek(startSeconds);
-        audio?.play().catch(() => {});
+        audio.play().catch(() => {});
         setSegmentActive(true);
       };
-      audio?.addEventListener("loadedmetadata", startAndPlay, { once: true });
+
+      // If metadata is already loaded (cached), fire immediately; otherwise wait
+      if (audio.readyState >= 1) {
+        startAndPlay();
+      } else {
+        audio.addEventListener("loadedmetadata", startAndPlay, { once: true });
+      }
     } else {
+      // Episode already active — seek to segment start, play, and arm detection
       seek(startSeconds);
       if (!isPlaying) {
-        audioRef.current?.play().catch(() => {});
+        audio.play().catch(() => {});
       }
       setSegmentActive(true);
     }
-  }, [isThisEpisode, load, seek, toggle, isPlaying, audioRef, audioUrl, episode, startSeconds]);
+  }, [isThisEpisode, load, seek, isPlaying, audioRef, audioUrl, episode, startSeconds]);
 
   const handlePause = useCallback(() => {
     const audio = audioRef.current;

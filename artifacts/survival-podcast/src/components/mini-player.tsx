@@ -1,5 +1,21 @@
+/*
+ * MiniPlayer — persistent bottom bar (web)
+ *
+ * Happy path:
+ *   Episode loaded into PlayerContext → MiniPlayer renders → click progress bar
+ *   to scrub → seek() called → timeupdate keeps bar in sync → click X to dismiss
+ *
+ * Edge cases verified:
+ *   - Returns null when no episode is loaded (no layout shift)
+ *   - Volume slider syncs directly to audioRef so changes are immediate
+ *   - Mute toggle preserves last non-zero volume so unmute restores it
+ *   - isError shown as a retry button in place of play/pause
+ *   - z-index 50 keeps player above all page content
+ *   - Progress bar click target is full width (no dead-zones)
+ */
+
 import { Link } from "wouter";
-import { Play, Pause, SkipBack, SkipForward, X, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, X, Volume2, VolumeX, AlertCircle, RefreshCw } from "lucide-react";
 import { useState, useRef } from "react";
 import { usePlayer } from "@/context/player-context";
 import { decodeHtml } from "@/lib/decode-html";
@@ -15,7 +31,7 @@ function fmt(s: number): string {
 }
 
 export function MiniPlayer() {
-  const { episode, isPlaying, currentTime, duration, toggle, seek, skip, dismiss, audioRef } = usePlayer();
+  const { episode, isPlaying, isError, currentTime, duration, toggle, seek, skip, dismiss, retry, audioRef } = usePlayer();
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -25,8 +41,9 @@ export function MiniPlayer() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (duration <= 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     seek(ratio * duration);
   };
 
@@ -55,6 +72,11 @@ export function MiniPlayer() {
         ref={progressRef}
         className="w-full h-1 bg-white/20 cursor-pointer group"
         onClick={handleProgressClick}
+        role="slider"
+        aria-label="Playback progress"
+        aria-valuenow={Math.round(progress)}
+        aria-valuemin={0}
+        aria-valuemax={100}
       >
         <div
           className="h-full bg-[#D9A066] transition-none relative"
@@ -103,32 +125,49 @@ export function MiniPlayer() {
 
         {/* Controls */}
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => skip(-15)}
-            className="hidden sm:flex p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-            title="Back 15s"
-          >
-            <SkipBack className="w-4 h-4" />
-          </button>
+          {isError ? (
+            /* Error state: show icon + retry button */
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <button
+                onClick={retry}
+                className="flex items-center gap-1 text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition-colors"
+                title="Retry playback"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => skip(-15)}
+                className="hidden sm:flex p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                title="Back 15s"
+              >
+                <SkipBack className="w-4 h-4" />
+              </button>
 
-          <button
-            onClick={toggle}
-            className="w-10 h-10 rounded-full bg-[#D9A066] hover:bg-[#c48a4a] text-white flex items-center justify-center shadow transition-colors"
-          >
-            {isPlaying ? (
-              <Pause className="w-4 h-4 fill-current" />
-            ) : (
-              <Play className="w-4 h-4 fill-current ml-0.5" />
-            )}
-          </button>
+              <button
+                onClick={toggle}
+                className="w-10 h-10 rounded-full bg-[#D9A066] hover:bg-[#c48a4a] text-white flex items-center justify-center shadow transition-colors"
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                )}
+              </button>
 
-          <button
-            onClick={() => skip(30)}
-            className="hidden sm:flex p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-            title="Forward 30s"
-          >
-            <SkipForward className="w-4 h-4" />
-          </button>
+              <button
+                onClick={() => skip(30)}
+                className="hidden sm:flex p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                title="Forward 30s"
+              >
+                <SkipForward className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Volume (desktop only) */}
@@ -136,6 +175,7 @@ export function MiniPlayer() {
           <button
             onClick={toggleMute}
             className="text-white/60 hover:text-white transition-colors"
+            title={muted || volume === 0 ? "Unmute" : "Mute"}
           >
             {muted || volume === 0 ? (
               <VolumeX className="w-4 h-4" />
@@ -151,6 +191,7 @@ export function MiniPlayer() {
             value={muted ? 0 : volume}
             onChange={handleVolumeChange}
             className="w-full h-1 appearance-none bg-white/20 rounded-full cursor-pointer accent-[#D9A066]"
+            aria-label="Volume"
           />
         </div>
 

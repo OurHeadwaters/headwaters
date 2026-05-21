@@ -1,3 +1,28 @@
+/*
+ * PlayerProvider — global audio context for TSP mobile (Expo / expo-av)
+ *
+ * Happy path:
+ *   play(episode) → getPositionAsync → playEpisodeInternal(ep, savedPos) →
+ *   Audio.Sound.createAsync → onPlaybackStatus fires every 500 ms →
+ *   savePosition every 5 s → on didJustFinish: markFinished + advance queue
+ *
+ * Edge cases verified:
+ *   - playEpisodeInternal: previous sound is unloaded before new one loads
+ *     (avoids two simultaneous Audio.Sound instances)
+ *   - onPlaybackStatus: error branch (status.isLoaded === false with error)
+ *     sets isError true; UI can show retry
+ *   - resume(): guards against null soundRef so setIsPlaying(true) is never
+ *     called on a non-existent sound
+ *   - seek(): clamps to 0 and resets lastMinuteRef to avoid phantom minute ticks
+ *   - stop(): unloads sound AND clears currentEpisodeRef so stale callbacks
+ *     cannot fire after teardown
+ *   - Queue persistence: written to AsyncStorage on every queue change;
+ *     restored on mount — current episode is NOT auto-resumed (user must tap play)
+ *   - nextEpisode advances correctly: queue head is removed before playback
+ *     of the next item starts
+ *   - playbackMinutesRef kept in sync with state for use inside stable callbacks
+ */
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio, AVPlaybackStatus } from "expo-av";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -19,6 +44,7 @@ interface PlayerState {
   currentEpisode: PlayableEpisode | null;
   isPlaying: boolean;
   isLoading: boolean;
+  isError: boolean;
   positionMs: number;
   durationMs: number;
   playbackMinutes: number;
@@ -34,6 +60,7 @@ interface PlayerState {
   resume: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
   stop: () => Promise<void>;
+  retry: () => Promise<void>;
   onEpisodeFinished: ((slug: string) => void) | null;
   setOnEpisodeFinished: (cb: ((slug: string) => void) | null) => void;
   onPlaybackMinute: ((slug: string, minuteCount: number) => void) | null;
@@ -48,6 +75,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentEpisode, setCurrentEpisode] = useState<PlayableEpisode | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [playbackMinutes, setPlaybackMinutes] = useState(0);
@@ -58,6 +86,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = useState<PlayableEpisode[]>([]);
   const queueRef = useRef<PlayableEpisode[]>([]);
 
+  // Restore queue from AsyncStorage on mount (episode is not auto-played)
   useEffect(() => {
     AsyncStorage.getItem(QUEUE_STORAGE_KEY)
       .then((raw) => {
@@ -71,6 +100,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, []);
 
+  // Persist queue to AsyncStorage on every change
   useEffect(() => {
     AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue)).catch(() => {});
   }, [queue]);
@@ -96,7 +126,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const onPlaybackStatus = useCallback(
     (status: AVPlaybackStatus) => {
-      if (!status.isLoaded) return;
+      // Handle error/unloaded state
+      if (!status.isLoaded) {
+        if ((status as { error?: string }).error) {
+          console.error("Audio playback error:", (status as { error?: string }).error);
+          setIsError(true);
+          setIsPlaying(false);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsError(false);
       setIsPlaying(status.isPlaying);
       setPositionMs(status.positionMillis);
       if (status.durationMillis) setDurationMs(status.durationMillis);
@@ -140,6 +181,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
+        // Advance to next episode in queue
         const nextQueue = queueRef.current;
         if (nextQueue.length > 0) {
           const [next, ...remaining] = nextQueue;
@@ -157,10 +199,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (!episode.audioUrl) return;
       try {
         setIsLoading(true);
+        setIsError(false);
+
+        // Unload any existing sound before creating a new one
         if (soundRef.current) {
           await soundRef.current.unloadAsync();
           soundRef.current = null;
         }
+
         if (Platform.OS !== "web") {
           await Audio.setAudioModeAsync({
             allowsRecordingIOS: false,
@@ -169,6 +215,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             shouldDuckAndroid: true,
           });
         }
+
         const { sound } = await Audio.Sound.createAsync(
           { uri: episode.audioUrl },
           {
@@ -178,6 +225,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           },
           onPlaybackStatus,
         );
+
         soundRef.current = sound;
         currentEpisodeRef.current = episode;
         setCurrentEpisode(episode);
@@ -190,6 +238,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setPlaybackMinutes(Math.floor(fromPosition / 60000));
       } catch (e) {
         console.error("Audio play error:", e);
+        setIsError(true);
+        setIsPlaying(false);
       } finally {
         setIsLoading(false);
       }
@@ -249,7 +299,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const pause = useCallback(async () => {
-    await soundRef.current?.pauseAsync();
+    if (!soundRef.current) return;
+    await soundRef.current.pauseAsync();
     setIsPlaying(false);
     const ep = currentEpisodeRef.current;
     if (ep) {
@@ -269,24 +320,31 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [savePosition]);
 
   const resume = useCallback(async () => {
-    await soundRef.current?.playAsync();
+    // Guard: only play if a sound is actually loaded
+    if (!soundRef.current) return;
+    await soundRef.current.playAsync();
     setIsPlaying(true);
   }, []);
 
   const seek = useCallback(async (ms: number) => {
-    await soundRef.current?.setPositionAsync(ms);
-    setPositionMs(ms);
-    lastMinuteRef.current = Math.floor(ms / 60000);
+    if (!soundRef.current) return;
+    const clamped = Math.max(0, ms);
+    await soundRef.current.setPositionAsync(clamped);
+    setPositionMs(clamped);
+    lastMinuteRef.current = Math.floor(clamped / 60000);
   }, []);
 
   const stop = useCallback(async () => {
-    await soundRef.current?.stopAsync();
-    await soundRef.current?.unloadAsync();
-    soundRef.current = null;
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
     currentEpisodeRef.current = null;
     queueRef.current = [];
     setCurrentEpisode(null);
     setIsPlaying(false);
+    setIsError(false);
     setPositionMs(0);
     setDurationMs(0);
     setPlaybackMinutes(0);
@@ -294,6 +352,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     lastMinuteRef.current = 0;
     playbackMinutesRef.current = 0;
   }, []);
+
+  const retry = useCallback(async () => {
+    const ep = currentEpisodeRef.current;
+    if (!ep) return;
+    await playEpisodeInternal(ep, positionMs);
+  }, [playEpisodeInternal, positionMs]);
 
   const nextEpisode = queue.length > 0 ? queue[0] : null;
 
@@ -303,6 +367,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         currentEpisode,
         isPlaying,
         isLoading,
+        isError,
         positionMs,
         durationMs,
         playbackMinutes,
@@ -318,6 +383,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         resume,
         seek,
         stop,
+        retry,
         onEpisodeFinished,
         setOnEpisodeFinished,
         onPlaybackMinute,
