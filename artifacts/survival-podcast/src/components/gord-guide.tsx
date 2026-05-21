@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { GordBird } from "./gord-bird";
@@ -14,10 +14,48 @@ interface GordGuideProps {
   path: string;
 }
 
+function useEyeTarget(containerRef: React.RefObject<HTMLDivElement | null>) {
+  const [eyeTarget, setEyeTarget] = useState({ dx: 0, dy: 0 });
+  const rafRef = useRef<number | null>(null);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const rawDx = e.clientX - cx;
+      const rawDy = e.clientY - cy;
+      const dist = Math.sqrt(rawDx * rawDx + rawDy * rawDy);
+      if (dist < 1) return;
+      const maxDist = 280;
+      const factor = Math.min(dist, maxDist) / maxDist;
+      setEyeTarget({ dx: (rawDx / dist) * factor, dy: (rawDy / dist) * factor });
+    });
+  }, [containerRef]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [handleMouseMove]);
+
+  return eyeTarget;
+}
+
 export function GordGuide({ path }: GordGuideProps) {
   const [routeKey, setRouteKey] = useState<GordRouteKey | null>(null);
   const [visible, setVisible] = useState(false);
   const [perchVisible, setPerchVisible] = useState(false);
+
+  const guideBirdRef = useRef<HTMLDivElement>(null);
+  const perchBirdRef = useRef<HTMLDivElement>(null);
+
+  const activeRef = visible ? guideBirdRef : perchBirdRef;
+  const eyeTarget = useEyeTarget(activeRef);
 
   useEffect(() => {
     const key = routeKeyFromPath(path);
@@ -94,7 +132,7 @@ export function GordGuide({ path }: GordGuideProps) {
                 </p>
                 <button
                   onClick={dismiss}
-                  className="text-[#8B6F47]/60 hover:text-[#8B6F47] transition-colors shrink-0 -mt-0.5"
+                  className="text-[#8B6F47]/60 hover:text-[#8B6F47] transition-colors shrink-0 -mt-0.5 pointer-events-auto"
                   aria-label="Dismiss Gord"
                 >
                   <X size={14} />
@@ -109,13 +147,12 @@ export function GordGuide({ path }: GordGuideProps) {
             </motion.div>
 
             <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ delay: 0.05, type: "spring", stiffness: 220, damping: 20 }}
+              ref={guideBirdRef}
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               className="pointer-events-auto"
             >
-              <GordBird size={90} variant="full" />
+              <GordBird size={90} variant="full" eyeTarget={eyeTarget} />
             </motion.div>
           </motion.div>
         )}
@@ -142,7 +179,13 @@ export function GordGuide({ path }: GordGuideProps) {
               <div className="bg-[#FDF6EC] border border-[#D9A066]/50 rounded-l-xl shadow-md px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 mr-1 shrink-0">
                 <span className="text-[10px] font-bold text-[#D9A066] whitespace-nowrap">Gord&rsquo;s on Board</span>
               </div>
-              <GordBird size={44} variant="head" className="shrink-0" />
+              <motion.div
+                ref={perchBirdRef}
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <GordBird size={44} variant="head" className="shrink-0" eyeTarget={eyeTarget} />
+              </motion.div>
             </motion.div>
           </motion.button>
         )}

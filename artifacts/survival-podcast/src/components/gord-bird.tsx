@@ -2,11 +2,17 @@ interface GordBirdProps {
   size?: number;
   className?: string;
   variant?: "full" | "head";
+  eyeTarget?: { dx: number; dy: number };
 }
 
-export function GordBird({ size = 120, className = "", variant = "full" }: GordBirdProps) {
+export function GordBird({ size = 120, className = "", variant = "full", eyeTarget }: GordBirdProps) {
+  const ex = eyeTarget?.dx ?? 0;
+  const ey = eyeTarget?.dy ?? 0;
+
   if (variant === "head") {
     const s = size;
+    const px = ex * 1.2;
+    const py = ey * 0.8;
     return (
       <svg
         width={s}
@@ -21,10 +27,10 @@ export function GordBird({ size = 120, className = "", variant = "full" }: GordB
         <ellipse cx="30" cy="24" rx="13" ry="14" fill="#C4965A" />
         <ellipse cx="24" cy="20" rx="4.5" ry="5" fill="white" />
         <ellipse cx="36" cy="20" rx="4.5" ry="5" fill="white" />
-        <circle cx="24" cy="21" r="3" fill="#2C1810" />
-        <circle cx="36" cy="21" r="3" fill="#2C1810" />
-        <circle cx="25" cy="20" r="1" fill="white" />
-        <circle cx="37" cy="20" r="1" fill="white" />
+        <circle cx={24 + px} cy={21 + py} r="3" fill="#2C1810" />
+        <circle cx={36 + px} cy={21 + py} r="3" fill="#2C1810" />
+        <circle cx={25 + px} cy={20 + py} r="1" fill="white" />
+        <circle cx={37 + px} cy={20 + py} r="1" fill="white" />
         <polygon points="30,28 24,35 36,35" fill="#E8B97F" stroke="#6B4E2A" strokeWidth="1.5" />
         <polygon points="30,33.5 26,37 34,37" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1" />
         <line x1="30" y1="28" x2="30" y2="35" stroke="#6B4E2A" strokeWidth="1" />
@@ -36,6 +42,8 @@ export function GordBird({ size = 120, className = "", variant = "full" }: GordB
     );
   }
 
+  const px = ex * 1.8;
+  const py = ey * 1.2;
   return (
     <svg
       width={size}
@@ -69,10 +77,10 @@ export function GordBird({ size = 120, className = "", variant = "full" }: GordB
 
       <ellipse cx="43" cy="62" rx="6" ry="7" fill="white" />
       <ellipse cx="57" cy="62" rx="6" ry="7" fill="white" />
-      <circle cx="43" cy="63" r="4.5" fill="#2C1810" />
-      <circle cx="57" cy="63" r="4.5" fill="#2C1810" />
-      <circle cx="44.5" cy="61.5" r="1.5" fill="white" />
-      <circle cx="58.5" cy="61.5" r="1.5" fill="white" />
+      <circle cx={43 + px} cy={63 + py} r="4.5" fill="#2C1810" />
+      <circle cx={57 + px} cy={63 + py} r="4.5" fill="#2C1810" />
+      <circle cx={44.5 + px} cy={61.5 + py} r="1.5" fill="white" />
+      <circle cx={58.5 + px} cy={61.5 + py} r="1.5" fill="white" />
 
       <polygon points="50,70 43,79 57,79" fill="#E8B97F" stroke="#6B4E2A" strokeWidth="2" />
       <polygon points="50,77 45,82 55,82" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1.2" />
