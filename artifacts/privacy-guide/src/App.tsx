@@ -286,7 +286,43 @@ export default function App() {
             <p className="panel-note">Shaded rows have independently audited no-log policies.</p>
           </div>
 
-          {/* Panel 3: Metaphor key */}
+          {/* Panel 3: Recommended hardware */}
+          <div className="panel">
+            <div className="panel-heading moss">Recommended hardware</div>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th className="th-label">Device</th>
+                  <th className="th-moss">OS</th>
+                  <th className="th-moss">Google-free</th>
+                  <th className="th-moss">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="row-good">
+                  <td className="row-label">Above Phone Pixel 10</td>
+                  <td className="td-check">GrapheneOS</td>
+                  <td className="td-check">Yes</td>
+                  <td className="td-neutral">takebackourtech.org</td>
+                </tr>
+                <tr className="row-good">
+                  <td className="row-label">Above Phone Pixel 9</td>
+                  <td className="td-check">GrapheneOS</td>
+                  <td className="td-check">Yes</td>
+                  <td className="td-neutral">takebackourtech.org</td>
+                </tr>
+                <tr>
+                  <td className="row-label">DIY: Pixel + GrapheneOS</td>
+                  <td className="td-check">GrapheneOS</td>
+                  <td className="td-check">Yes</td>
+                  <td className="td-neutral">grapheneos.org</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="panel-note">Shaded rows are pre-configured and ready to use out of the box. GrapheneOS passes reCAPTCHA on iOS-style scanning; standard de-Googled builds may require a workaround for QR-based CAPTCHAs.</p>
+          </div>
+
+          {/* Panel 4: Metaphor key */}
           <div className="panel">
             <div className="panel-heading moss">Metaphor key</div>
             <dl className="metaphor-list">
