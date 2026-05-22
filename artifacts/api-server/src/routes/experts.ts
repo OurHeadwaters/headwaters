@@ -116,10 +116,16 @@ router.get("/experts/:slug", async (req, res) => {
       return title.includes(nameLower) || summary.includes(nameLower);
     });
 
+    const filteredFireside = firesideEpisodes.filter((ep) => {
+      const title = (ep.title ?? "").toLowerCase();
+      const summary = (ep.summary ?? "").toLowerCase();
+      return title.includes(nameLower) || summary.includes(nameLower);
+    });
+
     res.json({
       expert,
       ownEpisodes,
-      firesideEpisodes,
+      firesideEpisodes: filteredFireside.length > 0 ? filteredFireside : firesideEpisodes,
       tspAppearances: filteredAppearances.slice(0, 50),
     });
   } catch (err) {
