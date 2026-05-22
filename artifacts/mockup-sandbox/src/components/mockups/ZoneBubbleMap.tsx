@@ -7,7 +7,7 @@
  * Built to the updated Eave Rule model:
  * - Two-gate model (Z0/Z1 Eave Flow + Z1/Z2 and Z2/Z3 Gear-Up)
  * - Z0→Z1 uses distinct Eave Flow interaction, not a hat ceremony
- * - Z2→Z3 shows both Gatekeeper hat variants side-by-side with tension noted
+ * - Z2→Z3 enforces the resolved Gatekeeper model (personal hat — locked)
  * - Z1→Z3 absolute prohibition shown as dashed/redacted membrane
  * - Giraffe protection language in Z2→Z3 panel
  * - Every label passes Saltbox, Both-States, and Both-Sides naming tests
@@ -52,7 +52,8 @@ type GateDef = {
   color: string;
   hats?: HatVariant[];
   eaveOptions?: { open: string; clear: string };
-  gatekeeperTension?: string;
+  gatekeeperModel?: "personal" | "workbench-only";
+  gatekeeperResolution?: string;
   giraffeNote?: string;
   cx: number;
   cy: number;
@@ -195,16 +196,10 @@ const TSP_4_ZONE_CONFIG: ZoneSetConfig = {
             "I hold and enforce the crossing rules. This is a personal hat — I carry it across the threshold.",
           side: "personal",
         },
-        {
-          id: "gatekeeper-workbench",
-          label: "Gatekeeper (Workbench only)",
-          description:
-            "The Gatekeeper role belongs solely to the Workbench — it cannot be worn by an individual. It enforces the gate but is never a personal identity.",
-          side: "workbench",
-        },
       ],
-      gatekeeperTension:
-        "Unresolved tension: Is 'Gatekeeper' a personal hat the individual wears at crossing, or a role that can only be held by the Workbench and never by a person? Both models are coherent in different architectures. This choice must be locked before the gate goes into production.",
+      gatekeeperModel: "personal",
+      gatekeeperResolution:
+        "Resolved (Round Table — May 2026): Gatekeeper is a personal hat. The individual wears it at crossing and carries its obligations across the threshold. The Workbench-only model was considered and set aside — it created an unworkable separation between the decision-maker and the rule they enforce.",
       giraffeNote:
         "Credential appears at crossing only — it is never stored inside Z2 records. Audit visibility is allowed. No composable reverse path back to Z1 exists (giraffe protection: you cannot reconstruct the Z1 identity from Z3 data).",
       cx: 690, cy: 250,
@@ -398,10 +393,18 @@ function GearUpPanel({
   const [selectedHat, setSelectedHat] = useState<string | null>(null);
   const [step, setStep] = useState<"select" | "narrative" | "confirmed">("select");
 
-  const personalHats = gate.hats?.filter((h) => h.side !== "workbench") ?? [];
-  const workbenchHats = gate.hats?.filter((h) => h.side === "workbench") ?? [];
+  // Enforce the resolved gatekeeper model: filter out the variant that was not chosen.
+  const visibleHats = gate.hats?.filter((hat) => {
+    if (!gate.gatekeeperModel) return true;
+    if (hat.id === "gatekeeper-workbench" && gate.gatekeeperModel === "personal") return false;
+    if (hat.id === "gatekeeper-personal" && gate.gatekeeperModel === "workbench-only") return false;
+    return true;
+  }) ?? [];
+
+  const personalHats = visibleHats.filter((h) => h.side !== "workbench");
+  const workbenchHats = visibleHats.filter((h) => h.side === "workbench");
   const hasVariants = workbenchHats.length > 0;
-  const selectedHatDef = gate.hats?.find((h) => h.id === selectedHat);
+  const selectedHatDef = visibleHats.find((h) => h.id === selectedHat);
 
   if (step === "confirmed") {
     return (
@@ -443,19 +446,19 @@ function GearUpPanel({
           </p>
         </div>
 
-        {isGatekeeperHat && gate.gatekeeperTension && (
+        {isGatekeeperHat && gate.gatekeeperResolution && (
           <div
             className="p-4 rounded-xl border"
-            style={{ borderColor: "#CC883355", background: "#CC883312" }}
+            style={{ borderColor: "#4A9A4455", background: "#4A9A4412" }}
           >
             <p
               className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
-              style={{ color: "#CC8833" }}
+              style={{ color: "#7ABF5E" }}
             >
-              ⚠ Unresolved architectural tension
+              ✓ Architectural decision resolved
             </p>
-            <p className="text-xs leading-relaxed" style={{ color: "#CC8833BB" }}>
-              {gate.gatekeeperTension}
+            <p className="text-xs leading-relaxed" style={{ color: "#7ABF5EBB" }}>
+              {gate.gatekeeperResolution}
             </p>
           </div>
         )}
@@ -584,27 +587,11 @@ function GearUpPanel({
               ))}
             </div>
 
-            {gate.gatekeeperTension && (
-              <div
-                className="mt-3 p-3 rounded-xl border"
-                style={{ borderColor: "#CC883344", background: "#CC883310" }}
-              >
-                <p
-                  className="text-[9px] font-bold uppercase tracking-widest mb-1"
-                  style={{ color: "#CC8833" }}
-                >
-                  ⚠ Tension
-                </p>
-                <p className="text-[10px] leading-relaxed" style={{ color: "#CC8833AA" }}>
-                  {gate.gatekeeperTension}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       ) : (
         <div className="space-y-2">
-          {gate.hats?.map((hat) => (
+          {visibleHats.map((hat) => (
             <button
               key={hat.id}
               onClick={() => setSelectedHat(hat.id)}
@@ -654,7 +641,7 @@ function GearUpPanel({
         }}
       >
         {selectedHat
-          ? `Gear up as ${gate.hats?.find((h) => h.id === selectedHat)?.label}`
+          ? `Gear up as ${visibleHats.find((h) => h.id === selectedHat)?.label}`
           : "Select a hat to continue"}
       </button>
     </div>
