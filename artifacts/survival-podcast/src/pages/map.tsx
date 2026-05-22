@@ -205,12 +205,14 @@ function EntryGate({ onChoose }: { onChoose: (mode: "guided" | "free") => void }
 
 function Questionnaire({
   onComplete,
+  initialAnswers = {},
 }: {
   onComplete: (answers: Record<string, string>) => void;
+  initialAnswers?: Record<string, string>;
 }) {
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [value, setValue] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
+  const [value, setValue] = useState(initialAnswers[QUESTIONNAIRE_STEPS[0].key] ?? "");
 
   const current = QUESTIONNAIRE_STEPS[step];
   const total = QUESTIONNAIRE_STEPS.length;
@@ -220,11 +222,12 @@ function Questionnaire({
     if (!value.trim()) return;
     const updated = { ...answers, [current.key]: value.trim() };
     setAnswers(updated);
-    setValue("");
 
     if (step + 1 >= total) {
       onComplete(updated);
     } else {
+      const nextKey = QUESTIONNAIRE_STEPS[step + 1].key;
+      setValue(updated[nextKey] ?? "");
       setStep((s) => s + 1);
     }
   }
@@ -470,10 +473,12 @@ function MapView({
   map,
   onToggleSurrender,
   onVisit,
+  onRetake,
 }: {
   map: LifestyleMap;
   onToggleSurrender: () => void;
   onVisit: (slug: string) => void;
+  onRetake: () => void;
 }) {
   const primaryZone = map.primaryZone;
   const secondaryZone = map.secondaryZone;
@@ -562,9 +567,22 @@ function MapView({
               {map.surrenderMode ? "Surrender Mode: On" : "Surrender Mode"}
             </button>
 
-            {!isGuided && (
-              <Link
-                href="/map?retake=true"
+            {isGuided ? (
+              <button
+                onClick={onRetake}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border"
+                style={{
+                  background: "transparent",
+                  color: "#FDFBF7cc",
+                  borderColor: "#FDFBF730",
+                }}
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                Reassess my zone
+              </button>
+            ) : (
+              <button
+                onClick={onRetake}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border"
                 style={{
                   background: "transparent",
@@ -574,7 +592,7 @@ function MapView({
               >
                 <Wand2 className="w-3.5 h-3.5" />
                 Get a recommendation
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -684,7 +702,7 @@ export default function MapPage() {
       return;
     }
 
-    if (retake && map.entryMode !== "guided") {
+    if (retake) {
       setPhase("questionnaire");
       return;
     }
@@ -722,6 +740,7 @@ export default function MapPage() {
   if (phase === "questionnaire") {
     return (
       <Questionnaire
+        initialAnswers={(map?.answers as Record<string, string>) ?? {}}
         onComplete={async (answers) => {
           setPhase("assessing");
           try {
@@ -763,6 +782,10 @@ export default function MapPage() {
       }}
       onVisit={(slug) => {
         markVisited(slug);
+      }}
+      onRetake={() => {
+        setRetake(true);
+        setPhase("questionnaire");
       }}
     />
   );
