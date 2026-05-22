@@ -310,10 +310,14 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       return;
     }
 
-    // Paid events must go through the /checkout endpoint
-    if (event.ticketPriceCents && event.ticketPriceCents > 0 && event.stripeConnectedAccountId) {
+    // Paid events ALWAYS go through the /checkout endpoint.
+    // Blocking unconditionally (not just when Stripe is connected) prevents
+    // attendees from getting in free while the host is still finishing Connect setup.
+    if (event.ticketPriceCents && event.ticketPriceCents > 0) {
       res.status(400).json({
-        error: "This is a paid event — use the /checkout endpoint to purchase a ticket",
+        error: event.stripeConnectedAccountId
+          ? "This is a paid event — use the /checkout endpoint to purchase a ticket"
+          : "This event requires a paid ticket but Stripe Connect setup is not yet complete. Check back soon.",
       });
       return;
     }

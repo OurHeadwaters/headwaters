@@ -518,8 +518,18 @@ function EventCard({
                   <Ticket className="w-3 h-3" />
                   {rsvped ? "✓ Ticket Purchased" : `Buy Ticket — ${event.priceDisplay}`}
                 </button>
-              ) : !event.ticketPriceCents || !event.isStripeReady ? (
-                /* Free event or paid-but-not-yet-connected → plain RSVP */
+              ) : event.ticketPriceCents && !event.isStripeReady ? (
+                /* Paid event but host hasn't completed Stripe Connect yet — no free RSVP allowed */
+                <span
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                  style={{ color: "#A87060", border: "1px solid rgba(166,75,54,0.3)", background: "rgba(100,50,30,0.15)" }}
+                  title="The host hasn't finished setting up ticket payments yet. Check back soon."
+                >
+                  <Ticket className="w-3 h-3" />
+                  Tickets coming soon
+                </span>
+              ) : !event.ticketPriceCents ? (
+                /* Free event → plain RSVP */
                 <button
                   onClick={() => !rsvped && !isFull && setShowRsvpModal(true)}
                   disabled={rsvped || isFull}
