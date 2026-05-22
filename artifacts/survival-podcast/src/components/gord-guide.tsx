@@ -7,6 +7,7 @@ import {
   getCurrentGordTip,
   advanceGordVariant,
   hasSeenAllVariants,
+  gordTips,
   type GordRouteKey,
 } from "@/lib/gord-tips";
 
@@ -141,6 +142,15 @@ export function GordGuide({ path }: GordGuideProps) {
   }
 
   function recall() {
+    if (!routeKey) return;
+    const freshTip = getCurrentGordTip(routeKey);
+    if (freshTip) {
+      setTip(freshTip);
+    } else {
+      const variants = gordTips[routeKey];
+      const lastTip = variants[variants.length - 1] ?? null;
+      setTip(lastTip);
+    }
     setPerchVisible(false);
     setVisible(true);
   }
