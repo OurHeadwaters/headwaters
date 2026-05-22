@@ -65,3 +65,9 @@ id = "xtNQc2BqJ_DksSZ9Uho-q"
 uri = "file://artifacts/survival-podcast/public/freedom-ambient.mp3"
 type = "audio"
 title = "freedom_ambient"
+
+[[outputs]]
+id = "RnZ3GJBDHrRWlown1_okN"
+uri = "file://.local/handoffs/the-gate.md"
+type = "text"
+title = "The Gate — Complete Build Context & Handoff"
