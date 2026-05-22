@@ -1,0 +1,36 @@
+Prompt for Zone 2 Workbench — Align All Three Zone Bubble & Gate Map Builds (Refined)Align the following into one coherent, load-bearing Zone Bubble & Gate Map:The full interactive canvas prototype spec (artifacts/mockup-sandbox)
+The current static diagram on the canvas board (with Eave overhang, gate notes, prohibition, and ritual callout)
+Any existing live Zone Bubble / Gate Map prototype (if none is found in mockup-sandbox or survival-podcast, build the first version from the spec)
+
+Enforce this updated model from the latest Eave Rule round table:Eave overhang shelters Z0, Z1, and Z2 from Z3 rain.
+Two-gate model with controlled crossings: Z1 (Circle) ←[Gate]→ Z2 (Workbench) ←[Gate]→ Z3 (Community).
+Z0Z1: Not a gear-up gate. This is Eave Flow (water from roof to cistern, clearing gutter, valve). Use a distinct interaction (e.g. “open the flow” or “clear the leaves”).
+Z1Z2 Gate: Controlled household context crosses in. Gear-up hats: Practitioner / Steward / Observer.
+Z2Z3 Gate: Contractor credential appears only at the crossing (not stored inside Z2 records). Giraffe protection required — audit visibility allowed, but no composable reverse path to Z1. Hats: Representative / Neighbour / Gatekeeper (build both variants side-by-side — one where Gatekeeper is a personal hat, one where it belongs only to the Workbench — and note the tension).
+Z1Z3: Absolute prohibition — no direct path, no traversal via Z2. Show as dashed/redacted membrane.
+Every gate crossing = ritual of becoming: new hat, new shoes, acknowledge identity shift.
+
+The Three Naming Tests (apply to every label and interaction):Saltbox — Is it one bounded thing you can point at?
+Both-States — Does the name work empty AND full, from day one?
+Both-Sides — Does it work for practitioner language AND technical/agent language without splitting?
+
+Alignment Tasks:Visual Consistency
+Use organic overlapping bubbles. Show the green Eave overhang clearly behind Z0–Z2. Make overlap regions distinct, blended-color gate membranes.
+Interaction Consistency  Clicking/tapping a gate membrane opens the full Gear-Up panel.
+Special handling for Z0Z1 (Eave Flow, not hat ceremony).
+Support crossed gates (stamped), “You are here” marker, and prohibition line.
+Data & Extensibility
+Use a config object at the top for zones and adjacencies so any set (including full TSP 6-zone) can be swapped easily.
+Giraffe & Architectural Protection
+Explicit note on Z2Z3 gate about credential-at-crossing-only and giraffe protection.
+Documentation Output
+Create .local/notes/zone-gate-language.md with:Updated Eave overhang + gate language ready to paste into the North Star Guide and Codetry Handbook.
+Summary of changes across the three artifacts.
+Remaining tensions or decisions (especially Gatekeeper hat variants).
+Relevant files to touch:artifacts/mockup-sandbox/src/App.tsx
+artifacts/mockup-sandbox/src/components/ui/
+artifacts/survival-podcast/src/lib/zones.ts
+artifacts/survival-podcast/src/pages/map.tsx
+
+Respect the three naming tests on every label. Use plain, load-bearing language. Do not create new forks.
+

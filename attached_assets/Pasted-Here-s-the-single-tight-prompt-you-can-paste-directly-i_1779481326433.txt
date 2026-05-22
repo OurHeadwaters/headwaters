@@ -1,0 +1,29 @@
+Here's the single, tight prompt you can paste directly into your Zone 2 Workbench:Prompt for Zone 2 Workbench — Align All Three Zone Bubble & Gate Map BuildsAlign the following three artifacts into one coherent, load-bearing Zone Bubble & Gate Map:The full interactive canvas prototype spec (mockup-sandbox)
+The current static diagram on the canvas board (with Eave overhang, gate notes, prohibition, and ritual callout)
+The live prototype already serving 200 (three-bubble version with gear-up panels)
+
+Enforce this updated model from the latest Eave Rule round table:Eave overhang shelters Z0, Z1, and Z2 from Z3 rain.
+Two-gate model with controlled crossings: Z1 (Circle) ←[Gate]→ Z2 (Workbench) ←[Gate]→ Z3 (Community).
+Z0Z1: Not a gear-up gate. This is Eave Flow (water from roof to cistern, clearing gutter, valve). Use a distinct interaction (e.g. “open the flow” or “clear the leaves”).
+Z1Z2 Gate: Controlled household context crosses in. Gear-up hats: Practitioner / Steward / Observer.
+Z2Z3 Gate: Contractor credential appears only at the crossing (not stored inside Z2 records). Giraffe protection required — audit visibility allowed, but no composable reverse path to Z1. Hats: Representative / Neighbour / Gatekeeper (stress-test whether Gatekeeper belongs to the person or the Workbench itself).
+Z1Z3: Absolute prohibition — no direct path, no traversal via Z2. Show as dashed/redacted membrane.
+Every gate crossing = ritual of becoming: new hat, new shoes, acknowledge identity shift.
+
+Alignment Tasks:Visual Consistency
+Update all three to use organic overlapping bubbles (not perfect circles). Show the green Eave overhang clearly behind Z0–Z2. Make overlap regions distinct, blended-color gate membranes.
+Interaction Consistency  Clicking/tapping a gate membrane opens the full Gear-Up panel with “What hat are you putting on?”, selectable identity chips, crossing narrative, and confirmation.
+Special handling for Z0Z1 (Eave Flow interaction, not hat ceremony).
+Show crossed gates as stamped/filled. Support “You are here” marker.
+Keep the absolute prohibition clearly visible.
+Data & Extensibility
+Use the config object so any zone set can be swapped. Pre-load the full TSP 6-zone set.
+Giraffe & Architectural Protection
+Add explicit note/language on the Z2Z3 gate about credential-at-crossing-only and giraffe protection.
+Output Required
+After alignment:Summary of changes made across the three artifacts.
+Remaining tensions or decisions (especially Z2–Z3 credential handling and Gatekeeper hat).
+Updated Eave overhang + gate language ready to paste into the North Star Guide and Codetry Handbook.
+Any recommended next step for the prototype (e.g. embed improvements or stress-test walk-through).
+Respect the three naming tests on every label and interaction. Use plain, load-bearing language. Do not create new forks.This prompt is complete, self-contained, and pulls everything together. Paste it as-is. Let me know if you want a shorter or more detailed version.
+
