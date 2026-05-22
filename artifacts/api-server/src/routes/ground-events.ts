@@ -174,7 +174,8 @@ router.post("/ground-events", async (req, res) => {
 
     const isOnline = body.isOnline === true || body.isOnline === "true";
 
-    const externalUrl =
+    // Paid events use platform Stripe Checkout — external URL is ignored/rejected.
+    const rawExternalUrl =
       typeof body.externalUrl === "string" && body.externalUrl.trim()
         ? body.externalUrl.trim().slice(0, 500)
         : null;
@@ -225,6 +226,9 @@ router.post("/ground-events", async (req, res) => {
 
     // ── Host management token ────────────────────────────────────────────────
     const hostToken = randomUUID();
+
+    // Paid events use platform Stripe Checkout — external URL is not permitted.
+    const externalUrl = ticketPriceCents ? null : rawExternalUrl;
 
     const [row] = await db
       .insert(groundEventsTable)

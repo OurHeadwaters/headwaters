@@ -472,7 +472,8 @@ function EventCard({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {event.externalUrl && (
+              {/* External URL only shown for free events — paid events go through platform Stripe Checkout */}
+              {event.externalUrl && !event.ticketPriceCents && (
                 <a
                   href={event.externalUrl}
                   target="_blank"
@@ -968,20 +969,23 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           </div>
         </div>
 
-        <div>
-          <label style={labelStyle}>Ticket / Payment URL <span style={{ color: "#4A6850", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
-          <input
-            type="url"
-            value={externalUrl}
-            onChange={(e) => setExternalUrl(e.target.value)}
-            placeholder="https://eventbrite.com/e/your-event or Stripe link"
-            maxLength={500}
-            style={inputStyle}
-          />
-          <p className="text-xs mt-1" style={{ color: "#4A6850" }}>
-            Link to Eventbrite, a Stripe payment page, or any external ticketing site.
-          </p>
-        </div>
+        {/* External URL field: only shown for free events — paid events use platform Stripe Checkout */}
+        {isFree && (
+          <div>
+            <label style={labelStyle}>External link <span style={{ color: "#4A6850", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+            <input
+              type="url"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="https://eventbrite.com/e/your-event"
+              maxLength={500}
+              style={inputStyle}
+            />
+            <p className="text-xs mt-1" style={{ color: "#4A6850" }}>
+              Optional link to an Eventbrite page or any external event site.
+            </p>
+          </div>
+        )}
 
         <button
           onClick={() =>
