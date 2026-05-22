@@ -97,22 +97,90 @@ function getPreviewExamplePath(): string {
 }
 
 function Gallery() {
+  const basePath = getBasePath();
+  const mapUrl = `${basePath}/preview/ZoneBubbleMap`;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-      <div className="text-center max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-3">
-          Component Preview Server
-        </h1>
-        <p className="text-gray-500 mb-4">
-          This server renders individual components for the workspace canvas.
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0a120a",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "32px 24px 48px",
+        fontFamily: "'Georgia', serif",
+        gap: 24,
+      }}
+    >
+      {/* Canvas board header */}
+      <div style={{ textAlign: "center", maxWidth: 700 }}>
+        <p style={{ color: "#5a7a5a", fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 8px" }}>
+          Prototype · Mockup Canvas
         </p>
-        <p className="text-sm text-gray-400">
-          Access component previews at{" "}
-          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-            {getPreviewExamplePath()}
-          </code>
+        <h1 style={{ color: "#C4A05A", margin: "0 0 10px", fontSize: "1.6rem", fontWeight: 700, letterSpacing: "0.04em" }}>
+          Zone Bubble &amp; Gate Map
+        </h1>
+        <p style={{ color: "#8a9a8a", margin: 0, fontSize: "0.85rem", lineHeight: 1.6 }}>
+          A spatial, relational model of the TSP 6-zone territory. Zones are organic overlapping bubbles;
+          the overlap regions are interactive <strong style={{ color: "#b0a070" }}>gates</strong> — the membranes where you change
+          identity and cross from one zone into the next.
         </p>
       </div>
+
+      {/* Instruction chips */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        {[
+          "Click a zone bubble to see what lives there",
+          "Click a gate (overlap) to gear up for the crossing",
+          "Set your position · mark gates as crossed",
+        ].map((tip) => (
+          <div
+            key={tip}
+            style={{
+              background: "#1a2a1a",
+              border: "1px solid #2a3a2a",
+              borderRadius: 20,
+              padding: "5px 13px",
+              color: "#6a8a6a",
+              fontSize: "0.72rem",
+            }}
+          >
+            {tip}
+          </div>
+        ))}
+      </div>
+
+      {/* iframe embed */}
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1200,
+          borderRadius: 10,
+          overflow: "hidden",
+          border: "1px solid #2a3a2a",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+        }}
+      >
+        <iframe
+          src={mapUrl}
+          style={{
+            width: "100%",
+            height: 620,
+            border: "none",
+            display: "block",
+          }}
+          title="Zone Bubble Map"
+        />
+      </div>
+
+      {/* Direct link */}
+      <p style={{ color: "#3a4a3a", fontSize: "0.7rem", margin: 0 }}>
+        Full-screen:{" "}
+        <a href={mapUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#5a7a5a" }}>
+          {mapUrl}
+        </a>
+      </p>
     </div>
   );
 }
