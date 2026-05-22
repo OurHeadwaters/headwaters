@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useLifestyleMap, type LifestyleMap } from "@/hooks/use-lifestyle-map";
 import { ZONES } from "@/lib/zones";
+import ZoneBubbleMap from "@/components/ZoneBubbleMap";
 import {
   Loader2,
   Map,
@@ -529,6 +530,17 @@ function MapView({
   const visitedZones = (map.visitedZones as string[]) ?? [];
   const isGuided = map.entryMode === "guided";
 
+  const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
+
+  const handleBubbleMapZoneClick = useCallback((slug: string) => {
+    setHighlightedZone(slug);
+    setTimeout(() => setHighlightedZone(null), 1600);
+    const el = document.getElementById(`zone-card-${slug}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
@@ -679,16 +691,39 @@ function MapView({
             <span className="w-6 h-px bg-border" />
             The Territory — Zone 0 (innermost) to Zone 5 (outermost)
           </div>
+
+          {/* Zone Bubble & Gate Diagram */}
+          <div className="mb-8">
+            <ZoneBubbleMap
+              primaryZone={isGuided ? (primaryZone ?? null) : null}
+              visitedZones={visitedZones}
+              onZoneClick={handleBubbleMapZoneClick}
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {ZONES.map((zone) => (
-              <ZoneCard
+              <div
                 key={zone.slug}
-                zone={zone}
-                isPrimary={isGuided && zone.slug === primaryZone}
-                isSecondary={isGuided && zone.slug === secondaryZone && zone.slug !== primaryZone}
-                isVisited={visitedZones.includes(zone.slug)}
-                onVisit={onVisit}
-              />
+                id={`zone-card-${zone.slug}`}
+                style={
+                  highlightedZone === zone.slug
+                    ? {
+                        borderRadius: "1rem",
+                        boxShadow: `0 0 0 3px ${ZONE_COLORS[zone.slug] ?? "#4A7A3A"}66, 0 0 20px ${ZONE_COLORS[zone.slug] ?? "#4A7A3A"}33`,
+                        transition: "box-shadow 0.3s ease",
+                      }
+                    : { transition: "box-shadow 0.5s ease" }
+                }
+              >
+                <ZoneCard
+                  zone={zone}
+                  isPrimary={isGuided && zone.slug === primaryZone}
+                  isSecondary={isGuided && zone.slug === secondaryZone && zone.slug !== primaryZone}
+                  isVisited={visitedZones.includes(zone.slug)}
+                  onVisit={onVisit}
+                />
+              </div>
             ))}
           </div>
         </div>
