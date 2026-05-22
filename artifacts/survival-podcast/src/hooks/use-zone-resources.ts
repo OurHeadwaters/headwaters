@@ -55,7 +55,7 @@ export type ZoneResources = {
   businesses: ZoneBusiness[];
 };
 
-async function fetchZoneResources(slug: string, source?: "tsp" | "ulg"): Promise<ZoneResources> {
+async function fetchZoneResources(slug: string, source?: "tsp" | "ulg" | "fireside-freedom"): Promise<ZoneResources> {
   const url = new URL(`/api/zones/${encodeURIComponent(slug)}/resources`, window.location.origin);
   if (source) url.searchParams.set("source", source);
   const res = await fetch(url.toString());
@@ -63,7 +63,7 @@ async function fetchZoneResources(slug: string, source?: "tsp" | "ulg"): Promise
   return res.json();
 }
 
-export function useZoneResources(slug: string | undefined, source?: "tsp" | "ulg") {
+export function useZoneResources(slug: string | undefined, source?: "tsp" | "ulg" | "fireside-freedom") {
   return useQuery<ZoneResources>({
     queryKey: ["zones", slug, "resources", source ?? "all"],
     queryFn: () => fetchZoneResources(slug!, source),

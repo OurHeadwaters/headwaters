@@ -276,6 +276,7 @@ router.get("/zones/:slug/resources", async (req, res) => {
     const sourceFilter =
       rawSource === "tsp" ? "tsp" :
       rawSource === "ulg" ? "ulg" :
+      rawSource === "fireside-freedom" ? "fireside-freedom" :
       null;
     const sourceFragment = sourceFilter ? `source = '${esc(sourceFilter)}'` : "true";
 

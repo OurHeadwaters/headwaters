@@ -10,7 +10,7 @@ import {
   ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare, Bot, Radio,
 } from "lucide-react";
 
-type SourceFilter = "all" | "tsp" | "ulg";
+type SourceFilter = "all" | "tsp" | "ulg" | "fireside-freedom";
 
 const ZONE_RING_COLORS = [
   "border-amber-600",
@@ -561,9 +561,13 @@ export default function ZoneDetailPage() {
           </p>
 
           {/* Source filter tabs */}
-          <div className="flex items-center gap-1.5 ml-11 mb-5">
-            {(["all", "tsp", "ulg"] as SourceFilter[]).map((f) => {
-              const label = f === "all" ? "All" : f === "tsp" ? "TSP Only" : "ULG Only";
+          <div className="flex items-center gap-1.5 ml-11 mb-5 flex-wrap">
+            {(["all", "tsp", "ulg", "fireside-freedom"] as SourceFilter[]).map((f) => {
+              const label =
+                f === "all" ? "All" :
+                f === "tsp" ? "TSP Only" :
+                f === "ulg" ? "ULG Only" :
+                "Fireside Freedom";
               const active = sourceFilter === f;
               return (
                 <button
@@ -583,7 +587,7 @@ export default function ZoneDetailPage() {
 
           {episodes.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              No {sourceFilter === "tsp" ? "TSP" : sourceFilter === "ulg" ? "ULG" : ""} episodes found for this zone yet.
+              No {sourceFilter === "tsp" ? "TSP" : sourceFilter === "ulg" ? "ULG" : sourceFilter === "fireside-freedom" ? "Fireside Freedom" : ""} episodes found for this zone yet.
             </p>
           ) : (
             <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
