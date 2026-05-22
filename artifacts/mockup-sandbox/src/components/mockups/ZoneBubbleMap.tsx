@@ -55,6 +55,7 @@ type GateDef = {
   gatekeeperModel?: "personal" | "workbench-only";
   gatekeeperResolution?: string;
   giraffeNote?: string;
+  rationale?: string;
   cx: number;
   cy: number;
 };
@@ -448,7 +449,44 @@ const TSP_6_ZONE_CONFIG: ZoneSetConfig = {
       kind: "prohibition",
       label: "Z1→Z3 Prohibited",
       color: "#CC3333",
+      rationale: "You must build through The Garden (Z2) first. Skipping Z2 means arriving at Z3 without the foundational competencies Z2 builds. This is not a permission problem — it is an architecture problem.",
       cx: 663, cy: 164,
+    },
+
+    // ── Z1 → Z4 ── Absolute prohibition
+    {
+      id: "gate-z1-z4-prohibition",
+      from: "z1",
+      to: "z4",
+      kind: "prohibition",
+      label: "Z1→Z4 Prohibited",
+      color: "#CC3333",
+      rationale: "The Home cannot reach The Forest without first building through The Garden (Z2) and The Homestead (Z3). Outer margins require inner foundations — there is no shortcut.",
+      cx: 730, cy: 136,
+    },
+
+    // ── Z1 → Z5 ── Absolute prohibition
+    {
+      id: "gate-z1-z5-prohibition",
+      from: "z1",
+      to: "z5",
+      kind: "prohibition",
+      label: "Z1→Z5 Prohibited",
+      color: "#CC3333",
+      rationale: "The Home cannot reach The Wild without passing through Z2, Z3, and Z4. Zone 5 is only safely entered from Zone 4. No path exists from Z1 to Z5 — the gap is structural, not a locked door.",
+      cx: 800, cy: 112,
+    },
+
+    // ── Z2 → Z5 ── Absolute prohibition
+    {
+      id: "gate-z2-z5-prohibition",
+      from: "z2",
+      to: "z5",
+      kind: "prohibition",
+      label: "Z2→Z5 Prohibited",
+      color: "#CC3333",
+      rationale: "The Garden cannot reach The Wild without crossing through The Homestead (Z3) and The Forest (Z4). Crossing The Wild requires going through The Forest — the two intermediate zones are not optional.",
+      cx: 855, cy: 136,
     },
   ],
 
@@ -947,11 +985,19 @@ function GearUpPanel({
 }
 
 function ProhibitionPanel({
+  gate,
+  fromZone,
+  toZone,
   onClose,
 }: {
   gate: GateDef;
+  fromZone: ZoneDef;
+  toZone: ZoneDef;
   onClose: () => void;
 }) {
+  const fromLabel = `Z${fromZone.number}`;
+  const toLabel = `Z${toZone.number}`;
+
   return (
     <div className="p-6 space-y-4">
       <div>
@@ -962,21 +1008,20 @@ function ProhibitionPanel({
           Crossing prohibited
         </p>
         <h2 className="font-serif text-xl font-bold" style={{ color: "#E8EBE8" }}>
-          Z1 → Z3: Absolute prohibition
+          {fromLabel} → {toLabel}: Absolute prohibition
         </h2>
         <p className="text-sm mt-2 leading-relaxed" style={{ color: "#7A8A7A" }}>
           You cannot cross directly from{" "}
-          <strong style={{ color: "#C4A05A" }}>The Home</strong> to{" "}
-          <strong style={{ color: "#4A7A3A" }}>The Homestead</strong>. This path is{" "}
+          <strong style={{ color: fromZone.color }}>{fromZone.name}</strong> to{" "}
+          <strong style={{ color: toZone.color }}>{toZone.name}</strong>. This path is{" "}
           <strong style={{ color: "#CC3333" }}>redacted</strong> — not locked behind a key,
           but structurally absent from the map. There is no gate here to open.
         </p>
-        <p className="text-sm mt-3 leading-relaxed" style={{ color: "#6A7A6A" }}>
-          The zone model requires you to build through{" "}
-          <strong style={{ color: "#6B8F47" }}>The Garden</strong> (Z2) first. Skipping Z2
-          means arriving at Z3 without the foundational competencies Z2 builds. This is not a
-          permission problem — it is an architecture problem.
-        </p>
+        {gate.rationale && (
+          <p className="text-sm mt-3 leading-relaxed" style={{ color: "#6A7A6A" }}>
+            {gate.rationale}
+          </p>
+        )}
       </div>
 
       <div
@@ -984,12 +1029,11 @@ function ProhibitionPanel({
         style={{ borderColor: "#CC333333", background: "#CC333310" }}
       >
         <p style={{ color: "#6A7A6A" }}>
-          Z1 → Z3:{" "}
+          {fromLabel} → {toLabel}:{" "}
           <span style={{ color: "#CC3333", textDecoration: "line-through" }}>
             path does not exist
           </span>
         </p>
-        <p style={{ color: "#4A7A3A" }}>Correct path: Z1 → Z2 → Z3</p>
       </div>
 
       <button
@@ -1273,25 +1317,25 @@ export default function ZoneBubbleMap() {
             const crossed = isGateCrossed(gate.id);
 
             if (gate.kind === "prohibition") {
-              const z1 = zoneById("z1");
-              const z3 = zoneById("z3");
+              const fromZ = zoneById(gate.from);
+              const toZ = zoneById(gate.to);
               return (
                 <g
                   key={gate.id}
                   onClick={() => openGate(gate.id)}
                   style={{ cursor: "pointer" }}
-                  aria-label="Z1 to Z3 prohibition"
+                  aria-label={gate.label}
                 >
-                  {/* Dashed prohibition line */}
+                  {/* Dashed prohibition arc */}
                   <line
-                    x1={z1.cx + z1.rx * 0.15}
-                    y1={z1.cy - z1.ry}
-                    x2={z3.cx + z3.rx * 0.55}
-                    y2={z3.cy - z3.ry * 0.45}
+                    x1={fromZ.cx}
+                    y1={fromZ.cy - fromZ.ry}
+                    x2={toZ.cx + toZ.rx * 0.45}
+                    y2={toZ.cy - toZ.ry * 0.45}
                     stroke="#CC3333"
                     strokeWidth={2}
                     strokeDasharray="7 5"
-                    opacity={0.65}
+                    opacity={0.55}
                   />
                   {/* Prohibition stamp */}
                   <circle
@@ -1449,7 +1493,7 @@ export default function ZoneBubbleMap() {
           { color: "#7ABF5E", label: "Eave Flow (Z0→Z1)" },
           { color: "#8A9A6A", label: "Gate membrane — click to cross" },
           { color: "#CCDDCC", label: "✓ Stamped — already crossed" },
-          { color: "#CC3333", label: "⊘ Z1→Z3 prohibition — no path exists" },
+          { color: "#CC3333", label: "⊘ Skip prohibition — no path exists (click for rationale)" },
           { color: "#B5853A", label: "● You are here" },
           { color: "#88CC88", label: "Arc glow — your zone exploration progress (logged in)" },
         ].map((item) => (
@@ -1559,7 +1603,12 @@ export default function ZoneBubbleMap() {
               />
             )}
             {activeGate.kind === "prohibition" && (
-              <ProhibitionPanel gate={activeGate} onClose={closePanel} />
+              <ProhibitionPanel
+                gate={activeGate}
+                fromZone={zoneById(activeGate.from)}
+                toZone={zoneById(activeGate.to)}
+                onClose={closePanel}
+              />
             )}
           </div>
         </div>
