@@ -55,6 +55,7 @@ interface ContentItem {
 interface ProfileData {
   expert: Expert;
   ownEpisodes: ContentItem[];
+  firesideEpisodes: ContentItem[];
   tspAppearances: ContentItem[];
 }
 
@@ -131,6 +132,57 @@ function OwnEpisodeCard({ item }: { item: ContentItem }) {
   );
 }
 
+function FiresideEpisodeCard({ item }: { item: ContentItem }) {
+  const pubDate = item.publishedAt ? new Date(item.publishedAt) : null;
+  const dateStr = pubDate ? pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
+
+  return (
+    <a
+      href={item.link || item.audioUrl || "#"}
+      target="_blank"
+      rel="noreferrer"
+      className="group flex gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200"
+    >
+      {item.artworkUrl ? (
+        <img
+          src={item.artworkUrl}
+          alt={item.title}
+          className="w-14 h-14 rounded-lg object-cover shrink-0"
+        />
+      ) : (
+        <div className="w-14 h-14 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+          <Radio className="w-5 h-5 text-accent/40" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded">
+            Fireside
+          </span>
+          {item.episodeNumber && (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Ep. {item.episodeNumber}
+            </span>
+          )}
+        </div>
+        <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+          {item.title}
+        </h3>
+        <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+          {dateStr && <span>{dateStr}</span>}
+          {item.durationSeconds && (
+            <>
+              <span>·</span>
+              <span>{formatDuration(item.durationSeconds)}</span>
+            </>
+          )}
+        </div>
+      </div>
+      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 self-center" />
+    </a>
+  );
+}
+
 export function CouncilMemberPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
@@ -160,7 +212,7 @@ export function CouncilMemberPage() {
     );
   }
 
-  const { expert, ownEpisodes, tspAppearances } = data;
+  const { expert, ownEpisodes, firesideEpisodes = [], tspAppearances } = data;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 md:py-14 max-w-4xl">
@@ -244,6 +296,34 @@ export function CouncilMemberPage() {
         </section>
       )}
 
+      {/* Fireside Freedom Episodes */}
+      {firesideEpisodes.length > 0 && (
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-5">
+            <Radio className="w-4 h-4 text-accent" />
+            <h2 className="font-serif text-xl font-bold text-foreground">
+              Their Episodes
+            </h2>
+            <span className="ml-1 text-xs font-semibold text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
+              Fireside Freedom
+            </span>
+            <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {firesideEpisodes.length} episode{firesideEpisodes.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {firesideEpisodes.slice(0, 20).map((item) => (
+              <FiresideEpisodeCard key={item.id} item={item} />
+            ))}
+          </div>
+          {firesideEpisodes.length > 20 && (
+            <p className="mt-4 text-sm text-muted-foreground text-center">
+              Showing 20 of {firesideEpisodes.length} episodes
+            </p>
+          )}
+        </section>
+      )}
+
       {/* TSP Appearances */}
       {tspAppearances.length > 0 ? (
         <section>
@@ -268,7 +348,7 @@ export function CouncilMemberPage() {
           )}
         </section>
       ) : (
-        ownEpisodes.length === 0 && (
+        ownEpisodes.length === 0 && firesideEpisodes.length === 0 && (
           <div className="py-16 text-center border border-dashed border-border rounded-xl">
             <Users className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-40" />
             <p className="text-muted-foreground text-sm">

@@ -79,7 +79,9 @@ router.get("/experts/:slug", async (req, res) => {
     }
 
     const source = `council-${slug}`;
-    const [ownEpisodes, tspAppearances] = await Promise.all([
+    const isFiresideHost = expert.crew === "fireside-freedom";
+
+    const [ownEpisodes, tspAppearances, firesideEpisodes] = await Promise.all([
       db
         .select()
         .from(contentItemsTable)
@@ -97,6 +99,14 @@ router.get("/experts/:slug", async (req, res) => {
         )
         .orderBy(desc(contentItemsTable.publishedAt))
         .limit(200),
+      isFiresideHost
+        ? db
+            .select()
+            .from(contentItemsTable)
+            .where(eq(contentItemsTable.source, "fireside-freedom"))
+            .orderBy(desc(contentItemsTable.publishedAt))
+            .limit(100)
+        : Promise.resolve([]),
     ]);
 
     const nameLower = expert.name.toLowerCase();
@@ -109,6 +119,7 @@ router.get("/experts/:slug", async (req, res) => {
     res.json({
       expert,
       ownEpisodes,
+      firesideEpisodes,
       tspAppearances: filteredAppearances.slice(0, 50),
     });
   } catch (err) {
