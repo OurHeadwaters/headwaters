@@ -6,7 +6,8 @@ import {
   ExchangeMobileAuthorizationCodeResponse,
   LogoutMobileSessionResponse,
 } from "@workspace/api-zod";
-import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { db, usersTable, userLifestyleMapsTable } from "@workspace/db";
 import {
   clearSession,
   getOidcConfig,
@@ -168,6 +169,14 @@ router.get("/callback", async (req: Request, res: Response) => {
     claims as unknown as Record<string, unknown>,
   );
 
+  const existingMap = await db
+    .select({ userId: userLifestyleMapsTable.userId })
+    .from(userLifestyleMapsTable)
+    .where(eq(userLifestyleMapsTable.userId, dbUser.id))
+    .limit(1);
+
+  const destination = existingMap.length === 0 ? "/map" : returnTo;
+
   const now = Math.floor(Date.now() / 1000);
   const sessionData: SessionData = {
     user: {
@@ -184,7 +193,7 @@ router.get("/callback", async (req: Request, res: Response) => {
 
   const sid = await createSession(sessionData);
   setSessionCookie(res, sid);
-  res.redirect(returnTo);
+  res.redirect(destination);
 });
 
 router.get("/logout", async (req: Request, res: Response) => {
