@@ -176,6 +176,15 @@ export function CouncilPage() {
                   <Flame className="w-4 h-4" />
                   <span className="text-sm font-bold tracking-wide">Fireside Freedom Crew</span>
                 </div>
+                <a
+                  href="https://www.firesidefreedompodcast.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Listen to Fireside Freedom
+                </a>
                 <div className="flex-1 h-px bg-border" />
               </div>
               <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
