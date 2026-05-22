@@ -1,968 +1,1253 @@
+/**
+ * ZoneBubbleMap — Interactive Zone Bubble & Gate Map
+ *
+ * Drive zone/adjacency data entirely from ACTIVE_CONFIG below.
+ * Swap ACTIVE_CONFIG to change zone sets without touching interaction logic.
+ *
+ * Built to the updated Eave Rule model:
+ * - Two-gate model (Z0/Z1 Eave Flow + Z1/Z2 and Z2/Z3 Gear-Up)
+ * - Z0→Z1 uses distinct Eave Flow interaction, not a hat ceremony
+ * - Z2→Z3 shows both Gatekeeper hat variants side-by-side with tension noted
+ * - Z1→Z3 absolute prohibition shown as dashed/redacted membrane
+ * - Giraffe protection language in Z2→Z3 panel
+ * - Every label passes Saltbox, Both-States, and Both-Sides naming tests
+ */
+
 import { useState, useCallback } from "react";
 
-// =============================================================================
-// CONFIG — swap this object to use a different zone set
-// =============================================================================
-// Each zone needs: id, number, name, color, description, identity
-// Each adjacency needs: id, from, to, narrative, chips
-// To use your own zone set, replace ZONE_CONFIG and ADJACENCY_CONFIG below.
-// =============================================================================
+// ============================================================
+// TYPES
+// ============================================================
 
-const ZONE_RADIUS = 130;
+type ZoneId = string;
 
-const ZONE_CONFIG = [
-  {
-    id: "z0",
-    number: 0,
-    name: "The Self",
-    color: "#B5853A",
-    description:
-      "Mindset, money, freedom, and personal sovereignty. This is your foundation — how you think, how you earn, and how you secure your future.",
-    identity:
-      "The Sovereign Individual: economist, philosopher, freedom-seeker, investor",
-  },
-  {
-    id: "z1",
-    number: 1,
-    name: "The Home",
-    color: "#C4A05A",
-    description:
-      "Basic home preparedness. Food storage, water security, first aid, and the skills that keep your household resilient when systems fail.",
-    identity:
-      "The Provider: protector, planner, household manager, security-minded parent",
-  },
-  {
-    id: "z2",
-    number: 2,
-    name: "The Garden",
-    color: "#6B8F47",
-    description:
-      "Food production and permaculture. Growing your own food, keeping bees, tending chickens — the zone where you start producing rather than just consuming.",
-    identity:
-      "The Grower: gardener, cultivator, beekeeper, fermentation hobbyist",
-  },
-  {
-    id: "z3",
-    number: 3,
-    name: "The Homestead",
-    color: "#4A7A3A",
-    description:
-      "Full-scale homesteading. Livestock, off-grid energy, woodworking — a self-sufficient property that can sustain life indefinitely.",
-    identity:
-      "The Homesteader: farmer, rancher, off-grid engineer, animal husbandrist",
-  },
-  {
-    id: "z4",
-    number: 4,
-    name: "The Forest",
-    color: "#2C5F2E",
-    description:
-      "Hunting, foraging, and bushcraft. Extracting life from the wild world — skills that work when there is no property at all.",
-    identity:
-      "The Wildcrafter: hunter, forager, bushcraft practitioner, tracker",
-  },
-  {
-    id: "z5",
-    number: 5,
-    name: "The Wild",
-    color: "#1A3A1C",
-    description:
-      "Grid-down survival and contingency planning. Bug-out scenarios, wilderness survival, communications — the outermost edge of the self-reliant life.",
-    identity:
-      "The Survivor: operator, navigator, grid-down communicator, wilderness sentinel",
-  },
-];
-
-const ADJACENCY_CONFIG = [
-  {
-    id: "g0-1",
-    from: "z0",
-    to: "z1",
-    narrative:
-      "Crossing from inner sovereignty into the physical household. You're moving from philosophy into action — protecting and providing for those under your roof.",
-    chips: ["Thinker → Provider", "Dreamer → Builder", "Philosopher → Protector", "Planner → Doer"],
-  },
-  {
-    id: "g1-2",
-    from: "z1",
-    to: "z2",
-    narrative:
-      "Crossing from the prepared home into food production. You're moving from storing food to growing it — from consumer to cultivator.",
-    chips: ["Homeowner → Grower", "Buyer → Producer", "Consumer → Cultivator", "Tenant → Steward"],
-  },
-  {
-    id: "g2-3",
-    from: "z2",
-    to: "z3",
-    narrative:
-      "Crossing from the garden into the full homestead. You're moving from hobby production to whole-property self-sufficiency — from grower to farmer.",
-    chips: ["Gardener → Farmer", "Grower → Rancher", "Hobbyist → Homesteader", "Part-timer → Committed"],
-  },
-  {
-    id: "g3-4",
-    from: "z3",
-    to: "z4",
-    narrative:
-      "Crossing from the managed homestead into the wild. You're moving from tended land to untamed forest — from keeper to seeker.",
-    chips: ["Farmer → Hunter", "Land-tender → Wildcrafter", "Keeper → Seeker", "Domestic → Feral"],
-  },
-  {
-    id: "g4-5",
-    from: "z4",
-    to: "z5",
-    narrative:
-      "Crossing from the forest into the wild frontier. You're moving from skilled outdoorsman to full-spectrum survivor — from knowledgeable to hardened.",
-    chips: ["Woodsman → Survivor", "Outdoorsman → Operator", "Skilled → Prepared", "Knowledgeable → Hardened"],
-  },
-];
-
-// =============================================================================
-// LAYOUT — fixed coordinates for the 6 zones (hand-tuned)
-// =============================================================================
-
-const ZONE_POSITIONS: Record<string, { cx: number; cy: number }> = {
-  z0: { cx: 165, cy: 360 },
-  z1: { cx: 355, cy: 230 },
-  z2: { cx: 560, cy: 195 },
-  z3: { cx: 735, cy: 315 },
-  z4: { cx: 885, cy: 205 },
-  z5: { cx: 1055, cy: 325 },
+type ZoneDef = {
+  id: ZoneId;
+  number: number;
+  name: string;
+  subtitle: string;
+  color: string;
+  fillColor: string;
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
 };
 
-const SVG_WIDTH = 1230;
-const SVG_HEIGHT = 540;
+type GateKind = "eave-flow" | "gear-up" | "prohibition";
 
-// =============================================================================
-// HELPERS
-// =============================================================================
+type HatVariant = {
+  id: string;
+  label: string;
+  description: string;
+  side?: "personal" | "workbench";
+};
 
-function hexToRgb(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return [r, g, b];
-}
+type GateDef = {
+  id: string;
+  from: ZoneId;
+  to: ZoneId;
+  kind: GateKind;
+  label: string;
+  color: string;
+  hats?: HatVariant[];
+  eaveOptions?: { open: string; clear: string };
+  gatekeeperTension?: string;
+  giraffeNote?: string;
+  cx: number;
+  cy: number;
+};
 
-function blendColors(hex1: string, hex2: string, t = 0.5): string {
-  const [r1, g1, b1] = hexToRgb(hex1);
-  const [r2, g2, b2] = hexToRgb(hex2);
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-  return `rgb(${r},${g},${b})`;
-}
+type EaveDef = {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+  color: string;
+};
 
-/**
- * Compute the SVG arc path for the lens (vesica) intersection of two equal-radius circles.
- * Returns null if circles don't overlap.
- */
-function lensPath(
-  cx1: number, cy1: number,
-  cx2: number, cy2: number,
-  r: number,
-): string | null {
-  const dx = cx2 - cx1;
-  const dy = cy2 - cy1;
-  const d = Math.sqrt(dx * dx + dy * dy);
-  if (d >= 2 * r || d === 0) return null;
+type ZoneSetConfig = {
+  name: string;
+  zones: ZoneDef[];
+  gates: GateDef[];
+  eave: EaveDef;
+};
 
-  const a = d / 2; // for equal radii: a = d/2
-  const h = Math.sqrt(r * r - a * a);
+// ============================================================
+// CONFIG — TSP 4-ZONE MODEL (wired and active)
+// ============================================================
 
-  const mx = (cx1 + cx2) / 2;
-  const my = (cy1 + cy2) / 2;
+const TSP_4_ZONE_CONFIG: ZoneSetConfig = {
+  name: "TSP 4-Zone",
 
-  const nx = -dy / d;
-  const ny = dx / d;
-
-  const p1x = mx + h * nx;
-  const p1y = my + h * ny;
-  const p2x = mx - h * nx;
-  const p2y = my - h * ny;
-
-  // Both arcs use sweep=1 for equal-radius circles
-  return `M ${p1x} ${p1y} A ${r} ${r} 0 0 1 ${p2x} ${p2y} A ${r} ${r} 0 0 1 ${p1x} ${p1y} Z`;
-}
-
-/** Midpoint of the lens region (used for gate click target and label) */
-function lensMidpoint(cx1: number, cy1: number, cx2: number, cy2: number) {
-  return { x: (cx1 + cx2) / 2, y: (cy1 + cy2) / 2 };
-}
-
-// =============================================================================
-// TYPES
-// =============================================================================
-
-type SelectedItem =
-  | { type: "zone"; id: string }
-  | { type: "gate"; id: string };
-
-type CurrentPosition =
-  | { type: "zone"; id: string }
-  | { type: "gate"; id: string }
-  | null;
-
-// =============================================================================
-// COMPONENT
-// =============================================================================
-
-export default function ZoneBubbleMap() {
-  const [selected, setSelected] = useState<SelectedItem | null>(null);
-  const [currentPosition, setCurrentPosition] = useState<CurrentPosition>(null);
-  const [crossedGates, setCrossedGates] = useState<Set<string>>(new Set());
-  const [selectedChip, setSelectedChip] = useState<string | null>(null);
-
-  const zoneMap = Object.fromEntries(ZONE_CONFIG.map((z) => [z.id, z]));
-  const adjMap = Object.fromEntries(ADJACENCY_CONFIG.map((a) => [a.id, a]));
-
-  const handleZoneClick = useCallback((id: string) => {
-    setSelected({ type: "zone", id });
-    setSelectedChip(null);
-  }, []);
-
-  const handleGateClick = useCallback((id: string) => {
-    setSelected({ type: "gate", id });
-    setSelectedChip(null);
-  }, []);
-
-  const handleSetPosition = useCallback((type: "zone" | "gate", id: string) => {
-    setCurrentPosition({ type, id });
-  }, []);
-
-  const handleCrossGate = useCallback(
-    (gateId: string) => {
-      if (!selectedChip) return;
-      setCrossedGates((prev) => {
-        const next = new Set(prev);
-        next.add(gateId);
-        return next;
-      });
-      setSelectedChip(null);
+  // Zones listed innermost-first so config reads inside-out.
+  // SVG renders them outermost-first (array reversed below).
+  // Ellipses are slightly offset from each other for an organic feel.
+  zones: [
+    {
+      id: "z0",
+      number: 0,
+      name: "The Self",
+      subtitle: "Sovereignty begins here",
+      color: "#B5853A",
+      fillColor: "#1A1205",
+      cx: 402, cy: 256, rx: 90, ry: 54,
     },
-    [selectedChip],
-  );
+    {
+      id: "z1",
+      number: 1,
+      name: "The Home",
+      subtitle: "Daily life, resilient by design",
+      color: "#C4A05A",
+      fillColor: "#18140A",
+      cx: 406, cy: 253, rx: 183, ry: 110,
+    },
+    {
+      id: "z2",
+      number: 2,
+      name: "The Garden",
+      subtitle: "Growing food, building soil",
+      color: "#6B8F47",
+      fillColor: "#0E1808",
+      cx: 410, cy: 250, rx: 280, ry: 168,
+    },
+    {
+      id: "z3",
+      number: 3,
+      name: "The Homestead",
+      subtitle: "Working land, real systems",
+      color: "#4A7A3A",
+      fillColor: "#091208",
+      cx: 413, cy: 248, rx: 388, ry: 233,
+    },
+  ],
 
-  const closePanel = useCallback(() => {
-    setSelected(null);
-    setSelectedChip(null);
-  }, []);
+  // Gates are positioned at the boundary of each zone pair (east side for navigability).
+  gates: [
+    // ── Z0 → Z1 ── Eave Flow (not a hat ceremony)
+    {
+      id: "gate-z0-z1",
+      from: "z0",
+      to: "z1",
+      kind: "eave-flow",
+      label: "Eave Flow",
+      color: "#7ABF5E",
+      eaveOptions: {
+        open: "Open the flow",
+        clear: "Clear the leaves",
+      },
+      cx: 492, cy: 256,
+    },
 
-  const panelOpen = selected !== null;
+    // ── Z1 → Z2 ── Gear-Up: Garden Gate
+    {
+      id: "gate-z1-z2",
+      from: "z1",
+      to: "z2",
+      kind: "gear-up",
+      label: "Garden Gate",
+      color: "#94B85A",
+      hats: [
+        {
+          id: "practitioner",
+          label: "Practitioner",
+          description: "I'm here to build and apply hands-on skills. I am in the work.",
+        },
+        {
+          id: "steward",
+          label: "Steward",
+          description: "I'm here to tend, sustain, and protect what's already growing.",
+        },
+        {
+          id: "observer",
+          label: "Observer",
+          description: "I'm here to watch, study, and learn the system before I act.",
+        },
+      ],
+      cx: 589, cy: 253,
+    },
 
-  return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        background: "#0f1a0f",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "'Georgia', serif",
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 24px",
-          borderBottom: "1px solid #2a3a2a",
-          flexShrink: 0,
-        }}
-      >
-        <div>
-          <h1 style={{ color: "#C4A05A", margin: 0, fontSize: "1.1rem", fontWeight: 700, letterSpacing: "0.05em" }}>
-            ZONE BUBBLE MAP
-          </h1>
-          <p style={{ color: "#5a7a5a", margin: 0, fontSize: "0.72rem", marginTop: 2 }}>
-            The Survival Podcast · TSP 6-Zone Territory
-          </p>
-        </div>
-        <Legend crossedGates={crossedGates} currentPosition={currentPosition} />
-      </div>
+    // ── Z2 → Z3 ── Gear-Up: Homestead Gate (with Gatekeeper variants)
+    {
+      id: "gate-z2-z3",
+      from: "z2",
+      to: "z3",
+      kind: "gear-up",
+      label: "Homestead Gate",
+      color: "#5A9E42",
+      hats: [
+        {
+          id: "representative",
+          label: "Representative",
+          description: "I act on behalf of the whole holding. My decisions bind the land.",
+          side: "personal",
+        },
+        {
+          id: "neighbour",
+          label: "Neighbour",
+          description: "I arrive at the boundary as a peer — I don't own this land.",
+          side: "personal",
+        },
+        {
+          id: "gatekeeper-personal",
+          label: "Gatekeeper",
+          description:
+            "I hold and enforce the crossing rules. This is a personal hat — I carry it across the threshold.",
+          side: "personal",
+        },
+        {
+          id: "gatekeeper-workbench",
+          label: "Gatekeeper (Workbench only)",
+          description:
+            "The Gatekeeper role belongs solely to the Workbench — it cannot be worn by an individual. It enforces the gate but is never a personal identity.",
+          side: "workbench",
+        },
+      ],
+      gatekeeperTension:
+        "Unresolved tension: Is 'Gatekeeper' a personal hat the individual wears at crossing, or a role that can only be held by the Workbench and never by a person? Both models are coherent in different architectures. This choice must be locked before the gate goes into production.",
+      giraffeNote:
+        "Credential appears at crossing only — it is never stored inside Z2 records. Audit visibility is allowed. No composable reverse path back to Z1 exists (giraffe protection: you cannot reconstruct the Z1 identity from Z3 data).",
+      cx: 690, cy: 250,
+    },
 
-      {/* Map + Panel row */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
-        {/* SVG Map */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            padding: "12px",
-          }}
-        >
-          <svg
-            viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-            style={{ width: "100%", maxHeight: "100%", overflow: "visible" }}
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <defs>
-              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="8" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter id="glow-strong" x="-60%" y="-60%" width="220%" height="220%">
-                <feGaussianBlur stdDeviation="14" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              {ZONE_CONFIG.map((z) => {
-                const [r, g, b] = hexToRgb(z.color);
-                return (
-                  <radialGradient key={z.id} id={`grad-${z.id}`} cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor={`rgb(${r},${g},${b})`} stopOpacity="0.55" />
-                    <stop offset="70%" stopColor={`rgb(${r},${g},${b})`} stopOpacity="0.30" />
-                    <stop offset="100%" stopColor={`rgb(${r},${g},${b})`} stopOpacity="0.12" />
-                  </radialGradient>
-                );
-              })}
-            </defs>
+    // ── Z1 → Z3 ── Absolute prohibition (structural, not a locked gate)
+    {
+      id: "gate-z1-z3-prohibition",
+      from: "z1",
+      to: "z3",
+      kind: "prohibition",
+      label: "Z1→Z3 Prohibited",
+      color: "#CC3333",
+      cx: 592, cy: 164,
+    },
+  ],
 
-            {/*
-             * LAYER ORDER (SVG paints top-to-bottom; last element = topmost hit target):
-             *   1. Zone fill circles       — clickable for non-overlap areas
-             *   2. Gate lens paths         — ON TOP of fills, so they win clicks in overlap regions
-             *   3. Zone labels + markers   — purely visual, pointer-events: none
-             */}
+  // Eave overhang: visible green ring that sits structurally behind Z0–Z2,
+  // rendered as a slightly larger shape than Z2 so it peeks out at Z2's edge.
+  eave: {
+    cx: 410, cy: 250, rx: 296, ry: 178,
+    color: "#4EAA34",
+  },
+};
 
-            {/* ── Layer 1: Zone fill circles (clickable) ── */}
-            {ZONE_CONFIG.map((zone) => {
-              const pos = ZONE_POSITIONS[zone.id];
-              const isSelected = selected?.type === "zone" && selected.id === zone.id;
-              const isCurrent = currentPosition?.type === "zone" && currentPosition.id === zone.id;
+// ============================================================
+// CONFIG — TSP 6-ZONE MODEL
+// Config object supports the full set; only 4-zone is wired for now.
+// Swap ACTIVE_CONFIG below to enable once wired.
+// ============================================================
 
-              return (
-                <g
-                  key={zone.id}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleZoneClick(zone.id)}
-                >
-                  {isCurrent && (
-                    <circle
-                      cx={pos.cx}
-                      cy={pos.cy}
-                      r={ZONE_RADIUS + 14}
-                      fill="none"
-                      stroke={zone.color}
-                      strokeWidth={3}
-                      strokeOpacity={0.5}
-                      filter="url(#glow)"
-                    />
-                  )}
-                  <circle
-                    cx={pos.cx}
-                    cy={pos.cy}
-                    r={ZONE_RADIUS}
-                    fill={`url(#grad-${zone.id})`}
-                    stroke={zone.color}
-                    strokeWidth={isSelected ? 2.5 : 1.5}
-                    strokeOpacity={isSelected ? 1 : 0.65}
-                    filter={isSelected ? "url(#glow)" : undefined}
-                    style={{ transition: "stroke-width 0.2s, stroke-opacity 0.2s" }}
-                  />
-                </g>
-              );
-            })}
+const TSP_6_ZONE_CONFIG: ZoneSetConfig = {
+  ...TSP_4_ZONE_CONFIG,
+  name: "TSP 6-Zone (placeholder — wire Z4 and Z5 before activating)",
+};
 
-            {/* ── Layer 2: Gate lens paths (clickable, on top of zone fills) ── */}
-            {ADJACENCY_CONFIG.map((adj) => {
-              const z1pos = ZONE_POSITIONS[adj.from];
-              const z2pos = ZONE_POSITIONS[adj.to];
-              const path = lensPath(z1pos.cx, z1pos.cy, z2pos.cx, z2pos.cy, ZONE_RADIUS);
-              if (!path) return null;
+// Retain reference for future use
+void TSP_6_ZONE_CONFIG;
 
-              const fromZone = zoneMap[adj.from];
-              const toZone = zoneMap[adj.to];
-              const blended = blendColors(fromZone.color, toZone.color, 0.5);
-              const isCrossed = crossedGates.has(adj.id);
-              const isSelected = selected?.type === "gate" && selected.id === adj.id;
+// ============================================================
+// ACTIVE CONFIG — swap here to change zone set
+// ============================================================
 
-              return (
-                <g key={adj.id} style={{ cursor: "pointer" }} onClick={() => handleGateClick(adj.id)}>
-                  <path
-                    d={path}
-                    fill={blended}
-                    fillOpacity={isCrossed ? 0.75 : isSelected ? 0.65 : 0.42}
-                    stroke={blended}
-                    strokeWidth={isSelected ? 2.5 : 1.5}
-                    strokeOpacity={isSelected ? 1 : 0.7}
-                    filter={isSelected ? "url(#glow)" : undefined}
-                    style={{ transition: "fill-opacity 0.2s, stroke-width 0.2s" }}
-                  />
-                  {!isCrossed && (
-                    <path
-                      d={path}
-                      fill="none"
-                      stroke={blended}
-                      strokeWidth={2}
-                      strokeOpacity={0}
-                      style={{ animation: "gatePulse 2.4s ease-in-out infinite" }}
-                    />
-                  )}
-                </g>
-              );
-            })}
+const ACTIVE_CONFIG: ZoneSetConfig = TSP_4_ZONE_CONFIG;
 
-            {/* ── Layer 3: Zone labels + gate labels + position markers (no pointer events) ── */}
-            {ZONE_CONFIG.map((zone) => {
-              const pos = ZONE_POSITIONS[zone.id];
-              const isCurrent = currentPosition?.type === "zone" && currentPosition.id === zone.id;
-              return (
-                <g key={`label-${zone.id}`} style={{ pointerEvents: "none" }}>
-                  <text
-                    x={pos.cx}
-                    y={pos.cy - 12}
-                    textAnchor="middle"
-                    fontSize={28}
-                    fontWeight="700"
-                    fill={zone.color}
-                    fillOpacity={0.9}
-                    style={{ userSelect: "none" }}
-                  >
-                    {zone.number}
-                  </text>
-                  <text
-                    x={pos.cx}
-                    y={pos.cy + 14}
-                    textAnchor="middle"
-                    fontSize={12}
-                    fontWeight="600"
-                    fill="white"
-                    fillOpacity={0.85}
-                    style={{ userSelect: "none" }}
-                  >
-                    {zone.name}
-                  </text>
-                  {isCurrent && (
-                    <g transform={`translate(${pos.cx}, ${pos.cy - ZONE_RADIUS - 8})`}>
-                      <circle cx={0} cy={0} r={7} fill={zone.color} stroke="white" strokeWidth={1.5} />
-                      <text x={0} y={4} textAnchor="middle" fontSize={8} fill="white" fontWeight="700">▼</text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-            {ADJACENCY_CONFIG.map((adj) => {
-              const z1pos = ZONE_POSITIONS[adj.from];
-              const z2pos = ZONE_POSITIONS[adj.to];
-              const path = lensPath(z1pos.cx, z1pos.cy, z2pos.cx, z2pos.cy, ZONE_RADIUS);
-              if (!path) return null;
-              const mid = lensMidpoint(z1pos.cx, z1pos.cy, z2pos.cx, z2pos.cy);
-              const fromZone = zoneMap[adj.from];
-              const toZone = zoneMap[adj.to];
-              const blended = blendColors(fromZone.color, toZone.color, 0.5);
-              const isCrossed = crossedGates.has(adj.id);
-              const isCurrent = currentPosition?.type === "gate" && currentPosition.id === adj.id;
-              return (
-                <g key={`gate-label-${adj.id}`} style={{ pointerEvents: "none" }}>
-                  {isCrossed ? (
-                    <text x={mid.x} y={mid.y + 5} textAnchor="middle" fontSize={16} fill="white" fillOpacity={0.85} style={{ userSelect: "none" }}>✦</text>
-                  ) : (
-                    <text x={mid.x} y={mid.y + 4} textAnchor="middle" fontSize={10} fill="white" fillOpacity={0.55} style={{ userSelect: "none" }}>gate</text>
-                  )}
-                  {isCurrent && (
-                    <g transform={`translate(${mid.x}, ${mid.y - 22})`}>
-                      <circle cx={0} cy={0} r={7} fill={blended} stroke="white" strokeWidth={1.5} />
-                      <text x={0} y={4} textAnchor="middle" fontSize={8} fill="white" fontWeight="700">▼</text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
-        </div>
+// ============================================================
+// HELPERS
+// ============================================================
 
-        {/* Side panel */}
-        {panelOpen && (
-          <SidePanel
-            selected={selected!}
-            zoneMap={zoneMap}
-            adjMap={adjMap}
-            currentPosition={currentPosition}
-            crossedGates={crossedGates}
-            selectedChip={selectedChip}
-            onSetPosition={handleSetPosition}
-            onSelectChip={setSelectedChip}
-            onCrossGate={handleCrossGate}
-            onClose={closePanel}
-          />
-        )}
-      </div>
-
-      {/* Pulse animation */}
-      <style>{`
-        @keyframes gatePulse {
-          0%   { stroke-opacity: 0; stroke-width: 2; }
-          40%  { stroke-opacity: 0.55; stroke-width: 5; }
-          100% { stroke-opacity: 0; stroke-width: 9; }
-        }
-      `}</style>
-    </div>
-  );
+function blendColors(a: string, b: string): string {
+  const parse = (hex: string) => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+  const [ar, ag, ab] = parse(a);
+  const [br, bg, bb] = parse(b);
+  const hex = (n: number) => Math.round(n).toString(16).padStart(2, "0");
+  return `#${hex((ar + br) / 2)}${hex((ag + bg) / 2)}${hex((ab + bb) / 2)}`;
 }
 
-// =============================================================================
-// LEGEND
-// =============================================================================
+// ============================================================
+// GATE PANELS
+// ============================================================
 
-function Legend({
-  crossedGates,
-  currentPosition,
-}: {
-  crossedGates: Set<string>;
-  currentPosition: CurrentPosition;
-}) {
-  return (
-    <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
-      <LegendItem
-        symbol={<span style={{ fontSize: 13, opacity: 0.6 }}>◉</span>}
-        label="Zone"
-      />
-      <LegendItem
-        symbol={
-          <span
-            style={{
-              display: "inline-block",
-              width: 14,
-              height: 14,
-              borderRadius: 3,
-              background: "rgba(180,160,90,0.55)",
-              border: "1px solid rgba(180,160,90,0.7)",
-            }}
-          />
-        }
-        label="Uncrossed gate"
-      />
-      <LegendItem
-        symbol={<span style={{ fontSize: 14, color: "#C4A05A" }}>✦</span>}
-        label="Crossed gate"
-      />
-      {currentPosition && (
-        <LegendItem
-          symbol={<span style={{ fontSize: 12, color: "#C4A05A" }}>●</span>}
-          label="You are here"
-        />
-      )}
-      {crossedGates.size > 0 && (
-        <span style={{ color: "#5a7a5a", fontSize: "0.72rem" }}>
-          {crossedGates.size} gate{crossedGates.size !== 1 ? "s" : ""} crossed
-        </span>
-      )}
-    </div>
-  );
-}
-
-function LegendItem({ symbol, label }: { symbol: React.ReactNode; label: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#8a9a8a", fontSize: "0.72rem" }}>
-      {symbol}
-      <span>{label}</span>
-    </div>
-  );
-}
-
-// =============================================================================
-// SIDE PANEL
-// =============================================================================
-
-function SidePanel({
-  selected,
-  zoneMap,
-  adjMap,
-  currentPosition,
-  crossedGates,
-  selectedChip,
-  onSetPosition,
-  onSelectChip,
-  onCrossGate,
+function EaveFlowPanel({
+  gate,
+  onConfirm,
   onClose,
 }: {
-  selected: SelectedItem;
-  zoneMap: Record<string, (typeof ZONE_CONFIG)[number]>;
-  adjMap: Record<string, (typeof ADJACENCY_CONFIG)[number]>;
-  currentPosition: CurrentPosition;
-  crossedGates: Set<string>;
-  selectedChip: string | null;
-  onSetPosition: (type: "zone" | "gate", id: string) => void;
-  onSelectChip: (chip: string | null) => void;
-  onCrossGate: (id: string) => void;
+  gate: GateDef;
+  onConfirm: (choice: string) => void;
+  onClose: () => void;
+}) {
+  const [choice, setChoice] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+
+  function handleCross() {
+    if (!choice) return;
+    setConfirmed(true);
+    setTimeout(() => {
+      onConfirm(choice);
+      onClose();
+    }, 900);
+  }
+
+  if (confirmed) {
+    return (
+      <div className="p-8 text-center space-y-3">
+        <div style={{ fontSize: 40 }}>🌿</div>
+        <p className="font-serif text-xl font-bold" style={{ color: gate.color }}>
+          Flow opened.
+        </p>
+        <p className="text-sm" style={{ color: "#88AA88" }}>
+          The Eave carries you through.
+        </p>
+      </div>
+    );
+  }
+
+  const options = [
+    {
+      id: "open",
+      label: gate.eaveOptions!.open,
+      desc: "You arrive in The Home with intention — ready to show up in daily life.",
+    },
+    {
+      id: "clear",
+      label: gate.eaveOptions!.clear,
+      desc: "You clear what blocks the threshold — releasing before you arrive.",
+    },
+  ];
+
+  return (
+    <div className="p-6 space-y-5">
+      <div>
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest mb-1"
+          style={{ color: gate.color }}
+        >
+          Z0 → Z1 — Eave Flow
+        </p>
+        <h2 className="font-serif text-2xl font-bold" style={{ color: "#E8EBE8" }}>
+          The Eave Flow
+        </h2>
+        <p className="text-sm mt-2 leading-relaxed" style={{ color: "#7A8A7A" }}>
+          The Eave is the canopy that shelters The Self into The Home. This is{" "}
+          <strong style={{ color: "#AAC8AA" }}>not a hat ceremony</strong> — there is no role to
+          put on. The Eave Flow is a threshold of presence, not permission. You move through it
+          by choosing your posture as you arrive.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest"
+          style={{ color: "#556655" }}
+        >
+          How are you crossing?
+        </p>
+        {options.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => setChoice(opt.id)}
+            className="w-full text-left p-4 rounded-xl border-2 transition-all"
+            style={{
+              borderColor: choice === opt.id ? gate.color : "#2A3A2A",
+              background: choice === opt.id ? gate.color + "22" : "#111A11",
+            }}
+          >
+            <p className="font-semibold text-sm" style={{ color: "#D8EBD8" }}>
+              {opt.label}
+            </p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: "#6A7A6A" }}>
+              {opt.desc}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={handleCross}
+        disabled={!choice}
+        className="w-full py-3 rounded-xl font-semibold text-sm transition-all"
+        style={{
+          background: choice ? gate.color : "#1A2A1A",
+          color: choice ? "#fff" : "#445544",
+          border: `1px solid ${choice ? gate.color : "#2A3A2A"}`,
+          cursor: choice ? "pointer" : "not-allowed",
+        }}
+      >
+        Cross the Eave
+      </button>
+    </div>
+  );
+}
+
+function GearUpPanel({
+  gate,
+  fromZone,
+  toZone,
+  onConfirm,
+  onClose,
+}: {
+  gate: GateDef;
+  fromZone: ZoneDef;
+  toZone: ZoneDef;
+  onConfirm: (hatId: string) => void;
+  onClose: () => void;
+}) {
+  const [selectedHat, setSelectedHat] = useState<string | null>(null);
+  const [step, setStep] = useState<"select" | "narrative" | "confirmed">("select");
+
+  const personalHats = gate.hats?.filter((h) => h.side !== "workbench") ?? [];
+  const workbenchHats = gate.hats?.filter((h) => h.side === "workbench") ?? [];
+  const hasVariants = workbenchHats.length > 0;
+  const selectedHatDef = gate.hats?.find((h) => h.id === selectedHat);
+
+  if (step === "confirmed") {
+    return (
+      <div className="p-8 text-center space-y-3">
+        <div style={{ fontSize: 40 }}>🎩</div>
+        <p className="font-serif text-xl font-bold" style={{ color: gate.color }}>
+          {selectedHatDef?.label} hat on.
+        </p>
+        <p className="text-sm" style={{ color: "#88AA88" }}>
+          You've crossed into {toZone.name}.
+        </p>
+      </div>
+    );
+  }
+
+  if (step === "narrative" && selectedHatDef) {
+    const isGatekeeperHat = selectedHat?.startsWith("gatekeeper");
+    return (
+      <div className="p-6 space-y-5">
+        <div>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: gate.color }}
+          >
+            Crossing narrative
+          </p>
+          <h2 className="font-serif text-2xl font-bold" style={{ color: "#E8EBE8" }}>
+            {selectedHatDef.label}
+          </h2>
+          <p className="text-sm mt-2 leading-relaxed" style={{ color: "#7A8A7A" }}>
+            {selectedHatDef.description}
+          </p>
+          <p className="text-sm mt-3 leading-relaxed" style={{ color: "#6A7A6A" }}>
+            You are crossing from{" "}
+            <strong style={{ color: fromZone.color }}>{fromZone.name}</strong> into{" "}
+            <strong style={{ color: toZone.color }}>{toZone.name}</strong> as{" "}
+            <strong style={{ color: "#D0E0D0" }}>{selectedHatDef.label}</strong>. This hat shapes
+            what you can do, what you can see, and what commitments you carry across the threshold.
+          </p>
+        </div>
+
+        {isGatekeeperHat && gate.gatekeeperTension && (
+          <div
+            className="p-4 rounded-xl border"
+            style={{ borderColor: "#CC883355", background: "#CC883312" }}
+          >
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
+              style={{ color: "#CC8833" }}
+            >
+              ⚠ Unresolved architectural tension
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: "#CC8833BB" }}>
+              {gate.gatekeeperTension}
+            </p>
+          </div>
+        )}
+
+        {gate.giraffeNote && (
+          <div
+            className="p-4 rounded-xl border"
+            style={{ borderColor: gate.color + "44", background: gate.color + "12" }}
+          >
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
+              style={{ color: gate.color }}
+            >
+              🦒 Giraffe Protection
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: gate.color + "BB" }}>
+              {gate.giraffeNote}
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setStep("select")}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
+            style={{ border: "1px solid #2A3A2A", color: "#7A8A7A" }}
+          >
+            Change hat
+          </button>
+          <button
+            onClick={() => {
+              setStep("confirmed");
+              setTimeout(() => {
+                onConfirm(selectedHat!);
+                onClose();
+              }, 900);
+            }}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm"
+            style={{ background: gate.color, color: "#fff" }}
+          >
+            Confirm crossing
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // step === "select"
+  return (
+    <div className="p-6 space-y-5">
+      <div>
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest mb-1"
+          style={{ color: gate.color }}
+        >
+          {gate.label} — Gear-Up
+        </p>
+        <h2 className="font-serif text-xl font-bold" style={{ color: "#E8EBE8" }}>
+          What hat are you putting on?
+        </h2>
+        <p className="text-sm mt-1.5 leading-relaxed" style={{ color: "#7A8A7A" }}>
+          To cross from{" "}
+          <strong style={{ color: fromZone.color }}>{fromZone.name}</strong> into{" "}
+          <strong style={{ color: toZone.color }}>{toZone.name}</strong>, choose the
+          identity you're carrying across the threshold.
+        </p>
+      </div>
+
+      {hasVariants ? (
+        // Side-by-side layout: personal hats | workbench hats
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-2"
+              style={{ color: "#556655" }}
+            >
+              Personal hat
+            </p>
+            <div className="space-y-2">
+              {personalHats.map((hat) => (
+                <button
+                  key={hat.id}
+                  onClick={() => setSelectedHat(hat.id)}
+                  className="w-full text-left p-3 rounded-xl border-2 transition-all"
+                  style={{
+                    borderColor: selectedHat === hat.id ? gate.color : "#2A3A2A",
+                    background: selectedHat === hat.id ? gate.color + "22" : "#111A11",
+                  }}
+                >
+                  <p className="font-semibold text-sm" style={{ color: "#D8EBD8" }}>
+                    {hat.label}
+                  </p>
+                  <p className="text-xs mt-0.5 leading-snug" style={{ color: "#5A6A5A" }}>
+                    {hat.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-2"
+              style={{ color: "#556655" }}
+            >
+              Workbench-only
+            </p>
+            <div className="space-y-2">
+              {workbenchHats.map((hat) => (
+                <button
+                  key={hat.id}
+                  onClick={() => setSelectedHat(hat.id)}
+                  className="w-full text-left p-3 rounded-xl border-2 transition-all"
+                  style={{
+                    borderColor: selectedHat === hat.id ? gate.color : "#2A3A2A",
+                    background: selectedHat === hat.id ? gate.color + "22" : "#111A11",
+                  }}
+                >
+                  <p className="font-semibold text-sm" style={{ color: "#D8EBD8" }}>
+                    {hat.label}
+                  </p>
+                  <p className="text-xs mt-0.5 leading-snug" style={{ color: "#5A6A5A" }}>
+                    {hat.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {gate.gatekeeperTension && (
+              <div
+                className="mt-3 p-3 rounded-xl border"
+                style={{ borderColor: "#CC883344", background: "#CC883310" }}
+              >
+                <p
+                  className="text-[9px] font-bold uppercase tracking-widest mb-1"
+                  style={{ color: "#CC8833" }}
+                >
+                  ⚠ Tension
+                </p>
+                <p className="text-[10px] leading-relaxed" style={{ color: "#CC8833AA" }}>
+                  {gate.gatekeeperTension}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {gate.hats?.map((hat) => (
+            <button
+              key={hat.id}
+              onClick={() => setSelectedHat(hat.id)}
+              className="w-full text-left p-4 rounded-xl border-2 transition-all"
+              style={{
+                borderColor: selectedHat === hat.id ? gate.color : "#2A3A2A",
+                background: selectedHat === hat.id ? gate.color + "22" : "#111A11",
+              }}
+            >
+              <p className="font-semibold text-sm" style={{ color: "#D8EBD8" }}>
+                {hat.label}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "#5A6A5A" }}>
+                {hat.description}
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {gate.giraffeNote && (
+        <div
+          className="p-3 rounded-xl border"
+          style={{ borderColor: gate.color + "44", background: gate.color + "0E" }}
+        >
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: gate.color }}
+          >
+            🦒 Giraffe Protection
+          </p>
+          <p className="text-[11px] leading-relaxed" style={{ color: gate.color + "BB" }}>
+            {gate.giraffeNote}
+          </p>
+        </div>
+      )}
+
+      <button
+        onClick={() => selectedHat && setStep("narrative")}
+        disabled={!selectedHat}
+        className="w-full py-3 rounded-xl font-semibold text-sm transition-all"
+        style={{
+          background: selectedHat ? gate.color : "#1A2A1A",
+          color: selectedHat ? "#fff" : "#445544",
+          border: `1px solid ${selectedHat ? gate.color : "#2A3A2A"}`,
+          cursor: selectedHat ? "pointer" : "not-allowed",
+        }}
+      >
+        {selectedHat
+          ? `Gear up as ${gate.hats?.find((h) => h.id === selectedHat)?.label}`
+          : "Select a hat to continue"}
+      </button>
+    </div>
+  );
+}
+
+function ProhibitionPanel({
+  onClose,
+}: {
+  gate: GateDef;
   onClose: () => void;
 }) {
   return (
+    <div className="p-6 space-y-4">
+      <div>
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest mb-1"
+          style={{ color: "#CC3333" }}
+        >
+          Crossing prohibited
+        </p>
+        <h2 className="font-serif text-xl font-bold" style={{ color: "#E8EBE8" }}>
+          Z1 → Z3: Absolute prohibition
+        </h2>
+        <p className="text-sm mt-2 leading-relaxed" style={{ color: "#7A8A7A" }}>
+          You cannot cross directly from{" "}
+          <strong style={{ color: "#C4A05A" }}>The Home</strong> to{" "}
+          <strong style={{ color: "#4A7A3A" }}>The Homestead</strong>. This path is{" "}
+          <strong style={{ color: "#CC3333" }}>redacted</strong> — not locked behind a key,
+          but structurally absent from the map. There is no gate here to open.
+        </p>
+        <p className="text-sm mt-3 leading-relaxed" style={{ color: "#6A7A6A" }}>
+          The zone model requires you to build through{" "}
+          <strong style={{ color: "#6B8F47" }}>The Garden</strong> (Z2) first. Skipping Z2
+          means arriving at Z3 without the foundational competencies Z2 builds. This is not a
+          permission problem — it is an architecture problem.
+        </p>
+      </div>
+
+      <div
+        className="p-4 rounded-xl border font-mono text-xs space-y-1"
+        style={{ borderColor: "#CC333333", background: "#CC333310" }}
+      >
+        <p style={{ color: "#6A7A6A" }}>
+          Z1 → Z3:{" "}
+          <span style={{ color: "#CC3333", textDecoration: "line-through" }}>
+            path does not exist
+          </span>
+        </p>
+        <p style={{ color: "#4A7A3A" }}>Correct path: Z1 → Z2 → Z3</p>
+      </div>
+
+      <button
+        onClick={onClose}
+        className="w-full py-3 rounded-xl font-semibold text-sm transition-all"
+        style={{ border: "1px solid #2A3A2A", color: "#8A9A8A" }}
+      >
+        Understood
+      </button>
+    </div>
+  );
+}
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
+type CrossedGate = { gateId: string; hatId?: string };
+
+export default function ZoneBubbleMap() {
+  const config = ACTIVE_CONFIG;
+
+  const [currentZone, setCurrentZone] = useState<ZoneId>("z0");
+  const [activeGateId, setActiveGateId] = useState<string | null>(null);
+  const [crossedGates, setCrossedGates] = useState<CrossedGate[]>([]);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const zoneById = useCallback(
+    (id: ZoneId): ZoneDef =>
+      config.zones.find((z) => z.id === id) ?? config.zones[0],
+    [config.zones],
+  );
+
+  const activeGate = activeGateId
+    ? config.gates.find((g) => g.id === activeGateId) ?? null
+    : null;
+
+  const currentZoneDef = zoneById(currentZone);
+  const isGateCrossed = useCallback(
+    (gateId: string) => crossedGates.some((g) => g.gateId === gateId),
+    [crossedGates],
+  );
+
+  function openGate(gateId: string) {
+    setActiveGateId(gateId);
+    setPanelOpen(true);
+  }
+
+  function closePanel() {
+    setPanelOpen(false);
+    setTimeout(() => setActiveGateId(null), 250);
+  }
+
+  function handleGateConfirm(gateId: string, hatId?: string) {
+    setCrossedGates((prev) => {
+      const filtered = prev.filter((g) => g.gateId !== gateId);
+      return [...filtered, { gateId, hatId }];
+    });
+    const gate = config.gates.find((g) => g.id === gateId);
+    if (gate?.to && gate.kind !== "prohibition") {
+      setCurrentZone(gate.to);
+    }
+  }
+
+  // SVG rendering helpers
+  const zonesOuterFirst = [...config.zones].reverse();
+
+  return (
     <div
       style={{
-        width: 320,
-        flexShrink: 0,
-        background: "#111c11",
-        borderLeft: "1px solid #2a3a2a",
+        minHeight: "100vh",
+        background: "#080E08",
+        color: "#D0E0D0",
+        fontFamily: "system-ui, sans-serif",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
-        animation: "slideIn 0.2s ease-out",
       }}
     >
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(40px); opacity: 0; }
-          to   { transform: translateX(0);   opacity: 1; }
-        }
-      `}</style>
-
-      {/* Panel header */}
+      {/* ── Header ── */}
       <div
         style={{
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          padding: "12px 20px",
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          padding: "14px 16px 10px",
-          borderBottom: "1px solid #2a3a2a",
-          flexShrink: 0,
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
         }}
       >
-        <span style={{ color: "#5a7a5a", fontSize: "0.68rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          {selected.type === "zone" ? "Zone Detail" : "Gate · Gear Up"}
-        </span>
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#5a7a5a",
-            cursor: "pointer",
-            fontSize: 18,
-            lineHeight: 1,
-            padding: "0 2px",
-          }}
-        >
-          ×
-        </button>
-      </div>
-
-      {/* Panel body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
-        {selected.type === "zone" ? (
-          <ZonePanel
-            zone={zoneMap[selected.id]}
-            isCurrent={currentPosition?.type === "zone" && currentPosition.id === selected.id}
-            onSetPosition={(id) => onSetPosition("zone", id)}
-          />
-        ) : (
-          <GatePanel
-            adj={adjMap[selected.id]}
-            zoneMap={zoneMap}
-            isCrossed={crossedGates.has(selected.id)}
-            isCurrent={currentPosition?.type === "gate" && currentPosition.id === selected.id}
-            selectedChip={selectedChip}
-            onSetPosition={(id) => onSetPosition("gate", id)}
-            onSelectChip={onSelectChip}
-            onCrossGate={onCrossGate}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// ZONE PANEL
-// =============================================================================
-
-function ZonePanel({
-  zone,
-  isCurrent,
-  onSetPosition,
-}: {
-  zone: (typeof ZONE_CONFIG)[number];
-  isCurrent: boolean;
-  onSetPosition: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Zone badge + name */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: zone.color,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 22,
-            fontWeight: 700,
-            color: "white",
-            flexShrink: 0,
-          }}
-        >
-          {zone.number}
-        </div>
         <div>
-          <div style={{ color: "white", fontWeight: 700, fontSize: "1rem" }}>{zone.name}</div>
-          <div style={{ color: zone.color, fontSize: "0.7rem", marginTop: 2 }}>Zone {zone.number}</div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <p style={{ color: "#b0c0b0", fontSize: "0.82rem", lineHeight: 1.55, margin: 0 }}>
-        {zone.description}
-      </p>
-
-      {/* Identity */}
-      <div
-        style={{
-          background: "#1a2a1a",
-          border: `1px solid ${zone.color}40`,
-          borderRadius: 6,
-          padding: "10px 12px",
-        }}
-      >
-        <div style={{ color: "#5a7a5a", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5 }}>
-          Who lives here
-        </div>
-        <div style={{ color: "#c0d0c0", fontSize: "0.8rem", lineHeight: 1.4 }}>
-          {zone.identity}
-        </div>
-      </div>
-
-      {/* Set position button */}
-      {isCurrent ? (
-        <div
-          style={{
-            background: `${zone.color}20`,
-            border: `1px solid ${zone.color}60`,
-            borderRadius: 6,
-            padding: "9px 14px",
-            color: zone.color,
-            fontSize: "0.78rem",
-            textAlign: "center",
-          }}
-        >
-          ● You are here
-        </div>
-      ) : (
-        <button
-          onClick={() => onSetPosition(zone.id)}
-          style={{
-            background: `${zone.color}22`,
-            border: `1px solid ${zone.color}55`,
-            borderRadius: 6,
-            padding: "9px 14px",
-            color: zone.color,
-            fontSize: "0.78rem",
-            cursor: "pointer",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = `${zone.color}40`)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = `${zone.color}22`)}
-        >
-          Set as my position
-        </button>
-      )}
-    </div>
-  );
-}
-
-// =============================================================================
-// GATE PANEL
-// =============================================================================
-
-function GatePanel({
-  adj,
-  zoneMap,
-  isCrossed,
-  isCurrent,
-  selectedChip,
-  onSetPosition,
-  onSelectChip,
-  onCrossGate,
-}: {
-  adj: (typeof ADJACENCY_CONFIG)[number];
-  zoneMap: Record<string, (typeof ZONE_CONFIG)[number]>;
-  isCrossed: boolean;
-  isCurrent: boolean;
-  selectedChip: string | null;
-  onSetPosition: (id: string) => void;
-  onSelectChip: (chip: string | null) => void;
-  onCrossGate: (id: string) => void;
-}) {
-  const fromZone = zoneMap[adj.from];
-  const toZone = zoneMap[adj.to];
-  const blended = blendColors(fromZone.color, toZone.color);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* From → To header */}
-      <div
-        style={{
-          background: "#1a2a1a",
-          border: `1px solid ${blended}40`,
-          borderRadius: 8,
-          padding: "12px 14px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ZonePill zone={fromZone} />
-          <span style={{ color: "#5a7a5a", fontSize: "1rem" }}>→</span>
-          <ZonePill zone={toZone} />
-        </div>
-        <div style={{ color: "#5a7a5a", fontSize: "0.65rem", marginTop: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          Crossing the gate
-        </div>
-      </div>
-
-      {/* Narrative */}
-      <p style={{ color: "#b0c0b0", fontSize: "0.82rem", lineHeight: 1.55, margin: 0 }}>
-        {adj.narrative}
-      </p>
-
-      {/* Set as my position */}
-      {isCurrent ? (
-        <div
-          style={{
-            background: `${blended}20`,
-            border: `1px solid ${blended}55`,
-            borderRadius: 6,
-            padding: "9px 14px",
-            color: blended,
-            fontSize: "0.78rem",
-            textAlign: "center",
-          }}
-        >
-          ● You are here
-        </div>
-      ) : (
-        <button
-          onClick={() => onSetPosition(adj.id)}
-          style={{
-            background: `${blended}18`,
-            border: `1px solid ${blended}45`,
-            borderRadius: 6,
-            padding: "9px 14px",
-            color: blended,
-            fontSize: "0.78rem",
-            cursor: "pointer",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = `${blended}35`)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = `${blended}18`)}
-        >
-          Set as my position
-        </button>
-      )}
-
-      {isCrossed ? (
-        /* Already crossed */
-        <div
-          style={{
-            background: `${blended}20`,
-            border: `1px solid ${blended}55`,
-            borderRadius: 6,
-            padding: "12px 14px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: 20, marginBottom: 4 }}>✦</div>
-          <div style={{ color: blended, fontSize: "0.82rem", fontWeight: 600 }}>Gate crossed</div>
-          <div style={{ color: "#5a7a5a", fontSize: "0.72rem", marginTop: 4 }}>
-            You've made this transition
-          </div>
-        </div>
-      ) : (
-        /* Gear-up prompt */
-        <>
-          <div>
-            <div style={{ color: "#8a9a8a", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
-              What hat are you putting on?
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {adj.chips.map((chip) => {
-                const active = selectedChip === chip;
-                return (
-                  <button
-                    key={chip}
-                    onClick={() => onSelectChip(active ? null : chip)}
-                    style={{
-                      background: active ? `${blended}35` : "#1a2a1a",
-                      border: `1px solid ${active ? blended : "#2a3a2a"}`,
-                      borderRadius: 6,
-                      padding: "8px 12px",
-                      color: active ? "white" : "#8a9a8a",
-                      fontSize: "0.78rem",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      transition: "all 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.borderColor = `${blended}80`;
-                        e.currentTarget.style.color = "#b0c0b0";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.borderColor = "#2a3a2a";
-                        e.currentTarget.style.color = "#8a9a8a";
-                      }
-                    }}
-                  >
-                    {chip}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            disabled={!selectedChip}
-            onClick={() => onCrossGate(adj.id)}
+          <p
             style={{
-              background: selectedChip ? `${blended}30` : "#1a2a1a",
-              border: `1px solid ${selectedChip ? blended : "#2a3a2a"}`,
-              borderRadius: 6,
-              padding: "10px 14px",
-              color: selectedChip ? "white" : "#3a4a3a",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              cursor: selectedChip ? "pointer" : "not-allowed",
-              transition: "all 0.15s",
-              letterSpacing: "0.03em",
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#445544",
+              marginBottom: 2,
             }}
           >
-            Cross this gate →
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
+            {config.name}
+          </p>
+          <h1
+            style={{
+              fontFamily: "Georgia, serif",
+              fontSize: 17,
+              fontWeight: 700,
+              color: "#C8E0C8",
+              margin: 0,
+            }}
+          >
+            Zone Bubble &amp; Gate Map
+          </h1>
+        </div>
 
-function ZonePill({ zone }: { zone: (typeof ZONE_CONFIG)[number] }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 5,
-        background: `${zone.color}20`,
-        border: `1px solid ${zone.color}50`,
-        borderRadius: 5,
-        padding: "3px 8px",
-      }}
-    >
-      <span style={{ color: zone.color, fontWeight: 700, fontSize: "0.78rem" }}>{zone.number}</span>
-      <span style={{ color: "#b0c0b0", fontSize: "0.75rem" }}>{zone.name}</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "5px 12px",
+            borderRadius: 999,
+            border: `1px solid ${currentZoneDef.color}44`,
+            background: currentZoneDef.color + "18",
+            fontSize: 11,
+            fontWeight: 600,
+            color: currentZoneDef.color,
+          }}
+        >
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: currentZoneDef.color,
+              display: "inline-block",
+            }}
+          />
+          You are in {currentZoneDef.name}
+        </div>
+      </div>
+
+      {/* ── SVG Map ── */}
+      <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
+        <svg
+          viewBox="0 0 820 500"
+          style={{ width: "100%", maxHeight: 400, display: "block" }}
+          aria-label="Zone Bubble and Gate Map"
+        >
+          <defs>
+            <filter id="eave-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="gate-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="marker-glow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Zone bubbles — outermost first so inner zones paint on top */}
+          {zonesOuterFirst.map((zone) => {
+            const isCurrent = zone.id === currentZone;
+            return (
+              <g
+                key={zone.id}
+                onClick={() => setCurrentZone(zone.id)}
+                style={{ cursor: "pointer" }}
+                aria-label={`Zone ${zone.number}: ${zone.name}`}
+              >
+                <ellipse
+                  cx={zone.cx}
+                  cy={zone.cy}
+                  rx={zone.rx}
+                  ry={zone.ry}
+                  fill={zone.fillColor}
+                  stroke={zone.color}
+                  strokeWidth={isCurrent ? 2.5 : 1.5}
+                  opacity={0.97}
+                />
+
+                {/* Zone number label — lower inside edge */}
+                <text
+                  x={zone.cx - zone.rx * 0.58}
+                  y={zone.cy + zone.ry - 20}
+                  fill={zone.color}
+                  fontSize={zone.number === 3 ? 13 : 11}
+                  fontWeight="700"
+                  letterSpacing="0.07em"
+                  style={{ fontFamily: "Georgia, serif", userSelect: "none" }}
+                >
+                  Z{zone.number}
+                </text>
+
+                {/* Zone name label */}
+                <text
+                  x={zone.cx - zone.rx * 0.58}
+                  y={zone.cy + zone.ry - 6}
+                  fill={zone.color + "88"}
+                  fontSize={9}
+                  letterSpacing="0.04em"
+                  style={{ fontFamily: "system-ui, sans-serif", userSelect: "none" }}
+                >
+                  {zone.name}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Eave overhang — green ring visible at Z2 inner edge, behind Z2/Z1/Z0 */}
+          <ellipse
+            cx={config.eave.cx}
+            cy={config.eave.cy}
+            rx={config.eave.rx}
+            ry={config.eave.ry}
+            fill="none"
+            stroke={config.eave.color}
+            strokeWidth={10}
+            opacity={0.32}
+            filter="url(#eave-glow)"
+            style={{ pointerEvents: "none" }}
+          />
+          <text
+            x={config.eave.cx - config.eave.rx + 6}
+            y={config.eave.cy - config.eave.ry + 15}
+            fill={config.eave.color}
+            fontSize={8}
+            fontWeight="700"
+            letterSpacing="0.1em"
+            opacity={0.55}
+            style={{ fontFamily: "system-ui, sans-serif", userSelect: "none" }}
+          >
+            EAVE
+          </text>
+
+          {/* Gates */}
+          {config.gates.map((gate) => {
+            const crossed = isGateCrossed(gate.id);
+
+            if (gate.kind === "prohibition") {
+              const z1 = zoneById("z1");
+              const z3 = zoneById("z3");
+              return (
+                <g
+                  key={gate.id}
+                  onClick={() => openGate(gate.id)}
+                  style={{ cursor: "pointer" }}
+                  aria-label="Z1 to Z3 prohibition"
+                >
+                  {/* Dashed prohibition line */}
+                  <line
+                    x1={z1.cx + z1.rx * 0.15}
+                    y1={z1.cy - z1.ry}
+                    x2={z3.cx + z3.rx * 0.55}
+                    y2={z3.cy - z3.ry * 0.45}
+                    stroke="#CC3333"
+                    strokeWidth={2}
+                    strokeDasharray="7 5"
+                    opacity={0.65}
+                  />
+                  {/* Prohibition stamp */}
+                  <circle
+                    cx={gate.cx}
+                    cy={gate.cy}
+                    r={15}
+                    fill="#CC333322"
+                    stroke="#CC3333"
+                    strokeWidth={1.5}
+                    opacity={0.9}
+                    filter="url(#gate-glow)"
+                  />
+                  <text
+                    x={gate.cx}
+                    y={gate.cy + 5}
+                    textAnchor="middle"
+                    fill="#CC3333"
+                    fontSize={14}
+                    fontWeight="900"
+                    style={{ userSelect: "none" }}
+                  >
+                    ⊘
+                  </text>
+                  <text
+                    x={gate.cx}
+                    y={gate.cy + 25}
+                    textAnchor="middle"
+                    fill="#CC333399"
+                    fontSize={7.5}
+                    letterSpacing="0.07em"
+                    style={{ fontFamily: "system-ui", userSelect: "none" }}
+                  >
+                    PROHIBITED
+                  </text>
+                </g>
+              );
+            }
+
+            // Normal gate membrane
+            const fromZone = zoneById(gate.from);
+            const toZone = zoneById(gate.to);
+            const membraneColor = blendColors(fromZone.color, toZone.color);
+
+            return (
+              <g
+                key={gate.id}
+                onClick={() => openGate(gate.id)}
+                style={{ cursor: "pointer" }}
+                aria-label={`Gate: ${gate.label}`}
+              >
+                {/* Membrane circle at zone boundary */}
+                <circle
+                  cx={gate.cx}
+                  cy={gate.cy}
+                  r={19}
+                  fill={crossed ? membraneColor + "55" : membraneColor + "22"}
+                  stroke={membraneColor}
+                  strokeWidth={crossed ? 2.5 : 1.5}
+                  opacity={0.95}
+                  filter="url(#gate-glow)"
+                />
+
+                {/* Crossed (stamped) vs uncrossed icon */}
+                {crossed ? (
+                  <text
+                    x={gate.cx}
+                    y={gate.cy + 6}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize={15}
+                    fontWeight="900"
+                    style={{ userSelect: "none" }}
+                  >
+                    ✓
+                  </text>
+                ) : (
+                  <text
+                    x={gate.cx}
+                    y={gate.cy + 5}
+                    textAnchor="middle"
+                    fill={membraneColor}
+                    fontSize={14}
+                    style={{ userSelect: "none" }}
+                  >
+                    ⬡
+                  </text>
+                )}
+
+                {/* Gate label */}
+                <text
+                  x={gate.cx}
+                  y={gate.cy + 32}
+                  textAnchor="middle"
+                  fill={membraneColor + "AA"}
+                  fontSize={8}
+                  letterSpacing="0.06em"
+                  style={{ fontFamily: "system-ui", userSelect: "none" }}
+                >
+                  {gate.kind === "eave-flow"
+                    ? "EAVE FLOW"
+                    : gate.label.toUpperCase()}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* "You are here" marker */}
+          <g style={{ pointerEvents: "none" }}>
+            <circle
+              cx={currentZoneDef.cx}
+              cy={currentZoneDef.cy}
+              r={18}
+              fill="none"
+              stroke={currentZoneDef.color}
+              strokeWidth={1.5}
+              opacity={0.3}
+              filter="url(#marker-glow)"
+            />
+            <circle
+              cx={currentZoneDef.cx}
+              cy={currentZoneDef.cy}
+              r={9}
+              fill={currentZoneDef.color}
+              opacity={0.9}
+            />
+            <text
+              x={currentZoneDef.cx}
+              y={currentZoneDef.cy - 24}
+              textAnchor="middle"
+              fill={currentZoneDef.color}
+              fontSize={8.5}
+              fontWeight="700"
+              letterSpacing="0.07em"
+              style={{ fontFamily: "system-ui", userSelect: "none" }}
+            >
+              YOU ARE HERE
+            </text>
+          </g>
+        </svg>
+      </div>
+
+      {/* ── Legend strip ── */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          padding: "8px 20px",
+          display: "flex",
+          gap: 20,
+          flexWrap: "wrap",
+          fontSize: 10,
+          color: "#556655",
+        }}
+      >
+        {[
+          { color: "#7ABF5E", label: "Eave Flow (Z0→Z1)" },
+          { color: "#8A9A6A", label: "Gate membrane — click to cross" },
+          { color: "#CCDDCC", label: "✓ Stamped — already crossed" },
+          { color: "#CC3333", label: "⊘ Z1→Z3 prohibition — no path exists" },
+          { color: "#B5853A", label: "● You are here" },
+        ].map((item) => (
+          <span key={item.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: item.color,
+                display: "inline-block",
+                flexShrink: 0,
+              }}
+            />
+            {item.label}
+          </span>
+        ))}
+      </div>
+
+      {/* ── Gate Panel Overlay ── */}
+      {panelOpen && activeGate && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closePanel();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(5px)",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 540,
+              background: "#0D180D",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "18px 18px 0 0",
+              maxHeight: "88vh",
+              overflowY: "auto",
+            }}
+          >
+            {/* Panel top bar */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "#445544",
+                }}
+              >
+                Gate
+              </span>
+              <button
+                onClick={closePanel}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent",
+                  color: "#6A8A6A",
+                  fontSize: 18,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                }}
+                aria-label="Close panel"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Panel body */}
+            {activeGate.kind === "eave-flow" && (
+              <EaveFlowPanel
+                gate={activeGate}
+                onConfirm={(choice) => handleGateConfirm(activeGate.id, choice)}
+                onClose={closePanel}
+              />
+            )}
+            {activeGate.kind === "gear-up" && (
+              <GearUpPanel
+                gate={activeGate}
+                fromZone={zoneById(activeGate.from)}
+                toZone={zoneById(activeGate.to)}
+                onConfirm={(hatId) => handleGateConfirm(activeGate.id, hatId)}
+                onClose={closePanel}
+              />
+            )}
+            {activeGate.kind === "prohibition" && (
+              <ProhibitionPanel gate={activeGate} onClose={closePanel} />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
