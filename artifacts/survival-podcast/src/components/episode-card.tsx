@@ -1,10 +1,30 @@
 import { Episode } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
-import { PlayCircle, Clock, Calendar, Layers } from "lucide-react";
+import { PlayCircle, Clock, Calendar, Layers, Flame } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
+
+const FIRESIDE_FREEDOM_URL = "https://www.firesidefreedompodcast.com";
+
+const FIRESIDE_CREW_SIGNALS = [
+  "fireside freedom",
+  "brian aleksivich",
+  "lettie loo",
+  "toolman",
+  "ken eash",
+  "lamaster",
+  "farmish kind of life",
+  "amy fewell",
+  "hawkins j",
+];
+
+function hasFiresideFreedomHost(episode: Episode): boolean {
+  if (episode.tags?.some((t) => t.toLowerCase() === "fireside-freedom")) return true;
+  const haystack = `${episode.title ?? ""} ${episode.summary ?? ""}`.toLowerCase();
+  return FIRESIDE_CREW_SIGNALS.some((sig) => haystack.includes(sig));
+}
 
 export function formatDuration(seconds?: number | null) {
   if (!seconds) return null;
@@ -43,6 +63,7 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
   const seriesSlug = seriesSlugProp ?? detectSeriesSlug(episode);
   const seriesMeta = seriesSlug ? getSeriesMeta(seriesSlug) : null;
   const seriesTheme = seriesSlug ? getSeriesTheme(seriesSlug) : null;
+  const showFiresideBadge = hasFiresideFreedomHost(episode);
 
   return (
     <Link 
@@ -153,6 +174,23 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
                 +{episode.categories.length - 2}
               </span>
             )}
+          </div>
+        )}
+
+        {showFiresideBadge && (
+          <div className={`${transformation || seriesMeta ? "mt-2" : "mt-auto pt-3 border-t border-border/50"}`}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(FIRESIDE_FREEDOM_URL, "_blank", "noopener,noreferrer");
+              }}
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-sm border border-orange-300/60 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-400/70 transition-colors"
+            >
+              <Flame className="w-2.5 h-2.5 shrink-0" />
+              Fireside Freedom
+            </button>
           </div>
         )}
       </div>
