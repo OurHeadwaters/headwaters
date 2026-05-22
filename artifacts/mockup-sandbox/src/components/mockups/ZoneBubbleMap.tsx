@@ -72,6 +72,7 @@ type ZoneSetConfig = {
   zones: ZoneDef[];
   gates: GateDef[];
   eave: EaveDef;
+  viewBox?: string;
 };
 
 // ============================================================
@@ -226,24 +227,243 @@ const TSP_4_ZONE_CONFIG: ZoneSetConfig = {
 };
 
 // ============================================================
-// CONFIG — TSP 6-ZONE MODEL
-// Config object supports the full set; only 4-zone is wired for now.
-// Swap ACTIVE_CONFIG below to enable once wired.
+// CONFIG — TSP 6-ZONE MODEL (fully wired)
+// Zone positions re-centered for the wider 1100-wide canvas.
+// Swap ACTIVE_CONFIG below to activate.
 // ============================================================
 
 const TSP_6_ZONE_CONFIG: ZoneSetConfig = {
-  ...TSP_4_ZONE_CONFIG,
-  name: "TSP 6-Zone (placeholder — wire Z4 and Z5 before activating)",
-};
+  name: "TSP 6-Zone",
+  viewBox: "0 0 1100 500",
 
-// Retain reference for future use
-void TSP_6_ZONE_CONFIG;
+  // Zones listed innermost-first; SVG renders outermost-first (array reversed below).
+  // Centers shift slightly outward for an organic layered feel.
+  zones: [
+    {
+      id: "z0",
+      number: 0,
+      name: "The Self",
+      subtitle: "Sovereignty begins here",
+      color: "#B5853A",
+      fillColor: "#1A1205",
+      cx: 475, cy: 256, rx: 90, ry: 54,
+    },
+    {
+      id: "z1",
+      number: 1,
+      name: "The Home",
+      subtitle: "Daily life, resilient by design",
+      color: "#C4A05A",
+      fillColor: "#18140A",
+      cx: 479, cy: 253, rx: 183, ry: 110,
+    },
+    {
+      id: "z2",
+      number: 2,
+      name: "The Garden",
+      subtitle: "Growing food, building soil",
+      color: "#6B8F47",
+      fillColor: "#0E1808",
+      cx: 483, cy: 250, rx: 280, ry: 168,
+    },
+    {
+      id: "z3",
+      number: 3,
+      name: "The Homestead",
+      subtitle: "Working land, real systems",
+      color: "#4A7A3A",
+      fillColor: "#091208",
+      cx: 486, cy: 248, rx: 388, ry: 233,
+    },
+    {
+      id: "z4",
+      number: 4,
+      name: "The Forest",
+      subtitle: "Wild harvest, managed wilderness",
+      color: "#2C5F2E",
+      fillColor: "#050F05",
+      cx: 489, cy: 246, rx: 490, ry: 290,
+    },
+    {
+      id: "z5",
+      number: 5,
+      name: "The Wild",
+      subtitle: "Unmanaged, unpredictable, essential",
+      color: "#1A3A1C",
+      fillColor: "#020802",
+      cx: 492, cy: 244, rx: 595, ry: 348,
+    },
+  ],
+
+  gates: [
+    // ── Z0 → Z1 ── Eave Flow (not a hat ceremony)
+    {
+      id: "gate-z0-z1",
+      from: "z0",
+      to: "z1",
+      kind: "eave-flow",
+      label: "Eave Flow",
+      color: "#7ABF5E",
+      eaveOptions: {
+        open: "Open the flow",
+        clear: "Clear the leaves",
+      },
+      cx: 565, cy: 256,
+    },
+
+    // ── Z1 → Z2 ── Gear-Up: Garden Gate
+    {
+      id: "gate-z1-z2",
+      from: "z1",
+      to: "z2",
+      kind: "gear-up",
+      label: "Garden Gate",
+      color: "#94B85A",
+      hats: [
+        {
+          id: "practitioner",
+          label: "Practitioner",
+          description: "I'm here to build and apply hands-on skills. I am in the work.",
+        },
+        {
+          id: "steward",
+          label: "Steward",
+          description: "I'm here to tend, sustain, and protect what's already growing.",
+        },
+        {
+          id: "observer",
+          label: "Observer",
+          description: "I'm here to watch, study, and learn the system before I act.",
+        },
+      ],
+      cx: 662, cy: 253,
+    },
+
+    // ── Z2 → Z3 ── Gear-Up: Homestead Gate (with Gatekeeper variants)
+    {
+      id: "gate-z2-z3",
+      from: "z2",
+      to: "z3",
+      kind: "gear-up",
+      label: "Homestead Gate",
+      color: "#5A9E42",
+      hats: [
+        {
+          id: "representative",
+          label: "Representative",
+          description: "I act on behalf of the whole holding. My decisions bind the land.",
+          side: "personal",
+        },
+        {
+          id: "neighbour",
+          label: "Neighbour",
+          description: "I arrive at the boundary as a peer — I don't own this land.",
+          side: "personal",
+        },
+        {
+          id: "gatekeeper-personal",
+          label: "Gatekeeper",
+          description:
+            "I hold and enforce the crossing rules. This is a personal hat — I carry it across the threshold.",
+          side: "personal",
+        },
+        {
+          id: "gatekeeper-workbench",
+          label: "Gatekeeper (Workbench only)",
+          description:
+            "The Gatekeeper role belongs solely to the Workbench — it cannot be worn by an individual. It enforces the gate but is never a personal identity.",
+          side: "workbench",
+        },
+      ],
+      gatekeeperTension:
+        "Unresolved tension: Is 'Gatekeeper' a personal hat the individual wears at crossing, or a role that can only be held by the Workbench and never by a person? Both models are coherent in different architectures. This choice must be locked before the gate goes into production.",
+      giraffeNote:
+        "Credential appears at crossing only — it is never stored inside Z2 records. Audit visibility is allowed. No composable reverse path back to Z1 exists (giraffe protection: you cannot reconstruct the Z1 identity from Z3 data).",
+      cx: 763, cy: 250,
+    },
+
+    // ── Z3 → Z4 ── Gear-Up: Forest Gate
+    {
+      id: "gate-z3-z4",
+      from: "z3",
+      to: "z4",
+      kind: "gear-up",
+      label: "Forest Gate",
+      color: "#3B7034",
+      hats: [
+        {
+          id: "harvester",
+          label: "Harvester",
+          description:
+            "I'm here to take from the wild with skill and intention. The outer margin provides what the homestead cannot.",
+        },
+        {
+          id: "scout",
+          label: "Scout",
+          description:
+            "I'm learning the terrain — mapping what exists before I claim it. I don't harvest until I understand.",
+        },
+        {
+          id: "steward",
+          label: "Steward",
+          description:
+            "I tend the outer margin as I tend the inner zones: sustainably, with long horizons and no waste.",
+        },
+      ],
+      cx: 874, cy: 248,
+    },
+
+    // ── Z4 → Z5 ── Gear-Up: Wild Gate
+    {
+      id: "gate-z4-z5",
+      from: "z4",
+      to: "z5",
+      kind: "gear-up",
+      label: "Wild Gate",
+      color: "#234D25",
+      hats: [
+        {
+          id: "contingency",
+          label: "Contingency Planner",
+          description:
+            "I'm pre-walking this ground in my mind. I'm here to know Zone 5 before I ever need to live in it.",
+        },
+        {
+          id: "survivor",
+          label: "Survivor",
+          description:
+            "I've stepped past managed systems. My preparation is everything I carry. Civilization ends at this threshold.",
+        },
+      ],
+      giraffeNote:
+        "Zone 5 is the edge of the map. No infrastructure, no supply chain, no grid. Whatever identity you carry here must be self-sufficient — nothing from the inner zones follows you in.",
+      cx: 979, cy: 246,
+    },
+
+    // ── Z1 → Z3 ── Absolute prohibition (structural, not a locked gate)
+    {
+      id: "gate-z1-z3-prohibition",
+      from: "z1",
+      to: "z3",
+      kind: "prohibition",
+      label: "Z1→Z3 Prohibited",
+      color: "#CC3333",
+      cx: 663, cy: 164,
+    },
+  ],
+
+  // Eave overhang: sits structurally between Z0 and Z2 — same in all zone models.
+  eave: {
+    cx: 483, cy: 250, rx: 296, ry: 178,
+    color: "#4EAA34",
+  },
+};
 
 // ============================================================
 // ACTIVE CONFIG — swap here to change zone set
 // ============================================================
 
-const ACTIVE_CONFIG: ZoneSetConfig = TSP_4_ZONE_CONFIG;
+const ACTIVE_CONFIG: ZoneSetConfig = TSP_6_ZONE_CONFIG;
 
 // ============================================================
 // HELPERS
@@ -838,7 +1058,7 @@ export default function ZoneBubbleMap() {
       {/* ── SVG Map ── */}
       <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
         <svg
-          viewBox="0 0 820 500"
+          viewBox={ACTIVE_CONFIG.viewBox ?? "0 0 820 500"}
           style={{ width: "100%", maxHeight: 400, display: "block" }}
           aria-label="Zone Bubble and Gate Map"
         >
