@@ -26,7 +26,7 @@ interface GroundEvent {
   ticketPriceCents: number | null;
   breakEvenTickets: number;
   platformSharePct: number | null;
-  stripeConnectedAccountId: string | null;
+  isStripeReady: boolean;
 }
 
 interface EventsResponse {
@@ -85,10 +85,12 @@ async function submitEvent(data: {
   return j as GroundEvent;
 }
 
-async function startStripeConnect(eventId: number): Promise<void> {
+async function startStripeConnect(eventId: number, hostToken: string): Promise<void> {
   const res = await fetch(apiUrl(`/ground-events/${eventId}/connect/start`), {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     credentials: "include",
+    body: JSON.stringify({ token: hostToken }),
   });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed to start Stripe Connect");
@@ -502,7 +504,7 @@ function EventCard({
               )}
 
               {/* Paid event with Stripe Connect ready → platform checkout */}
-              {event.ticketPriceCents && event.stripeConnectedAccountId && !isFull ? (
+              {event.ticketPriceCents && event.isStripeReady && !isFull ? (
                 <button
                   onClick={() => { if (!rsvped) void initiateCheckout(event.id); }}
                   disabled={rsvped}
@@ -516,7 +518,7 @@ function EventCard({
                   <Ticket className="w-3 h-3" />
                   {rsvped ? "✓ Ticket Purchased" : `Buy Ticket — ${event.priceDisplay}`}
                 </button>
-              ) : !event.ticketPriceCents || !event.stripeConnectedAccountId ? (
+              ) : !event.ticketPriceCents || !event.isStripeReady ? (
                 /* Free event or paid-but-not-yet-connected → plain RSVP */
                 <button
                   onClick={() => !rsvped && !isFull && setShowRsvpModal(true)}
@@ -680,7 +682,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
                 setConnectingStripe(true);
                 setConnectError(null);
                 try {
-                  await startStripeConnect(createdEvent.id);
+                  await startStripeConnect(createdEvent.id, createdEvent.hostToken ?? "");
                 } catch (err) {
                   setConnectError(err instanceof Error ? err.message : "Failed to connect");
                   setConnectingStripe(false);

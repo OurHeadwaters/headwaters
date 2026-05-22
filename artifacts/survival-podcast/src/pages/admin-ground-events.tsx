@@ -27,7 +27,7 @@ interface GroundEvent {
   ticketPriceCents: number | null;
   breakEvenTickets: number;
   platformSharePct: number | null;
-  stripeConnectedAccountId: string | null;
+  isStripeReady: boolean;
 }
 
 async function fetchEvents(): Promise<GroundEvent[]> {
@@ -176,10 +176,16 @@ function EventRow({ event }: { event: GroundEvent }) {
                   )}
                 </span>
               )}
-              {event.stripeConnectedAccountId ? (
+              {event.isStripeReady ? (
                 <span className="text-[10px] font-semibold text-emerald-700">✓ Stripe connected</span>
               ) : (
                 <span className="text-[10px] text-amber-600">⚠ Awaiting Stripe Connect</span>
+              )}
+              {/* Gross revenue = all paid tickets × price */}
+              {event.rsvpCount > 0 && (
+                <span className="text-[10px] font-semibold text-violet-700">
+                  Gross: ${((event.rsvpCount * event.ticketPriceCents) / 100).toFixed(2)}
+                </span>
               )}
             </div>
           )}

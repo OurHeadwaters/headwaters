@@ -32,6 +32,17 @@ router.post("/ground-events/:id/connect/start", async (req, res) => {
       return;
     }
 
+    // Host authentication: require the private host management token.
+    // This prevents any caller from hijacking Stripe payouts for an arbitrary event.
+    const hostToken =
+      typeof req.body?.token === "string" ? req.body.token.trim() :
+      typeof req.query.token === "string" ? req.query.token.trim() : "";
+
+    if (!hostToken) {
+      res.status(401).json({ error: "Missing host token — include your management token in the request body as { token }" });
+      return;
+    }
+
     const [event] = await db
       .select()
       .from(groundEventsTable)
@@ -40,6 +51,11 @@ router.post("/ground-events/:id/connect/start", async (req, res) => {
 
     if (!event) {
       res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.hostToken || event.hostToken !== hostToken) {
+      res.status(403).json({ error: "Invalid host token" });
       return;
     }
 
