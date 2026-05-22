@@ -14,6 +14,8 @@ import {
   Zap,
   Star,
   Navigation,
+  X,
+  MapPin,
 } from "lucide-react";
 
 const ZONE_COLORS: Record<string, string> = {
@@ -129,9 +131,51 @@ function LoginGate() {
 }
 
 function EntryGate({ onChoose }: { onChoose: (mode: "guided" | "free") => void }) {
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
       <div className="max-w-2xl w-full">
+        {/* Welcome banner — shown only on first visit (no map record yet) */}
+        {!welcomeDismissed && (
+          <div
+            className="relative mb-8 rounded-2xl border px-6 py-5 flex items-start gap-4"
+            style={{
+              background: "linear-gradient(135deg, #1A2C1A 0%, #12241A 100%)",
+              borderColor: "#4A7A3A44",
+            }}
+          >
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+              style={{ background: "#4A7A3A22", border: "1px solid #4A7A3A55" }}
+            >
+              <MapPin className="w-4 h-4" style={{ color: "#6B9E50" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-[11px] font-bold uppercase tracking-widest mb-1"
+                style={{ color: "#6B9E50" }}
+              >
+                Welcome to TSP
+              </p>
+              <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
+                Your Lifestyle Map is a personalized guide to the TSP Zone framework — a
+                permaculture-inspired model that moves from the self outward. It places you
+                in the territory based on where you actually are right now, so you build
+                real resilience in the right order.
+              </p>
+            </div>
+            <button
+              onClick={() => setWelcomeDismissed(true)}
+              aria-label="Dismiss welcome message"
+              className="shrink-0 p-1 rounded-lg transition-colors hover:bg-white/10"
+              style={{ color: "#6B9E5099" }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <div className="text-center mb-10">
           <div
             className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest mb-5 px-3 py-1.5 rounded-full"

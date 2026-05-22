@@ -109,7 +109,6 @@ function SubscribePicker({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
->>>>>>> efbc680 (feat: subscription picker modal for Fireside Freedom (task #512))
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
