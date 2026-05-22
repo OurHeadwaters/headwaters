@@ -11,6 +11,7 @@ import {
 } from "@expo-google-fonts/fraunces";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setBaseUrl } from "@workspace/api-client-react";
+import { MobileAuthProvider } from "@/context/MobileAuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -88,27 +89,29 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <OnboardingProvider onReplay={() => setShowOnboarding(true)}>
-                <DownloadProvider>
-                  <HistoryProvider>
-                    <V4VProvider>
-                      <StompProvider>
-                        <PlayerProvider>
-                          <RootLayoutNav />
-                          <OnboardingScreen
-                            visible={showOnboarding}
-                            onDone={() => setShowOnboarding(false)}
-                          />
-                        </PlayerProvider>
-                      </StompProvider>
-                    </V4VProvider>
-                  </HistoryProvider>
-                </DownloadProvider>
-              </OnboardingProvider>
-            </KeyboardProvider>
-          </GestureHandlerRootView>
+          <MobileAuthProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <OnboardingProvider onReplay={() => setShowOnboarding(true)}>
+                  <DownloadProvider>
+                    <HistoryProvider>
+                      <V4VProvider>
+                        <StompProvider>
+                          <PlayerProvider>
+                            <RootLayoutNav />
+                            <OnboardingScreen
+                              visible={showOnboarding}
+                              onDone={() => setShowOnboarding(false)}
+                            />
+                          </PlayerProvider>
+                        </StompProvider>
+                      </V4VProvider>
+                    </HistoryProvider>
+                  </DownloadProvider>
+                </OnboardingProvider>
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </MobileAuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

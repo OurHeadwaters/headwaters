@@ -1,0 +1,44 @@
+export default {
+  expo: {
+    name: "The Stomping Path",
+    slug: "tsp-mobile",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/icon.png",
+    scheme: "tsp-mobile",
+    userInterfaceStyle: "automatic",
+    newArchEnabled: true,
+    splash: {
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#2C4A36",
+    },
+    ios: {
+      supportsTablet: false,
+    },
+    android: {
+      backgroundColor: "#2C4A36",
+    },
+    web: {
+      favicon: "./assets/images/icon.png",
+    },
+    plugins: [
+      [
+        "expo-router",
+        {
+          origin: "https://replit.com/",
+        },
+      ],
+      "expo-font",
+      "expo-web-browser",
+      "expo-secure-store",
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+    extra: {
+      replId: process.env.REPL_ID ?? "",
+    },
+  },
+};
