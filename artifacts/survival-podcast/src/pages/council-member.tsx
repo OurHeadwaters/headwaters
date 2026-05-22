@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { ChevronLeft, ExternalLink, Radio, Mic, Users, PlayCircle, PauseCircle, FileText, Video, Rss } from "lucide-react";
 
@@ -133,11 +133,25 @@ function OwnEpisodeCard({ item }: { item: ContentItem }) {
   );
 }
 
-function FiresideEpisodeCard({ item }: { item: ContentItem }) {
+function FiresideEpisodeCard({
+  item,
+  playingId,
+  onPlay,
+}: {
+  item: ContentItem;
+  playingId: number | null;
+  onPlay: (id: number | null) => void;
+}) {
   const pubDate = item.publishedAt ? new Date(item.publishedAt) : null;
   const dateStr = pubDate ? pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
-  const [playing, setPlaying] = useState(false);
+  const playing = playingId === item.id;
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (!playing) {
+      audioRef.current?.pause();
+    }
+  }, [playing]);
 
   function handlePlayPause(e: React.MouseEvent) {
     e.preventDefault();
@@ -146,10 +160,10 @@ function FiresideEpisodeCard({ item }: { item: ContentItem }) {
     if (!audio) return;
     if (playing) {
       audio.pause();
-      setPlaying(false);
+      onPlay(null);
     } else {
       audio.play();
-      setPlaying(true);
+      onPlay(item.id);
     }
   }
 
@@ -228,9 +242,9 @@ function FiresideEpisodeCard({ item }: { item: ContentItem }) {
             src={item.audioUrl}
             controls
             className="w-full h-8"
-            onEnded={() => setPlaying(false)}
-            onPause={() => setPlaying(false)}
-            onPlay={() => setPlaying(true)}
+            onEnded={() => { if (playingId === item.id) onPlay(null); }}
+            onPause={() => { if (playingId === item.id) onPlay(null); }}
+            onPlay={() => onPlay(item.id)}
           />
         </div>
       )}
@@ -242,6 +256,7 @@ export function CouncilMemberPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
   const { data, isLoading, isError } = useExpertProfile(slug);
+  const [playingFiresideId, setPlayingFiresideId] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -377,7 +392,12 @@ export function CouncilMemberPage() {
           </div>
           <div className="grid grid-cols-1 gap-3">
             {firesideEpisodes.slice(0, 20).map((item) => (
-              <FiresideEpisodeCard key={item.id} item={item} />
+              <FiresideEpisodeCard
+                key={item.id}
+                item={item}
+                playingId={playingFiresideId}
+                onPlay={setPlayingFiresideId}
+              />
             ))}
           </div>
           {firesideEpisodes.length > 20 && (
