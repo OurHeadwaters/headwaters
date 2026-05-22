@@ -107,6 +107,54 @@ async function buildDbSeriesSummary(seriesSlug: string) {
 }
 
 /**
+ * GET /api/zones/progress
+ * Returns per-zone listened/total episode counts for the authenticated user.
+ * Returns 401 when not logged in.
+ */
+router.get("/zones/progress", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const userId = req.user.id;
+
+  try {
+    const results = await Promise.all(
+      ZONES.map(async (zone) => {
+        const whereFragment = zoneWhereFragment(zone.tags, zone.categories, zone.slug);
+
+        const [totalRow, listenedRow] = await Promise.all([
+          db.execute(sql.raw(
+            `SELECT count(*)::int AS total FROM content_items WHERE ${whereFragment}`,
+          )),
+          db.execute(sql.raw(`
+            SELECT count(*)::int AS listened
+            FROM content_items
+            WHERE id IN (
+              SELECT episode_id FROM user_track_progress WHERE user_id = '${esc(userId)}'
+            )
+            AND ${whereFragment}
+          `)),
+        ]);
+
+        return {
+          slug: zone.slug,
+          number: zone.number,
+          listened: (listenedRow.rows[0] as { listened: number }).listened,
+          total: (totalRow.rows[0] as { total: number }).total,
+        };
+      }),
+    );
+
+    res.json(results);
+  } catch (err) {
+    logger.error({ err }, "zones progress failed");
+    res.status(500).json({ error: "Failed to load zone progress" });
+  }
+});
+
+/**
  * GET /api/zones
  * Returns all 6 zones with item counts, sample artwork, embedded series summaries,
  * and Expert Council / ULG business counts.

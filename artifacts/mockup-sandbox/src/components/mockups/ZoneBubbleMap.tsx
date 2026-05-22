@@ -13,7 +13,7 @@
  * - Every label passes Saltbox, Both-States, and Both-Sides naming tests
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 // ============================================================
 // TYPES
@@ -464,6 +464,50 @@ const TSP_6_ZONE_CONFIG: ZoneSetConfig = {
 // ============================================================
 
 const ACTIVE_CONFIG: ZoneSetConfig = TSP_6_ZONE_CONFIG;
+
+// ============================================================
+// ZONE PROGRESS — fetch listened/total counts per zone
+// ============================================================
+
+type ZoneProgressItem = {
+  slug: string;
+  number: number;
+  listened: number;
+  total: number;
+};
+
+type ZoneProgressMap = Record<string, ZoneProgressItem>;
+
+function useZoneProgress(): ZoneProgressMap | null {
+  const [data, setData] = useState<ZoneProgressMap | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/zones/progress", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const items = (await res.json()) as ZoneProgressItem[];
+        if (cancelled) return;
+        const map: ZoneProgressMap = {};
+        for (const item of items) {
+          map[item.slug] = item;
+        }
+        setData(map);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return data;
+}
+
+/** Approximate ellipse perimeter via Ramanujan's second formula. */
+function ellipsePerimeter(rx: number, ry: number): number {
+  const h = Math.pow((rx - ry) / (rx + ry), 2);
+  return Math.PI * (rx + ry) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+}
 
 // ============================================================
 // HELPERS
@@ -938,6 +982,7 @@ export default function ZoneBubbleMap() {
   const [activeGateId, setActiveGateId] = useState<string | null>(null);
   const [crossedGates, setCrossedGates] = useState<CrossedGate[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
+  const zoneProgress = useZoneProgress();
 
   const zoneById = useCallback(
     (id: ZoneId): ZoneDef =>
@@ -1106,6 +1151,31 @@ export default function ZoneBubbleMap() {
                   strokeWidth={isCurrent ? 2.5 : 1.5}
                   opacity={0.97}
                 />
+
+                {/* Zone progress arc — only rendered when user has listened episodes */}
+                {(() => {
+                  const slug = `zone-${zone.number}`;
+                  const prog = zoneProgress?.[slug];
+                  if (!prog || prog.listened === 0) return null;
+                  const fraction = Math.min(prog.listened / Math.max(prog.total, 1), 1);
+                  const perim = ellipsePerimeter(zone.rx, zone.ry);
+                  const arcLen = fraction * perim;
+                  return (
+                    <ellipse
+                      cx={zone.cx}
+                      cy={zone.cy}
+                      rx={zone.rx}
+                      ry={zone.ry}
+                      fill="none"
+                      stroke={zone.color}
+                      strokeWidth={4}
+                      strokeOpacity={0.7}
+                      strokeDasharray={`${arcLen} ${perim}`}
+                      strokeDashoffset={perim * 0.75}
+                      style={{ pointerEvents: "none" }}
+                    />
+                  );
+                })()}
 
                 {/* Zone number label — lower inside edge */}
                 <text
@@ -1344,6 +1414,7 @@ export default function ZoneBubbleMap() {
           { color: "#CCDDCC", label: "✓ Stamped — already crossed" },
           { color: "#CC3333", label: "⊘ Z1→Z3 prohibition — no path exists" },
           { color: "#B5853A", label: "● You are here" },
+          { color: "#88CC88", label: "Arc glow — your zone exploration progress (logged in)" },
         ].map((item) => (
           <span key={item.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span
