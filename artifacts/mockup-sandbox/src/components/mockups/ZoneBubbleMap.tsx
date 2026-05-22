@@ -529,12 +529,42 @@ function blendColors(a: string, b: string): string {
 // GATE PANELS
 // ============================================================
 
+function BrowseEpisodesLink({ zoneNumber, zoneColor }: { zoneNumber: number; zoneColor: string }) {
+  const href = `/episodes?zone=zone-${zoneNumber}`;
+  return (
+    <a
+      href={href}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        padding: "10px 16px",
+        borderRadius: 10,
+        border: `1px solid ${zoneColor}44`,
+        background: zoneColor + "14",
+        color: zoneColor,
+        fontSize: 12,
+        fontWeight: 600,
+        textDecoration: "none",
+        transition: "background 0.15s",
+      }}
+    >
+      <span style={{ fontSize: 14 }}>🎧</span>
+      Browse episodes for this zone
+      <span style={{ fontSize: 12, opacity: 0.7 }}>→</span>
+    </a>
+  );
+}
+
 function EaveFlowPanel({
   gate,
+  toZone,
   onConfirm,
   onClose,
 }: {
   gate: GateDef;
+  toZone: ZoneDef;
   onConfirm: (choice: string) => void;
   onClose: () => void;
 }) {
@@ -637,6 +667,8 @@ function EaveFlowPanel({
       >
         Cross the Eave
       </button>
+
+      <BrowseEpisodesLink zoneNumber={toZone.number} zoneColor={toZone.color} />
     </div>
   );
 }
@@ -908,6 +940,8 @@ function GearUpPanel({
           ? `Gear up as ${visibleHats.find((h) => h.id === selectedHat)?.label}`
           : "Select a hat to continue"}
       </button>
+
+      <BrowseEpisodesLink zoneNumber={toZone.number} zoneColor={toZone.color} />
     </div>
   );
 }
@@ -1137,9 +1171,12 @@ export default function ZoneBubbleMap() {
             return (
               <g
                 key={zone.id}
-                onClick={() => setCurrentZone(zone.id)}
+                onClick={() => {
+                  setCurrentZone(zone.id);
+                  window.location.href = `/episodes?zone=zone-${zone.number}`;
+                }}
                 style={{ cursor: "pointer" }}
-                aria-label={`Zone ${zone.number}: ${zone.name}`}
+                aria-label={`Zone ${zone.number}: ${zone.name} — click to browse episodes`}
               >
                 <ellipse
                   cx={zone.cx}
@@ -1507,6 +1544,7 @@ export default function ZoneBubbleMap() {
             {activeGate.kind === "eave-flow" && (
               <EaveFlowPanel
                 gate={activeGate}
+                toZone={zoneById(activeGate.to)}
                 onConfirm={(choice) => handleGateConfirm(activeGate.id, choice)}
                 onClose={closePanel}
               />

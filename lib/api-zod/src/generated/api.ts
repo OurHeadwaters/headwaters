@@ -52,7 +52,8 @@ export const ListEpisodesQueryParams = zod.object({
   "category": zod.coerce.string().optional(),
   "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)'),
   "sort": zod.enum(['newest', 'oldest', 'popular']).default(listEpisodesQuerySortDefault).describe('Sort order: newest (default), oldest, or popular (foundational\/evergreen episodes first by episode number ascending, nulls last)'),
-  "hasHistory": zod.coerce.boolean().optional().describe('When present, filter to only episodes that have a detectable \'This Day in History\' segment')
+  "hasHistory": zod.coerce.boolean().optional().describe('When present, filter to only episodes that have a detectable \'This Day in History\' segment'),
+  "zone": zod.coerce.string().optional().describe('Zone slug (e.g. zone-4) — server resolves to zone tags and filters accordingly')
 })
 
 export const ListEpisodesResponse = zod.object({

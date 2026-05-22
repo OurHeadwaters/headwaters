@@ -411,6 +411,10 @@ sort?: ListEpisodesSort;
  * When present, filter to only episodes that have a detectable 'This Day in History' segment
  */
 hasHistory?: boolean;
+/**
+ * Zone slug (e.g. zone-4) — server resolves to zone tags and filters accordingly
+ */
+zone?: string;
 };
 
 export type ListEpisodesSort = typeof ListEpisodesSort[keyof typeof ListEpisodesSort];

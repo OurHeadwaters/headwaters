@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch, Link } from "wouter";
-import { useListEpisodes, useListCategories, getListEpisodesQueryKey } from "@workspace/api-client-react";
+import { useListEpisodes, useListCategories, useListZones, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import { EpisodeCard } from "@/components/episode-card";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
-import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight, Compass, X } from "lucide-react";
+import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight, Compass, X, Layers } from "lucide-react";
 
 function matchTransformations(
   episodeCategories: string[],
@@ -28,6 +28,7 @@ export function Archive() {
   const initialCategory = searchParams.get("category") || "";
   const initialQ = searchParams.get("q") || "";
   const initialTransformation = searchParams.get("transformation") || "";
+  const initialZone = searchParams.get("zone") || "";
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
   const limit = 20;
 
@@ -36,29 +37,33 @@ export function Archive() {
   const debouncedSearch = useDebounce(searchInput, 300);
 
   const { data: transformations } = useTransformations();
+  const { data: zones } = useListZones();
   const activeTransformation = transformations?.find(
     (t) => t.slug === initialTransformation,
   ) ?? null;
+  const activeZone = zones?.find((z) => z.slug === initialZone) ?? null;
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("q", debouncedSearch);
     if (initialCategory) params.set("category", initialCategory);
     if (initialTransformation) params.set("transformation", initialTransformation);
+    if (initialZone) params.set("zone", initialZone);
     if (pageParam > 1) params.set("page", pageParam.toString());
 
     const newSearch = params.toString();
     if (newSearch !== searchString && debouncedSearch !== initialQ) {
       setLocation(`${location}?${newSearch}`, { replace: true });
     }
-  }, [debouncedSearch, initialCategory, initialTransformation, pageParam, location, searchString, setLocation, initialQ]);
+  }, [debouncedSearch, initialCategory, initialTransformation, initialZone, pageParam, location, searchString, setLocation, initialQ]);
 
   const offset = (pageParam - 1) * limit;
 
-  // Build query params: transformation filters take priority, user search overlays on top
+  // Build query params: transformation or zone filters take priority, user search overlays on top
   let queryCategory: string | undefined;
   let queryTags: string[] | undefined;
   let queryQ: string | undefined;
+  let queryZone: string | undefined;
 
   if (activeTransformation) {
     // Combine tags + categories into a single OR filter for richer results
@@ -71,14 +76,19 @@ export function Archive() {
     if (debouncedSearch) {
       queryQ = debouncedSearch;
     }
+  } else if (initialZone) {
+    queryZone = initialZone;
+    if (debouncedSearch) {
+      queryQ = debouncedSearch;
+    }
   } else {
     queryCategory = initialCategory || undefined;
     queryQ = debouncedSearch || undefined;
   }
 
   const { data: episodePage, isLoading, isError } = useListEpisodes(
-    { limit, offset, q: queryQ, category: queryCategory, tags: queryTags },
-    { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: queryQ, category: queryCategory, tags: queryTags }) } },
+    { limit, offset, q: queryQ, category: queryCategory, tags: queryTags, zone: queryZone },
+    { query: { queryKey: getListEpisodesQueryKey({ limit, offset, q: queryQ, category: queryCategory, tags: queryTags, zone: queryZone }) } },
   );
 
   const { data: categoryList } = useListCategories();
@@ -115,6 +125,14 @@ export function Archive() {
   const clearTransformation = () => {
     const params = new URLSearchParams(searchString);
     params.delete("transformation");
+    params.delete("page");
+    const newSearch = params.toString();
+    setLocation(newSearch ? `${location}?${newSearch}` : location);
+  };
+
+  const clearZone = () => {
+    const params = new URLSearchParams(searchString);
+    params.delete("zone");
     params.delete("page");
     const newSearch = params.toString();
     setLocation(newSearch ? `${location}?${newSearch}` : location);
@@ -177,6 +195,44 @@ export function Archive() {
         </div>
       )}
 
+      {/* Zone banner */}
+      {activeZone && !activeTransformation && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 rounded-xl border border-border bg-muted/30">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div
+              className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-xs font-bold"
+              style={{ background: activeZone.color + "22", color: activeZone.color, border: `1px solid ${activeZone.color}44` }}
+            >
+              Z{activeZone.number}
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                Zone Filter
+              </div>
+              <div className="font-serif text-base font-bold text-foreground">
+                {activeZone.name}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/zones/${activeZone.slug}`}
+              className="text-xs font-semibold flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Zone page
+            </Link>
+            <button
+              onClick={clearZone}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Clear zone filter"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
         <div>
           {activeTransformation ? (
@@ -189,6 +245,18 @@ export function Archive() {
               </h1>
               <p className="text-muted-foreground max-w-2xl">
                 {activeTransformation.description}
+              </p>
+            </>
+          ) : activeZone ? (
+            <>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                Zone {activeZone.number} Episodes
+              </p>
+              <h1 className="font-serif text-4xl font-bold text-foreground mb-2">
+                {activeZone.name}
+              </h1>
+              <p className="text-muted-foreground max-w-2xl">
+                {activeZone.description}
               </p>
             </>
           ) : initialCategory ? (
@@ -234,7 +302,7 @@ export function Archive() {
             <span>By Transformation</span>
           </button>
 
-          {initialCategory && !activeTransformation && (
+          {initialCategory && !activeTransformation && !activeZone && (
             <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-md text-sm font-medium">
               <Filter className="w-4 h-4" />
               <span>{initialCategory}</span>
@@ -284,7 +352,7 @@ export function Archive() {
         </div>
       )}
 
-      {(debouncedSearch || initialCategory || activeTransformation) && !isLoading && episodePage && (
+      {(debouncedSearch || initialCategory || activeTransformation || activeZone) && !isLoading && episodePage && (
         <div className="text-sm font-medium text-muted-foreground pb-4 border-b border-border/50">
           <span className="text-foreground">{episodePage.total}</span> episode{episodePage.total !== 1 ? "s" : ""} found
           {debouncedSearch && (
@@ -293,7 +361,10 @@ export function Archive() {
           {activeTransformation && (
             <span> on the <span className="text-foreground">{activeTransformation.from} → {activeTransformation.to}</span> path</span>
           )}
-          {initialCategory && !activeTransformation && (
+          {activeZone && !activeTransformation && (
+            <span> in <span className="text-foreground">{activeZone.name}</span></span>
+          )}
+          {initialCategory && !activeTransformation && !activeZone && (
             <span> in <span className="text-foreground">{initialCategory}</span></span>
           )}
         </div>
