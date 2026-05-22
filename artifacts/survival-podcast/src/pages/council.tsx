@@ -2,16 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Users, ExternalLink, ChevronRight, Radio, Bot, Flame } from "lucide-react";
 
-const FIRESIDE_FREEDOM_IDS = new Set([
-  "brian-aleksivich",
-  "lettie-loo",
-  "tim-toolman-cook",
-  "ken-eash",
-  "nate-erin-lamaster",
-  "amy-fireside",
-  "hawkins-j",
-]);
-
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return `${base}/api${path}`;
@@ -43,6 +33,7 @@ interface Expert {
   description: string;
   url: string;
   zones: string[];
+  crew: string | null;
   podcastFeedUrl: string | null;
   rssSlug: string | null;
 }
@@ -141,8 +132,8 @@ export function CouncilPage() {
   const { data, isLoading } = useExperts();
   const experts = data?.experts ?? [];
 
-  const coreExperts = experts.filter((e) => !FIRESIDE_FREEDOM_IDS.has(e.slug));
-  const firesideExperts = experts.filter((e) => FIRESIDE_FREEDOM_IDS.has(e.slug));
+  const coreExperts = experts.filter((e) => e.crew !== "fireside-freedom");
+  const firesideExperts = experts.filter((e) => e.crew === "fireside-freedom");
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-16 max-w-5xl">

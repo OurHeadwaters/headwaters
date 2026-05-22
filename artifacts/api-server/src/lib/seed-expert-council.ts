@@ -22,6 +22,7 @@ export async function seedExpertCouncil(): Promise<number> {
         description: m.description,
         url: m.url,
         zones: m.zones,
+        crew: m.crew ?? null,
         sortOrder: i,
       })
       .onConflictDoUpdate({
@@ -32,6 +33,7 @@ export async function seedExpertCouncil(): Promise<number> {
           description: sql`excluded.description`,
           url: sql`excluded.url`,
           zones: sql`excluded.zones`,
+          crew: sql`excluded.crew`,
           updatedAt: sql`now()`,
         },
       })

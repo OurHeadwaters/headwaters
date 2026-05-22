@@ -13,6 +13,7 @@ export type ExpertCouncilMember = {
   xHandle?: string;
   zones: string[];
   comingSoon?: boolean;
+  crew?: string;
 };
 
 export type UlgBusiness = {
@@ -209,6 +210,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Co-host of the Fireside Freedom Podcast and founder of The Lots Project — a liberty-minded community initiative focused on land, connection, and self-reliance. Brian brings grassroots community-building experience to the intersection of freedom philosophy and practical preparedness.",
     url: "https://www.thelotsproject.com",
     zones: ["zone-0", "zone-2"],
+    crew: "fireside-freedom",
   },
   {
     id: "lettie-loo",
@@ -218,6 +220,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Co-host of the Fireside Freedom Podcast and creator of Liberty All Day — a platform exploring the everyday practice of living free. Lettie covers the mindset shifts, habits, and choices that build a genuinely self-directed life.",
     url: "https://libertyallday.home.blog",
     zones: ["zone-0", "zone-1"],
+    crew: "fireside-freedom",
   },
   {
     id: "tim-toolman-cook",
@@ -227,6 +230,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Alberta-based handyman, homesteader, and host of the Workshop Podcast. Tim is the anchor of the future Tool Shed concept — covering practical home repair, workshop skills, and the kind of hands-on preparedness that keeps a property running no matter what. If it involves tools, Tim has it covered.",
     url: "https://www.toolmantim.co",
     zones: ["zone-3"],
+    crew: "fireside-freedom",
   },
   {
     id: "ken-eash",
@@ -236,6 +240,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Co-host of the Fireside Freedom Podcast and host of the Constructive Liberty Podcast. Ken blends the principles of personal freedom with the practical craft of building — from structures to systems — on the homestead.",
     url: "https://www.kennetheash.com",
     zones: ["zone-3"],
+    crew: "fireside-freedom",
   },
   {
     id: "nate-erin-lamaster",
@@ -245,6 +250,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Co-hosts of the Fireside Freedom Podcast and operators of Two Chicks Homestead. Nate and Erin document real homestead life — the animals, the gardens, the setbacks, and the wins — and inspire others to build productive, freedom-centered lives on the land.",
     url: "https://www.twochickshomestead.com",
     zones: ["zone-2", "zone-3"],
+    crew: "fireside-freedom",
   },
   {
     id: "amy-fireside",
@@ -254,6 +260,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Co-host of the Fireside Freedom Podcast and creator of A Farmish Kind of Life — a practical, grounded resource for anyone building a homestead or farm-based lifestyle. Amy covers everything from raising animals to preserving the harvest with honesty and humor.",
     url: "https://www.afarmishkindoflife.com",
     zones: ["zone-2"],
+    crew: "fireside-freedom",
   },
   {
     id: "hawkins-j",
@@ -264,6 +271,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "",
     comingSoon: true,
     zones: ["zone-0"],
+    crew: "fireside-freedom",
   },
 ];
 

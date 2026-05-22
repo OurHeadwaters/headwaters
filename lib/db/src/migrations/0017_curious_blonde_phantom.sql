@@ -1,0 +1,1 @@
+ALTER TABLE "expert_council" ADD COLUMN "crew" text;

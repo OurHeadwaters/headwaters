@@ -15,6 +15,7 @@ export type ExpertCouncilMember = {
   description: string;
   url: string;
   zones: string[];
+  crew: string | null;
   podcastFeedUrl: string | null;
   rssSlug: string | null;
 };
@@ -41,6 +42,7 @@ export async function getAllExperts(): Promise<ExpertCouncilMember[]> {
     description: r.description,
     url: r.url,
     zones: r.zones,
+    crew: r.crew ?? null,
     podcastFeedUrl: r.podcastFeedUrl ?? null,
     rssSlug: r.rssSlug ?? null,
   }));
