@@ -1,8 +1,115 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
-import { ChevronLeft, ExternalLink, Radio, Mic, Users, PlayCircle, PauseCircle, FileText, Video, Rss } from "lucide-react";
+import { ChevronLeft, ExternalLink, Radio, Mic, Users, PlayCircle, PauseCircle, FileText, Video, Rss, X } from "lucide-react";
 import { usePlayer } from "@/context/player-context";
+
+const FEED_URL = "https://feeds.captivate.fm/fireside-freedom/";
+
+const PODCAST_PLATFORMS = [
+  {
+    name: "Apple Podcasts",
+    url: `https://podcasts.apple.com/search?term=Fireside+Freedom`,
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5c4.142 0 7.5 3.358 7.5 7.5 0 4.142-3.358 7.5-7.5 7.5S4.5 16.142 4.5 12c0-4.142 3.358-7.5 7.5-7.5zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11zm0 2c1.93 0 3.5 1.57 3.5 3.5S13.93 15.5 12 15.5 8.5 13.93 8.5 12s1.57-3.5 3.5-3.5zm0 1.5a2 2 0 100 4 2 2 0 000-4z" />
+      </svg>
+    ),
+    color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100",
+  },
+  {
+    name: "Spotify",
+    url: `https://open.spotify.com/search/Fireside%20Freedom`,
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+      </svg>
+    ),
+    color: "text-green-600 bg-green-50 border-green-200 hover:bg-green-100",
+  },
+  {
+    name: "Pocket Casts",
+    url: `https://pca.st/itunes/search?q=Fireside+Freedom`,
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+        <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm4.25 16.5a.75.75 0 01-.75-.75 3.5 3.5 0 10-7 0 .75.75 0 01-1.5 0 5 5 0 1110 0 .75.75 0 01-.75.75zm2.5-2a.75.75 0 01-.75-.75 6 6 0 10-12 0 .75.75 0 01-1.5 0 7.5 7.5 0 1115 0 .75.75 0 01-.75.75zM12 13a1 1 0 100-2 1 1 0 000 2z" />
+      </svg>
+    ),
+    color: "text-red-600 bg-red-50 border-red-200 hover:bg-red-100",
+  },
+  {
+    name: "RSS Feed",
+    url: FEED_URL,
+    icon: <Rss className="w-5 h-5" />,
+    color: "text-orange-600 bg-orange-50 border-orange-200 hover:bg-orange-100",
+  },
+];
+
+function SubscribePicker({ onClose }: { onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div
+        ref={ref}
+        className="relative w-full max-w-sm bg-background rounded-2xl shadow-2xl border border-border p-6"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="flex items-center gap-2 mb-1">
+          <Radio className="w-4 h-4 text-accent" />
+          <h2 className="font-serif text-lg font-bold text-foreground">
+            Subscribe to Fireside Freedom
+          </h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-5">
+          Pick your podcast app to follow the show.
+        </p>
+
+        <div className="flex flex-col gap-2">
+          {PODCAST_PLATFORMS.map((platform) => (
+            <a
+              key={platform.name}
+              href={platform.url}
+              target="_blank"
+              rel="noreferrer"
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border font-medium text-sm transition-colors ${platform.color}`}
+              onClick={onClose}
+            >
+              {platform.icon}
+              {platform.name}
+              <ExternalLink className="w-3.5 h-3.5 ml-auto opacity-50" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+>>>>>>> efbc680 (feat: subscription picker modal for Fireside Freedom (task #512))
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -289,6 +396,7 @@ export function CouncilMemberPage() {
   const slug = params.slug ?? "";
   const { data, isLoading, isError } = useExpertProfile(slug);
   const [playingFiresideId, setPlayingFiresideId] = useState<number | null>(null);
+  const [showSubscribePicker, setShowSubscribePicker] = useState(false);
 
   if (isLoading) {
     return (
@@ -423,15 +531,16 @@ export function CouncilMemberPage() {
             <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {firesideEpisodes.length} episode{firesideEpisodes.length !== 1 ? "s" : ""}
             </span>
-            <a
-              href="https://feeds.captivate.fm/fireside-freedom/"
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => setShowSubscribePicker(true)}
               className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-accent border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors px-3 py-1.5 rounded-full"
             >
               <Rss className="w-3.5 h-3.5" />
               Subscribe to Fireside Freedom
-            </a>
+            </button>
+            {showSubscribePicker && (
+              <SubscribePicker onClose={() => setShowSubscribePicker(false)} />
+            )}
           </div>
           <div className="grid grid-cols-1 gap-3">
             {firesideEpisodes.slice(0, 20).map((item) => (
