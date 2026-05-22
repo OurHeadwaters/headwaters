@@ -140,7 +140,7 @@ async function syncUlgSource(): Promise<{ itemsSeen: number; itemsUpserted: numb
   return result;
 }
 
-async function syncCouncilFeed(slug: string, feedUrl: string): Promise<{ itemsSeen: number; itemsUpserted: number }> {
+async function syncCouncilFeed(slug: string, feedUrl: string, zones: string[]): Promise<{ itemsSeen: number; itemsUpserted: number }> {
   const source = `council-${slug}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20_000);
@@ -174,7 +174,7 @@ async function syncCouncilFeed(slug: string, feedUrl: string): Promise<{ itemsSe
       artworkUrl: ep.artworkUrl,
       episodeNumber: ep.episodeNumber,
       categories: ep.categories,
-      tags: [],
+      tags: zones,
       extra: {},
     }));
     const itemsUpserted = await upsertBatch(items);
@@ -186,16 +186,18 @@ async function syncCouncilFeed(slug: string, feedUrl: string): Promise<{ itemsSe
 
 async function syncAllCouncilFeeds(): Promise<{ itemsSeen: number; itemsUpserted: number }> {
   const members = await db
-    .select({ slug: expertCouncilTable.slug, podcastFeedUrl: expertCouncilTable.podcastFeedUrl })
+    .select({ slug: expertCouncilTable.slug, podcastFeedUrl: expertCouncilTable.podcastFeedUrl, zones: expertCouncilTable.zones })
     .from(expertCouncilTable)
     .where(sql`${expertCouncilTable.podcastFeedUrl} is not null`);
 
   let totalSeen = 0;
   let totalUpserted = 0;
+
   for (const member of members) {
     if (!member.podcastFeedUrl) continue;
+    const zones = member.zones ?? [];
     try {
-      const { itemsSeen, itemsUpserted } = await syncCouncilFeed(member.slug, member.podcastFeedUrl);
+      const { itemsSeen, itemsUpserted } = await syncCouncilFeed(member.slug, member.podcastFeedUrl, zones);
       totalSeen += itemsSeen;
       totalUpserted += itemsUpserted;
       logger.info({ slug: member.slug, itemsSeen, itemsUpserted }, "Council feed synced");
