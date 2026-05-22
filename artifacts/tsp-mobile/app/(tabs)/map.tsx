@@ -59,6 +59,35 @@ const ZONE_META: Record<
 
 const ALL_ZONES = ["zone-0", "zone-1", "zone-2", "zone-3", "zone-4", "zone-5"];
 
+/**
+ * Returns the subset of zones a client should see based on their risk profile.
+ * Only applied when entryMode === "practitioner" (i.e. Headwaters-placed).
+ * riskProfile 1–2 → primary zone only
+ * riskProfile 3   → primary + secondary zones
+ * riskProfile 4–5 → all zones
+ * null / other    → all zones
+ */
+function visibleZones(
+  allZones: string[],
+  entryMode: string | null,
+  riskProfile: number | null,
+  primaryZone: string | null,
+  secondaryZone: string | null,
+): string[] {
+  if (entryMode !== "practitioner" || riskProfile == null) return allZones;
+  if (riskProfile <= 2) {
+    return primaryZone ? allZones.filter((z) => z === primaryZone) : allZones;
+  }
+  if (riskProfile === 3) {
+    const keep = new Set<string>([
+      ...(primaryZone ? [primaryZone] : []),
+      ...(secondaryZone ? [secondaryZone] : []),
+    ]);
+    return allZones.filter((z) => keep.has(z));
+  }
+  return allZones;
+}
+
 function ZoneRow({
   zoneSlug,
   isPrimary,
@@ -354,6 +383,9 @@ export default function MapScreen() {
   const visitedZones = state.status === "ready" ? (state.map.visitedZones ?? []) : [];
   const rationale = state.status === "ready" ? state.map.rationale : null;
   const entryMode = state.status === "ready" ? state.map.entryMode : null;
+  const riskProfile = state.status === "ready" ? (state.map.riskProfile ?? null) : null;
+
+  const shownZones = visibleZones(ALL_ZONES, entryMode, riskProfile, primaryZone, secondaryZone);
 
   return (
     <View style={[screenStyles.root, { backgroundColor: colors.background }]}>
@@ -463,7 +495,7 @@ export default function MapScreen() {
             All Zones
           </Text>
 
-          {ALL_ZONES.map((slug) => (
+          {shownZones.map((slug) => (
             <ZoneRow
               key={slug}
               zoneSlug={slug}

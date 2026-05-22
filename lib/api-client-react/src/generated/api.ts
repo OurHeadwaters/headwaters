@@ -34,6 +34,14 @@ import type {
   GetThisDayEpisodesParams,
   GetZoneEpisodesParams,
   HandleBrowserLoginCallbackParams,
+  HeadwatersClient,
+  HeadwatersClientInput,
+  HeadwatersClientPatch,
+  HeadwatersDashboard,
+  HeadwatersInterpretRequest,
+  HeadwatersInterpretResult,
+  HeadwatersPushRequest,
+  HeadwatersPushResult,
   HealthStatus,
   LibraryItemDetail,
   LibraryPage,
@@ -1909,6 +1917,522 @@ export const useLogoutMobileSession = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getLogoutMobileSessionMutationOptions(options));
+    }
+
+export const getGetHeadwatersDashboardUrl = () => {
+
+
+
+
+  return `/api/headwaters/dashboard`
+}
+
+/**
+ * @summary Practitioner dashboard — client counts, recent intakes, zone distribution
+ */
+export const getHeadwatersDashboard = async ( options?: RequestInit): Promise<HeadwatersDashboard> => {
+
+  return customFetch<HeadwatersDashboard>(getGetHeadwatersDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHeadwatersDashboardQueryKey = () => {
+    return [
+    `/api/headwaters/dashboard`
+    ] as const;
+    }
+
+
+export const getGetHeadwatersDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getHeadwatersDashboard>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHeadwatersDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHeadwatersDashboard>>> = ({ signal }) => getHeadwatersDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHeadwatersDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getHeadwatersDashboard>>>
+export type GetHeadwatersDashboardQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Practitioner dashboard — client counts, recent intakes, zone distribution
+ */
+
+export function useGetHeadwatersDashboard<TData = Awaited<ReturnType<typeof getHeadwatersDashboard>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHeadwatersDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListHeadwatersClientsUrl = () => {
+
+
+
+
+  return `/api/headwaters/clients`
+}
+
+/**
+ * @summary List all practitioner clients
+ */
+export const listHeadwatersClients = async ( options?: RequestInit): Promise<HeadwatersClient[]> => {
+
+  return customFetch<HeadwatersClient[]>(getListHeadwatersClientsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListHeadwatersClientsQueryKey = () => {
+    return [
+    `/api/headwaters/clients`
+    ] as const;
+    }
+
+
+export const getListHeadwatersClientsQueryOptions = <TData = Awaited<ReturnType<typeof listHeadwatersClients>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHeadwatersClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListHeadwatersClientsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listHeadwatersClients>>> = ({ signal }) => listHeadwatersClients({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listHeadwatersClients>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListHeadwatersClientsQueryResult = NonNullable<Awaited<ReturnType<typeof listHeadwatersClients>>>
+export type ListHeadwatersClientsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List all practitioner clients
+ */
+
+export function useListHeadwatersClients<TData = Awaited<ReturnType<typeof listHeadwatersClients>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHeadwatersClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListHeadwatersClientsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateHeadwatersClientUrl = () => {
+
+
+
+
+  return `/api/headwaters/clients`
+}
+
+/**
+ * @summary Create a new client record
+ */
+export const createHeadwatersClient = async (headwatersClientInput: HeadwatersClientInput, options?: RequestInit): Promise<HeadwatersClient> => {
+
+  return customFetch<HeadwatersClient>(getCreateHeadwatersClientUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      headwatersClientInput,)
+  }
+);}
+
+
+
+
+export const getCreateHeadwatersClientMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createHeadwatersClient>>, TError,{data: BodyType<HeadwatersClientInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createHeadwatersClient>>, TError,{data: BodyType<HeadwatersClientInput>}, TContext> => {
+
+const mutationKey = ['createHeadwatersClient'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createHeadwatersClient>>, {data: BodyType<HeadwatersClientInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createHeadwatersClient(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateHeadwatersClientMutationResult = NonNullable<Awaited<ReturnType<typeof createHeadwatersClient>>>
+    export type CreateHeadwatersClientMutationBody = BodyType<HeadwatersClientInput>
+    export type CreateHeadwatersClientMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Create a new client record
+ */
+export const useCreateHeadwatersClient = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createHeadwatersClient>>, TError,{data: BodyType<HeadwatersClientInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createHeadwatersClient>>,
+        TError,
+        {data: BodyType<HeadwatersClientInput>},
+        TContext
+      > => {
+      return useMutation(getCreateHeadwatersClientMutationOptions(options));
+    }
+
+export const getGetHeadwatersClientUrl = (clientId: string,) => {
+
+
+
+
+  return `/api/headwaters/clients/${clientId}`
+}
+
+/**
+ * @summary Get a single client record
+ */
+export const getHeadwatersClient = async (clientId: string, options?: RequestInit): Promise<HeadwatersClient> => {
+
+  return customFetch<HeadwatersClient>(getGetHeadwatersClientUrl(clientId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHeadwatersClientQueryKey = (clientId: string,) => {
+    return [
+    `/api/headwaters/clients/${clientId}`
+    ] as const;
+    }
+
+
+export const getGetHeadwatersClientQueryOptions = <TData = Awaited<ReturnType<typeof getHeadwatersClient>>, TError = ErrorType<ApiError>>(clientId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersClient>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHeadwatersClientQueryKey(clientId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHeadwatersClient>>> = ({ signal }) => getHeadwatersClient(clientId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(clientId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersClient>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHeadwatersClientQueryResult = NonNullable<Awaited<ReturnType<typeof getHeadwatersClient>>>
+export type GetHeadwatersClientQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get a single client record
+ */
+
+export function useGetHeadwatersClient<TData = Awaited<ReturnType<typeof getHeadwatersClient>>, TError = ErrorType<ApiError>>(
+ clientId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersClient>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHeadwatersClientQueryOptions(clientId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getPatchHeadwatersClientUrl = (clientId: string,) => {
+
+
+
+
+  return `/api/headwaters/clients/${clientId}`
+}
+
+/**
+ * @summary Update a client record
+ */
+export const patchHeadwatersClient = async (clientId: string,
+    headwatersClientPatch: HeadwatersClientPatch, options?: RequestInit): Promise<HeadwatersClient> => {
+
+  return customFetch<HeadwatersClient>(getPatchHeadwatersClientUrl(clientId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      headwatersClientPatch,)
+  }
+);}
+
+
+
+
+export const getPatchHeadwatersClientMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchHeadwatersClient>>, TError,{clientId: string;data: BodyType<HeadwatersClientPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchHeadwatersClient>>, TError,{clientId: string;data: BodyType<HeadwatersClientPatch>}, TContext> => {
+
+const mutationKey = ['patchHeadwatersClient'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchHeadwatersClient>>, {clientId: string;data: BodyType<HeadwatersClientPatch>}> = (props) => {
+          const {clientId,data} = props ?? {};
+
+          return  patchHeadwatersClient(clientId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchHeadwatersClientMutationResult = NonNullable<Awaited<ReturnType<typeof patchHeadwatersClient>>>
+    export type PatchHeadwatersClientMutationBody = BodyType<HeadwatersClientPatch>
+    export type PatchHeadwatersClientMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Update a client record
+ */
+export const usePatchHeadwatersClient = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchHeadwatersClient>>, TError,{clientId: string;data: BodyType<HeadwatersClientPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchHeadwatersClient>>,
+        TError,
+        {clientId: string;data: BodyType<HeadwatersClientPatch>},
+        TContext
+      > => {
+      return useMutation(getPatchHeadwatersClientMutationOptions(options));
+    }
+
+export const getInterpretHeadwatersDumpUrl = () => {
+
+
+
+
+  return `/api/headwaters/interpret`
+}
+
+/**
+ * @summary AI interpretation of a practitioner brain dump — returns zone placement and risk profile
+ */
+export const interpretHeadwatersDump = async (headwatersInterpretRequest: HeadwatersInterpretRequest, options?: RequestInit): Promise<HeadwatersInterpretResult> => {
+
+  return customFetch<HeadwatersInterpretResult>(getInterpretHeadwatersDumpUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      headwatersInterpretRequest,)
+  }
+);}
+
+
+
+
+export const getInterpretHeadwatersDumpMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof interpretHeadwatersDump>>, TError,{data: BodyType<HeadwatersInterpretRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof interpretHeadwatersDump>>, TError,{data: BodyType<HeadwatersInterpretRequest>}, TContext> => {
+
+const mutationKey = ['interpretHeadwatersDump'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof interpretHeadwatersDump>>, {data: BodyType<HeadwatersInterpretRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  interpretHeadwatersDump(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InterpretHeadwatersDumpMutationResult = NonNullable<Awaited<ReturnType<typeof interpretHeadwatersDump>>>
+    export type InterpretHeadwatersDumpMutationBody = BodyType<HeadwatersInterpretRequest>
+    export type InterpretHeadwatersDumpMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary AI interpretation of a practitioner brain dump — returns zone placement and risk profile
+ */
+export const useInterpretHeadwatersDump = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof interpretHeadwatersDump>>, TError,{data: BodyType<HeadwatersInterpretRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof interpretHeadwatersDump>>,
+        TError,
+        {data: BodyType<HeadwatersInterpretRequest>},
+        TContext
+      > => {
+      return useMutation(getInterpretHeadwatersDumpMutationOptions(options));
+    }
+
+export const getPushHeadwatersPlacementUrl = () => {
+
+
+
+
+  return `/api/headwaters/push`
+}
+
+/**
+ * @summary Confirm and push zone placement to the client's TSP lifestyle map
+ */
+export const pushHeadwatersPlacement = async (headwatersPushRequest: HeadwatersPushRequest, options?: RequestInit): Promise<HeadwatersPushResult> => {
+
+  return customFetch<HeadwatersPushResult>(getPushHeadwatersPlacementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      headwatersPushRequest,)
+  }
+);}
+
+
+
+
+export const getPushHeadwatersPlacementMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pushHeadwatersPlacement>>, TError,{data: BodyType<HeadwatersPushRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof pushHeadwatersPlacement>>, TError,{data: BodyType<HeadwatersPushRequest>}, TContext> => {
+
+const mutationKey = ['pushHeadwatersPlacement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pushHeadwatersPlacement>>, {data: BodyType<HeadwatersPushRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  pushHeadwatersPlacement(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PushHeadwatersPlacementMutationResult = NonNullable<Awaited<ReturnType<typeof pushHeadwatersPlacement>>>
+    export type PushHeadwatersPlacementMutationBody = BodyType<HeadwatersPushRequest>
+    export type PushHeadwatersPlacementMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Confirm and push zone placement to the client's TSP lifestyle map
+ */
+export const usePushHeadwatersPlacement = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pushHeadwatersPlacement>>, TError,{data: BodyType<HeadwatersPushRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof pushHeadwatersPlacement>>,
+        TError,
+        {data: BodyType<HeadwatersPushRequest>},
+        TContext
+      > => {
+      return useMutation(getPushHeadwatersPlacementMutationOptions(options));
     }
 
 export const getGetTrackProgressUrl = (slug: string,) => {

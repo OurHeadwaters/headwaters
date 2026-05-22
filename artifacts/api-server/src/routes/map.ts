@@ -55,7 +55,16 @@ router.get("/map", async (req: Request, res: Response) => {
       .where(eq(userLifestyleMapsTable.userId, req.user.id))
       .limit(1);
 
-    res.json({ map: row ?? null });
+    if (!row) {
+      res.json({ map: null });
+      return;
+    }
+
+    // Strip practitioner-private fields before sending to the client.
+    // practitionerNotes are written by Headwaters and must never be surfaced here.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { practitionerNotes: _private, ...publicMap } = row;
+    res.json({ map: publicMap });
   } catch (err) {
     logger.error({ err }, "map fetch failed");
     res.status(500).json({ error: "Failed to load map" });

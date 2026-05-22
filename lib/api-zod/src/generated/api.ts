@@ -636,6 +636,190 @@ export const LogoutMobileSessionResponse = zod.object({
 
 
 /**
+ * @summary Practitioner dashboard — client counts, recent intakes, zone distribution
+ */
+export const GetHeadwatersDashboardHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const GetHeadwatersDashboardResponse = zod.object({
+  "totalClients": zod.number(),
+  "recentIntakes": zod.array(zod.object({
+  "clientId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullish(),
+  "connectedUserId": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "primaryZone": zod.string().nullish(),
+  "secondaryZone": zod.string().nullish(),
+  "riskProfile": zod.number().nullish(),
+  "lastDump": zod.string().nullish(),
+  "lastPushedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})),
+  "zoneDistribution": zod.array(zod.object({
+  "zone": zod.string(),
+  "count": zod.number()
+}))
+})
+
+
+/**
+ * @summary List all practitioner clients
+ */
+export const ListHeadwatersClientsHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const ListHeadwatersClientsResponseItem = zod.object({
+  "clientId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullish(),
+  "connectedUserId": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "primaryZone": zod.string().nullish(),
+  "secondaryZone": zod.string().nullish(),
+  "riskProfile": zod.number().nullish(),
+  "lastDump": zod.string().nullish(),
+  "lastPushedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const ListHeadwatersClientsResponse = zod.array(ListHeadwatersClientsResponseItem)
+
+
+/**
+ * @summary Create a new client record
+ */
+export const CreateHeadwatersClientHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+
+
+
+export const CreateHeadwatersClientBody = zod.object({
+  "name": zod.string().min(1),
+  "email": zod.string().optional(),
+  "connectedUserId": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Get a single client record
+ */
+export const GetHeadwatersClientParams = zod.object({
+  "clientId": zod.coerce.string()
+})
+
+export const GetHeadwatersClientHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const GetHeadwatersClientResponse = zod.object({
+  "clientId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullish(),
+  "connectedUserId": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "primaryZone": zod.string().nullish(),
+  "secondaryZone": zod.string().nullish(),
+  "riskProfile": zod.number().nullish(),
+  "lastDump": zod.string().nullish(),
+  "lastPushedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a client record
+ */
+export const PatchHeadwatersClientParams = zod.object({
+  "clientId": zod.coerce.string()
+})
+
+export const PatchHeadwatersClientHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+
+
+
+export const PatchHeadwatersClientBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "email": zod.string().nullish(),
+  "connectedUserId": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const PatchHeadwatersClientResponse = zod.object({
+  "clientId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullish(),
+  "connectedUserId": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "primaryZone": zod.string().nullish(),
+  "secondaryZone": zod.string().nullish(),
+  "riskProfile": zod.number().nullish(),
+  "lastDump": zod.string().nullish(),
+  "lastPushedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary AI interpretation of a practitioner brain dump — returns zone placement and risk profile
+ */
+export const InterpretHeadwatersDumpHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const interpretHeadwatersDumpBodyDumpMin = 10;
+
+
+
+export const InterpretHeadwatersDumpBody = zod.object({
+  "dump": zod.string().min(interpretHeadwatersDumpBodyDumpMin),
+  "clientId": zod.string().optional()
+})
+
+export const InterpretHeadwatersDumpResponse = zod.object({
+  "primaryZone": zod.string(),
+  "secondaryZone": zod.string(),
+  "riskProfile": zod.number(),
+  "clientRationale": zod.string(),
+  "practitionerSummary": zod.string()
+})
+
+
+/**
+ * @summary Confirm and push zone placement to the client's TSP lifestyle map
+ */
+export const PushHeadwatersPlacementHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const PushHeadwatersPlacementBody = zod.object({
+  "clientId": zod.string(),
+  "primaryZone": zod.string(),
+  "secondaryZone": zod.string(),
+  "riskProfile": zod.number(),
+  "clientRationale": zod.string(),
+  "practitionerNotes": zod.string(),
+  "dump": zod.string().optional()
+})
+
+export const PushHeadwatersPlacementResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string().nullish()
+})
+
+
+/**
  * @summary Get the current user's progress for a learning track
  */
 export const GetTrackProgressParams = zod.object({

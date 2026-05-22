@@ -24,6 +24,8 @@ tags:
     description: Browser and mobile authentication endpoints.
   - name: track-progress
     description: Per-user learning track progress (requires authentication).
+  - name: headwaters
+    description: Headwaters practitioner intake tool — brain dump, AI zone placement, push to TSP.
 paths:
   /healthz:
     get:
@@ -451,6 +453,184 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogoutSuccess'
+  /headwaters/dashboard:
+    get:
+      operationId: getHeadwatersDashboard
+      tags: [headwaters]
+      summary: Practitioner dashboard — client counts, recent intakes, zone distribution
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersDashboard"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /headwaters/clients:
+    get:
+      operationId: listHeadwatersClients
+      tags: [headwaters]
+      summary: List all practitioner clients
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Client list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HeadwatersClient"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: createHeadwatersClient
+      tags: [headwaters]
+      summary: Create a new client record
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeadwatersClientInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersClient"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /headwaters/clients/{clientId}:
+    get:
+      operationId: getHeadwatersClient
+      tags: [headwaters]
+      summary: Get a single client record
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+        - { name: clientId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Client record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersClient"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: patchHeadwatersClient
+      tags: [headwaters]
+      summary: Update a client record
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+        - { name: clientId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeadwatersClientPatch"
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersClient"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /headwaters/interpret:
+    post:
+      operationId: interpretHeadwatersDump
+      tags: [headwaters]
+      summary: AI interpretation of a practitioner brain dump — returns zone placement and risk profile
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeadwatersInterpretRequest"
+      responses:
+        "200":
+          description: AI interpretation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersInterpretResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /headwaters/push:
+    post:
+      operationId: pushHeadwatersPlacement
+      tags: [headwaters]
+      summary: Confirm and push zone placement to the client's TSP lifestyle map
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeadwatersPushRequest"
+      responses:
+        "200":
+          description: Push result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersPushResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /track-progress/{slug}:
     get:
       tags: [track-progress]
@@ -968,3 +1148,82 @@ components:
           type: integer
         done:
           type: boolean
+    HeadwatersClient:
+      type: object
+      required: [clientId, name, createdAt]
+      properties:
+        clientId: { type: string }
+        name: { type: string }
+        email: { type: ["string", "null"] }
+        connectedUserId: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        primaryZone: { type: ["string", "null"] }
+        secondaryZone: { type: ["string", "null"] }
+        riskProfile: { type: ["integer", "null"] }
+        lastDump: { type: ["string", "null"] }
+        lastPushedAt: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    HeadwatersClientInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        email: { type: string }
+        connectedUserId: { type: string }
+        notes: { type: string }
+    HeadwatersClientPatch:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        email: { type: ["string", "null"] }
+        connectedUserId: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+    HeadwatersDashboard:
+      type: object
+      required: [totalClients, recentIntakes, zoneDistribution]
+      properties:
+        totalClients: { type: integer }
+        recentIntakes:
+          type: array
+          items: { $ref: "#/components/schemas/HeadwatersClient" }
+        zoneDistribution:
+          type: array
+          items:
+            type: object
+            required: [zone, count]
+            properties:
+              zone: { type: string }
+              count: { type: integer }
+    HeadwatersInterpretRequest:
+      type: object
+      required: [dump]
+      properties:
+        dump: { type: string, minLength: 10 }
+        clientId: { type: string }
+    HeadwatersInterpretResult:
+      type: object
+      required: [primaryZone, secondaryZone, riskProfile, clientRationale, practitionerSummary]
+      properties:
+        primaryZone: { type: string }
+        secondaryZone: { type: string }
+        riskProfile: { type: integer }
+        clientRationale: { type: string }
+        practitionerSummary: { type: string }
+    HeadwatersPushRequest:
+      type: object
+      required: [clientId, primaryZone, secondaryZone, riskProfile, clientRationale, practitionerNotes]
+      properties:
+        clientId: { type: string }
+        primaryZone: { type: string }
+        secondaryZone: { type: string }
+        riskProfile: { type: integer }
+        clientRationale: { type: string }
+        practitionerNotes: { type: string }
+        dump: { type: string }
+    HeadwatersPushResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+        message: { type: ["string", "null"] }

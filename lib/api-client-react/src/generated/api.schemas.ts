@@ -173,28 +173,11 @@ export type LibraryItemDetail = LibraryItem & {
   related?: LibraryItem[];
 };
 
-export interface FieldNote {
-  id: number;
-  /** nostr | audio */
-  sourceType: string;
-  rawContent: string;
-  tags: string[];
-  createdAt: string;
-  /** @nullable */
-  metaUrl?: string | null;
-  /** @nullable */
-  metaTitle?: string | null;
-  /** @nullable */
-  contextUrl?: string | null;
-}
-
 export interface LibraryPage {
   items: LibraryItem[];
   total: number;
   limit: number;
   offset: number;
-  /** Included when ?include=field-notes is passed */
-  fieldNotes?: FieldNote[];
 }
 
 export interface KindCount {
@@ -382,6 +365,89 @@ export interface TrackProgressUpdate {
   done: boolean;
 }
 
+export interface HeadwatersClient {
+  clientId: string;
+  name: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  connectedUserId?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  primaryZone?: string | null;
+  /** @nullable */
+  secondaryZone?: string | null;
+  /** @nullable */
+  riskProfile?: number | null;
+  /** @nullable */
+  lastDump?: string | null;
+  /** @nullable */
+  lastPushedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface HeadwatersClientInput {
+  /** @minLength 1 */
+  name: string;
+  email?: string;
+  connectedUserId?: string;
+  notes?: string;
+}
+
+export interface HeadwatersClientPatch {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  connectedUserId?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type HeadwatersDashboardZoneDistributionItem = {
+  zone: string;
+  count: number;
+};
+
+export interface HeadwatersDashboard {
+  totalClients: number;
+  recentIntakes: HeadwatersClient[];
+  zoneDistribution: HeadwatersDashboardZoneDistributionItem[];
+}
+
+export interface HeadwatersInterpretRequest {
+  /** @minLength 10 */
+  dump: string;
+  clientId?: string;
+}
+
+export interface HeadwatersInterpretResult {
+  primaryZone: string;
+  secondaryZone: string;
+  riskProfile: number;
+  clientRationale: string;
+  practitionerSummary: string;
+}
+
+export interface HeadwatersPushRequest {
+  clientId: string;
+  primaryZone: string;
+  secondaryZone: string;
+  riskProfile: number;
+  clientRationale: string;
+  practitionerNotes: string;
+  dump?: string;
+}
+
+export interface HeadwatersPushResult {
+  success: boolean;
+  /** @nullable */
+  message?: string | null;
+}
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */
@@ -461,10 +527,6 @@ limit?: number;
  */
 offset?: number;
 sort?: SearchLibrarySort;
-/**
- * Comma-separated list of extra result sets to include. Supported value: field-notes
- */
-include?: string;
 };
 
 export type SearchLibrarySort = typeof SearchLibrarySort[keyof typeof SearchLibrarySort];

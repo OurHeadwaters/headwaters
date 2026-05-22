@@ -3,11 +3,12 @@ import { useAuth } from "@workspace/replit-auth-web";
 
 export type LifestyleMap = {
   userId: string;
-  entryMode: "guided" | "free";
+  entryMode: "guided" | "free" | "practitioner";
   answers: Record<string, string>;
   primaryZone: string | null;
   secondaryZone: string | null;
   rationale: string | null;
+  riskProfile: number | null;
   visitedZones: string[];
   surrenderMode: boolean;
   createdAt: string;

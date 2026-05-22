@@ -6,6 +6,8 @@ import { authMiddleware } from "./middlewares/authMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app: Express = express();
 
@@ -54,5 +56,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+// ─── Headwaters static SPA ────────────────────────────────────────────────────
+// Serves the pre-built Headwaters React app at /headwaters/.
+// Run `pnpm --filter @workspace/headwaters run build` to update the assets.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const hwDist = path.resolve(__dirname, "../../../artifacts/headwaters/dist/public");
+app.use("/headwaters", express.static(hwDist));
+app.get("/headwaters/*splat", (_req, res) => {
+  res.sendFile(path.join(hwDist, "index.html"));
+});
 
 export default app;

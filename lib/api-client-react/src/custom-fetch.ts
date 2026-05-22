@@ -17,6 +17,16 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _extraHeadersGetter: (() => Record<string, string>) | null = null;
+
+/**
+ * Register a getter that returns extra headers to attach to every request.
+ * Useful for passphrase-gated tools that need a custom header on every call.
+ * Pass `null` to clear.
+ */
+export function setExtraHeadersGetter(getter: (() => Record<string, string>) | null): void {
+  _extraHeadersGetter = getter;
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -355,6 +365,16 @@ export async function customFetch<T = unknown>(
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
+    }
+  }
+
+  // Attach any extra headers registered via setExtraHeadersGetter.
+  if (_extraHeadersGetter) {
+    const extra = _extraHeadersGetter();
+    for (const [key, value] of Object.entries(extra)) {
+      if (!headers.has(key)) {
+        headers.set(key, value);
+      }
     }
   }
 

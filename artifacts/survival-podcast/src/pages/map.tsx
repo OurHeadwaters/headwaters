@@ -514,6 +514,35 @@ function SurrenderModeCard({ map }: { map: LifestyleMap }) {
   );
 }
 
+/**
+ * Returns the subset of ZONES a client should see based on their risk profile.
+ * Only applied for practitioner-placed maps (entryMode === "practitioner").
+ * riskProfile 1–2 → primary zone only
+ * riskProfile 3   → primary + secondary zones
+ * riskProfile 4–5 → full map
+ * null / other    → full map
+ */
+function filteredZones(
+  allZones: typeof ZONES,
+  entryMode: string,
+  riskProfile: number | null,
+  primaryZone: string | null,
+  secondaryZone: string | null,
+): typeof ZONES {
+  if (entryMode !== "practitioner" || riskProfile == null) return allZones;
+  if (riskProfile <= 2) {
+    return primaryZone ? allZones.filter((z) => z.slug === primaryZone) : allZones;
+  }
+  if (riskProfile === 3) {
+    const keep = new Set<string>([
+      ...(primaryZone ? [primaryZone] : []),
+      ...(secondaryZone ? [secondaryZone] : []),
+    ]);
+    return allZones.filter((z) => keep.has(z.slug));
+  }
+  return allZones;
+}
+
 function MapView({
   map,
   onToggleSurrender,
@@ -529,6 +558,7 @@ function MapView({
   const secondaryZone = map.secondaryZone;
   const visitedZones = (map.visitedZones as string[]) ?? [];
   const isGuided = map.entryMode === "guided";
+  const shownZones = filteredZones(ZONES, map.entryMode, map.riskProfile ?? null, primaryZone, secondaryZone);
 
   const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
 
@@ -702,7 +732,7 @@ function MapView({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {ZONES.map((zone) => (
+            {shownZones.map((zone) => (
               <div
                 key={zone.slug}
                 id={`zone-card-${zone.slug}`}
