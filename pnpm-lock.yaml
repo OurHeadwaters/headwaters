@@ -379,6 +379,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/gord-bird':
+        specifier: workspace:*
+        version: link:../../lib/gord-bird
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -754,6 +757,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/gord-bird':
+        specifier: workspace:*
+        version: link:../../lib/gord-bird
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -950,6 +956,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/gord-bird':
+        specifier: workspace:*
+        version: link:../../lib/gord-bird
       '@workspace/replit-auth-web':
         specifier: workspace:*
         version: link:../../lib/replit-auth-web
@@ -1216,6 +1225,18 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
+
+  lib/gord-bird:
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.14
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.38.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: 'catalog:'
+        version: 19.1.0
 
   lib/integrations-openai-ai-react: {}
 
