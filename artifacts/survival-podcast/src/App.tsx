@@ -34,6 +34,7 @@ import { AdminGroundEvents } from "@/pages/admin-ground-events";
 import WorkshopManagePage from "@/pages/workshop-manage";
 import HistoryPage from "@/pages/history";
 import { AdminWisdom } from "@/pages/admin-wisdom";
+import { AdminFieldNotes } from "@/pages/admin-field-notes";
 import StompingGroundsPage from "@/pages/stomping-grounds";
 import NotFound from "@/pages/not-found";
 
@@ -78,6 +79,7 @@ function Router() {
         <Route path="/admin/gear" component={AdminGear} />
         <Route path="/admin/nuggets" component={AdminNuggets} />
         <Route path="/admin/wisdom" component={AdminWisdom} />
+        <Route path="/admin/field-notes" component={AdminFieldNotes} />
         <Route path="/admin/ground-events" component={AdminGroundEvents} />
         <Route path="/workshops/manage" component={WorkshopManagePage} />
         <Route path="/wishing-well">

@@ -11,3 +11,4 @@ export * from "./reviewed-products";
 export * from "./water-wheel";
 export * from "./ground-events";
 export * from "./ground-event-rsvps";
+export * from "./curated-items";

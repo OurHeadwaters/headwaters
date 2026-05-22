@@ -1,0 +1,299 @@
+import { useState, useRef, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock } from "lucide-react";
+import { useAuth } from "@workspace/replit-auth-web";
+import { format } from "date-fns";
+
+type FieldNote = {
+  id: number;
+  sourceType: "nostr" | "audio";
+  externalId: string;
+  rawContent: string;
+  tags: string[];
+  published: boolean;
+  createdAt: string;
+};
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+async function fetchNotes(): Promise<FieldNote[]> {
+  const res = await fetch(`${base}/api/admin/field-notes?limit=100`);
+  if (!res.ok) throw new Error("Failed to load field notes");
+  return res.json();
+}
+
+async function uploadAudio(file: File): Promise<FieldNote> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${base}/api/admin/field-notes/upload`, {
+    method: "POST",
+    body: form,
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? "Upload failed");
+  }
+  return res.json();
+}
+
+function NoteCard({ note }: { note: FieldNote }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = note.rawContent.length > 280;
+  const preview = isLong && !expanded
+    ? note.rawContent.slice(0, 280) + "…"
+    : note.rawContent;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          {note.sourceType === "nostr" ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-600/40">
+              <Radio className="w-3 h-3" />
+              Nostr
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300/60 dark:border-blue-600/40">
+              <Mic className="w-3 h-3" />
+              Audio Memo
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {format(new Date(note.createdAt), "MMM d, yyyy")}
+          </span>
+        </div>
+        {note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {note.tags.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border"
+              >
+                <Tag className="w-2.5 h-2.5" />
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+        {preview}
+      </p>
+
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="self-start inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="w-3 h-3" /> Show less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-3 h-3" /> Show more
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function AdminFieldNotes() {
+  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const { data: notes, isLoading } = useQuery<FieldNote[]>({
+    queryKey: ["admin-field-notes"],
+    queryFn: fetchNotes,
+    staleTime: 30_000,
+    enabled: isAuthenticated,
+  });
+
+  const mutation = useMutation({
+    mutationFn: uploadAudio,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-field-notes"] });
+      setUploadError(null);
+    },
+    onError: (err: Error) => {
+      setUploadError(err.message);
+    },
+  });
+
+  const handleFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+      setUploadError(null);
+      mutation.mutate(file);
+    },
+    [mutation],
+  );
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles],
+  );
+
+  const nostrCount = notes?.filter((n) => n.sourceType === "nostr").length ?? 0;
+  const audioCount = notes?.filter((n) => n.sourceType === "audio").length ?? 0;
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-24 max-w-md text-center flex flex-col items-center gap-6">
+        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+          <Lock className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+            Login required
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            This page is only accessible to editors. Please log in to continue.
+          </p>
+        </div>
+        <button
+          onClick={login}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Log in
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 md:px-6 py-10 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl font-bold text-foreground mb-2">
+          Field Notes
+        </h1>
+        <p className="text-muted-foreground">
+          Nostr notes and audio memos auto-surfaced alongside episodes and zones.
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+            <Radio className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Nostr Notes</span>
+          </div>
+          <span className="text-3xl font-bold text-foreground">{nostrCount.toLocaleString()}</span>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+            <Mic className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Audio Memos</span>
+          </div>
+          <span className="text-3xl font-bold text-foreground">{audioCount.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* Audio upload drop zone */}
+      <div className="mb-8">
+        <h2 className="font-serif text-xl font-bold text-foreground mb-3">
+          Upload Voice Memo
+        </h2>
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`rounded-xl border-2 border-dashed transition-colors cursor-pointer p-10 flex flex-col items-center gap-4 ${
+            dragOver
+              ? "border-primary bg-primary/5"
+              : "border-border hover:border-primary/60 hover:bg-muted/30"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".m4a,.mp3,.wav,.ogg,.webm,.mp4"
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+
+          {mutation.isPending ? (
+            <>
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                Transcribing with Whisper…
+              </p>
+            </>
+          ) : (
+            <>
+              <Upload className="w-8 h-8 text-muted-foreground/60" />
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">
+                  Drag &amp; drop an audio file, or click to browse
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  .m4a · .mp3 · .wav · .ogg — up to 50 MB
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        {uploadError && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {uploadError}
+          </div>
+        )}
+
+        {mutation.isSuccess && (
+          <p className="mt-3 text-sm font-semibold text-green-600 dark:text-green-400">
+            ✓ Memo transcribed and saved successfully.
+          </p>
+        )}
+      </div>
+
+      {/* Notes list */}
+      <div>
+        <h2 className="font-serif text-xl font-bold text-foreground mb-4">
+          All Field Notes
+        </h2>
+
+        {isLoading ? (
+          <div className="flex items-center gap-3 text-muted-foreground py-12">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Loading field notes…
+          </div>
+        ) : !notes || notes.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            No field notes yet. Nostr notes sync daily and audio memos appear after upload.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {notes.map((note) => (
+              <NoteCard key={note.id} note={note} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

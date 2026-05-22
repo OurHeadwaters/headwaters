@@ -5,6 +5,7 @@ import { startGearSchedule } from "./routes/gear";
 import { getFeedCached } from "./lib/rss";
 import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-consistency";
 import { seedExpertCouncil, seedUlgBusinesses } from "./lib/seed-expert-council";
+import { startNostrIngestion } from "./lib/nostr-ingestion";
 
 const rawPort = process.env["PORT"];
 
@@ -82,4 +83,7 @@ app.listen(port, (err) => {
 
   // Initialise Stripe after server is ready (non-blocking)
   initStripe();
+
+  // Nostr ingestion — runs once at startup then daily (non-blocking)
+  startNostrIngestion();
 });

@@ -505,9 +505,121 @@ export function EpisodeDetail() {
             </div>
           )}
 
+          <FieldNotesSection slug={slug} />
+
           <OdysseyBridge variant="compact" />
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── "From the Field" section ─────────────────────────────────────── */
+
+type FieldNote = {
+  id: number;
+  sourceType: string;
+  rawContent: string;
+  tags: string[];
+  createdAt: string;
+};
+
+function FieldNotesSection({ slug }: { slug: string }) {
+  const [open, setOpen] = useState(true);
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  const { data: notes = [] } = useQuery<FieldNote[]>({
+    queryKey: ["field-notes-episode", slug],
+    queryFn: async () => {
+      const res = await fetch(
+        `${base}/api/field-notes?episode=${encodeURIComponent(slug)}`,
+      );
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!slug,
+  });
+
+  if (notes.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-6 py-4 hover:bg-muted/40 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-base font-bold text-foreground font-serif">
+            From the Field
+          </span>
+          <span className="text-xs font-semibold bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
+            {notes.length}
+          </span>
+        </div>
+        {open ? (
+          <ChevronLeft className="w-4 h-4 text-muted-foreground rotate-90" />
+        ) : (
+          <ChevronLeft className="w-4 h-4 text-muted-foreground -rotate-90" />
+        )}
+      </button>
+
+      {open && (
+        <div className="border-t border-border divide-y divide-border">
+          {notes.map((note) => (
+            <FieldNoteCard key={note.id} note={note} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FieldNoteCard({ note }: { note: FieldNote }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = note.rawContent.length > 320;
+  const preview =
+    isLong && !expanded ? note.rawContent.slice(0, 320) + "…" : note.rawContent;
+
+  const dateStr = (() => {
+    try {
+      return new Date(note.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  })();
+
+  return (
+    <div className="px-6 py-4 flex flex-col gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        {note.sourceType === "nostr" ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/50">
+            Nostr
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300/50">
+            Audio Memo
+          </span>
+        )}
+        {dateStr && (
+          <span className="text-xs text-muted-foreground">{dateStr}</span>
+        )}
+      </div>
+      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+        {preview}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="self-start text-xs font-semibold text-primary hover:underline"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
     </div>
   );
 }

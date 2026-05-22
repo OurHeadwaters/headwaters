@@ -7,7 +7,7 @@ import { ProductShelfSection, type ReviewedProduct } from "@/components/product-
 import { DebtFreedomCoachPanel } from "@/components/debt-freedom-coach";
 import {
   Loader2, Headphones, Users, Building2, ExternalLink,
-  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare, Bot,
+  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare, Bot, Radio,
 } from "lucide-react";
 
 type SourceFilter = "all" | "tsp" | "ulg";
@@ -231,6 +231,114 @@ function ShelfHeader({
         </span>
       )}
     </div>
+  );
+}
+
+/* ── Field Notes shelf ───────────────────────────────────────────────────── */
+
+type FieldNote = {
+  id: number;
+  sourceType: string;
+  rawContent: string;
+  tags: string[];
+  createdAt: string;
+};
+
+function FieldNoteCard({ note }: { note: FieldNote }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = note.rawContent.length > 280;
+  const preview =
+    isLong && !expanded ? note.rawContent.slice(0, 280) + "…" : note.rawContent;
+
+  const dateStr = (() => {
+    try {
+      return new Date(note.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  })();
+
+  return (
+    <div className="p-5 rounded-xl border border-border bg-card flex flex-col gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        {note.sourceType === "nostr" ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/50">
+            <Radio className="w-2.5 h-2.5" />
+            Nostr
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300/50">
+            <Mic className="w-2.5 h-2.5" />
+            Audio Memo
+          </span>
+        )}
+        {dateStr && (
+          <span className="text-xs text-muted-foreground">{dateStr}</span>
+        )}
+      </div>
+      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+        {preview}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="self-start text-xs font-semibold text-primary hover:underline"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function FieldNotesShelf({
+  zoneSlug,
+  zoneName,
+  zoneColor,
+}: {
+  zoneSlug: string;
+  zoneName: string;
+  zoneColor: string;
+}) {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  const { data: notes = [] } = useQuery<FieldNote[]>({
+    queryKey: ["field-notes-zone", zoneSlug],
+    queryFn: async () => {
+      const res = await fetch(
+        `${base}/api/field-notes?zone=${encodeURIComponent(zoneSlug)}`,
+      );
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!zoneSlug,
+  });
+
+  if (notes.length === 0) return null;
+
+  return (
+    <section>
+      <ShelfHeader
+        icon={<Radio className="w-4 h-4" />}
+        title="Field Notes"
+        count={notes.length}
+        zoneColor={zoneColor}
+      />
+      <p className="text-sm text-muted-foreground mb-5 ml-11">
+        Nostr notes and audio memos from the field, tagged for{" "}
+        {zoneName.toLowerCase()}.
+      </p>
+      <div className="flex flex-col gap-4">
+        {notes.map((note) => (
+          <FieldNoteCard key={note.id} note={note} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -469,6 +577,9 @@ export default function ZoneDetailPage() {
             </div>
           </section>
         )}
+
+        {/* Shelf 4: Field Notes */}
+        <FieldNotesShelf zoneSlug={zone.slug} zoneName={zone.name} zoneColor={zone.color} />
 
         {/* Gear shelf */}
         {gearProducts.length > 0 && (
