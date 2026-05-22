@@ -201,6 +201,70 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.ramseysolutions.com",
     zones: ["zone-0"],
   },
+  {
+    id: "brian-aleksivich",
+    name: "Brian Aleksivich",
+    role: "Community Building & Preparedness Outreach",
+    description:
+      "Co-host of the Fireside Freedom Podcast and founder of The Lots Project — a liberty-minded community initiative focused on land, connection, and self-reliance. Brian brings grassroots community-building experience to the intersection of freedom philosophy and practical preparedness.",
+    url: "https://www.thelotsproject.com",
+    zones: ["zone-0", "zone-2"],
+  },
+  {
+    id: "lettie-loo",
+    name: "Lettie Loo",
+    role: "Liberty Lifestyle & Personal Freedom",
+    description:
+      "Co-host of the Fireside Freedom Podcast and creator of Liberty All Day — a platform exploring the everyday practice of living free. Lettie covers the mindset shifts, habits, and choices that build a genuinely self-directed life.",
+    url: "https://libertyallday.home.blog",
+    zones: ["zone-0", "zone-1"],
+  },
+  {
+    id: "tim-toolman-cook",
+    name: "Tim 'Toolman' Cook",
+    role: "Home Systems & Workshop Preparedness",
+    description:
+      "Alberta-based handyman, homesteader, and host of the Workshop Podcast. Tim is the anchor of the future Tool Shed concept — covering practical home repair, workshop skills, and the kind of hands-on preparedness that keeps a property running no matter what. If it involves tools, Tim has it covered.",
+    url: "https://www.toolmantim.co",
+    zones: ["zone-3"],
+  },
+  {
+    id: "ken-eash",
+    name: "Ken Eash",
+    role: "Constructive Liberty & Homestead Building",
+    description:
+      "Co-host of the Fireside Freedom Podcast and host of the Constructive Liberty Podcast. Ken blends the principles of personal freedom with the practical craft of building — from structures to systems — on the homestead.",
+    url: "https://www.kennetheash.com",
+    zones: ["zone-3"],
+  },
+  {
+    id: "nate-erin-lamaster",
+    name: "Nate & Erin Lamaster",
+    role: "Homesteading & Small Farm Living",
+    description:
+      "Co-hosts of the Fireside Freedom Podcast and operators of Two Chicks Homestead. Nate and Erin document real homestead life — the animals, the gardens, the setbacks, and the wins — and inspire others to build productive, freedom-centered lives on the land.",
+    url: "https://www.twochickshomestead.com",
+    zones: ["zone-2", "zone-3"],
+  },
+  {
+    id: "amy-fireside",
+    name: "Amy",
+    role: "Farmstead Life & Home Food Production",
+    description:
+      "Co-host of the Fireside Freedom Podcast and creator of A Farmish Kind of Life — a practical, grounded resource for anyone building a homestead or farm-based lifestyle. Amy covers everything from raising animals to preserving the harvest with honesty and humor.",
+    url: "https://www.afarmishkindoflife.com",
+    zones: ["zone-2"],
+  },
+  {
+    id: "hawkins-j",
+    name: "Hawkins J",
+    role: "Liberty Media & Podcast Production",
+    description:
+      "Co-host of the Fireside Freedom Podcast and a key voice in the liberty-media space. Hawkins brings a sharp perspective on freedom philosophy, independent media, and the culture of self-reliance.",
+    url: "",
+    comingSoon: true,
+    zones: ["zone-0"],
+  },
 ];
 
 export const ULG_BUSINESSES: UlgBusiness[] = [
