@@ -526,11 +526,21 @@ type FieldNote = {
   metaImageUrl?: string | null;
 };
 
+type FieldNoteSource = "all" | "nostr" | "audio" | "youtube";
+
+const FIELD_NOTE_SOURCE_FILTERS: { value: FieldNoteSource; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "nostr", label: "Nostr" },
+  { value: "audio", label: "Audio" },
+  { value: "youtube", label: "YouTube" },
+];
+
 function FieldNotesSection({ slug }: { slug: string }) {
   const [open, setOpen] = useState(true);
+  const [sourceFilter, setSourceFilter] = useState<FieldNoteSource>("all");
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-  const { data: notes = [] } = useQuery<FieldNote[]>({
+  const { data: allNotes = [] } = useQuery<FieldNote[]>({
     queryKey: ["field-notes-episode", slug],
     queryFn: async () => {
       const res = await fetch(
@@ -543,7 +553,22 @@ function FieldNotesSection({ slug }: { slug: string }) {
     enabled: !!slug,
   });
 
-  if (notes.length === 0) return null;
+  const { data: filteredNotes = [] } = useQuery<FieldNote[]>({
+    queryKey: ["field-notes-episode", slug, sourceFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({ episode: slug });
+      if (sourceFilter !== "all") params.set("source", sourceFilter);
+      const res = await fetch(`${base}/api/field-notes?${params}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!slug && sourceFilter !== "all",
+  });
+
+  const notes = sourceFilter === "all" ? allNotes : filteredNotes;
+
+  if (allNotes.length === 0) return null;
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -556,7 +581,7 @@ function FieldNotesSection({ slug }: { slug: string }) {
             From the Field
           </span>
           <span className="text-xs font-semibold bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
-            {notes.length}
+            {allNotes.length}
           </span>
         </div>
         {open ? (
@@ -567,10 +592,36 @@ function FieldNotesSection({ slug }: { slug: string }) {
       </button>
 
       {open && (
-        <div className="border-t border-border divide-y divide-border">
-          {notes.map((note) => (
-            <FieldNoteCard key={note.id} note={note} />
-          ))}
+        <div className="border-t border-border">
+          <div className="flex items-center gap-1.5 px-6 py-3 border-b border-border">
+            {FIELD_NOTE_SOURCE_FILTERS.map((f) => {
+              const active = sourceFilter === f.value;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => setSourceFilter(f.value)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    active
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-transparent text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+          {notes.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No {sourceFilter} notes for this episode yet.
+            </p>
+          ) : (
+            <div className="divide-y divide-border">
+              {notes.map((note) => (
+                <FieldNoteCard key={note.id} note={note} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

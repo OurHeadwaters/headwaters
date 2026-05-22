@@ -59,7 +59,7 @@ async function episodeToSlugs(episodeSlug: string): Promise<string[]> {
 
 router.get("/field-notes", async (req, res) => {
   try {
-    const { zone, transformation, episode } = req.query as Record<
+    const { zone, transformation, episode, source } = req.query as Record<
       string,
       string | undefined
     >;
@@ -86,6 +86,12 @@ router.get("/field-notes", async (req, res) => {
         sql`${curatedItemsTable.tags} @> ${JSON.stringify([slug])}::jsonb`,
     );
 
+    const validSources = ["youtube", "nostr", "audio"];
+    const sourceFilter =
+      source && validSources.includes(source)
+        ? eq(curatedItemsTable.sourceType, source)
+        : undefined;
+
     const items = await db
       .select()
       .from(curatedItemsTable)
@@ -93,6 +99,7 @@ router.get("/field-notes", async (req, res) => {
         and(
           eq(curatedItemsTable.published, true),
           or(...tagConditions),
+          sourceFilter,
         ),
       )
       .orderBy(desc(curatedItemsTable.createdAt))

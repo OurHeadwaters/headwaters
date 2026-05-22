@@ -336,6 +336,8 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
   return <div>{cardContent}</div>;
 }
 
+type FieldNoteSource = "all" | "nostr" | "audio" | "youtube";
+
 function FieldNotesShelf({
   zoneSlug,
   zoneName,
@@ -346,8 +348,9 @@ function FieldNotesShelf({
   zoneColor: string;
 }) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const [sourceFilter, setSourceFilter] = useState<FieldNoteSource>("all");
 
-  const { data: notes = [] } = useQuery<FieldNote[]>({
+  const { data: allNotes = [] } = useQuery<FieldNote[]>({
     queryKey: ["field-notes-zone", zoneSlug],
     queryFn: async () => {
       const res = await fetch(
@@ -360,25 +363,71 @@ function FieldNotesShelf({
     enabled: !!zoneSlug,
   });
 
-  if (notes.length === 0) return null;
+  const { data: filteredNotes = [] } = useQuery<FieldNote[]>({
+    queryKey: ["field-notes-zone", zoneSlug, sourceFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({ zone: zoneSlug });
+      if (sourceFilter !== "all") params.set("source", sourceFilter);
+      const res = await fetch(`${base}/api/field-notes?${params}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!zoneSlug && sourceFilter !== "all",
+  });
+
+  const notes = sourceFilter === "all" ? allNotes : filteredNotes;
+
+  if (allNotes.length === 0) return null;
+
+  const SOURCE_FILTERS: { value: FieldNoteSource; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "nostr", label: "Nostr" },
+    { value: "audio", label: "Audio" },
+    { value: "youtube", label: "YouTube" },
+  ];
 
   return (
     <section>
       <ShelfHeader
         icon={<Radio className="w-4 h-4" />}
         title="Field Notes"
-        count={notes.length}
+        count={allNotes.length}
         zoneColor={zoneColor}
       />
-      <p className="text-sm text-muted-foreground mb-5 ml-11">
+      <p className="text-sm text-muted-foreground mb-4 ml-11">
         Nostr notes and audio memos from the field, tagged for{" "}
         {zoneName.toLowerCase()}.
       </p>
-      <div className="flex flex-col gap-4">
-        {notes.map((note) => (
-          <FieldNoteCard key={note.id} note={note} />
-        ))}
+      <div className="flex items-center gap-1.5 ml-11 mb-5">
+        {SOURCE_FILTERS.map((f) => {
+          const active = sourceFilter === f.value;
+          return (
+            <button
+              key={f.value}
+              onClick={() => setSourceFilter(f.value)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                active
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-transparent text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
+      {notes.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-6 text-center">
+          No {sourceFilter} notes found for this zone yet.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {notes.map((note) => (
+            <FieldNoteCard key={note.id} note={note} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
