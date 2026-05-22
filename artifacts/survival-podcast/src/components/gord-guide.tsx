@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { GordBird, type IdleAnim } from "./gord-bird";
 import {
-  gordTips,
   routeKeyFromPath,
-  hasSeenGord,
-  markGordSeen,
+  getCurrentGordTip,
+  advanceGordVariant,
+  hasSeenAllVariants,
   type GordRouteKey,
 } from "@/lib/gord-tips";
 
@@ -90,6 +90,7 @@ function useIdleAnimation(paused: boolean, variant: "full" | "head"): IdleAnim {
 
 export function GordGuide({ path }: GordGuideProps) {
   const [routeKey, setRouteKey] = useState<GordRouteKey | null>(null);
+  const [tip, setTip] = useState<{ heading: string; body: string } | null>(null);
   const [visible, setVisible] = useState(false);
   const [perchVisible, setPerchVisible] = useState(false);
   const [tipHovered, setTipHovered] = useState(false);
@@ -113,8 +114,10 @@ export function GordGuide({ path }: GordGuideProps) {
       return;
     }
 
-    const seen = hasSeenGord(key);
-    if (!seen) {
+    const allSeen = hasSeenAllVariants(key);
+    if (!allSeen) {
+      const currentTip = getCurrentGordTip(key);
+      setTip(currentTip);
       const timer = setTimeout(() => {
         setVisible(true);
         setPerchVisible(false);
@@ -128,7 +131,7 @@ export function GordGuide({ path }: GordGuideProps) {
 
   function dismiss() {
     if (routeKey) {
-      markGordSeen(routeKey);
+      advanceGordVariant(routeKey);
     }
     setVisible(false);
     setTipHovered(false);
@@ -142,12 +145,10 @@ export function GordGuide({ path }: GordGuideProps) {
 
   if (!routeKey) return null;
 
-  const tip = gordTips[routeKey];
-
   return (
     <>
       <AnimatePresence>
-        {visible && (
+        {visible && tip && (
           <motion.div
             key="gord-guide"
             initial={{ x: 120, opacity: 0 }}
