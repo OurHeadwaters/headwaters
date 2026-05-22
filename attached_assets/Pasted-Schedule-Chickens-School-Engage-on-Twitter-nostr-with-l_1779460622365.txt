@@ -1,0 +1,325 @@
+Schedule
+
+Chickens 
+School
+Engage on Twitter & nostr with like minded accounts over coffee and breakfast (chaffles)
+
+Outline Topic of the day
+- Twitter using GPT 
+   - video, blog or podcast with show notes affiliate links
+
+Publish content 
+
+Walk/exercise
+Shower
+Laundry
+
+Work on course, workshop, newsletter or revenue generating project
+
+Engage on twitter
+
+Do house work
+
+
+
+How does NOSTR differ from a traditional protocol?
+
+A "protocol" in web development refers to a set of rules and guidelines that computers follow to communicate with each other over the internet. Think of it like a handshake or a conversation between two people who speak the same language. By using a common language, computers can share information and work together to display websites, send emails or transfer files. One well-known example of a protocol is the "HTTP" you see at the beginning of a website address, which stands for Hypertext Transfer Protocol.
+
+SIMPLE
+
+Introducing NOSTR, a protocol to improve internet communication in a #WEF led world. #twitterCEO
+
+Here are the key features that make it unique:
+
+1/5 Object-oriented approach: NOSTR handles data as objects, rather than packets or bytes, streamlining complex data structure management
+
+2/5 Encapsulation: Data & behavior are self-contained objects, promoting modularity, maintainability & reusability for easier development
+
+3/5 Efficient communication: NOSTR optimizes data storage, retrieval, and updates to minimize messages exchanged between computers
+
+4/5 Strong security: Built-in encryption, access control & authentication provide robust protection for data transmission/storage
+
+5/5 Scalability & adaptability: NOSTR can scale horizontally & vertically, adapting to varying network conditions & usage patterns
+
+#NOSTR #InternetProtocol
+
+DETAILED
+
+NOSTR, short for Networked Object-Oriented Storage and Retrieval, is a novel and hypothetical protocol that, like traditional protocols, aims to facilitate communication between computers over the internet. However, there are a few key differences between NOSTR and traditional protocols that make it distinct:
+
+1. Object-oriented approach: Unlike traditional protocols, which usually focus on the transmission of data packets and bytes, NOSTR is designed to handle data as objects. This means that data is organized, accessed, and manipulated based on its relationship with other data, making it easier for developers to work with complex data structures.
+
+2. Encapsulation of functionality: NOSTR would encapsulate the behavior and data into self-contained objects. This promotes modularity, maintainability, and reusability, as each object can be independently developed, tested, and reused in various applications.
+
+3. Streamlined communication: NOSTR aims to reduce the communication overhead by minimizing the number of messages exchanged between computers. This could be achieved by optimizing data storage, retrieval, and updates using advanced algorithms and techniques.
+
+4. Enhanced security: By design, NOSTR would provide built-in security measures to protect data transmission and storage. This could include encryption, access control, and authentication mechanisms to ensure that only authorized users can access and manipulate the data.
+
+5. Scalability and adaptability: NOSTR would be designed to scale both horizontally (adding more servers to improve performance) and vertically (optimizing server resources for greater computational power). This flexibility allows it to adapt to varying network conditions and usage patterns.
+
+In summary, while traditional protocols generally focus on the communication aspects, NOSTR represents a shift towards a more holistic approach, bringing together object-oriented principles, encapsulation of functionality, streamlined communication, enhanced security, and scalability. However, it is crucial to note that NOSTR is purely a hypothetical concept and not an actual implemented protocol at this time.
+
+POSTED ON NOSTR RE:CONTENT CREATION
+
+I’ve been increasing my skills in modern preparedness since 2011 when a friend pointed me towards solutions instead of problems- I was freaking out after learning how money works in my mid 20’s. 
+
+Starting with food grade buckets from the long term care home I worked at, mylar bags, a vacuum and a hair straightener, I got started in the way most people do—shoving beans and rice in the basement. 
+
+I went from scared to prepare over the course of 12 years. We now have two children on a resilient hunters homestead, living a life of modern preparedness. 
+
+Starting with the most important hierarchy of needs—we plugged away at the home to install:
+-Heating systems (three forms), including a fireplace
+-Gravity fed septic system 
+-Manual well pump for our spring fed well 
+-Gardens and indoor growing systems
+-Pantry rotation systems
+
+And that’s just the infrastructure. The skills we’ve learned along the way is where the most value is derived and I’m hoping to pay that forward in a more efficient way. 
+
+What type of detailed digital content are #grownostr folks willing to trade sats or fiat for? 
+
+-Purchasing ebook PDFs with nice pictures/ How To’s (forms of canning, preservation methods, kratky hydroponics, seed starting, hatching chicks, homeschooling, trapping, hunting, fishing, etc)
+
+-Purchasing Online courses (with video, quizzes, etc) on similar content as above. 
+
+-Support daily content creation through a membership and affiliates (podcast, writing, blog)
+
+-PDF Cookbooks and canning recipes
+
+-Templates/Handbook for organizing:
+-Preps and pantry
+-Business
+-Homestead
+-Homeschool
+-Household
+
+-Kids content- videos of my family doing homesteaducation  things and my sons teaching other kids basics.
+
+
+
+
+
+
+Since 2011, I have been enhancing my expertise in modern preparedness when a friend introduced me to exploring solutions to the problems of the world—an eye-opening experience that broadened my understanding of economics during my mid-20s.
+
+My journey began with food-grade buckets from the long-term care home where I worked, Mylar bags, a vacuum, and a hair straightener. Like many others, I began by storing beans and rice in the basement to prepare for any disaster (including standard financial hardship) that may occur from a job loss or disability. 
+
+Over the course of 12 years, I transitioned from scared to well-prepared. Our family of four now resides on a resilient hunter's homestead, embracing a lifestyle of modern preparedness.
+
+We focused on the most crucial hierarchy of needs and progressively upgraded our home with:
+
+- Three types of heating systems, including a fireplace
+- A gravity-fed septic system
+- A manual well pump for our spring-fed well
+- Gardens and indoor growing systems
+- Pantry rotation systems
+
+But the real value lies in the skills we've acquired along the way. I'm eager to share this knowledge more efficiently.
+
+In the future we will be sharing content in a variety of ways:
+
+- Engaging e-book PDFs with eye-catching images and how-to guides (covering canning techniques, preservation methods, kratky hydroponics, seed-starting, chick hatching, homeschooling, trapping, hunting, fishing, etc.)
+
+- Comprehensive online courses complete with videos and quizzes on topics similar to those listed above.
+
+- Exclusive access to content creation through a membership and affiliate program (including podcasts, articles, and blog posts).
+
+- PDF cookbooks featuring canning recipes.
+
+- Organizational templates and system layouts for:
+  - Pantry
+  - Business
+  - Homestead
+  - Homeschool
+  - Household
+
+- Children's content: videos showcasing our family engaging in homestead education activities, with our sons teaching other kids the basics.
+
+I’m shifting my business, Parrs Jars, from LOCAL to DIGITAL to compound impact—what kind of content are you looking for? 
+
+
+
+Why I love Jan
+
+If you come to Dryden Jan can be found working. In the garden. At the store. Making preserves. 
+
+Jan snickered when our young coordinator mentioned he out 1980 on her logo. That’s fine, she said, but you could easily add 25 years or so. 
+
+She won’t sell squash for more than a dollar a piece. They could grow to 14 lbs, but “you’ll leave with a truck full” either way. 
+
+When listing Jan’s Jam we were discussing her price point. We talked about our pricing structure and how we work from what SHE needs. Jan looked at me and said “I’m concerned about the affordability.” She wants above all else to give everyone access to freshly local and loved food. 
+
+It came down to $7….but I had to pull that number out. This is how 807 Food Co-op works;
+
+Jan says she needs $7 to make her time worthwhile and keep afloat. So we do the math to keep her afloat.
+
+807 needs 15% to make their time worthwhile and to keep afloat. So we create a model to make that happen.
+
+807 adds 5% to items for packaging, processing and pickup fees.
+
+Jan gives 807 ~10% of sales to sustain the foundation of the organization—software and labour.
+
+All producer members share $50/year to achieve growth for the organization. 
+
+The rest of what we can do for food security is UP TO YOU! 
+
+807 Food Co-op is launching a crowd funding campaign to catapult impact in Northwestern Ontario. 
+
+Our plans are big and our steps are small. Being a grassroots organization, 807 Food Co-op is focused on creating a collaborative, scaleable, deep rooted food system in our region. 
+
+Join us in our mission; 
+Providing quality, locally grown and crafted products through a grassroots food system to foster self-sufficiency and sustainability in Northwestern Ontario.
+
+REWRITE 1
+
+
+
+Why I Admire Jan.
+
+In the rural town of Dryden, ON you can always find Jan hard at work. Whether she's tending to her garden, slugging soil at 🇨🇦Canadian Tire, or crafting delicious preserves, her dedication is inspiring.
+
+With a warm and infectious laugh, Jan responded to our young co-op coordinator who suggested her logo displayed 1980. "That's fine," she giggled, "but you could easily add another 25 years or so."
+
+Jan firmly believes that no squash should be sold for more than a dollar each. Regardless of their size, even if they reach 14 lbs, she ensures you'll always leave with a truck full of her produce. She won’t sell it on the co-op she says—cause you won’t like my prices. 
+
+As we discussed the pricing of Jan's Jam, we considered our pricing structure and how it reflects her needs. Jan's primary concern was affordability for the customers, as she wants everyone to have access to fresh, locally-sourced, and lovingly-made food. Times are tough, she said. 
+
+As I gazed into Jan's eyes, I couldn't help but ask, "Have prices gone up for you too?" Her stunning yet sorrowful eyes met mine, silently revealing the truth she couldn't bring herself to admit. The burden weighing heavily on her heart, it was clear that producers, like her, were feeling the relentless, tightening squeeze of financial pressure.
+
+Eventually, we agreed on a $7 price point back in her pocket, but it took some convincing. 
+
+Everyone is feeling the pinch but it’s producers who are there when people really need it. Support local and build decentralized food systems to keep the Jan’s of the world running strong.
+
+
+Here's how the 807 Food Co-op pricing model supports Jan and other local producers:
+
+1. Jan needs $7 to make her efforts worthwhile and stay in business, so we do the calculations to sustain her livelihood.
+2. An additional 5% is incorporated for packaging, processing, and pickup fees.
+3. Jan contributes 10% of her sales to maintain the organization's foundation, including software, marketing and labor costs.
+5. All producer members contribute $50 per year towards the growth of the organization.
+
+BUT .GOV STRIKES AGAIN AND TELLS JAN SHE NEEDS A LICENSE—
+
+We are raising funds to operate a shared, local production facility (Food Hub) to get the Health Unit off Jan’s back (and hopefully everyone thereafter). 
+
+#GOV squashed my milk runs (which were like 95% “compliant”) and now they are trying to squash co-op members like Jan doing things safe but old school. She can’t afford to rent my licensed kitchen, I can’t afford it alone, nobody can afford to comply around here…We want to secure the future of “compliance” for our region so we can aid in knowledge transfer and get a decentralized food system going before everyone ages out completely. Average age right now is about 70–not kidding. 93year old Bob Wall is still diggin up taters.
+
+807 Food Co-op is initiating a crowdfunding campaign to boost our impact in Northwestern Ontario. Our aspirations are bold, yet we take small, calculated steps. Operating as a grassroots organization, we aim to establish a scalable, deeply-rooted, and collaborative food system in our region.
+
+We invite you to join our mission:
+
+"Empowering Northwestern Ontario with a grassroots food network that provides high-quality, locally-grown, and handcrafted products, fostering self-sufficiency and sustainability.”
+
+EVERY ZAP in the next 72hours WILL GO TOWARD A GROUP CONTRIBUTION FOR THIS CAMPAIGN. 
+
+SUGGEST A TEAM NAME FOR THE DONATION, WE WILL PICK THE BEST ONE AND I’LL SLAM THE LOCALS ON WHY BTC & NOSTR ARE AMAZING. 
+
+#grownostr
+#permaculture #impact #foodcoop
+#compliance
+@jackspirko​ and the TSP community.
+
+
+
+
+
+
+
+
+1/ Why I Admire Jan: A Story of Dedication and Community
+
+Meet Jan, a hardworking individual from the rural town of Dryden, ON. She's always busy – tending to her garden, working at Canadian Tire, or crafting delicious preserves – her commitment is truly inspiring. 💪
+
+2/ Jan's Infectious Laughter and Longevity
+
+Our young co-op coordinator was tweaking Jan's logo and it displayed 1980, to which she laughed, "That's fine, but you could easily add another 25 years or so." Her warmth and humor are just as captivating as her dedication. 😆
+
+3/ Affordability and Fair Pricing: Jan's Philosophy
+
+Jan believes no squash should be sold for more than a dollar each, no matter their size. She ensures you'll always leave with plenty of her produce. "You won't like my prices," she says, opting not to sell on the co-op. 🍈
+
+4/ Prioritizing Accessibility: Jan's Jam Dilemma
+
+During pricing discussions for Jan's Jam, our main concern was reflecting her needs while keeping it affordable for customers. She wants everyone to enjoy fresh, locally-sourced, and lovingly-made food in these tough times. 🍓
+
+5/ The Silent Struggles Producers Face: Jan's Unspoken Truth
+
+When I asked about price increases for Jan too, her eyes wordlessly exposed the truth. The burden and financial pressure faced by farmers like her is becoming unbearable. The producers are the ones feeling the pinch. 💔
+
+6/ Empowering Producers: A $7 Price Point Compromise
+
+After much convincing, we agreed on a $7 price point – providing fair compensation so Jan can continue her amazing work. 🌱
+
+7/ Support Local, Build a Decentralized Food System
+
+Let's support and strengthen our local farmers to keep the Jan's of the world flourishing. Decentralized food systems ensure our communities have better access to fresh, local produce. Together, we can create a brighter future. 🌎🤝
+
+I’m teaching a kratky hydroponics workshop tonight. 
+
+We do things simply with triple lined wooden boxes. I pump our fresh spring water into the boxes, mix the nutrients and plant my seedlings. No watering or maintenance (besides raising lights) and 4-6 weeks later we are eating and selling greens. 
+
+Swiss chard loves this system, so does cress. Lettuce is usually good too but needs a little more airflow that the others. Pac Choi is great as well.
+
+Biggest challenges in the past three years with this indoor system has been the aphids. When they show up it’s game over. I can control them for a few weeks or a month but eventually they take over. Start emitting a sticky substance and I have to pull everything and start fresh. 
+
+Because of this, succession planting has been tough. We do subscriptions but without effective collaborations; that model has been hard to keep up.
+
+Our business is shifting from focusing on local production (food subscriptions) into education (community workshops, online education, team building contracts). 
+
+We’ve built a not for profit co-op to fill the role of direct to consumer sales, allowing for more effective farm-farm collaborations through self-directed software rather than me buying and reselling all the vegetables in town. 😵‍💫
+
+It’s going to be a great change and am looking forward to teaching this ridiculously simple form of hydroponics. 
+
+——-
+
+I taught a kratky hydroponics workshop tonight and it was rather fun recalling my journey the past 3 years since @jackspirko introduced me to the method. 
+
+We made triple lined vapour barrier wooden boxes. I pump our fresh spring water into the boxes, mix the nutrients and plant my seedlings. No watering or maintenance (besides raising lights) and 4-6 weeks later we are eating and selling greens. 
+
+Swiss chard loves this system, so does cress. Lettuce is usually good too but needs a little more airflow that the others. Pac Choi and all the cousins are great as well.
+
+Biggest challenges in the past three years with this indoor system has been the aphids—and they always start on the red vein sorrel. When they show up it’s game over. I can control them for a few weeks or a month but eventually they take over. Start emitting a sticky substance and I have to pull everything and start fresh. 
+
+Because of this, succession planting has been tough. We do food subscriptions but without effective collaborations; that model has been hard to keep up.
+
+I was also growing microgreens to have variety in the greens subscriptions, but started outsourcing that to the only other regional producer. They took the most time out of everything…but over covid, I’d rather 24hrs a week with indoor growing at home than 24hrs in a mask in a long term care facility (my former field). 
+
+Our business is shifting from focusing on local production (food subscriptions) into education (community workshops, online education, team building contracts). The change was for a few reasons but most of all, it requires a skill set I don’t have. Administrative and task oriented focus. I’m sure I can outsource it but it’s a tight margin business in a small market so why swim upstream?
+
+We’ve worked with a few others and built a not for profit co-op to fill the role of direct to consumer sales, allowing for more effective farm-farm collaborations through self-directed software rather than me buying and reselling all the vegetables in town. 😵‍💫
+
+Kratky led me down a huge rabbit hole with local food systems…right down to unknowingly partnering with a corporate snake and what I believe is a local arm for the globalist agenda. Looking forward to sharing more of my story & #grownostr. 
+
+TEWRITE
+
+Tonight, I conducted a Kratky hydroponics workshop, where I fondly reminisced about my journey over the past three years since @jackspirko introduced me to this innovative method.
+
+In 2020 we built triple-lined vapor barrier wooden boxes to start offering greens subscriptions (our town went months without romaine) so I could charge higher prices.
+
+At the workshop I demonstrated how to pump fresh spring water into the boxes, mix in the nutrients, and plant seedlings. With minimal effort (apart from adjusting lights), we can enjoy and sell fresh greens in just 6weeks.
+
+Swiss chard and cress thrive in this system, while lettuce generally fares well, but requires a bit more airflow. Pac Choi and its relatives also perform excellently.
+
+The biggest challenge over the past three years with this indoor system has been aphids, which typically target the red vein sorrel first. When they appear, it's often difficult to control them for more than a few weeks or a month before they overrun the system. They eventually excrete a sticky substance, necessitating a complete overhaul and restart of the system.
+
+As a result, sustaining a consistent planting schedule has been difficult.
+
+Additionally, I was growing microgreens to diversify our subscriptions and started outsourcing production to another regional producer. While they were time-consuming, I found that spending 24 hours a week listening to podcasts, homeschooling and growing food indoors during Covid was preferable to working in a long-term care facility and witnessing the daily torment of beloved residents. 
+
+My undertakings these past few years have resulted in immense practical skills. Cheapest education I’ve ever gotten, but definitely the most I’ve ever fallen on my face.
+
+I was duped by a corporate snake and got into bed with a local arm of the globalists. More on that another time—#grownostr fans are the right audience for that story. 
+
+It’s been a whirlwind of irrational exuberance, but I wouldn’t have had it any other way. 
+
+
+
+Our business has shifted its focus from local production (food subscriptions) to education (community workshops, online courses, and team-building contracts). This change stemmed from various factors, but one challenge was that it demanded a skill set I don't possess: administrative and task-oriented focus. I could outsource it, but with tight margins, high expenses (I also did a dairy subscription, more on that tornado later) and a small consumer market, it makes more sense to avoid struggling against the current.
+
+Ultimately, we collaborated with others to establish a non-profit co-op for direct-to-consumer sales, facilitating more effective collaborations through self-directed software instead of relying solely on me as a coordinator. It’s very freeing to reduce customer service and invoice after invoice.
+
+It’s been a whirlwind of irrational exuberance, but I wouldn’t have had it any other way. 
+
+
+
