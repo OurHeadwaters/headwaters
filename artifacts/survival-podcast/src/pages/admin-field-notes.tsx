@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube, X, Plus } from "lucide-react";
+import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube, X, Plus, Flame } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { format } from "date-fns";
 
@@ -326,6 +326,9 @@ export function AdminFieldNotes() {
   const youtubeStatus = syncStatus?.["youtube"];
   const youtubeCount = youtubeStatus?.total ?? 0;
   const youtubeLastAt = youtubeStatus?.lastIngestedAt ?? null;
+  const firesideStatus = syncStatus?.["fireside-freedom"];
+  const firesideCount = firesideStatus?.total ?? 0;
+  const firesideLastAt = firesideStatus?.lastIngestedAt ?? null;
   const publishedCount = notes?.filter((n) => n.published).length ?? 0;
   const unpublishedCount = notes?.filter((n) => !n.published).length ?? 0;
 
@@ -373,7 +376,7 @@ export function AdminFieldNotes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
           <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
             <Radio className="w-4 h-4" />
@@ -399,6 +402,22 @@ export function AdminFieldNotes() {
               <Clock className="w-3 h-3" />
               Last synced {format(new Date(youtubeLastAt), "MMM d, yyyy")}
             </span>
+          )}
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+            <Flame className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Fireside Freedom</span>
+          </div>
+          <span className="text-3xl font-bold text-foreground">{firesideCount.toLocaleString()}</span>
+          {firesideLastAt && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3" />
+              Last synced {format(new Date(firesideLastAt), "MMM d, yyyy")}
+            </span>
+          )}
+          {!firesideLastAt && firesideCount === 0 && (
+            <span className="text-xs text-muted-foreground mt-0.5">Not yet synced</span>
           )}
         </div>
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
