@@ -5,6 +5,7 @@ import { logger } from "./logger";
 import { syncWordPressArchive } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
 import { syncUlg, correctUlgDiscoveredDates } from "./sources/ulg";
+import { syncFiresideFreedom } from "./sources/fireside-freedom";
 import { parseChannel } from "./rss";
 import { findUlgCrossLink, findExpertLink } from "./history-enrichment";
 
@@ -293,9 +294,10 @@ export type RefreshSummary = {
   youtube: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   ulg: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   council: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
+  firesideFreedom: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
 };
 
-const ALL_SOURCES = ["wordpress", "youtube", "ulg", "council"] as const;
+const ALL_SOURCES = ["wordpress", "youtube", "ulg", "council", "fireside-freedom"] as const;
 
 let inflight: Promise<RefreshSummary> | null = null;
 
@@ -320,18 +322,22 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
         youtube: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
         ulg: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
         council: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
+        firesideFreedom: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
       };
     }
   }
   inflight = (async () => {
     logger.info("Library refresh starting");
-    const [wp, yt, ulg, council] = await Promise.all([
+    const [wp, yt, ulg, council, firesideFreedom] = await Promise.all([
       recordRun("wordpress", syncWordPress),
       recordRun("youtube", syncYouTube),
       recordRun("ulg", syncUlgSource),
       recordRun("council", syncAllCouncilFeeds),
+      recordRun("fireside-freedom", () =>
+        syncFiresideFreedom({ upsertBatch: (items) => upsertBatch(items) }),
+      ),
     ]);
-    logger.info({ wp, yt, ulg, council }, "Library refresh complete");
+    logger.info({ wp, yt, ulg, council, firesideFreedom }, "Library refresh complete");
 
     // After sync is done (ULG content is now up-to-date), pre-compute cross-links
     // for any history episodes that don't yet have them cached in `extra`.
@@ -339,7 +345,7 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
       logger.warn({ err }, "precomputeHistoryCrossLinks failed");
     });
 
-    return { wordpress: wp, youtube: yt, ulg, council };
+    return { wordpress: wp, youtube: yt, ulg, council, firesideFreedom };
   })();
   try {
     return await inflight;
@@ -365,7 +371,7 @@ export function startBackgroundRefresh(): void {
 }
 
 export async function getSyncStatus(): Promise<{ source: string; lastRun: SyncRun | null }[]> {
-  const sources = ["wordpress", "youtube", "ulg", "council"];
+  const sources = ["wordpress", "youtube", "ulg", "council", "fireside-freedom"];
   const results: { source: string; lastRun: SyncRun | null }[] = [];
   for (const source of sources) {
     const [last] = await db
