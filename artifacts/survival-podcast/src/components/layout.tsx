@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X, LogIn, LogOut, User, ChevronDown } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
 import { GordGuide } from "./gord-guide";
@@ -38,16 +38,79 @@ function DropdownMenu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  const closeAndReturnFocus = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        close();
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [close]);
+
+  function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setOpen((v) => {
+        if (!v) {
+          setTimeout(() => itemRefs.current[0]?.focus(), 0);
+        }
+        return !v;
+      });
+    } else if (e.key === "Escape") {
+      close();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setTimeout(() => itemRefs.current[0]?.focus(), 0);
+    }
+  }
+
+  function handleMenuKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const focused = document.activeElement;
+    const idx = itemRefs.current.findIndex((el) => el === focused);
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeAndReturnFocus();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = (idx + 1) % items.length;
+      itemRefs.current[next]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = (idx - 1 + items.length) % items.length;
+      itemRefs.current[prev]?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      itemRefs.current[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      itemRefs.current[items.length - 1]?.focus();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      const lastIdx = items.length - 1;
+      if (e.shiftKey) {
+        const prev = idx <= 0 ? lastIdx : idx - 1;
+        itemRefs.current[prev]?.focus();
+      } else {
+        const next = idx >= lastIdx ? 0 : idx + 1;
+        itemRefs.current[next]?.focus();
+      }
+    }
+  }
 
   return (
     <div
@@ -57,7 +120,11 @@ function DropdownMenu({
       onMouseLeave={() => setOpen(false)}
     >
       <button
+        ref={triggerRef}
         onClick={() => setOpen((v) => !v)}
+        onKeyDown={handleTriggerKeyDown}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
           isActive
             ? "text-white border-b-2 border-[#D9A066]"
@@ -71,14 +138,21 @@ function DropdownMenu({
       </button>
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-64 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl pt-3 pb-2 z-50">
+        <div
+          role="menu"
+          aria-label={label}
+          onKeyDown={handleMenuKeyDown}
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-64 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl pt-3 pb-2 z-50"
+        >
           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1e3428] border-l border-t border-white/10 rotate-45" />
-          {items.map((item) => (
+          {items.map((item, i) => (
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setOpen(false)}
-              className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors"
+              role="menuitem"
+              ref={(el) => { itemRefs.current[i] = el as HTMLAnchorElement | null; }}
+              onClick={() => close()}
+              className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10"
             >
               <span className="text-sm font-semibold text-white">{item.label}</span>
               <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
