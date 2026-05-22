@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "wouter";
 import { motion, type Variants } from "framer-motion";
 import { GordBird } from "@/components/GordBird";
 
@@ -111,12 +112,11 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           >
             Open the Forge
           </button>
-          <a
-            href="#why-codetry"
-            className="px-7 py-3 rounded-md font-medium text-[#D9A066] border border-[#D9A066]/30 hover:border-[#D9A066]/60 transition-all duration-200"
-          >
-            Learn more
-          </a>
+          <Link href="/discover">
+            <span className="inline-block px-7 py-3 rounded-md font-medium text-[#D9A066] border border-[#D9A066]/30 hover:border-[#D9A066]/60 hover:bg-[#D9A066]/10 transition-all duration-200 cursor-pointer">
+              Find your zone
+            </span>
+          </Link>
         </motion.div>
 
         <motion.div variants={fadeInUp} className="flex items-center justify-center gap-6 pt-4 text-[#8A7A66] text-sm">

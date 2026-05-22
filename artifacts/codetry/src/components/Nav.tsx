@@ -50,12 +50,17 @@ export default function Nav() {
               </Link>
             );
           })}
-          <a
-            href="mailto:codetry@gmail.com"
-            className="text-sm font-medium px-4 py-2 rounded-md bg-[#D9A066] text-[#2B2825] hover:bg-[#C88E55] transition-colors"
-          >
-            Get in touch
-          </a>
+          <Link href="/discover">
+            <span
+              className={`text-sm font-semibold px-4 py-2 rounded-md border transition-colors cursor-pointer ${
+                location === "/discover"
+                  ? "bg-[#D9A066] text-[#2B2825] border-[#D9A066]"
+                  : "border-[#D9A066] text-[#D9A066] hover:bg-[#D9A066] hover:text-[#2B2825]"
+              }`}
+            >
+              Find your zone
+            </span>
+          </Link>
         </nav>
       </div>
     </header>

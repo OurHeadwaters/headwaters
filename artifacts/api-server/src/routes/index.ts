@@ -28,6 +28,7 @@ import fieldNotesRouter from "./field-notes";
 import adminFieldNotesRouter from "./admin-field-notes";
 import adminSyncStatusRouter from "./admin-sync-status";
 import mapRouter from "./map";
+import codetryAssessRouter from "./codetry-assess";
 
 const router: IRouter = Router();
 
@@ -60,5 +61,6 @@ router.use(stripeWorkshopsRouter);
 router.use(adminFieldNotesRouter);
 router.use(adminSyncStatusRouter);
 router.use(mapRouter);
+router.use(codetryAssessRouter);
 
 export default router;
