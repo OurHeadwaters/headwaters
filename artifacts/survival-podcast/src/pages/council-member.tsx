@@ -327,12 +327,12 @@ export function CouncilMemberPage() {
       </div>
 
       {/* Own Podcast Episodes */}
-      {ownEpisodes.length > 0 && (
+      {expert.podcastFeedUrl && ownEpisodes.length > 0 && (
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-5">
             <Radio className="w-4 h-4 text-accent" />
             <h2 className="font-serif text-xl font-bold text-foreground">
-              {expert.name.split(" ")[0]}'s Podcast
+              From {expert.name.split(" ")[0]}'s Podcast
             </h2>
             <span className="ml-1 text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {ownEpisodes.length} episode{ownEpisodes.length !== 1 ? "s" : ""}
