@@ -71,7 +71,7 @@ function DropdownMenu({
       </button>
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl py-2 z-50">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-64 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl pt-3 pb-2 z-50">
           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1e3428] border-l border-t border-white/10 rotate-45" />
           {items.map((item) => (
             <Link
