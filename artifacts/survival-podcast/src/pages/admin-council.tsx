@@ -25,6 +25,7 @@ interface Expert {
   description: string;
   url: string;
   zones: string[];
+  crew?: string | null;
   sortOrder: number;
   updatedAt: string;
   podcastFeedUrl?: string | null;
@@ -140,17 +141,18 @@ interface ExpertFormData {
   description: string;
   url: string;
   zones: string[];
+  crew: string;
   sortOrder: number;
   podcastFeedUrl: string;
   rssSlug: string;
 }
 
 const blankExpert = (): ExpertFormData => ({
-  slug: "", name: "", role: "", description: "", url: "", zones: [], sortOrder: 999, podcastFeedUrl: "", rssSlug: "",
+  slug: "", name: "", role: "", description: "", url: "", zones: [], crew: "", sortOrder: 999, podcastFeedUrl: "", rssSlug: "",
 });
 
 function expertToForm(e: Expert): ExpertFormData {
-  return { slug: e.slug, name: e.name, role: e.role, description: e.description, url: e.url, zones: e.zones, sortOrder: e.sortOrder, podcastFeedUrl: e.podcastFeedUrl ?? "", rssSlug: e.rssSlug ?? "" };
+  return { slug: e.slug, name: e.name, role: e.role, description: e.description, url: e.url, zones: e.zones, crew: e.crew ?? "", sortOrder: e.sortOrder, podcastFeedUrl: e.podcastFeedUrl ?? "", rssSlug: e.rssSlug ?? "" };
 }
 
 function ExpertForm({
@@ -256,6 +258,15 @@ function ExpertForm({
             placeholder="e.g. steven-harris-podcast"
             value={form.rssSlug}
             onChange={(e) => field("rssSlug", e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Crew <span className="font-normal normal-case">(optional — e.g. fireside-freedom)</span></label>
+          <input
+            className="rounded border border-border bg-background text-sm p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="e.g. fireside-freedom"
+            value={form.crew}
+            onChange={(e) => field("crew", e.target.value.toLowerCase().replace(/\s+/g, "-"))}
           />
         </div>
       </div>
@@ -518,6 +529,9 @@ function ExpertsTab() {
                       {expert.zones.map((z) => (
                         <span key={z} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{ZONE_LABELS[z] ?? z}</span>
                       ))}
+                      {expert.crew && (
+                        <span className="text-xs bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">crew: {expert.crew}</span>
+                      )}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground/60">
                       Order: {expert.sortOrder} · Updated {new Date(expert.updatedAt).toLocaleDateString()}
