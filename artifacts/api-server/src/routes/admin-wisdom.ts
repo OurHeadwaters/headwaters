@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, wisdomScrapeLogTable } from "@workspace/db";
-import { asc } from "drizzle-orm";
+import { db, wisdomScrapeLogTable, wisdomGemsTable } from "@workspace/db";
+import { asc, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
 import { scrapeAll, scrapeSource, type ScrapeSourceType } from "../lib/wisdom-scraper";
@@ -118,6 +118,33 @@ router.post("/admin/wisdom/scrape", requireEditor, async (req, res) => {
     res.status(500).json({ error: "Scrape failed", detail: String(err) });
   } finally {
     scrapeInProgress = false;
+  }
+});
+
+/**
+ * DELETE /api/admin/wisdom/gems/:id
+ * Permanently deletes a wisdom gem by ID. Editor-only.
+ */
+router.delete("/admin/wisdom/gems/:id", requireEditor, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid gem id" });
+      return;
+    }
+    const [deleted] = await db
+      .delete(wisdomGemsTable)
+      .where(eq(wisdomGemsTable.id, id))
+      .returning({ id: wisdomGemsTable.id });
+    if (!deleted) {
+      res.status(404).json({ error: "Gem not found" });
+      return;
+    }
+    logger.info({ id }, "admin-wisdom: gem deleted");
+    res.status(204).end();
+  } catch (err) {
+    logger.error({ err }, "admin-wisdom: DELETE /gems/:id failed");
+    res.status(500).json({ error: "Failed to delete gem" });
   }
 });
 

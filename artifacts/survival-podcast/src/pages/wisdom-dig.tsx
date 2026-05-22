@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Anchor, Sparkles, RefreshCw, ExternalLink, BookOpen, Globe, Twitter, Users } from "lucide-react";
+import { Anchor, Sparkles, RefreshCw, ExternalLink, BookOpen, Globe, Twitter, Users, Trash2, ShieldCheck } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -29,7 +29,17 @@ interface GemsResponse {
   offset: number;
 }
 
+interface AuthUser {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}
+
 type SourceFilter = "all" | "episode" | "council";
+
+const ALL_FILTERS: SourceFilter[] = ["all", "episode", "council"];
 
 const FILTER_TABS: { id: SourceFilter; label: string; icon: React.ReactNode }[] = [
   { id: "all", label: "All Gems", icon: <Sparkles className="w-3.5 h-3.5" /> },
@@ -41,6 +51,12 @@ async function fetchGems(offset = 0, source: SourceFilter = "all"): Promise<Gems
   const sourceParam = source !== "all" ? `&source=${source}` : "";
   const res = await fetch(apiUrl(`/wisdom/gems?limit=40&offset=${offset}${sourceParam}`));
   if (!res.ok) throw new Error("Failed to load gems");
+  return res.json();
+}
+
+async function fetchAuthUser(): Promise<{ user: AuthUser | null }> {
+  const res = await fetch(apiUrl("/auth/user"), { credentials: "include" });
+  if (!res.ok) return { user: null };
   return res.json();
 }
 
@@ -60,6 +76,14 @@ async function triggerExtraction(): Promise<{ extracted: number; episodes: numbe
   });
   if (!res.ok) throw new Error("Extraction failed");
   return res.json();
+}
+
+async function deleteGem(id: number): Promise<void> {
+  const res = await fetch(apiUrl(`/admin/wisdom/gems/${id}`), {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete gem");
 }
 
 const GEM_PALETTE = [
@@ -94,10 +118,18 @@ function GemCard({
   gem,
   anchored,
   onAnchor,
+  curating,
+  armed,
+  onArm,
+  onDelete,
 }: {
   gem: WisdomGem;
   anchored: boolean;
   onAnchor: (id: number) => void;
+  curating: boolean;
+  armed: boolean;
+  onArm: (id: number) => void;
+  onDelete: (id: number) => void;
 }) {
   const idxForPalette = gem.isNugget ? (gem.nuggetId ?? 0) : gem.id;
   const palette = GEM_PALETTE[Math.abs(idxForPalette) % GEM_PALETTE.length];
@@ -105,17 +137,33 @@ function GemCard({
 
   return (
     <div
-      className={`relative rounded-2xl border bg-gradient-to-br ${palette} to-transparent p-5 shadow-sm flex flex-col gap-3 card-lift`}
+      className={`relative rounded-2xl border bg-gradient-to-br ${palette} to-transparent p-5 shadow-sm flex flex-col gap-3 card-lift ${armed ? "ring-2 ring-red-400" : ""}`}
     >
       {gem.isNugget && (
         <div className="absolute -top-2 -right-2 bg-[#D9A066] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow">
           💎 Jack's Insight
         </div>
       )}
-      {!gem.isNugget && gem.featured && (
+      {!gem.isNugget && gem.featured && !curating && (
         <div className="absolute -top-2 -right-2 bg-[#D9A066] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow">
           ✦ Featured
         </div>
+      )}
+
+      {curating && !gem.isNugget && (
+        <button
+          onClick={() => armed ? onDelete(gem.id) : onArm(gem.id)}
+          aria-label={armed ? "Confirm delete" : "Delete this gem"}
+          title={armed ? "Click again to permanently delete" : "Delete gem"}
+          className={`absolute -top-2 -right-2 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shadow transition-all z-10 ${
+            armed
+              ? "bg-red-500 text-white animate-pulse"
+              : "bg-white text-red-400 border border-red-300 hover:bg-red-50"
+          }`}
+        >
+          <Trash2 className="w-3 h-3" />
+          {armed ? "Confirm" : "Delete"}
+        </button>
       )}
 
       {isScraped && gem.attribution && (
@@ -124,7 +172,7 @@ function GemCard({
         </div>
       )}
 
-      <p className="font-serif text-base leading-relaxed text-foreground italic">
+      <p className={`font-serif text-base leading-relaxed italic ${armed ? "text-muted-foreground/60" : "text-foreground"}`}>
         "{gem.gemText}"
       </p>
 
@@ -163,7 +211,7 @@ function GemCard({
           </a>
         )}
 
-        {!gem.isNugget && (
+        {!gem.isNugget && !curating && (
           <button
             onClick={() => !anchored && onAnchor(gem.id)}
             disabled={anchored}
@@ -214,6 +262,15 @@ export function WisdomDig() {
   const [anchored, setAnchored] = useState<Set<number>>(new Set());
   const [extractResult, setExtractResult] = useState<{ extracted: number; episodes: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<SourceFilter>("all");
+  const [curating, setCurating] = useState(false);
+  const [armedGemId, setArmedGemId] = useState<number | null>(null);
+
+  const { data: authData } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: fetchAuthUser,
+    staleTime: 5 * 60 * 1000,
+  });
+  const isEditor = Boolean(authData?.user);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["wisdom-gems", activeFilter],
@@ -225,6 +282,25 @@ export function WisdomDig() {
     onSuccess: (_data, id) => {
       setAnchored((prev) => new Set(prev).add(id));
       qc.invalidateQueries({ queryKey: ["wisdom-gems"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteGem,
+    onSuccess: (_data, id) => {
+      ALL_FILTERS.forEach((filter) => {
+        qc.setQueryData<GemsResponse>(["wisdom-gems", filter], (old) => {
+          if (!old) return old;
+          const hadGem = old.gems.some((g) => g.id === id);
+          if (!hadGem) return old;
+          return {
+            ...old,
+            gems: old.gems.filter((g) => g.id !== id),
+            total: Math.max(0, old.total - 1),
+          };
+        });
+      });
+      setArmedGemId(null);
     },
   });
 
@@ -242,6 +318,22 @@ export function WisdomDig() {
     },
     [anchored, anchorMutation],
   );
+
+  const handleArm = useCallback((id: number) => {
+    setArmedGemId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleDelete = useCallback(
+    (id: number) => {
+      deleteMutation.mutate(id);
+    },
+    [deleteMutation],
+  );
+
+  const handleToggleCurate = () => {
+    setCurating((prev) => !prev);
+    setArmedGemId(null);
+  };
 
   const gems = data?.gems ?? [];
   const hasGems = gems.length > 0;
@@ -272,7 +364,28 @@ export function WisdomDig() {
             {tab.label}
           </button>
         ))}
+
+        {isEditor && (
+          <button
+            onClick={handleToggleCurate}
+            className={`flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full border transition-all ml-auto ${
+              curating
+                ? "bg-red-500 text-white border-red-500"
+                : "border-border text-muted-foreground hover:text-red-500 hover:border-red-300"
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            {curating ? "Done Curating" : "Curate"}
+          </button>
+        )}
       </div>
+
+      {curating && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+          <Trash2 className="w-4 h-4 shrink-0" />
+          <span>Curation mode — click <strong>Delete</strong> once to arm, then <strong>Confirm</strong> to permanently remove a gem.</span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         {hasGems && (
@@ -332,6 +445,10 @@ export function WisdomDig() {
               gem={gem}
               anchored={anchored.has(gem.id)}
               onAnchor={handleAnchor}
+              curating={curating}
+              armed={armedGemId === gem.id}
+              onArm={handleArm}
+              onDelete={handleDelete}
             />
           ))}
         </div>
