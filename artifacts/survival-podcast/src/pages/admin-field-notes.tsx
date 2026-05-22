@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock } from "lucide-react";
+import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { format } from "date-fns";
 
@@ -14,11 +14,26 @@ type FieldNote = {
   createdAt: string;
 };
 
+type SourceStatus = {
+  total: number;
+  lastIngestedAt: string | null;
+};
+
+type SyncStatus = Record<string, SourceStatus>;
+
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 async function fetchNotes(): Promise<FieldNote[]> {
   const res = await fetch(`${base}/api/admin/field-notes?limit=100`);
   if (!res.ok) throw new Error("Failed to load field notes");
+  return res.json();
+}
+
+async function fetchSyncStatus(): Promise<SyncStatus> {
+  const res = await fetch(`${base}/api/admin/sync-status`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load sync status");
   return res.json();
 }
 
@@ -117,6 +132,13 @@ export function AdminFieldNotes() {
     enabled: isAuthenticated,
   });
 
+  const { data: syncStatus } = useQuery<SyncStatus>({
+    queryKey: ["admin-sync-status"],
+    queryFn: fetchSyncStatus,
+    staleTime: 60_000,
+    enabled: isAuthenticated,
+  });
+
   const mutation = useMutation({
     mutationFn: uploadAudio,
     onSuccess: () => {
@@ -149,6 +171,9 @@ export function AdminFieldNotes() {
 
   const nostrCount = notes?.filter((n) => n.sourceType === "nostr").length ?? 0;
   const audioCount = notes?.filter((n) => n.sourceType === "audio").length ?? 0;
+  const youtubeStatus = syncStatus?.["youtube"];
+  const youtubeCount = youtubeStatus?.total ?? 0;
+  const youtubeLastAt = youtubeStatus?.lastIngestedAt ?? null;
 
   if (authLoading) {
     return (
@@ -194,7 +219,7 @@ export function AdminFieldNotes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
           <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
             <Radio className="w-4 h-4" />
@@ -208,6 +233,19 @@ export function AdminFieldNotes() {
             <span className="text-xs font-bold uppercase tracking-wider">Audio Memos</span>
           </div>
           <span className="text-3xl font-bold text-foreground">{audioCount.toLocaleString()}</span>
+        </div>
+        <div className="col-span-2 sm:col-span-1 rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <Youtube className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">YouTube Videos</span>
+          </div>
+          <span className="text-3xl font-bold text-foreground">{youtubeCount.toLocaleString()}</span>
+          {youtubeLastAt && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3" />
+              Last synced {format(new Date(youtubeLastAt), "MMM d, yyyy")}
+            </span>
+          )}
         </div>
       </div>
 

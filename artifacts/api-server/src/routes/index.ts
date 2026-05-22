@@ -26,6 +26,7 @@ import stripeWorkshopsRouter from "./stripe-workshops";
 import debtCoachRouter from "./debt-coach";
 import fieldNotesRouter from "./field-notes";
 import adminFieldNotesRouter from "./admin-field-notes";
+import adminSyncStatusRouter from "./admin-sync-status";
 
 const router: IRouter = Router();
 
@@ -56,5 +57,6 @@ router.use(adminCouncilRouter);
 router.use(adminGroundEventsRouter);
 router.use(stripeWorkshopsRouter);
 router.use(adminFieldNotesRouter);
+router.use(adminSyncStatusRouter);
 
 export default router;
