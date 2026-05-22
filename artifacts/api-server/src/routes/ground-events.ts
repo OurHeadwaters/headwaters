@@ -3,6 +3,7 @@ import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
 import { eq, sql, and, desc, asc, gte, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
+import { sendRsvpNotification } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -414,6 +415,17 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
       { id, rsvpCount: result.rsvpCount, attendeeEmail },
       "ground-events: RSVP recorded",
     );
+    if (event.contactEmail) {
+      void sendRsvpNotification({
+        hostEmail: event.contactEmail,
+        hostName: event.hostName,
+        eventTitle: event.title,
+        eventDate: event.eventDate,
+        attendeeName,
+        attendeeEmail,
+      });
+    }
+
     res.status(201).json({ eventId: id, rsvpCount: result.rsvpCount, rsvpId: result.rsvpId });
   } catch (err) {
     logger.error({ err }, "ground-events: POST /rsvp failed");
