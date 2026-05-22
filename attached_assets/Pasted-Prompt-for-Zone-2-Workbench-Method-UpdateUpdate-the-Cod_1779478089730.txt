@@ -1,0 +1,19 @@
+Prompt for Zone 2 Workbench — Method UpdateUpdate the Codetry Method, North Star Guide, and constellation documentation with the following new discoveries and declarations from the May 22, 2026 round table. Integrate cleanly without creating forks. Use the three naming tests (Saltbox, Both-States, Both-Sides) on every change.1. Three-Layer Model (Official)Declare this as the reconciled structure:Layer 1 — Naming Constitution (permaculture/domain): Saltbox, Eave, Workbench, Commons, Arc, Margin. Answers “What kind of economic activity lives here?”
+Layer 2 — Architectural Intent / Trust-Gradient (constitutional spine): Z0 Dwelling/Household → Z1 Circle → Z2 Home Range → Z3 Community → Z4 Trade → Z5 Wild. Governs data architecture, identity models, and boundaries. This layer is constitutional.
+Layer 3 — Practitioner Energy Model (North Star): Dual labels (e.g. “Household / Afloat”, “Home Range / Build now”). Display and navigation layer only.
+
+Hierarchy declaration: Layer 2 (trust-gradient) is the load-bearing constitutional spine for all architecture and schema decisions. Layers 1 and 3 are Both-Sides translations/registers of the same positions.2. The Eave Rule (Poured Constitutional)Add this verbatim as the authoritative rule:The Eave is the hard structural seam between Zone 1 (Circle — private household identity) and Zone 3 (Community — XRPL wallet, above-board organizational identity).
+It is defined by intentional architectural absence:  No table, no foreign key, no join, no query path, and no stored reference may ever connect a Zone 3 wallet address, any derived identifier, any zone-bind payload, or any zone-bind signature to a Zone 1 household record.  
+A household may voluntarily bind its own XRPL wallet using the lib/zone-identity primitives, but the binding must be stored as a one-way, non-reversible reference that never permits reverse lookup.  
+Any proposed feature, route, migration, or type field that would create such a path must be refused or redesigned to respect the seam.
+Mark zoneCredentials.ts, types.ts, and schema notes as updated with this rule.3. Current Collisions Resolved“Eave” now primarily names the constitutional seam (Layer 2). The Z1 income/sovereignty constellation needs a new permanent name or clear disambiguation.
+Saltbox is a constellation (tool) that lives inside Zone 0, not the zone name itself.
+Standby already exists in sandbox (posts, checkins, circle pings) — treat as live, not blank ground.
+
+4. Integration InstructionsUpdate constellation.json, North Star Guide (especially “Zones & Money” and “Building Materials” chapters), and all relevant docs.
+Add a new section called “Three Layers & Constitutional Rules” in the Codetry Handbook.
+Run every new or existing noun through the three tests before finalizing.
+Flag any remaining label collisions (especially Eave, Headwaters, Watershed, Saltbox) for immediate resolution.
+
+Synthesize this into the cleanest, most practitioner-usable version. Keep language plain and load-bearing. Output the updated sections so I can review them.
+
