@@ -6,13 +6,14 @@ import {
   useGetLibraryStats, 
   useListLibraryTags,
   useListSeries,
-  SearchLibrarySort
+  SearchLibrarySort,
+  type FieldNote
 } from "@workspace/api-client-react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { LibraryItemCard } from "@/components/library-item-card";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, ChevronLeft, ChevronRight, Tag, RefreshCw, Users, ExternalLink, MapPin, ChevronRight as ChevRight } from "lucide-react";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { Search, ChevronLeft, ChevronRight, Tag, RefreshCw, Users, ExternalLink, MapPin, ChevronRight as ChevRight, Radio, Mic, Clock, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
+import { formatDistanceToNow, parseISO, format } from "date-fns";
 
 type ExpertResult = {
   id: string;
@@ -57,6 +58,96 @@ function zoneLabel(slug: string): string {
     "zone-5": "Zone 5 — Wild",
   };
   return labels[slug] ?? slug;
+}
+
+function FieldNoteCard({ note }: { note: FieldNote }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = note.rawContent.length > 240;
+  const preview = isLong && !expanded ? note.rawContent.slice(0, 240) + "…" : note.rawContent;
+
+  const zoneTags = note.tags.filter((t) => t.startsWith("zone-"));
+
+  return (
+    <div className="flex flex-col gap-2.5 p-4 rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all bg-background">
+      <div className="flex items-center gap-2 flex-wrap">
+        {note.sourceType === "nostr" ? (
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-600/40">
+            <Radio className="w-2.5 h-2.5" /> Nostr
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300/60 dark:border-blue-600/40">
+            <Mic className="w-2.5 h-2.5" /> Audio Memo
+          </span>
+        )}
+        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Clock className="w-2.5 h-2.5" />
+          {format(new Date(note.createdAt), "MMM d, yyyy")}
+        </span>
+      </div>
+
+      {note.metaTitle && (
+        <p className="text-xs font-semibold text-foreground">{note.metaTitle}</p>
+      )}
+
+      <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">{preview}</p>
+
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="self-start inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+        >
+          {expanded ? <><ChevronUp className="w-2.5 h-2.5" /> Show less</> : <><ChevronDown className="w-2.5 h-2.5" /> Show more</>}
+        </button>
+      )}
+
+      {(zoneTags.length > 0 || note.contextUrl) && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/50 mt-auto">
+          {zoneTags.slice(0, 2).map((z) => (
+            <Link
+              key={z}
+              href={`/zones/${z}`}
+              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              {zoneLabel(z)}
+            </Link>
+          ))}
+          {note.contextUrl && zoneTags.length === 0 && (
+            <Link
+              href={note.contextUrl}
+              className="text-[10px] font-semibold text-primary hover:underline inline-flex items-center gap-0.5"
+            >
+              View context <ChevRight className="w-2.5 h-2.5" />
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FieldNotesSection({ notes }: { notes: FieldNote[] }) {
+  if (notes.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-primary/5">
+        <BookOpen className="w-4 h-4 text-primary" />
+        <h2 className="font-serif font-bold text-base text-foreground">Field Notes</h2>
+        <span className="ml-auto text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+          {notes.length}
+        </span>
+      </div>
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {notes.map((note) => (
+          <FieldNoteCard key={note.id} note={note} />
+        ))}
+      </div>
+      <div className="px-5 py-3 border-t border-border bg-muted/30">
+        <p className="text-xs text-muted-foreground">
+          Bobbie's Nostr notes and voice memos, surfaced from the field.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function PeopleAndBusinesses({ q }: { q: string }) {
@@ -236,7 +327,8 @@ export function Library() {
     tag: initialTag || undefined,
     category: initialCategory || undefined,
     series: initialSeries || undefined,
-    sort: initialSort
+    sort: initialSort,
+    include: "field-notes",
   };
 
   const { data: libraryPage, isLoading, isError } = useSearchLibrary(
@@ -507,6 +599,11 @@ export function Library() {
 
           {/* People & Businesses panel — shown only when there's a search query */}
           {debouncedSearch && <PeopleAndBusinesses q={debouncedSearch} />}
+
+          {/* Field Notes — shown when results include matching field notes */}
+          {libraryPage?.fieldNotes && libraryPage.fieldNotes.length > 0 && (
+            <FieldNotesSection notes={libraryPage.fieldNotes} />
+          )}
 
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

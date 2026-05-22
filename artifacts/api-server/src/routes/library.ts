@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { sql, and, eq, desc, asc, ne, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { db, contentItemsTable } from "@workspace/db";
+import { db, contentItemsTable, curatedItemsTable } from "@workspace/db";
 import { refreshAll, getSyncStatus } from "../lib/library";
 import { invalidateTagQueryCache } from "./episodes";
 import { SERIES_REGISTRY } from "../lib/series";
@@ -106,7 +106,33 @@ router.get("/library/search", async (req, res) => {
       orderBy = [desc(contentItemsTable.publishedAt)];
     }
 
-    const [rows, totalRow] = await Promise.all([
+    const includeParam =
+      typeof req.query.include === "string" ? req.query.include : "";
+    const includeFieldNotes = includeParam
+      .split(",")
+      .map((s) => s.trim())
+      .includes("field-notes");
+
+    const fieldNotesPromise = includeFieldNotes
+      ? (async () => {
+          const fnConditions: SQL<unknown>[] = [
+            eq(curatedItemsTable.published, true),
+          ];
+          if (q) {
+            fnConditions.push(
+              sql`to_tsvector('english', ${curatedItemsTable.rawContent}) @@ websearch_to_tsquery('english', ${q})`,
+            );
+          }
+          return db
+            .select()
+            .from(curatedItemsTable)
+            .where(and(...fnConditions))
+            .orderBy(desc(curatedItemsTable.createdAt))
+            .limit(8);
+        })()
+      : Promise.resolve(null);
+
+    const [rows, totalRow, fieldNoteRows] = await Promise.all([
       db
         .select()
         .from(contentItemsTable)
@@ -118,13 +144,41 @@ router.get("/library/search", async (req, res) => {
         .select({ count: sql<number>`count(*)::int` })
         .from(contentItemsTable)
         .where(whereSql),
+      fieldNotesPromise,
     ]);
-    res.json({
+
+    const response: Record<string, unknown> = {
       items: rows.map(toApiItem),
       total: totalRow[0]?.count ?? 0,
       limit,
       offset,
-    });
+    };
+
+    if (fieldNoteRows !== null) {
+      response.fieldNotes = fieldNoteRows.map((fn) => {
+        const zoneTag = fn.tags.find((t: string) => t.startsWith("zone-"));
+        const transformTag = fn.tags.find((t: string) =>
+          t.startsWith("transformation-"),
+        );
+        const contextUrl = zoneTag
+          ? `/zones/${zoneTag}`
+          : transformTag
+            ? `/start?transformation=${transformTag}`
+            : null;
+        return {
+          id: fn.id,
+          sourceType: fn.sourceType,
+          rawContent: fn.rawContent,
+          tags: fn.tags,
+          createdAt: fn.createdAt.toISOString(),
+          metaUrl: fn.metaUrl ?? null,
+          metaTitle: fn.metaTitle ?? null,
+          contextUrl,
+        };
+      });
+    }
+
+    res.json(response);
   } catch (err) {
     logger.error({ err }, "library search failed");
     res.status(500).json({ error: "Search failed" });

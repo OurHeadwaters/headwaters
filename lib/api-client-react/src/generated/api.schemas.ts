@@ -173,11 +173,28 @@ export type LibraryItemDetail = LibraryItem & {
   related?: LibraryItem[];
 };
 
+export interface FieldNote {
+  id: number;
+  /** nostr | audio */
+  sourceType: string;
+  rawContent: string;
+  tags: string[];
+  createdAt: string;
+  /** @nullable */
+  metaUrl?: string | null;
+  /** @nullable */
+  metaTitle?: string | null;
+  /** @nullable */
+  contextUrl?: string | null;
+}
+
 export interface LibraryPage {
   items: LibraryItem[];
   total: number;
   limit: number;
   offset: number;
+  /** Included when ?include=field-notes is passed */
+  fieldNotes?: FieldNote[];
 }
 
 export interface KindCount {
@@ -440,6 +457,10 @@ limit?: number;
  */
 offset?: number;
 sort?: SearchLibrarySort;
+/**
+ * Comma-separated list of extra result sets to include. Supported value: field-notes
+ */
+include?: string;
 };
 
 export type SearchLibrarySort = typeof SearchLibrarySort[keyof typeof SearchLibrarySort];
