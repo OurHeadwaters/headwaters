@@ -40,18 +40,11 @@ export class WebhookHandlers {
     }
 
     if (event.type === "checkout.session.completed") {
-      try {
-        await WebhookHandlers.handleCheckoutComplete(
-          event.data.object as Stripe.Checkout.Session,
-        );
-      } catch (err) {
-        // Log but don't re-throw: the webhook was successfully processed by stripe-replit-sync.
-        // RSVP insertion failures should not cause Stripe to retry and duplicate the sync.
-        logger.error(
-          { err },
-          "webhookHandlers: paid RSVP recording failed — manual reconciliation may be needed",
-        );
-      }
+      // Re-throw on failure: Stripe will retry the webhook, and our session-id unique
+      // constraint makes handleCheckoutComplete idempotent against those retries.
+      await WebhookHandlers.handleCheckoutComplete(
+        event.data.object as Stripe.Checkout.Session,
+      );
     }
   }
 

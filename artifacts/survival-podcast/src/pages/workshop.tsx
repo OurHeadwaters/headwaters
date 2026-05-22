@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapPin, Calendar, Users, ExternalLink, ChevronDown, ChevronUp, Hammer, Wifi, Star, Ticket, X } from "lucide-react";
 
@@ -1028,6 +1028,25 @@ export function WorkshopBoard() {
   const qc = useQueryClient();
   const [rsvped, setRsvped] = useState<Set<number>>(new Set());
   const [showForm, setShowForm] = useState(false);
+
+  // When returning from Stripe Connect onboarding, poll the status endpoint to
+  // persist charges_enabled → stripe_charges_enabled in the DB, then refresh
+  // the event list so the "Buy Ticket" button appears if the host is now ready.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripeConnect = params.get("stripe_connect");
+    const eventId = params.get("eventId");
+    if (stripeConnect === "success" && eventId) {
+      fetch(apiUrl(`/ground-events/${eventId}/connect/status`), { credentials: "include" })
+        .then(() => qc.invalidateQueries({ queryKey: ["ground-events"] }))
+        .catch(() => void 0);
+      // Clean up the URL without a page reload
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete("stripe_connect");
+      clean.searchParams.delete("eventId");
+      window.history.replaceState({}, "", clean.toString());
+    }
+  }, [qc]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["ground-events"],
