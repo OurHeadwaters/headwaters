@@ -1,6 +1,50 @@
 import { db, expertCouncilTable, ulgBusinessesTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { sql, eq, and, isNull } from "drizzle-orm";
 import { EXPERT_COUNCIL, ULG_BUSINESSES } from "./expert-council-static";
+
+/**
+ * Known podcast feed URLs for individual Fireside Freedom host shows.
+ * Only slugs with a non-null podcastFeedUrl here are eligible for seeding.
+ * These are set as defaults — existing admin-set values are never overwritten.
+ */
+const COUNCIL_PODCAST_FEED_SEEDS: { slug: string; podcastFeedUrl: string }[] = [
+  {
+    slug: "tim-toolman-cook",
+    podcastFeedUrl: "https://anchor.fm/s/5a68f498/podcast/rss",
+  },
+  {
+    slug: "ken-eash",
+    podcastFeedUrl: "https://feeds.captivate.fm/constructive-liberty/",
+  },
+  {
+    slug: "lettie-loo",
+    podcastFeedUrl: "https://anchor.fm/s/475cc2bc/podcast/rss",
+  },
+];
+
+/**
+ * Seeds podcastFeedUrl for known Fireside Freedom host shows.
+ * Only sets the field when it is currently NULL in the DB — never overwrites
+ * a value that was set via the admin panel.
+ * Returns the number of rows updated.
+ */
+export async function seedCouncilPodcastFeeds(): Promise<number> {
+  let count = 0;
+  for (const { slug, podcastFeedUrl } of COUNCIL_PODCAST_FEED_SEEDS) {
+    const result = await db
+      .update(expertCouncilTable)
+      .set({ podcastFeedUrl, updatedAt: new Date() })
+      .where(
+        and(
+          eq(expertCouncilTable.slug, slug),
+          isNull(expertCouncilTable.podcastFeedUrl),
+        ),
+      )
+      .returning({ id: expertCouncilTable.id });
+    count += result.length;
+  }
+  return count;
+}
 
 /**
  * Syncs the expert_council table from the static registry.

@@ -4,7 +4,7 @@ import { startBackgroundRefresh } from "./lib/library";
 import { startGearSchedule } from "./routes/gear";
 import { getFeedCached } from "./lib/rss";
 import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-consistency";
-import { seedExpertCouncil, seedUlgBusinesses } from "./lib/seed-expert-council";
+import { seedExpertCouncil, seedUlgBusinesses, seedCouncilPodcastFeeds } from "./lib/seed-expert-council";
 import { startNostrIngestion } from "./lib/nostr-ingestion";
 import { startYouTubeIngestion } from "./lib/youtube-ingestion";
 
@@ -81,6 +81,10 @@ app.listen(port, (err) => {
   seedUlgBusinesses()
     .then((n) => logger.info({ count: n }, "ulg-businesses: startup sync complete"))
     .catch((err) => logger.warn({ err }, "ulg-businesses: startup sync failed (non-fatal)"));
+  // Seed known Fireside Freedom host podcast feed URLs (only fills NULLs)
+  seedCouncilPodcastFeeds()
+    .then((n) => logger.info({ count: n }, "council-podcast-feeds: startup seed complete"))
+    .catch((err) => logger.warn({ err }, "council-podcast-feeds: startup seed failed (non-fatal)"));
 
   // Initialise Stripe after server is ready (non-blocking)
   initStripe();
