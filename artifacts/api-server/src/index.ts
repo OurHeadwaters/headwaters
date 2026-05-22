@@ -6,6 +6,7 @@ import { getFeedCached } from "./lib/rss";
 import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-consistency";
 import { seedExpertCouncil, seedUlgBusinesses } from "./lib/seed-expert-council";
 import { startNostrIngestion } from "./lib/nostr-ingestion";
+import { startYouTubeIngestion } from "./lib/youtube-ingestion";
 
 const rawPort = process.env["PORT"];
 
@@ -86,4 +87,7 @@ app.listen(port, (err) => {
 
   // Nostr ingestion — runs once at startup then daily (non-blocking)
   startNostrIngestion();
+
+  // YouTube ingestion — runs once at startup then daily (non-blocking)
+  startYouTubeIngestion();
 });

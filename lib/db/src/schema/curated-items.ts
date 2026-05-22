@@ -26,6 +26,8 @@ export const curatedItemsTable = pgTable(
     rawContent: text("raw_content").notNull(),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     published: boolean("published").notNull().default(true),
+    metaUrl: text("meta_url"),
+    metaImageUrl: text("meta_image_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

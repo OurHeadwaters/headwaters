@@ -522,6 +522,8 @@ type FieldNote = {
   rawContent: string;
   tags: string[];
   createdAt: string;
+  metaUrl?: string | null;
+  metaImageUrl?: string | null;
 };
 
 function FieldNotesSection({ slug }: { slug: string }) {
@@ -577,6 +579,7 @@ function FieldNotesSection({ slug }: { slug: string }) {
 
 function FieldNoteCard({ note }: { note: FieldNote }) {
   const [expanded, setExpanded] = useState(false);
+  const isYouTube = note.sourceType === "youtube";
   const isLong = note.rawContent.length > 320;
   const preview =
     isLong && !expanded ? note.rawContent.slice(0, 320) + "…" : note.rawContent;
@@ -593,28 +596,49 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
     }
   })();
 
-  return (
-    <div className="px-6 py-4 flex flex-col gap-2">
+  const badge = isYouTube ? (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300/50">
+      <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5V8.5l6.25 3.5-6.25 3.5z" />
+      </svg>
+      YouTube
+    </span>
+  ) : note.sourceType === "nostr" ? (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/50">
+      Nostr
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300/50">
+      Audio Memo
+    </span>
+  );
+
+  const cardContent = (
+    <div className={`px-6 py-4 flex flex-col gap-2 ${isYouTube && note.metaUrl ? "hover:bg-muted/30 transition-colors" : ""}`}>
+      {isYouTube && note.metaImageUrl && (
+        <img
+          src={note.metaImageUrl}
+          alt=""
+          className="w-full aspect-video object-cover rounded-lg border border-border/50"
+        />
+      )}
       <div className="flex items-center gap-2 flex-wrap">
-        {note.sourceType === "nostr" ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/50">
-            Nostr
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300/50">
-            Audio Memo
-          </span>
-        )}
+        {badge}
         {dateStr && (
           <span className="text-xs text-muted-foreground">{dateStr}</span>
+        )}
+        {isYouTube && note.metaUrl && (
+          <span className="ml-auto text-xs font-semibold text-red-600 dark:text-red-400">
+            Watch on YouTube →
+          </span>
         )}
       </div>
       <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
         {preview}
       </p>
-      {isLong && (
+      {isLong && !isYouTube && (
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={(e) => { e.preventDefault(); setExpanded((v) => !v); }}
           className="self-start text-xs font-semibold text-primary hover:underline"
         >
           {expanded ? "Show less" : "Show more"}
@@ -622,4 +646,14 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
       )}
     </div>
   );
+
+  if (isYouTube && note.metaUrl) {
+    return (
+      <a href={note.metaUrl} target="_blank" rel="noopener noreferrer">
+        {cardContent}
+      </a>
+    );
+  }
+
+  return <div>{cardContent}</div>;
 }
