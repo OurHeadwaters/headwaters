@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { ChevronLeft, ExternalLink, Radio, Mic, Users, PlayCircle, PauseCircle, FileText, Video, Rss } from "lucide-react";
+import { usePlayer } from "@/context/player-context";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -84,52 +85,83 @@ function OwnEpisodeCard({ item }: { item: ContentItem }) {
   const href = item.kind === "audio" ? `/episodes/${item.slug}` : `/library/${item.slug}`;
   const pubDate = item.publishedAt ? new Date(item.publishedAt) : null;
   const dateStr = pubDate ? pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
+  const { load, toggle, episode: activeEpisode, isPlaying } = usePlayer();
+
+  const isThisEpisodePlaying = isPlaying && activeEpisode?.audioUrl === item.audioUrl;
+  const isThisEpisodeLoaded = activeEpisode?.audioUrl === item.audioUrl;
+
+  function handlePlayPause(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!item.audioUrl) return;
+    if (isThisEpisodeLoaded) {
+      toggle();
+    } else {
+      load({
+        title: item.title,
+        audioUrl: item.audioUrl,
+        artworkUrl: item.artworkUrl,
+        slug: item.slug,
+        episodeNumber: item.episodeNumber,
+        durationSeconds: item.durationSeconds,
+      }, true);
+    }
+  }
 
   return (
-    <Link
-      href={href}
-      className="group flex gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200"
-    >
-      {item.artworkUrl ? (
-        <img
-          src={item.artworkUrl}
-          alt={item.title}
-          className="w-14 h-14 rounded-lg object-cover shrink-0"
-        />
-      ) : (
-        <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          {item.kind === "audio" ? (
-            <Mic className="w-5 h-5 text-primary/40" />
-          ) : item.kind === "video" ? (
-            <Video className="w-5 h-5 text-primary/40" />
-          ) : (
-            <FileText className="w-5 h-5 text-primary/40" />
-          )}
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        {item.episodeNumber && (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            Ep. {item.episodeNumber}
-          </span>
+    <div className="group flex gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200">
+      <Link href={href} className="flex gap-3 flex-1 min-w-0">
+        {item.artworkUrl ? (
+          <img
+            src={item.artworkUrl}
+            alt={item.title}
+            className="w-14 h-14 rounded-lg object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            {item.kind === "audio" ? (
+              <Mic className="w-5 h-5 text-primary/40" />
+            ) : item.kind === "video" ? (
+              <Video className="w-5 h-5 text-primary/40" />
+            ) : (
+              <FileText className="w-5 h-5 text-primary/40" />
+            )}
+          </div>
         )}
-        <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-          {item.title}
-        </h3>
-        <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
-          {dateStr && <span>{dateStr}</span>}
-          {item.durationSeconds && (
-            <>
-              <span>·</span>
-              <span>{formatDuration(item.durationSeconds)}</span>
-            </>
+        <div className="flex-1 min-w-0">
+          {item.episodeNumber && (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Ep. {item.episodeNumber}
+            </span>
           )}
+          <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+            {item.title}
+          </h3>
+          <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+            {dateStr && <span>{dateStr}</span>}
+            {item.durationSeconds && (
+              <>
+                <span>·</span>
+                <span>{formatDuration(item.durationSeconds)}</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </Link>
       {item.audioUrl && (
-        <PlayCircle className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 self-center" />
+        <button
+          onClick={handlePlayPause}
+          aria-label={isThisEpisodePlaying ? "Pause episode" : "Play episode"}
+          className="text-muted-foreground hover:text-primary transition-colors shrink-0 self-center"
+        >
+          {isThisEpisodePlaying ? (
+            <PauseCircle className="w-6 h-6 text-primary" />
+          ) : (
+            <PlayCircle className="w-6 h-6 group-hover:text-primary transition-colors" />
+          )}
+        </button>
       )}
-    </Link>
+    </div>
   );
 }
 
