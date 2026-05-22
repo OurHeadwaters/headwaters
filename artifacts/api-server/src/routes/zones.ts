@@ -24,8 +24,13 @@ function esc(s: string) {
   return s.replace(/'/g, "''");
 }
 
-/** Zone membership: any of the zone's tags or categories present on the item */
-function zoneWhereFragment(tags: string[], categories: string[]): string {
+/**
+ * Zone membership: any of the zone's tags or categories present on the item,
+ * OR the item's tags array contains the zone's own slug string.
+ * The slug check picks up external feeds (e.g. Fireside Freedom) that are
+ * tagged with zone slugs like "zone-0" during ingestion.
+ */
+function zoneWhereFragment(tags: string[], categories: string[], zoneSlug?: string): string {
   const parts: string[] = [];
   if (tags.length) {
     const tagList = tags.map((t) => `'${esc(t)}'`).join(",");
@@ -38,6 +43,9 @@ function zoneWhereFragment(tags: string[], categories: string[]): string {
     parts.push(
       `EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE c.value IN (${catList}))`,
     );
+  }
+  if (zoneSlug) {
+    parts.push(`(tags @> '["${esc(zoneSlug)}"]'::jsonb)`);
   }
   return parts.length ? `(${parts.join(" OR ")})` : "true";
 }
@@ -112,7 +120,7 @@ router.get("/zones", async (_req, res) => {
 
     const results = await Promise.all(
       ZONES.map(async (zone) => {
-        const whereFragment = zoneWhereFragment(zone.tags, zone.categories);
+        const whereFragment = zoneWhereFragment(zone.tags, zone.categories, zone.slug);
 
         const [countRow, sampleRows, seriesList] = await Promise.all([
           db.execute(sql.raw(
@@ -170,7 +178,7 @@ router.get("/zones/:slug/episodes", async (req, res) => {
     const offset = safeInt(req.query.offset, 0, 0, 100_000);
     const excludeSeries = req.query.excludeSeries !== "false";
 
-    const whereFragment = zoneWhereFragment(zone.tags, zone.categories);
+    const whereFragment = zoneWhereFragment(zone.tags, zone.categories, zone.slug);
     const exclusionFragment = excludeSeries ? seriesExclusionFragment() : "true";
     const scoreFragment = zoneScoreFragment(zone.tags);
 
@@ -271,7 +279,7 @@ router.get("/zones/:slug/resources", async (req, res) => {
       null;
     const sourceFragment = sourceFilter ? `source = '${esc(sourceFilter)}'` : "true";
 
-    const whereFragment = zoneWhereFragment(zone.tags, zone.categories);
+    const whereFragment = zoneWhereFragment(zone.tags, zone.categories, zone.slug);
     const scoreFragment = zoneScoreFragment(zone.tags);
     const combinedWhere = `(${whereFragment}) AND ${sourceFragment}`;
 

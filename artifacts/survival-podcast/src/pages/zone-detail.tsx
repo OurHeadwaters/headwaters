@@ -64,7 +64,9 @@ function formatDuration(seconds: number | null): string {
 
 function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
   const isUlg = ep.source === "ulg";
-  const href = isUlg ? ep.link : `/episodes/${ep.slug}`;
+  const isFireside = ep.source === "fireside-freedom";
+  const isExternal = isUlg || isFireside;
+  const href = isExternal ? ep.link : `/episodes/${ep.slug}`;
 
   const inner = (
     <div className="group flex items-start gap-3 py-3 px-3 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer">
@@ -86,6 +88,11 @@ function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
               ULG
             </span>
           )}
+          {isFireside && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-300 shrink-0 leading-none">
+              Fireside
+            </span>
+          )}
           <p className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
             {ep.title}
           </p>
@@ -94,13 +101,13 @@ function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
           <span>{new Date(ep.publishedAt).getFullYear()}</span>
           {ep.durationSeconds && <span>{formatDuration(ep.durationSeconds)}</span>}
           {kindIcon(ep.kind)}
-          {isUlg && <ExternalLink className="w-3 h-3" />}
+          {isExternal && <ExternalLink className="w-3 h-3" />}
         </div>
       </div>
     </div>
   );
 
-  if (isUlg) {
+  if (isExternal) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer">
         {inner}
@@ -501,7 +508,7 @@ export default function ZoneDetailPage() {
             zoneColor={zone.color}
           />
           <p className="text-sm text-muted-foreground mb-4 ml-11">
-            TSP and Unloose the Goose episodes relevant to {zone.name.toLowerCase()}.
+            TSP, Unloose the Goose, and Fireside Freedom episodes relevant to {zone.name.toLowerCase()}.
           </p>
 
           {/* Source filter tabs */}
