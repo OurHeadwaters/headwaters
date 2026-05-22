@@ -1,0 +1,171 @@
+Agent Handoff Brief — Headwaters / Codetry Monorepo
+Date: May 22, 2026
+Practitioner: Bobbie Parr — solo, Wabigoon ON
+Repo: pnpm monorepo at /home/runner/workspace
+
+WHAT THIS IS
+Two connected platforms sharing one codebase:
+
+1. THE STOMPING PATH (survival-podcast, not in this repo) — homestead sovereignty platform. Rugged/earthy, auth-gated, permaculture zone framework. Zone Bubble Map, Lifestyle Map, Expert Council, Fireside Freedom Podcast, Gord Bird mascot.
+
+2. CODETRY (artifacts/codetry-ship) — digital self-reliance agency site. Builds community-owned software for food co-ops, First Nations, rural hubs. Dark green/amber forge aesthetic. No auth required.
+
+SHARED: Express API server (artifacts/api-server, port 8081), Postgres/Drizzle database (lib/db), OpenRouter (Grok x-ai/grok-4.20), OpenAI gpt-4o-mini.
+
+ALL ARTIFACTS
+Artifact dir	Kind	Title	Port	Preview path
+artifacts/north-star	web	North Star	9000	/north-star/
+artifacts/codetry-ship	web	Codetry Ship — Crew Manifest	auto	/codetry-ship/
+artifacts/practitioners-guide-v2	web	Practitioner's Guide V2	auto	/practitioners-guide-v2/
+artifacts/practitioner-operating-plan	web	Practitioner's Operating Plan	auto	/practitioner-operating-plan/
+artifacts/codetry-handbook	mobile (Expo)	Headwaters: How a Community Runs Its Own Economy	auto	/codetry-handbook/
+artifacts/headwaters-books	web	Headwaters Books	auto	/headwaters-books/
+artifacts/library	web	Northern Food Systems Research Library	auto	/library/
+artifacts/field-guide-finance	web	Field Guide Finance	auto	/field-guide-finance/
+artifacts/print-marketing	web	Headwaters Print Marketing Suite	auto	/print-marketing/
+artifacts/nursery	web	Nursery	auto	/nursery/
+artifacts/api-server	api	Sandbox — Village Board	8081	—
+artifacts/mockup-sandbox	web	Mockup Sandbox	8080	/
+THE CONSTITUTIONAL FRAMEWORK (three layers, load-bearing)
+Layer 1 — Naming (vocabulary):
+Saltbox, Eave, Workbench, Compost — constellation/tool names, not zone labels.
+
+Layer 2 — Trust-Gradient Spine (governs all schema):
+
+Z0 Dwelling/Household → Z1 Circle → Z2 Home Range →
+Z3 Community → Z4 Trade → Z5 Wild
+Layer 3 — Practitioner Energy (display only):
+Dual labels: "Household / Afloat", "Home Range / Build now", etc.
+
+THE EAVE RULE — poured concrete, non-negotiable:
+The Eave is the hard seam between Z1 (Circle — private household identity) and Z3 (Community — XRPL wallet). No table, foreign key, join, query path, or stored reference may ever connect a Z3 wallet address to a Z1 household record. Any feature that would create such a path must be refused or redesigned.
+
+THE KITCHEN TABLE sits in Z2 (Home Range / Workbench). Deliberation space. Curtains drawn by default.
+
+WHAT WAS BUILT THIS SESSION
+North Star (artifacts/north-star)
+/council route — KitchenTablePage.tsx — full Kitchen Table UI
+7 seats: Saltbox ⊡ (first, amber gold), Grok ◈, Systems ⟳, Community ⌂, Codetry ☷, Seat A ○, Seat B ○
+Saltbox seat card: "preserve, slow down, and cure — does this hold?"
+Full Table Brief loaded (Stomping Path + Codetry context, Eave Rule, zone framework, open tensions, vocabulary, pull quotes)
+Streaming chat via SSE → /api/council/chat
+Brief injected into every seat's system prompt before first response
+Coffee cup icon in bottom NavBar labelled "Table"
+Vite proxy: /api → port 8081
+API Server (artifacts/api-server)
+/api/council/chat — POST, SSE streaming, OpenRouter Grok x-ai/grok-4.20
+/api/gatekeeper — full Gatekeeper cap + seat + succession routes
+GET/POST /cap, POST /cap/:id/relinquish
+GET/POST /seat, POST /seat/:id/vacate
+GET/POST/PATCH/DELETE /mappings
+GET /succession, GET /status
+Auth: mutations require organizer session token; GETs open
+DB transactions wrap all multi-step succession operations
+DB Schema (lib/db/src/schema/gatekeeper.ts)
+Four new tables (pushed and applied):
+
+gatekeeper_caps — personal cap tenure records (one active row)
+gatekeeper_seats — Workbench seat records, isInterim flag for succession windows
+gatekeeper_mappings — translation mappings; snapshots authoredByCapId at creation
+gatekeeper_succession_log — append-only chain of custody
+Gatekeeper lib (artifacts/api-server/src/lib/gatekeeper.ts)
+Full type definitions, domain/category/sub-domain constants
+13 food system seed mappings (wild_game, foraged, fermented, cultivated, processed — Ontario regulatory citations)
+Succession protocol in code comments (7-step transition)
+Codetry Ship (artifacts/codetry-ship)
+/economy/cap-ceremony — CapCeremonyPage.tsx
+Six ceremony beats: Naming → Witness → Pre-flight → The Seal → The Record → Rest
+Screen-as-seal spec (read-only, four fields, single gesture)
+In-person vs. remote variants
+Cap (community) vs. warrant (chain/audit) language table
+Practitioners Guide V2 (artifacts/practitioners-guide-v2)
+/the-gate-override — TheGateOverridePage.tsx
+Three emergency types (A: structural, B: medical, C: neighbour)
+Broken-glass friction design (override allowed but announces itself)
+Ten chain record fields with required/conditional distinction
+Five-stage escalation timeline (T+0 → T+96)
+Codetry Handbook (artifacts/codetry-handbook)
+data/glossary.ts — new section "blm_refused":
+BLM refused word — four-step protocol (flag → examine → decide → document)
+Cap — Entry #1, Both-Sides test documented, credential + authorization ceiling
+Limit / Threshold — financial ceiling replacement going forward
+Z0 Key Custody group (7 appendix entries): the household seal, primary holder, witness position, custody event, custody breach, custody log, seal number
+public/narration/key-custody.md — full Z0 custody pattern document
+Custody object named: the household seal (standard letter envelope, wax/tamper-evident tape, signed across seal face)
+Location logic, tamper-evidence, single-adult and multi-adult variants
+Custody event vs. custody breach distinction
+Warrant record translation table (10 entries)
+data/handbook.ts — Saltbox "Where the protocol begins" section; Standby "posture substrate" section; Debrief as open architectural question
+Spec docs
+docs/saltbox-debrief-receipt-spec.md — complete debrief receipt spec
+8 fields in filing order, trigger design, cycle link (pair model), routine vs. override distinction, Bright Side / The Systems translation table
+TASK QUEUE (as of this session)
+#	Status	Title
+1718	MERGED	"Cap" as first BLM refused word — glossary entry
+1719	MERGED	Gatekeeper cap + Workbench seat structure with food system worked example
+1720	MERGED	Key custody primitive at Z0 — the household seal
+1721	MERGED	Emergency override — higher-friction path and chain record fields
+1722	MERGED	Debrief as on-chain receipt — fields, trigger, cycle link
+1723	MERGED	Cap ceremony + wallet UX — screen as seal, not form
+1724	PROPOSED	Gatekeeper translates food text live — Bright Side in, Systems out
+1725	PROPOSED	Cover Gatekeeper cap/seat/succession with tests
+1726	PROPOSED	Worked examples for land, health, governance domains
+1727	PROPOSED	Filing interface for debrief receipt
+1728	PROPOSED	Chain-status view — open overrides visible at a glance
+1729	PROPOSED	Define what "escalated" means in practice
+KEY FILES
+artifacts/north-star/src/pages/KitchenTablePage.tsx   ← Kitchen Table UI
+artifacts/north-star/src/components/NavBar.tsx
+artifacts/north-star/src/App.tsx
+artifacts/north-star/vite.config.ts                   ← /api proxy → 8081
+artifacts/api-server/src/routes/council.ts            ← SSE chat endpoint
+artifacts/api-server/src/routes/gatekeeper.ts         ← cap/seat/succession routes
+artifacts/api-server/src/routes/index.ts              ← mounts all at /api
+artifacts/api-server/src/lib/gatekeeper.ts            ← types + food seed mappings
+artifacts/api-server/src/app.ts                       ← Express app
+lib/db/src/schema/gatekeeper.ts                       ← 4 new tables
+lib/db/src/schema/index.ts                            ← schema index
+artifacts/codetry-ship/src/pages/CapCeremonyPage.tsx  ← ceremony spec
+artifacts/practitioners-guide-v2/src/pages/TheGateOverridePage.tsx
+artifacts/codetry-handbook/data/glossary.ts           ← blm_refused section
+artifacts/codetry-handbook/data/handbook.ts
+artifacts/codetry-handbook/public/narration/key-custody.md
+docs/saltbox-debrief-receipt-spec.md
+OPEN TENSIONS (unresolved)
+Eave naming collision — "Eave" now names the constitutional seam (Layer 2). The Z1 income/sovereignty constellation needs a new name. STATUS: Unresolved.
+Saltbox disambiguation — Saltbox is a constellation (tool) inside Z0, not a zone label. Also now a seat name at the Kitchen Table. STATUS: Functional, not formally documented.
+Headwaters / Watershed label collisions — both used across layers. STATUS: Flagged, not resolved.
+Z4/Z5 gate ceremonies — the bubble map prototype has them; the live survival-podcast ZoneBubbleMap component may not. STATUS: Check before building on.
+Practitioner Intake Tool (Task #544) — brain dump → zone placement → push to TSP. STATUS: Blocked waiting for input.
+VOCABULARY (quick reference)
+Term	Meaning
+Founding mode	Building sovereignty from scratch
+Reclamation mode	Board-by-board recovery inside someone else's house
+The grindstone	The builder — hands full, eyes on the material
+The oil	The person handling the outside world so the grindstone can work
+The frame	Z0 household unit — what you're enclosing, who's inside
+Hempcrete	The naming/vocabulary practice — fills, insulates, breathes
+Windows	Intentional openings — you choose where light enters
+The gate	The Eave — privacy boundary, household interior vs. outside
+The giraffe	Regulatory apparatus — sees over the fence, can't enter without crossing the trigger threshold
+The Standby	Posture substrate — six-word vocabulary, four-rung ladder (advisory / standby / active / standdown)
+The Debrief	Standing-down ritual — should write a cryptographic receipt back to the membrane
+Cap / hat	Role declaration artefact (identity + posture + cryptographic authority)
+Warrant	Chain-record / audit-facing term for cap
+Curtains	Household deliberation boundary — drawn = private, open = ready to share with the Circle
+Both-Sides test	BLM word refusal criterion — band council elder + auditor in the same sentence test
+The household seal	Z0 key custody object — standard envelope, wax-sealed, signed across the seal face
+PULL QUOTES IN CIRCULATION
+"The materials are the same. The order of operations is not."
+"You cannot demolish while a thousand people are living inside."
+"That engine does not grind without the oil."
+"Hang the gate before you invite anyone in."
+"It stops being invisible when you name it."
+"No one is interjecting while you work. Do the next thing."
+ENVIRONMENT NOTES
+OpenRouter: env vars AI_INTEGRATIONS_OPENROUTER_BASE_URL + AI_INTEGRATIONS_OPENROUTER_API_KEY — do not touch, already configured
+Grok model: x-ai/grok-4.20
+Port map: api-server=8081, north-star=9000, mockup-sandbox=8080, all others assigned from PORT env var
+DB: Postgres via Drizzle, schema in lib/db/src/schema/, push with pnpm --filter @workspace/db push
+Routing: all artifacts use Wouter, path-based routing, base path from import.meta.env.BASE_URL
+API mounting: app.use("/api", router) in artifacts/api-server/src/app.ts — all routes prefixed /api
