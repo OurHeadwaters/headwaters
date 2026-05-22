@@ -28,6 +28,7 @@ import { DownloadProvider } from "@/context/DownloadContext";
 import { PlayerProvider } from "@/context/PlayerContext";
 import { V4VProvider } from "@/context/V4VContext";
 import { StompProvider } from "@/context/StompContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
 
@@ -92,23 +93,25 @@ export default function RootLayout() {
           <MobileAuthProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
-                <OnboardingProvider onReplay={() => setShowOnboarding(true)}>
-                  <DownloadProvider>
-                    <HistoryProvider>
-                      <V4VProvider>
-                        <StompProvider>
-                          <PlayerProvider>
-                            <RootLayoutNav />
-                            <OnboardingScreen
-                              visible={showOnboarding}
-                              onDone={() => setShowOnboarding(false)}
-                            />
-                          </PlayerProvider>
-                        </StompProvider>
-                      </V4VProvider>
-                    </HistoryProvider>
-                  </DownloadProvider>
-                </OnboardingProvider>
+                <AuthProvider>
+                  <OnboardingProvider onReplay={() => setShowOnboarding(true)}>
+                    <DownloadProvider>
+                      <HistoryProvider>
+                        <V4VProvider>
+                          <StompProvider>
+                            <PlayerProvider>
+                              <RootLayoutNav />
+                              <OnboardingScreen
+                                visible={showOnboarding}
+                                onDone={() => setShowOnboarding(false)}
+                              />
+                            </PlayerProvider>
+                          </StompProvider>
+                        </V4VProvider>
+                      </HistoryProvider>
+                    </DownloadProvider>
+                  </OnboardingProvider>
+                </AuthProvider>
               </KeyboardProvider>
             </GestureHandlerRootView>
           </MobileAuthProvider>
