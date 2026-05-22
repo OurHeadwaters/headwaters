@@ -1,0 +1,38 @@
+Prompt for your agent:You are redesigning Gord's On Board — the flagship contextual guide and mascot for The Survival Podcast / Stomping Grounds ecosystem. Gord must become a beloved, memorable character that feels like a wise old-timer who’s seen it all on the homestead.Character Redesign Direction (Critical)
+Shift Gord from “owl-like” to a prairie grouse / greater prairie chicken — a chunky, grounded, no-nonsense ground bird with strong prairie/homestead personality.Physical Traits to Capture:Stocky, football-shaped body (not tall/owlish)
+Short neck, rounded head with prominent feather tufts/“horns” that look slightly ruffled
+Short, squared tail (slightly fanned when perched)
+Strong legs with visible three-toed feet (ground bird energy)
+Barred/mottled brown patterning on body and wings for texture
+Warm, expressive face with wise, slightly skeptical eyes
+Keep the improved two-part beak from previous versions (short, sturdy, slightly hooked)
+
+Personality & Voice
+Folksy, dry humor, practical, trustworthy — “the old bird who’s been around the prairie a few seasons.” Think warm grandfather who gives straight advice with a chuckle. Never cutesy or cartoonishly exaggerated.Technical Requirements1. SVG Component (gord-bird.tsx)
+Deliver two fully inline SVG variants:Full Body (used when flying or prominently placed)
+Head Only (used when peeking/perched)
+
+Both must support:Cursor-tracking eyes (pupils move within eye sockets via props eyeDx, eyeDy)
+Gentle bob / breathing animation (CSS or Framer Motion)
+Warm brand colors: #8B6F47 (deep brown), #C4965A (tan), #D9A066 (golden accents), #2C1810 (dark details), #FDF6EC (cream highlights)
+
+2. Behavior SystemFirst visit to a page: Slides in from bottom-right with full body + contextual speech bubble.
+Speech bubble: “Gord’s on Board!” header + 2–3 sentences of page-specific folksy wisdom.
+Dismiss (X) → Shrinks to head-only variant and partially hides off right edge.
+Hover on peeking head → “Gord’s on Board” label slides out.
+Click peeking head → Reopens full tip.
+Per-page unique tips for: Home, Stomping Grounds, Wisdom Dig, Wishing Well, Transformation Trail, Water Wheel, Library, etc.
+localStorage memory per route so he doesn’t re-appear after dismissal.
+
+3. IntegrationEyes follow cursor in real time (smooth, limited range).
+Subtle idle animations (head tilt, feather ruffle, occasional soft “cluck” if audio is added later).
+Works beautifully on mobile (touch-friendly).
+
+DeliverablesComplete gord-bird.tsx with both variants and cursor-tracking logic.
+Example usage wrapper with speech bubble, positioning logic, and localStorage handling.
+A JSON file with suggested tip copy for 10+ major pages written in Gord’s voice.
+Detailed comments on SVG structure and animation hooks.
+
+Goal
+Gord should feel like a living, trusted companion — the kind of mascot people screenshot, talk about, and feel genuinely happy to see. He strengthens community identity and makes the entire platform warmer and more memorable.Make him perfect.
+
