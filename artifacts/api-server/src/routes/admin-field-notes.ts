@@ -13,7 +13,7 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
 import { db, curatedItemsTable } from "@workspace/db";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { classifyText } from "../lib/field-note-classifier";
 import { requireEditor } from "../middlewares/requireEditor";
 import { logger } from "../lib/logger";
@@ -56,6 +56,55 @@ router.get("/admin/field-notes", requireEditor, async (req, res) => {
   } catch (err) {
     logger.error({ err }, "admin-field-notes: GET failed");
     res.status(500).json({ error: "Failed to load field notes" });
+  }
+});
+
+/* ── PATCH /api/admin/field-notes/:id ───────────────────────────────────── */
+
+router.patch("/admin/field-notes/:id", requireEditor, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const { published, tags } = req.body as {
+    published?: unknown;
+    tags?: unknown;
+  };
+
+  const updates: { published?: boolean; tags?: string[] } = {};
+
+  if (typeof published === "boolean") {
+    updates.published = published;
+  }
+
+  if (Array.isArray(tags) && tags.every((t) => typeof t === "string")) {
+    updates.tags = tags as string[];
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No valid fields to update" });
+    return;
+  }
+
+  try {
+    const [updated] = await db
+      .update(curatedItemsTable)
+      .set(updates)
+      .where(eq(curatedItemsTable.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Field note not found" });
+      return;
+    }
+
+    logger.info({ id, updates }, "admin-field-notes: PATCH applied");
+    res.json(updated);
+  } catch (err) {
+    logger.error({ err, id }, "admin-field-notes: PATCH failed");
+    res.status(500).json({ error: "Failed to update field note" });
   }
 });
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube } from "lucide-react";
+import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube, X, Plus } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { format } from "date-fns";
 
@@ -22,6 +22,26 @@ type SourceStatus = {
 type SyncStatus = Record<string, SourceStatus>;
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const ZONE_SLUGS = [
+  { slug: "zone-0", label: "Zone 0 — The Self" },
+  { slug: "zone-1", label: "Zone 1 — The Home" },
+  { slug: "zone-2", label: "Zone 2 — The Garden" },
+  { slug: "zone-3", label: "Zone 3 — The Homestead" },
+  { slug: "zone-4", label: "Zone 4 — The Forest" },
+  { slug: "zone-5", label: "Zone 5 — The Wild" },
+];
+
+const TRANSFORMATION_SLUGS = [
+  { slug: "conventional-to-regenerative", label: "Conventional → Regenerative" },
+  { slug: "tradfi-to-hard-assets", label: "TradFi → Hard Assets" },
+  { slug: "employee-to-owner", label: "Employee → Owner" },
+  { slug: "grid-to-off-grid", label: "Grid → Off-Grid" },
+  { slug: "outsourced-health-to-health-sovereign", label: "Outsourced Health → Health Sovereign" },
+  { slug: "individual-to-community-scale", label: "Individual → Community Scale" },
+];
+
+const ALL_KNOWN_SLUGS = [...ZONE_SLUGS, ...TRANSFORMATION_SLUGS];
 
 async function fetchNotes(): Promise<FieldNote[]> {
   const res = await fetch(`${base}/api/admin/field-notes?limit=100`);
@@ -52,17 +72,86 @@ async function uploadAudio(file: File): Promise<FieldNote> {
   return res.json();
 }
 
-function NoteCard({ note }: { note: FieldNote }) {
+async function patchNote(
+  id: number,
+  updates: { published?: boolean; tags?: string[] },
+): Promise<FieldNote> {
+  const res = await fetch(`${base}/api/admin/field-notes/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? "Update failed");
+  }
+  return res.json();
+}
+
+function NoteCard({
+  note,
+  onUpdate,
+}: {
+  note: FieldNote;
+  onUpdate: (updated: FieldNote) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const isLong = note.rawContent.length > 280;
-  const preview = isLong && !expanded
-    ? note.rawContent.slice(0, 280) + "…"
-    : note.rawContent;
+  const preview =
+    isLong && !expanded ? note.rawContent.slice(0, 280) + "…" : note.rawContent;
+
+  async function handleTogglePublished() {
+    setSaving(true);
+    try {
+      const updated = await patchNote(note.id, { published: !note.published });
+      onUpdate(updated);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveTag(tag: string) {
+    const newTags = note.tags.filter((t) => t !== tag);
+    setSaving(true);
+    try {
+      const updated = await patchNote(note.id, { tags: newTags });
+      onUpdate(updated);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddTag(slug: string) {
+    if (note.tags.includes(slug)) return;
+    const newTags = [...note.tags, slug];
+    setSaving(true);
+    try {
+      const updated = await patchNote(note.id, { tags: newTags });
+      onUpdate(updated);
+    } finally {
+      setSaving(false);
+      setTagPickerOpen(false);
+    }
+  }
+
+  const availableToAdd = ALL_KNOWN_SLUGS.filter(
+    ({ slug }) => !note.tags.includes(slug),
+  );
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
+    <div
+      className={`rounded-xl border bg-card p-5 flex flex-col gap-3 transition-opacity ${
+        note.published
+          ? "border-border"
+          : "border-border opacity-60"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {note.sourceType === "nostr" ? (
             <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-600/40">
               <Radio className="w-3 h-3" />
@@ -79,19 +168,76 @@ function NoteCard({ note }: { note: FieldNote }) {
             {format(new Date(note.createdAt), "MMM d, yyyy")}
           </span>
         </div>
-        {note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {note.tags.map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border"
-              >
-                <Tag className="w-2.5 h-2.5" />
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
+
+        {/* Published toggle */}
+        <button
+          onClick={handleTogglePublished}
+          disabled={saving}
+          title={note.published ? "Click to unpublish" : "Click to publish"}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${
+            note.published
+              ? "border-green-500 bg-green-500"
+              : "border-border bg-muted"
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+              note.published ? "translate-x-5" : "translate-x-0.5"
+            }`}
+          />
+          <span className="sr-only">
+            {note.published ? "Published" : "Unpublished"}
+          </span>
+        </button>
+      </div>
+
+      {/* Tags row */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {note.tags.map((t) => (
+          <span
+            key={t}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border group"
+          >
+            <Tag className="w-2.5 h-2.5" />
+            {t}
+            <button
+              onClick={() => handleRemoveTag(t)}
+              disabled={saving}
+              className="ml-0.5 rounded-full hover:text-destructive transition-colors disabled:opacity-40"
+              title={`Remove tag "${t}"`}
+            >
+              <X className="w-2.5 h-2.5" />
+            </button>
+          </span>
+        ))}
+
+        {/* Add tag button */}
+        <div className="relative">
+          <button
+            onClick={() => setTagPickerOpen((v) => !v)}
+            disabled={saving || availableToAdd.length === 0}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-2.5 h-2.5" />
+            Add tag
+          </button>
+
+          {tagPickerOpen && availableToAdd.length > 0 && (
+            <div className="absolute left-0 top-full mt-1 z-20 w-64 rounded-xl border border-border bg-popover shadow-lg p-2 flex flex-col gap-0.5">
+              {availableToAdd.map(({ slug, label }) => (
+                <button
+                  key={slug}
+                  onClick={() => handleAddTag(slug)}
+                  className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-muted transition-colors"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {saving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
       </div>
 
       <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
@@ -169,11 +315,19 @@ export function AdminFieldNotes() {
     [handleFiles],
   );
 
+  function handleNoteUpdate(updated: FieldNote) {
+    queryClient.setQueryData<FieldNote[]>(["admin-field-notes"], (prev) =>
+      prev ? prev.map((n) => (n.id === updated.id ? updated : n)) : prev,
+    );
+  }
+
   const nostrCount = notes?.filter((n) => n.sourceType === "nostr").length ?? 0;
   const audioCount = notes?.filter((n) => n.sourceType === "audio").length ?? 0;
   const youtubeStatus = syncStatus?.["youtube"];
   const youtubeCount = youtubeStatus?.total ?? 0;
   const youtubeLastAt = youtubeStatus?.lastIngestedAt ?? null;
+  const publishedCount = notes?.filter((n) => n.published).length ?? 0;
+  const unpublishedCount = notes?.filter((n) => !n.published).length ?? 0;
 
   if (authLoading) {
     return (
@@ -219,7 +373,7 @@ export function AdminFieldNotes() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
           <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
             <Radio className="w-4 h-4" />
@@ -234,7 +388,7 @@ export function AdminFieldNotes() {
           </div>
           <span className="text-3xl font-bold text-foreground">{audioCount.toLocaleString()}</span>
         </div>
-        <div className="col-span-2 sm:col-span-1 rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
           <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
             <Youtube className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">YouTube Videos</span>
@@ -246,6 +400,20 @@ export function AdminFieldNotes() {
               Last synced {format(new Date(youtubeLastAt), "MMM d, yyyy")}
             </span>
           )}
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+            <span className="w-4 h-4 flex items-center justify-center text-xs font-black">✓</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Published</span>
+          </div>
+          <span className="text-3xl font-bold text-foreground">{publishedCount.toLocaleString()}</span>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="w-4 h-4 flex items-center justify-center text-xs font-black">—</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Hidden</span>
+          </div>
+          <span className="text-3xl font-bold text-foreground">{unpublishedCount.toLocaleString()}</span>
         </div>
       </div>
 
@@ -327,7 +495,7 @@ export function AdminFieldNotes() {
         ) : (
           <div className="flex flex-col gap-4">
             {notes.map((note) => (
-              <NoteCard key={note.id} note={note} />
+              <NoteCard key={note.id} note={note} onUpdate={handleNoteUpdate} />
             ))}
           </div>
         )}
