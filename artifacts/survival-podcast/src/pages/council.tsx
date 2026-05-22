@@ -1,6 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { Users, ExternalLink, ChevronRight, Radio, Bot } from "lucide-react";
+import { Users, ExternalLink, ChevronRight, Radio, Bot, Flame } from "lucide-react";
+
+const FIRESIDE_FREEDOM_IDS = new Set([
+  "brian-aleksivich",
+  "lettie-loo",
+  "tim-toolman-cook",
+  "ken-eash",
+  "nate-erin-lamaster",
+  "amy-fireside",
+  "hawkins-j",
+]);
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -131,6 +141,9 @@ export function CouncilPage() {
   const { data, isLoading } = useExperts();
   const experts = data?.experts ?? [];
 
+  const coreExperts = experts.filter((e) => !FIRESIDE_FREEDOM_IDS.has(e.slug));
+  const firesideExperts = experts.filter((e) => FIRESIDE_FREEDOM_IDS.has(e.slug));
+
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-16 max-w-5xl">
       <div className="mb-10">
@@ -158,10 +171,32 @@ export function CouncilPage() {
           <p className="text-muted-foreground">No council members found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {experts.map((expert) => (
-            <ExpertCard key={expert.slug} expert={expert} />
-          ))}
+        <div className="space-y-14">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {coreExperts.map((expert) => (
+              <ExpertCard key={expert.slug} expert={expert} />
+            ))}
+          </div>
+
+          {firesideExperts.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700">
+                  <Flame className="w-4 h-4" />
+                  <span className="text-sm font-bold tracking-wide">Fireside Freedom Crew</span>
+                </div>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
+                The hosts of the Fireside Freedom Podcast — a sister community of liberty-minded homesteaders, builders, and everyday freedom practitioners.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {firesideExperts.map((expert) => (
+                  <ExpertCard key={expert.slug} expert={expert} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
