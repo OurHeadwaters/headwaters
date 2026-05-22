@@ -36,6 +36,7 @@ import HistoryPage from "@/pages/history";
 import { AdminWisdom } from "@/pages/admin-wisdom";
 import { AdminFieldNotes } from "@/pages/admin-field-notes";
 import StompingGroundsPage from "@/pages/stomping-grounds";
+import MapPage from "@/pages/map";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,7 @@ function Router() {
         </Route>
         <Route path="/stomping-grounds" component={StompingGroundsPage} />
         <Route path="/history" component={HistoryPage} />
+        <Route path="/map" component={MapPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

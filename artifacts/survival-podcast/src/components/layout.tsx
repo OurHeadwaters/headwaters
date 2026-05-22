@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogIn, LogOut, User, ChevronDown } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, ChevronDown, Map } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
@@ -266,6 +266,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
               isActive={isAdminActive}
             />
 
+            {/* My Map — auth-gated */}
+            {isAuthenticated && !authLoading && (
+              <Link
+                href="/map"
+                className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
+                  location === "/map"
+                    ? "text-white border-b-2 border-[#D9A066]"
+                    : "text-white/65 hover:text-white"
+                }`}
+              >
+                <Map className="w-3.5 h-3.5" />
+                My Map
+              </Link>
+            )}
+
             {/* Auth button */}
             {!authLoading && (
               isAuthenticated ? (
@@ -457,6 +472,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
+
+            {/* My Map — mobile, auth-gated */}
+            {isAuthenticated && !authLoading && (
+              <Link
+                href="/map"
+                className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
+                  location === "/map"
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Map className="w-4 h-4" />
+                My Map
+              </Link>
+            )}
 
             {/* Mobile auth */}
             {!authLoading && (

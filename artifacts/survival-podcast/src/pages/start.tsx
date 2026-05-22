@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
-import { ArrowRight, Radio, BookOpen, Mountain } from "lucide-react";
+import { ArrowRight, Radio, BookOpen, Mountain, Map } from "lucide-react";
+import { useAuth } from "@workspace/replit-auth-web";
 
 const PATHWAY_STEPS = [
   {
@@ -43,6 +44,7 @@ const TSP_PILLARS = [
 ];
 
 export default function StartPage() {
+  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
@@ -220,6 +222,16 @@ export default function StartPage() {
             at Zone 0. The tracks are designed to be independent — work through them in any order.
           </p>
           <div className="flex flex-wrap gap-3">
+            {isAuthenticated && (
+              <Link
+                href="/map"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md"
+                style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+              >
+                <Map className="w-4 h-4" />
+                See your map
+              </Link>
+            )}
             <Link
               href="/tracks"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:-translate-y-0.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md"
