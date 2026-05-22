@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { GordBird } from "./gord-bird";
+import { GordBird, type IdleAnim } from "./gord-bird";
 import {
   gordTips,
   routeKeyFromPath,
@@ -46,16 +46,62 @@ function useEyeTarget(containerRef: React.RefObject<HTMLDivElement | null>) {
   return eyeTarget;
 }
 
+const FULL_ANIMS: IdleAnim[] = ["head-tilt", "tail-fan", "wing-ruffle"];
+const HEAD_ANIMS: IdleAnim[] = ["head-tilt", "head-bob"];
+const ANIM_DURATION_MS = 1400;
+
+function useIdleAnimation(paused: boolean, variant: "full" | "head"): IdleAnim {
+  const [anim, setAnim] = useState<IdleAnim>(null);
+  const pausedRef = useRef(paused);
+  const variantRef = useRef(variant);
+  pausedRef.current = paused;
+  variantRef.current = variant;
+
+  useEffect(() => {
+    let cycleTimeout: ReturnType<typeof setTimeout>;
+    let clearAnim: ReturnType<typeof setTimeout>;
+
+    function runCycle() {
+      const delay = 8000 + Math.random() * 7000;
+      cycleTimeout = setTimeout(() => {
+        if (pausedRef.current) {
+          runCycle();
+          return;
+        }
+        const pool = variantRef.current === "full" ? FULL_ANIMS : HEAD_ANIMS;
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        setAnim(pick);
+        clearAnim = setTimeout(() => {
+          setAnim(null);
+          runCycle();
+        }, ANIM_DURATION_MS);
+      }, delay);
+    }
+
+    runCycle();
+    return () => {
+      clearTimeout(cycleTimeout);
+      clearTimeout(clearAnim);
+    };
+  }, []);
+
+  return anim;
+}
+
 export function GordGuide({ path }: GordGuideProps) {
   const [routeKey, setRouteKey] = useState<GordRouteKey | null>(null);
   const [visible, setVisible] = useState(false);
   const [perchVisible, setPerchVisible] = useState(false);
+  const [tipHovered, setTipHovered] = useState(false);
 
   const guideBirdRef = useRef<HTMLDivElement>(null);
   const perchBirdRef = useRef<HTMLDivElement>(null);
 
   const activeRef = visible ? guideBirdRef : perchBirdRef;
   const eyeTarget = useEyeTarget(activeRef);
+
+  const currentVariant: "full" | "head" = visible ? "full" : "head";
+  const idleAnim = useIdleAnimation(tipHovered, currentVariant);
 
   useEffect(() => {
     const key = routeKeyFromPath(path);
@@ -85,6 +131,7 @@ export function GordGuide({ path }: GordGuideProps) {
       markGordSeen(routeKey);
     }
     setVisible(false);
+    setTipHovered(false);
     setTimeout(() => setPerchVisible(true), 400);
   }
 
@@ -110,11 +157,14 @@ export function GordGuide({ path }: GordGuideProps) {
             className="fixed bottom-24 right-4 z-[60] flex flex-col items-end gap-2 pointer-events-none"
             style={{ maxWidth: "calc(100vw - 2rem)" }}
           >
+            {/* Tip bubble — hovering = actively reading, pauses idle anim */}
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 24 }}
+              onMouseEnter={() => setTipHovered(true)}
+              onMouseLeave={() => setTipHovered(false)}
               className="pointer-events-auto relative bg-[#FDF6EC] border border-[#D9A066]/60 rounded-2xl shadow-xl px-4 py-3 max-w-[280px] sm:max-w-[320px]"
             >
               <div
@@ -152,7 +202,7 @@ export function GordGuide({ path }: GordGuideProps) {
               transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               className="pointer-events-auto"
             >
-              <GordBird size={90} variant="full" eyeTarget={eyeTarget} />
+              <GordBird size={90} variant="full" eyeTarget={eyeTarget} idleAnim={idleAnim} />
             </motion.div>
           </motion.div>
         )}
@@ -184,7 +234,7 @@ export function GordGuide({ path }: GordGuideProps) {
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <GordBird size={44} variant="head" className="shrink-0" eyeTarget={eyeTarget} />
+                <GordBird size={44} variant="head" className="shrink-0" eyeTarget={eyeTarget} idleAnim={idleAnim} />
               </motion.div>
             </motion.div>
           </motion.button>
