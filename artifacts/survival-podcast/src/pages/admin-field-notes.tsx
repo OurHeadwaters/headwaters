@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube, X, Plus, Flame } from "lucide-react";
+import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube, X, Plus, Flame, CheckCircle2, XCircle } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { format } from "date-fns";
 
@@ -19,7 +19,19 @@ type SourceStatus = {
   lastIngestedAt: string | null;
 };
 
-type SyncStatus = Record<string, SourceStatus>;
+type RelayHealth = {
+  relay: string;
+  status: "ok" | "error";
+  ranAt: string | null;
+  itemsFetched: number;
+  itemsInserted: number;
+  errorMessage: string | null;
+};
+
+type SyncStatus = {
+  bySource: Record<string, SourceStatus>;
+  relayHealth: RelayHealth[];
+};
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -264,6 +276,40 @@ function NoteCard({
   );
 }
 
+function RelayHealthRow({ relay }: { relay: RelayHealth }) {
+  const label = relay.relay.replace("wss://", "");
+  const isOk = relay.status === "ok";
+
+  return (
+    <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+      <div className="mt-0.5 shrink-0">
+        {isOk ? (
+          <CheckCircle2 className="w-4 h-4 text-green-500" />
+        ) : (
+          <XCircle className="w-4 h-4 text-destructive" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-mono font-medium text-foreground">{label}</span>
+        {relay.ranAt && (
+          <span className="text-xs text-muted-foreground ml-2">
+            Last run {format(new Date(relay.ranAt), "MMM d, yyyy 'at' h:mm a")}
+          </span>
+        )}
+        {isOk ? (
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {relay.itemsFetched.toLocaleString()} fetched · {relay.itemsInserted.toLocaleString()} new
+          </p>
+        ) : (
+          relay.errorMessage && (
+            <p className="text-xs text-destructive mt-0.5 truncate">{relay.errorMessage}</p>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AdminFieldNotes() {
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const queryClient = useQueryClient();
@@ -323,7 +369,7 @@ export function AdminFieldNotes() {
 
   const nostrCount = notes?.filter((n) => n.sourceType === "nostr").length ?? 0;
   const audioCount = notes?.filter((n) => n.sourceType === "audio").length ?? 0;
-  const youtubeStatus = syncStatus?.["youtube"];
+  const youtubeStatus = syncStatus?.bySource?.["youtube"];
   const youtubeCount = youtubeStatus?.total ?? 0;
   const youtubeLastAt = youtubeStatus?.lastIngestedAt ?? null;
   const firesideStatus = syncStatus?.["fireside-freedom"];
@@ -331,6 +377,10 @@ export function AdminFieldNotes() {
   const firesideLastAt = firesideStatus?.lastIngestedAt ?? null;
   const publishedCount = notes?.filter((n) => n.published).length ?? 0;
   const unpublishedCount = notes?.filter((n) => !n.published).length ?? 0;
+
+  const relayHealth = syncStatus?.relayHealth ?? [];
+  const failingRelays = relayHealth.filter((r) => r.status === "error");
+  const hasRelayErrors = failingRelays.length > 0;
 
   if (authLoading) {
     return (
@@ -374,6 +424,23 @@ export function AdminFieldNotes() {
           Nostr notes and audio memos auto-surfaced alongside episodes and zones.
         </p>
       </div>
+
+      {/* Relay error warning banner */}
+      {hasRelayErrors && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3.5 text-destructive">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold">
+              {failingRelays.length === 1
+                ? "1 Nostr relay is offline"
+                : `${failingRelays.length} Nostr relays are offline`}
+            </p>
+            <p className="text-xs mt-0.5 opacity-80">
+              {failingRelays.map((r) => r.relay.replace("wss://", "")).join(", ")} failed during the last sync. Daily notes may be incomplete.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
@@ -435,6 +502,21 @@ export function AdminFieldNotes() {
           <span className="text-3xl font-bold text-foreground">{unpublishedCount.toLocaleString()}</span>
         </div>
       </div>
+
+      {/* Nostr relay health */}
+      {relayHealth.length > 0 && (
+        <div className="mb-8 rounded-xl border border-border bg-card p-5">
+          <h2 className="font-serif text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+            <Radio className="w-4 h-4 text-purple-500" />
+            Nostr Relay Health
+          </h2>
+          <div>
+            {relayHealth.map((r) => (
+              <RelayHealthRow key={r.relay} relay={r} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Audio upload drop zone */}
       <div className="mb-8">

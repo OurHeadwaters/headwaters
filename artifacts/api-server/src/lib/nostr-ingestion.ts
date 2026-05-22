@@ -3,6 +3,9 @@
  * nostr-tools SimplePool, upserts new ones into curated_items, and runs
  * the auto-classifier on each new record.
  *
+ * Each relay is queried individually so per-relay health is recorded in
+ * nostr_ingestion_log and surfaced on the admin page.
+ *
  * Runs once at server startup and then every 24 hours.
  */
 
@@ -10,7 +13,7 @@ import WebSocket from "ws";
 import { useWebSocketImplementation } from "nostr-tools/relay";
 import { SimplePool } from "nostr-tools/pool";
 import type { Event as NostrEvent } from "nostr-tools/core";
-import { db, curatedItemsTable } from "@workspace/db";
+import { db, curatedItemsTable, nostrIngestionLogTable } from "@workspace/db";
 import { classifyText } from "./field-note-classifier";
 import { logger } from "./logger";
 
@@ -65,33 +68,66 @@ async function ingestEvents(events: NostrEvent[]): Promise<number> {
   return inserted;
 }
 
-async function runIngestion(): Promise<void> {
-  logger.info("nostr: starting ingestion run");
-
+/**
+ * Query a single relay, ingest results, and persist a log row.
+ */
+async function runRelayIngestion(relay: string): Promise<void> {
   const pool = new SimplePool();
+  const ranAt = new Date();
 
   try {
     const events = await pool.querySync(
-      RELAYS,
+      [relay],
       { kinds: [1], authors: [NPUB_HEX], limit: 5000 },
       { maxWait: 30_000 },
     );
 
     logger.info(
-      { relay: RELAYS.join(", "), count: events.length },
-      "nostr: events fetched",
+      { relay, count: events.length },
+      "nostr: events fetched from relay",
     );
 
     const inserted = await ingestEvents(events);
+
     logger.info(
-      { inserted, total: events.length },
-      "nostr: ingestion run complete",
+      { relay, inserted, total: events.length },
+      "nostr: relay ingestion complete",
     );
+
+    await db.insert(nostrIngestionLogTable).values({
+      ranAt,
+      relay,
+      status: "ok",
+      itemsFetched: events.length,
+      itemsInserted: inserted,
+    });
   } catch (err) {
-    logger.warn({ err }, "nostr: ingestion run failed (non-fatal)");
+    const errorMessage =
+      err instanceof Error ? err.message : String(err);
+
+    logger.warn({ err, relay }, "nostr: relay ingestion failed (non-fatal)");
+
+    await db.insert(nostrIngestionLogTable).values({
+      ranAt,
+      relay,
+      status: "error",
+      itemsFetched: 0,
+      itemsInserted: 0,
+      errorMessage,
+    }).catch((dbErr) => {
+      logger.warn({ dbErr }, "nostr: failed to write error log row");
+    });
   } finally {
-    pool.close(RELAYS);
+    pool.close([relay]);
   }
+}
+
+async function runIngestion(): Promise<void> {
+  logger.info("nostr: starting ingestion run");
+
+  await Promise.allSettled(RELAYS.map((relay) => runRelayIngestion(relay)));
+
+  logger.info("nostr: ingestion run finished");
 }
 
 let scheduled = false;

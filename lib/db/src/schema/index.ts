@@ -12,3 +12,4 @@ export * from "./water-wheel";
 export * from "./ground-events";
 export * from "./ground-event-rsvps";
 export * from "./curated-items";
+export * from "./nostr-ingestion-log";
