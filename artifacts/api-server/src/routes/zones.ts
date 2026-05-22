@@ -284,7 +284,9 @@ router.get("/zones/:slug/resources", async (req, res) => {
     const scoreFragment = zoneScoreFragment(zone.tags);
     const combinedWhere = `(${whereFragment}) AND ${sourceFragment}`;
 
-    const [episodeRows, countRow] = await Promise.all([
+    const councilWhere = `(source LIKE 'council-%') AND (tags @> '["${esc(zone.slug)}"]'::jsonb)`;
+
+    const [episodeRows, countRow, councilRows] = await Promise.all([
       db.execute(sql.raw(`
         SELECT
           id, source, kind, slug, title, link, summary,
@@ -299,6 +301,16 @@ router.get("/zones/:slug/resources", async (req, res) => {
       db.execute(sql.raw(`
         SELECT count(*)::int AS count FROM content_items WHERE ${combinedWhere}
       `)),
+      db.execute(sql.raw(`
+        SELECT
+          id, source, kind, slug, title, link, summary,
+          published_at, episode_number, duration_seconds, audio_url,
+          audio_type, artwork_url, categories, tags
+        FROM content_items
+        WHERE ${councilWhere}
+        ORDER BY published_at DESC
+        LIMIT 50
+      `)),
     ]);
 
     type EpRow = {
@@ -307,10 +319,10 @@ router.get("/zones/:slug/resources", async (req, res) => {
       published_at: string; episode_number: number | null;
       duration_seconds: number | null; audio_url: string | null;
       audio_type: string | null; artwork_url: string | null;
-      categories: string[]; tags: string[]; zone_score: number;
+      categories: string[]; tags: string[]; zone_score?: number;
     };
 
-    const episodes = (episodeRows.rows as EpRow[]).map((r) => ({
+    const mapEpisode = (r: EpRow) => ({
       id: r.id,
       source: r.source,
       kind: r.kind,
@@ -326,8 +338,11 @@ router.get("/zones/:slug/resources", async (req, res) => {
       artworkUrl: r.artwork_url,
       categories: r.categories,
       tags: r.tags,
-      zoneScore: r.zone_score,
-    }));
+      zoneScore: r.zone_score ?? 0,
+    });
+
+    const episodes = (episodeRows.rows as EpRow[]).map(mapEpisode);
+    const councilEpisodes = (councilRows.rows as EpRow[]).map(mapEpisode);
 
     res.json({
       zone: {
@@ -343,6 +358,7 @@ router.get("/zones/:slug/resources", async (req, res) => {
       episodeTotal: (countRow.rows[0] as { count: number }).count,
       experts,
       businesses,
+      councilEpisodes,
     });
   } catch (err) {
     logger.error({ err }, "zone resources failed");

@@ -65,7 +65,8 @@ function formatDuration(seconds: number | null): string {
 function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
   const isUlg = ep.source === "ulg";
   const isFireside = ep.source === "fireside-freedom";
-  const isExternal = isUlg || isFireside;
+  const isCouncil = ep.source.startsWith("council-");
+  const isExternal = isUlg || isFireside || isCouncil;
   const href = isExternal ? ep.link : `/episodes/${ep.slug}`;
 
   const inner = (
@@ -91,6 +92,11 @@ function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
           {isFireside && (
             <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-300 shrink-0 leading-none">
               Fireside
+            </span>
+          )}
+          {isCouncil && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-300 shrink-0 leading-none">
+              Council
             </span>
           )}
           <p className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
@@ -480,7 +486,7 @@ export default function ZoneDetailPage() {
     );
   }
 
-  const { zone, episodes, episodeTotal, experts, businesses } = data;
+  const { zone, episodes, episodeTotal, experts, businesses, councilEpisodes = [] } = data;
 
   const idx = zone.number;
   const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
@@ -640,6 +646,26 @@ export default function ZoneDetailPage() {
             </div>
           )}
         </section>
+
+        {/* Member Episodes (Council feed) */}
+        {councilEpisodes.length > 0 && (
+          <section>
+            <ShelfHeader
+              icon={<Radio className="w-4 h-4" />}
+              title="Member Episodes"
+              count={councilEpisodes.length}
+              zoneColor={zone.color}
+            />
+            <p className="text-sm text-muted-foreground mb-5 ml-11">
+              Episodes from Expert Council members covering {zone.name.toLowerCase()} topics.
+            </p>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {councilEpisodes.map((ep) => (
+                <EpisodeRow key={ep.id} ep={ep} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Debt Freedom Coach — Zone 0 only */}
         {isZone0 && (

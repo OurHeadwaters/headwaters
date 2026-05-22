@@ -53,6 +53,7 @@ export type ZoneResources = {
   episodeTotal: number;
   experts: ZoneExpert[];
   businesses: ZoneBusiness[];
+  councilEpisodes: ZoneResourceEpisode[];
 };
 
 async function fetchZoneResources(slug: string, source?: "tsp" | "ulg" | "fireside-freedom"): Promise<ZoneResources> {
