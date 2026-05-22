@@ -8,6 +8,10 @@ const headVariants = {
     rotate: [0, -9, 6, 0],
     transition: { duration: 1.1, ease: "easeInOut", times: [0, 0.4, 0.75, 1] },
   },
+  hover: {
+    rotate: [0, -7, 5, -3, 0],
+    transition: { duration: 0.38, ease: "easeInOut", times: [0, 0.3, 0.6, 0.82, 1] },
+  },
 };
 
 const headPerchVariants = {
@@ -22,6 +26,11 @@ const headPerchVariants = {
     rotate: 0,
     transition: { duration: 0.85, ease: "easeInOut", times: [0, 0.4, 0.75, 1] },
   },
+  hover: {
+    y: [0, -4, 1, 0],
+    rotate: [0, -5, 4, 0],
+    transition: { duration: 0.38, ease: "easeInOut", times: [0, 0.35, 0.7, 1] },
+  },
 };
 
 const tailVariants = {
@@ -29,6 +38,10 @@ const tailVariants = {
   "tail-fan": {
     rotate: [0, 12, -4, 0],
     transition: { duration: 1.0, ease: "easeInOut", times: [0, 0.45, 0.75, 1] },
+  },
+  hover: {
+    rotate: [0, 10, -3, 0],
+    transition: { duration: 0.38, ease: "easeInOut", times: [0, 0.4, 0.72, 1] },
   },
 };
 
@@ -38,6 +51,18 @@ const wingVariants = {
     x: [0, -4, 3, -2, 0],
     transition: { duration: 0.65, ease: "easeInOut", times: [0, 0.25, 0.55, 0.8, 1] },
   },
+  hover: {
+    x: [0, -6, 4, -2, 0],
+    transition: { duration: 0.4, ease: "easeInOut", times: [0, 0.25, 0.55, 0.8, 1] },
+  },
+};
+
+const bodyScaleVariants = {
+  idle: { scale: 1, transition: { duration: 0.3, ease: "easeOut" } },
+  hover: {
+    scale: [1, 1.045, 1.02, 1],
+    transition: { duration: 0.38, ease: "easeInOut", times: [0, 0.3, 0.65, 1] },
+  },
 };
 
 interface GordBirdProps {
@@ -46,6 +71,7 @@ interface GordBirdProps {
   variant?: "full" | "head";
   eyeTarget?: { dx: number; dy: number };
   idleAnim?: IdleAnim;
+  hovered?: boolean;
 }
 
 export function GordBird({
@@ -54,12 +80,16 @@ export function GordBird({
   variant = "full",
   eyeTarget,
   idleAnim = null,
+  hovered = false,
 }: GordBirdProps) {
   const ex = eyeTarget?.dx ?? 0;
   const ey = eyeTarget?.dy ?? 0;
 
-  const headPerchState =
-    idleAnim === "head-tilt" || idleAnim === "head-bob" ? idleAnim : "idle";
+  const headPerchState = hovered
+    ? "hover"
+    : idleAnim === "head-tilt" || idleAnim === "head-bob"
+      ? idleAnim
+      : "idle";
 
   if (variant === "head") {
     const s = size;
@@ -137,12 +167,16 @@ export function GordBird({
   const px = ex * 1.8;
   const py = ey * 1.2;
 
-  const headState = idleAnim === "head-tilt" ? "head-tilt" : "idle";
-  const tailState = idleAnim === "tail-fan" ? "tail-fan" : "idle";
-  const wingState = idleAnim === "wing-ruffle" ? "wing-ruffle" : "idle";
+  const headState = hovered ? "hover" : idleAnim === "head-tilt" ? "head-tilt" : "idle";
+  const tailState = hovered ? "hover" : idleAnim === "tail-fan" ? "tail-fan" : "idle";
+  const wingState = hovered ? "hover" : idleAnim === "wing-ruffle" ? "wing-ruffle" : "idle";
+  const bodyScale = hovered ? "hover" : "idle";
 
   return (
-    <svg
+    <motion.svg
+      variants={bodyScaleVariants}
+      animate={bodyScale}
+      style={{ transformOrigin: "50px 97px", display: "block" }}
       width={size}
       height={Math.round(size * 1.4)}
       viewBox="0 0 100 140"
@@ -249,6 +283,6 @@ export function GordBird({
         <polygon points="44,71 40,75 48,75" fill="#D9A066" stroke="#6B4E2A" strokeWidth="1.1" strokeLinejoin="round" />
         <line x1="44" y1="64" x2="44" y2="72" stroke="#6B4E2A" strokeWidth="0.9" />
       </motion.g>
-    </svg>
+    </motion.svg>
   );
 }

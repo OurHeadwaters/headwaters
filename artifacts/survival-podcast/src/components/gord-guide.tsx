@@ -94,6 +94,7 @@ export function GordGuide({ path }: GordGuideProps) {
   const [visible, setVisible] = useState(false);
   const [perchVisible, setPerchVisible] = useState(false);
   const [tipHovered, setTipHovered] = useState(false);
+  const [gordHovered, setGordHovered] = useState(false);
 
   const guideBirdRef = useRef<HTMLDivElement>(null);
   const perchBirdRef = useRef<HTMLDivElement>(null);
@@ -135,6 +136,7 @@ export function GordGuide({ path }: GordGuideProps) {
     }
     setVisible(false);
     setTipHovered(false);
+    setGordHovered(false);
     setTimeout(() => setPerchVisible(true), 400);
   }
 
@@ -202,8 +204,10 @@ export function GordGuide({ path }: GordGuideProps) {
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               className="pointer-events-auto"
+              onMouseEnter={() => setGordHovered(true)}
+              onMouseLeave={() => setGordHovered(false)}
             >
-              <GordBird size={90} variant="full" eyeTarget={eyeTarget} idleAnim={idleAnim} />
+              <GordBird size={90} variant="full" eyeTarget={eyeTarget} idleAnim={idleAnim} hovered={gordHovered} />
             </motion.div>
           </motion.div>
         )}
@@ -234,8 +238,10 @@ export function GordGuide({ path }: GordGuideProps) {
                 ref={perchBirdRef}
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                onMouseEnter={() => setGordHovered(true)}
+                onMouseLeave={() => setGordHovered(false)}
               >
-                <GordBird size={44} variant="head" className="shrink-0" eyeTarget={eyeTarget} idleAnim={idleAnim} />
+                <GordBird size={44} variant="head" className="shrink-0" eyeTarget={eyeTarget} idleAnim={idleAnim} hovered={gordHovered} />
               </motion.div>
             </motion.div>
           </motion.button>
