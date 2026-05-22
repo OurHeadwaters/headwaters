@@ -305,10 +305,21 @@ export function CouncilMemberPage() {
               {expert.name}
             </h1>
             {expert.podcastFeedUrl && (
-              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20">
-                <Radio className="w-3 h-3" />
-                Has Podcast
-              </span>
+              <>
+                <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20">
+                  <Radio className="w-3 h-3" />
+                  Has Podcast
+                </span>
+                <a
+                  href={expert.podcastFeedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors"
+                >
+                  <Rss className="w-3 h-3" />
+                  Subscribe
+                </a>
+              </>
             )}
           </div>
           <p className="text-base text-muted-foreground font-medium mb-3">{expert.role}</p>
