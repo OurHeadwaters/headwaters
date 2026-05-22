@@ -1,0 +1,150 @@
+# The On-Ramp — Book Agent Handoff
+
+*Compiled from a working session on May 22, 2026. These are live insights — some already built into the North Star Guide, some still raw. Pass the full document.*
+
+---
+
+## The original prompt (verbatim, unedited)
+
+> "There are so many zone 0 humans, husbands and wives, carrying all the weight of the world on their shoulders. The people who have been holding the headwaters are tired and looking for new blood to get out of the grindstone and join the movement. We just have to make it easy to hop aboard with codetry. Teach them the trace of laying the frame, board by board, filling with hempcrete, framing the windows and on and on. Maybe this will also help more tradesmen to be molded — added bonus nice looking wall without the need for crappy drywall work and the maintenance of scuffs and repainting."
+
+> "North Star should be where these ideas go to be shaped I think. This should be shaped with my husband alongside, the men in my life from homesteader to mechanic to plumber to electrician — speaking their language along the way. They can build things — just let them get to work with a plan that they can stray from and revamp continuously with nobody interjecting while they work and women coming behind to pick up the scraps and ten to the dump and talk to the outside world so they can have their hands filled with on the ground real world things. The oil in the grindstone. That engine doesn't grind without these guys — and the future is looking bright for the oil. Let's help get the youth of tomorrow hands greased."
+
+---
+
+## Core insight: who this is actually for
+
+Zone 0 is not an abstract unit. It is the mechanic, the plumber, the electrician, the homesteader. The husband and wife who have been carrying the household on their backs for years. The headwaters people — the ones who have held the water from the source, who are tired, and who are looking for something to hand off or bring others into.
+
+They do not need explaining. They need a plan they can stray from. Nobody interjecting while they work. The outside world handled so their hands stay free.
+
+The tradespeople angle is not decorative. A builder who works with hempcrete reads this and recognizes that the metaphor is not borrowed — it is load-bearing. A nice-looking wall without the maintenance overhead of drywall is a real argument for a real material. The Codetry framework rides on that credibility. The person who knows how to mix mortar already understands the difference between binder and structure. You are not teaching them a metaphor; you are translating a practice they already have into an economic framework.
+
+---
+
+## The grindstone and the oil — the division of labor
+
+Pull quote: *"That engine does not grind without the oil."*
+
+There are two roles in the household engine:
+
+**The grindstone person** — hands full, eyes on the material, on the ground. The mechanic, the builder, the one doing the physical thing. Needs the outside world handled so they can stay in contact with the work.
+
+**The oil** — the person handling the outside world. Running the scraps to the dump. Talking to suppliers, regulators, neighbors. Representing the interior to anyone who needs to know it exists. Without them, the grindstone seizes. Without the grindstone, they have nothing to represent.
+
+This is not a hierarchy. It is a named division of labor. The naming is the point — it stops being invisible when you name it. Invisible labor is the primary source of resentment in Zone 0 households, not the labor itself.
+
+**The youth watching this:** The most valuable thing you can hand the next generation is a working example of two people who figured out the division without one of them disappearing. That is the inheritance. Not the house, not the money — the pattern.
+
+---
+
+## The two entry points — founding vs. reclamation
+
+Pull quote: *"The materials are the same. The order of operations is not."*
+
+**Founding mode:** Building from personal sovereignty with Codetry from the ground up. Hempcrete from the first pour. The house gets stronger while you live in it. Every decision is yours. The foundation accumulates in real time because you are the one pouring it. Generationally durable — what you build this way, you can hand to someone else without explaining what it secretly is.
+
+**Reclamation mode:** Board-by-board sovereignty recovery within a house someone else built. The goal is a house that is yours — the path is repair, not demolition. Each replaced board must carry the weight of the ones around it while the old ones come out. You cannot swap everything at once. The sequence matters more than the speed.
+
+Pull quote: *"You cannot demolish while a thousand people are living inside."*
+
+**Critical note:** Most people arriving are in reclamation mode. The tired Zone 0 households, the ones holding the headwaters — they are already inside a house. They did not get to design it from scratch. Reclamation mode is not a lesser version of the work. It is harder, it carries more scar tissue, and it produces a house that is genuinely yours by the time you are done — because you have replaced every board that needed replacing and left standing every board that could carry weight.
+
+The mistake is handing a founding-mode toolkit to someone in reclamation mode, or vice versa.
+
+---
+
+## The build sequence (The On-Ramp chapter)
+
+This is a trace, not a manual. The sequence exists so you know what you skipped and can go back. It is not a grading system.
+
+### Step 1 — Lay the frame
+
+Before any hempcrete goes in, the frame has to stand on its own.
+
+In the house: the structural skeleton that defines the interior spaces.
+In Codetry: the household unit (Zone 0) — what is inside, who is inside, what the walls protect.
+
+This is the step most people skip. They want to fill the wall before the frame is plumb. Write down what you are enclosing. Name the household. Name what stays inside it.
+
+The frame does not need to be finished to be started. Two posts and a beam is a frame. You can add to it.
+
+### Step 2 — Fill with hempcrete
+
+Hempcrete is not a structural material — the frame does that. Hempcrete is the binder. It fills, insulates, regulates. It holds the wall without being the wall.
+
+In Codetry that binder is the practice itself: the vocabulary, the naming discipline, the zone model. It fills the spaces the frame defines. It breathes. It does not crack under settling the way concrete does.
+
+You do not pour all at once. You fill in lifts — a foot at a time, tamped, left to set before the next. Rushing it produces a weak wall. The pace is the point.
+
+**Literal bonus:** A hempcrete wall is a nice-looking wall. It does not need the maintenance overhead of drywall — no scuffs, no repainting every few years, no paper face that dents when someone bumps it. The material argument and the framework argument are the same argument.
+
+### Step 3 — Frame the windows
+
+A window is an intentional opening. You decide where light comes in and where the outside world can see.
+
+In the house: placement is a design decision, not an accident.
+In Codetry: which zone boundaries are permeable, and by how much.
+
+The household steward is the interior architect. That is the person who knows what the rooms are for, who moves between them, and where the windows should go.
+
+Windows face outward. The interior stays yours. Nobody reaches through a window and rearranges the furniture.
+
+Don't cut windows until the wall has cured. A window cut too early weakens the wall before it has set.
+
+### Step 4 — Hang the gate
+
+The gate is the regulatory hinge — the point where inside meets outside on your terms. The fence post it hangs on is the boundary. The gate is not locked; it opens and closes.
+
+In Codetry this is the Eave: the hard privacy boundary between the household interior and the organizational world above. Zone 3 actors cannot reach Zone 1 data. The gate controls what crosses.
+
+Hang the gate before you invite anyone in. A fence without a gate is just a barrier. A gate without a fence is decoration.
+
+The giraffe: the regulatory apparatus. Long-necked by design — it can see over the fence from the road. It cannot enter unless you cross the trigger threshold. Know where your gate is before you scale.
+
+---
+
+## You are allowed to stray from the plan
+
+A build sequence is a starting frame, not a contract. Real walls meet real conditions. The hempcrete mix changes with the humidity. The frame settles. You adapt.
+
+The sequence exists so you know what you skipped and can go back. That is all.
+
+No one is interjecting while you work. Do the next thing. The plan will still be here.
+
+---
+
+## What has been built (as of this session)
+
+- **Building Materials chapter** — in the North Star Guide, readable now at `/north-star/` → Guide → Building Materials. Covers: hempcrete as binder, frame and foundation, windows, the fence post gate and the giraffe, mixing the foundation layer, founding mode, reclamation mode.
+- **The On-Ramp chapter** — in the North Star Guide, readable now at `/north-star/` → Guide → The On-Ramp. Covers: who this is for, two entry points, steps 1–4, the grindstone and the oil, permission to stray.
+- **Building Materials handbook doc** — at `docs/codetry/building-materials.md` in this repo, ready to be ported to the external Codetry handbook.
+
+---
+
+## What is still raw (for the book agent to work with)
+
+1. **The literal hempcrete case** — the building material itself deserves its own section. Not metaphor. Actual construction: why hempcrete over conventional, what the maintenance difference is, why a tradesperson should be interested. This is a recruitment argument, not just a framing device.
+
+2. **The youth chapter** — the ones whose hands are not yet greased. What does a working model of Zone 0 division-of-labor look like to a 16-year-old watching their parents? What does apprenticeship look like inside the framework? What does it mean to hand someone a plan they can stray from?
+
+3. **The headwaters people** — the ones who have been holding this for years and are tired. What does it look like when the Codetry framework gives them permission to hand something off? What does succession look like in Zone 0?
+
+4. **The women's chapter** — the oil side of the grindstone. Running to the dump, talking to the outside world, representing the interior. This is not a supporting role; it is a load-bearing one. It deserves its own naming, not just a mention inside the grindstone section.
+
+5. **The tradesperson on-ramp** — mechanic, plumber, electrician. They already understand build sequences and improvisation. They already know the difference between binder and structure. The on-ramp for them is shorter than for anyone else. Write it for them specifically.
+
+---
+
+## Key pull quotes (for the book agent)
+
+- "The materials are the same. The order of operations is not."
+- "You cannot demolish while a thousand people are living inside."
+- "That engine does not grind without the oil."
+- "The frame does not need to be finished to be started. Two posts and a beam is a frame."
+- "Hang the gate before you invite anyone in. A fence without a gate is just a barrier. A gate without a fence is decoration."
+- "Most people arriving here are in reclamation mode. That is not a lesser version."
+- "The sequence exists so you know what you skipped and can go back. That is all. It is not a grading system."
+- "No one is interjecting while you work. Do the next thing. The plan will still be here."
+- "What you build this way, you can hand to someone else without explaining what it secretly is."
+- "It stops being invisible when you name it."
