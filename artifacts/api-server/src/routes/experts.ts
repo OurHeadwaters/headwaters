@@ -11,11 +11,8 @@ let seeded = false;
 async function ensureSeeded() {
   if (seeded) return;
   try {
-    const [ecCount] = await db.select({ id: expertCouncilTable.id }).from(expertCouncilTable).limit(1);
-    if (!ecCount) {
-      await seedExpertCouncil();
-      await seedUlgBusinesses();
-    }
+    await seedExpertCouncil();
+    await seedUlgBusinesses();
     seeded = true;
   } catch (err) {
     logger.warn({ err }, "experts route: seed check failed");

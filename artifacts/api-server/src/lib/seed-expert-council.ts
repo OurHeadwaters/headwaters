@@ -1,10 +1,13 @@
 import { db, expertCouncilTable, ulgBusinessesTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
 import { EXPERT_COUNCIL, ULG_BUSINESSES } from "./expert-council-static";
 
 /**
- * Seeds the expert_council table from the static registry.
- * Only inserts rows that don't already exist (by slug).
- * Returns the number of rows seeded.
+ * Syncs the expert_council table from the static registry.
+ * Inserts new rows and updates url, description, role, and zones
+ * for existing rows (matched by slug). Admin-managed fields
+ * (podcastFeedUrl, rssSlug, sortOrder) are never overwritten.
+ * Returns the number of rows inserted or updated.
  */
 export async function seedExpertCouncil(): Promise<number> {
   let count = 0;
@@ -21,7 +24,17 @@ export async function seedExpertCouncil(): Promise<number> {
         zones: m.zones,
         sortOrder: i,
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({
+        target: expertCouncilTable.slug,
+        set: {
+          name: sql`excluded.name`,
+          role: sql`excluded.role`,
+          description: sql`excluded.description`,
+          url: sql`excluded.url`,
+          zones: sql`excluded.zones`,
+          updatedAt: sql`now()`,
+        },
+      })
       .returning({ id: expertCouncilTable.id });
     count += result.length;
   }
@@ -29,9 +42,10 @@ export async function seedExpertCouncil(): Promise<number> {
 }
 
 /**
- * Seeds the ulg_businesses table from the static registry.
- * Only inserts rows that don't already exist (by slug).
- * Returns the number of rows seeded.
+ * Syncs the ulg_businesses table from the static registry.
+ * Inserts new rows and updates name, tagline, description, url,
+ * and zones for existing rows (matched by slug).
+ * Returns the number of rows inserted or updated.
  */
 export async function seedUlgBusinesses(): Promise<number> {
   let count = 0;
@@ -48,7 +62,17 @@ export async function seedUlgBusinesses(): Promise<number> {
         zones: b.zones,
         sortOrder: i,
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({
+        target: ulgBusinessesTable.slug,
+        set: {
+          name: sql`excluded.name`,
+          tagline: sql`excluded.tagline`,
+          description: sql`excluded.description`,
+          url: sql`excluded.url`,
+          zones: sql`excluded.zones`,
+          updatedAt: sql`now()`,
+        },
+      })
       .returning({ id: ulgBusinessesTable.id });
     count += result.length;
   }

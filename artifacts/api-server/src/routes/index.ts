@@ -23,6 +23,7 @@ import adminCouncilRouter from "./admin-council";
 import groundEventsRouter from "./ground-events";
 import adminGroundEventsRouter from "./admin-ground-events";
 import stripeWorkshopsRouter from "./stripe-workshops";
+import debtCoachRouter from "./debt-coach";
 
 const router: IRouter = Router();
 
@@ -43,8 +44,9 @@ router.use(v4vRouter);
 router.use(ogRouter);
 router.use(wisdomRouter);
 router.use(groundEventsRouter);
-router.use(adminWisdomRouter);
 router.use(waterWheelRouter);
+router.use(debtCoachRouter);
+router.use(adminWisdomRouter);
 router.use(adminNuggetsRouter);
 router.use(adminCategoriesRouter);
 router.use(adminCouncilRouter);

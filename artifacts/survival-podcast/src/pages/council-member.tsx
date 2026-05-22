@@ -201,15 +201,21 @@ export function CouncilMemberPage() {
             ))}
           </div>
           <p className="text-base text-muted-foreground leading-relaxed mb-4">{expert.description}</p>
-          <a
-            href={expert.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            {expert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-          </a>
+          {expert.url ? (
+            <a
+              href={expert.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              {expert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground italic">
+              Site coming soon
+            </span>
+          )}
         </div>
       </div>
 

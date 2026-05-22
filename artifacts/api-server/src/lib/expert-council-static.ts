@@ -12,6 +12,7 @@ export type ExpertCouncilMember = {
   url: string;
   xHandle?: string;
   zones: string[];
+  comingSoon?: boolean;
 };
 
 export type UlgBusiness = {
@@ -21,6 +22,7 @@ export type UlgBusiness = {
   description: string;
   url: string;
   zones: string[];
+  comingSoon?: boolean;
 };
 
 export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
@@ -80,7 +82,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     role: "Community & Intentional Resilience",
     description:
       "Author and community resilience strategist. Karen works at the intersection of personal preparedness and neighborhood-scale resilience — building the human network that makes everything else work.",
-    url: "https://www.codetry.ca",
+    url: "https://www.ithunderbird.com",
     zones: ["zone-0", "zone-5"],
   },
   {
@@ -137,7 +139,8 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     role: "Hunting, Foraging & Wild Harvest",
     description:
       "Wilderness skills instructor and hunter. Nicholas teaches practical field craft — tracking, wild edibles, and integrating wild harvest into a complete self-reliant lifestyle.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: "",
+    comingSoon: true,
     zones: ["zone-4", "zone-5"],
   },
   {
@@ -146,7 +149,8 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     role: "Small Business & Entrepreneurship",
     description:
       "Business coach and TSP community member. Chuck helps people build income streams they own — from side hustles to full-time businesses that replace a job and build real freedom.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: "",
+    comingSoon: true,
     zones: ["zone-0"],
   },
   {
@@ -174,8 +178,28 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     role: "Historian & History Professor",
     description:
       "History professor and recurring TSP guest who brings rigorous academic context to topics like societal collapse, personal liberty, and the long arc of civilization. CJ makes history immediately relevant to modern self-reliance.",
-    url: "https://www.thesurvivalpodcast.com/prof-cj-kilmer",
+    url: "",
+    comingSoon: true,
     zones: ["zone-0", "zone-5"],
+  },
+  {
+    id: "dr-ken-berry",
+    name: "Dr. Ken Berry, MD",
+    role: "Carnivore Medicine & Nutritional Sovereignty",
+    description:
+      "Physician, author of Lies My Doctor Told Me, and one of the clearest voices on metabolic self-reliance. Dr. Berry teaches how to reclaim your health through proper human diet — carnivore, keto, and the ancestral eating principles that conventional medicine ignores.",
+    url: "https://www.drberry.com",
+    xHandle: "KenDBerryMD",
+    zones: ["zone-0"],
+  },
+  {
+    id: "dave-ramsey",
+    name: "Dave Ramsey",
+    role: "Debt Elimination & Financial Peace",
+    description:
+      "Creator of the 7 Baby Steps — the proven, step-by-step path to getting out of debt, building a $1,000 starter emergency fund, and achieving financial peace. Dave's zero-based budgeting and debt snowball methods have helped millions stop living paycheck to paycheck.",
+    url: "https://www.ramseysolutions.com",
+    zones: ["zone-0"],
   },
 ];
 
@@ -231,7 +255,8 @@ export const ULG_BUSINESSES: UlgBusiness[] = [
     tagline: "Regenerative farming consultation",
     description:
       "Consulting practice helping farmers transition to regenerative and beyond-organic systems. Covers soil health, grazing management, and whole-farm design.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: "",
+    comingSoon: true,
     zones: ["zone-3"],
   },
   {
@@ -240,7 +265,8 @@ export const ULG_BUSINESSES: UlgBusiness[] = [
     tagline: "Naturally dyed, handspun fiber",
     description:
       "Small-batch fiber arts from ethically raised sheep. Raw fleece, roving, and finished goods from a working homestead — fiber arts as self-reliance.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: "",
+    comingSoon: true,
     zones: ["zone-3"],
   },
   {
@@ -258,7 +284,8 @@ export const ULG_BUSINESSES: UlgBusiness[] = [
     tagline: "Craft fermentation from first principles",
     description:
       "A craft brewery and fermentation school that teaches home brewing, wild fermentation, and the broader culture of making your own beverages.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: "",
+    comingSoon: true,
     zones: ["zone-2"],
   },
   {
@@ -276,7 +303,8 @@ export const ULG_BUSINESSES: UlgBusiness[] = [
     tagline: "Pastured meats and farm education",
     description:
       "A multi-species pasture operation offering direct-to-consumer meats and on-farm education about sustainable animal husbandry.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: "",
+    comingSoon: true,
     zones: ["zone-3", "zone-4"],
   },
   {

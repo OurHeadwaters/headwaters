@@ -4,6 +4,7 @@ import { startBackgroundRefresh } from "./lib/library";
 import { startGearSchedule } from "./routes/gear";
 import { getFeedCached } from "./lib/rss";
 import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-consistency";
+import { seedExpertCouncil, seedUlgBusinesses } from "./lib/seed-expert-council";
 
 const rawPort = process.env["PORT"];
 
@@ -70,6 +71,14 @@ app.listen(port, (err) => {
         "series-consistency: could not fetch RSS feed at startup; skipping consistency check",
       ),
     );
+
+  // Sync expert council static registry to DB on startup (upserts by slug)
+  seedExpertCouncil()
+    .then((n) => logger.info({ count: n }, "expert-council: startup sync complete"))
+    .catch((err) => logger.warn({ err }, "expert-council: startup sync failed (non-fatal)"));
+  seedUlgBusinesses()
+    .then((n) => logger.info({ count: n }, "ulg-businesses: startup sync complete"))
+    .catch((err) => logger.warn({ err }, "ulg-businesses: startup sync failed (non-fatal)"));
 
   // Initialise Stripe after server is ready (non-blocking)
   initStripe();

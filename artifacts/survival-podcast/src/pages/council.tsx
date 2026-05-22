@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import { Users, ExternalLink, ChevronRight, Radio } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Users, ExternalLink, ChevronRight, Radio, Bot } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -50,6 +50,10 @@ function useExperts() {
 }
 
 function ExpertCard({ expert }: { expert: Expert }) {
+  const [, navigate] = useLocation();
+  const hasUrl = !!expert.url;
+  const isRamsey = expert.slug === "dave-ramsey";
+
   return (
     <div className="group flex flex-col rounded-xl border border-border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
       <div className="p-5 flex flex-col gap-3 flex-1">
@@ -96,15 +100,28 @@ function ExpertCard({ expert }: { expert: Expert }) {
         >
           View profile <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
-        <a
-          href={expert.url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ExternalLink className="w-3 h-3" />
-          Site
-        </a>
+
+        {isRamsey ? (
+          <button
+            onClick={() => navigate("/zones/zone-0#debt-coach-panel")}
+            className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+          >
+            <Bot className="w-3 h-3" />
+            Debt Coach →
+          </button>
+        ) : hasUrl ? (
+          <a
+            href={expert.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Site
+          </a>
+        ) : (
+          <span className="text-[10px] text-muted-foreground italic">site coming soon</span>
+        )}
       </div>
     </div>
   );

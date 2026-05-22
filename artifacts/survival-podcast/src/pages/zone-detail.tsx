@@ -4,9 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { ProductShelfSection, type ReviewedProduct } from "@/components/product-shelf";
+import { DebtFreedomCoachPanel } from "@/components/debt-freedom-coach";
 import {
   Loader2, Headphones, Users, Building2, ExternalLink,
-  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare,
+  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare, Bot,
 } from "lucide-react";
 
 type SourceFilter = "all" | "tsp" | "ulg";
@@ -109,52 +110,99 @@ function EpisodeRow({ ep }: { ep: ZoneResourceEpisode }) {
   return <Link href={href}>{inner}</Link>;
 }
 
-function ExpertCard({ expert }: { expert: ZoneExpert }) {
-  return (
-    <a
-      href={expert.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex flex-col gap-2 p-5 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
-    >
+function scrollToDebtCoach() {
+  const el = document.getElementById("debt-coach-panel");
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => {
+      const btn = el.querySelector("button") as HTMLButtonElement | null;
+      if (btn && !el.querySelector("[data-open='true']")) btn.click();
+    }, 400);
+  }
+}
+
+function ExpertCard({ expert, isZone0 }: { expert: ZoneExpert; isZone0?: boolean }) {
+  const hasUrl = !!expert.url;
+  const isRamsey = expert.id === "dave-ramsey";
+
+  const cardInner = (
+    <div className={`flex flex-col gap-2 p-5 rounded-xl border border-border bg-card transition-all ${hasUrl && !isRamsey ? "hover:shadow-md hover:border-primary/30 group" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+          <p className={`font-semibold text-foreground ${hasUrl && !isRamsey ? "group-hover:text-primary transition-colors" : ""}`}>
             {expert.name}
           </p>
           <p className="text-xs font-medium text-muted-foreground mt-0.5">{expert.role}</p>
         </div>
-        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+        {hasUrl ? (
+          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+        ) : (
+          <span className="text-[10px] font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
+            site coming soon
+          </span>
+        )}
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
         {expert.description}
       </p>
-    </a>
+      {isRamsey && isZone0 && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); scrollToDebtCoach(); }}
+          className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+        >
+          <Bot className="w-3.5 h-3.5" />
+          Chat with the Debt Coach →
+        </button>
+      )}
+    </div>
   );
+
+  if (hasUrl && !isRamsey) {
+    return (
+      <a href={expert.url} target="_blank" rel="noopener noreferrer">
+        {cardInner}
+      </a>
+    );
+  }
+
+  return <div>{cardInner}</div>;
 }
 
 function BusinessCard({ biz }: { biz: ZoneBusiness }) {
-  return (
-    <a
-      href={biz.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex flex-col gap-2 p-5 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
-    >
+  const hasUrl = !!biz.url;
+
+  const cardInner = (
+    <div className={`flex flex-col gap-2 p-5 rounded-xl border border-border bg-card transition-all ${hasUrl ? "hover:shadow-md hover:border-primary/30 group" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+          <p className={`font-semibold text-foreground ${hasUrl ? "group-hover:text-primary transition-colors" : ""}`}>
             {biz.name}
           </p>
           <p className="text-xs font-medium text-muted-foreground mt-0.5 italic">{biz.tagline}</p>
         </div>
-        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+        {hasUrl ? (
+          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+        ) : (
+          <span className="text-[10px] font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
+            site coming soon
+          </span>
+        )}
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
         {biz.description}
       </p>
-    </a>
+    </div>
   );
+
+  if (hasUrl) {
+    return (
+      <a href={biz.url} target="_blank" rel="noopener noreferrer">
+        {cardInner}
+      </a>
+    );
+  }
+
+  return <div>{cardInner}</div>;
 }
 
 function ShelfHeader({
@@ -235,6 +283,8 @@ export default function ZoneDetailPage() {
   const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
   const textColor = ZONE_TEXT_COLORS[idx] ?? "text-foreground";
   const badgeColor = ZONE_BADGE_BG[idx] ?? "bg-muted border-border text-foreground";
+
+  const isZone0 = zone.slug === "zone-0";
 
   return (
     <div className="min-h-screen bg-background">
@@ -377,11 +427,27 @@ export default function ZoneDetailPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {experts.map((expert) => (
-                <ExpertCard key={expert.id} expert={expert} />
+                <ExpertCard key={expert.id} expert={expert} isZone0={isZone0} />
               ))}
             </div>
           )}
         </section>
+
+        {/* Debt Freedom Coach — Zone 0 only */}
+        {isZone0 && (
+          <section>
+            <ShelfHeader
+              icon={<Bot className="w-4 h-4" />}
+              title="Debt Freedom Coach"
+              count={0}
+              zoneColor={zone.color}
+            />
+            <p className="text-sm text-muted-foreground mb-5 ml-11">
+              An AI coach powered by Dave Ramsey's 7 Baby Steps — debt payoff, zero-based budgeting, and financial peace.
+            </p>
+            <DebtFreedomCoachPanel id="debt-coach-panel" />
+          </section>
+        )}
 
         {/* Shelf 3: Businesses */}
         {businesses.length > 0 && (
