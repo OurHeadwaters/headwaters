@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { Link, useParams } from "wouter";
-import { ChevronLeft, ExternalLink, Radio, Mic, Users, PlayCircle, FileText, Video } from "lucide-react";
+import { ChevronLeft, ExternalLink, Radio, Mic, Users, PlayCircle, PauseCircle, FileText, Video, Rss } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -135,51 +136,105 @@ function OwnEpisodeCard({ item }: { item: ContentItem }) {
 function FiresideEpisodeCard({ item }: { item: ContentItem }) {
   const pubDate = item.publishedAt ? new Date(item.publishedAt) : null;
   const dateStr = pubDate ? pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  function handlePlayPause(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play();
+      setPlaying(true);
+    }
+  }
+
+  const externalHref = (item as any).link || (!item.audioUrl ? "#" : undefined);
 
   return (
-    <a
-      href={item.link || item.audioUrl || "#"}
-      target="_blank"
-      rel="noreferrer"
-      className="group flex gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200"
-    >
-      {item.artworkUrl ? (
-        <img
-          src={item.artworkUrl}
-          alt={item.title}
-          className="w-14 h-14 rounded-lg object-cover shrink-0"
-        />
-      ) : (
-        <div className="w-14 h-14 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-          <Radio className="w-5 h-5 text-accent/40" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded">
-            Fireside
-          </span>
-          {item.episodeNumber && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Ep. {item.episodeNumber}
+    <div className="group rounded-xl border border-border bg-card hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
+      <div className="flex gap-3 p-4">
+        {item.artworkUrl ? (
+          <img
+            src={item.artworkUrl}
+            alt={item.title}
+            className="w-14 h-14 rounded-lg object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+            <Radio className="w-5 h-5 text-accent/40" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded">
+              Fireside
             </span>
-          )}
+            {item.episodeNumber && (
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Ep. {item.episodeNumber}
+              </span>
+            )}
+          </div>
+          <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2">
+            {item.title}
+          </h3>
+          <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+            {dateStr && <span>{dateStr}</span>}
+            {item.durationSeconds && (
+              <>
+                <span>·</span>
+                <span>{formatDuration(item.durationSeconds)}</span>
+              </>
+            )}
+          </div>
         </div>
-        <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-          {item.title}
-        </h3>
-        <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
-          {dateStr && <span>{dateStr}</span>}
-          {item.durationSeconds && (
-            <>
-              <span>·</span>
-              <span>{formatDuration(item.durationSeconds)}</span>
-            </>
+        <div className="flex items-center gap-2 shrink-0 self-center">
+          {item.audioUrl && (
+            <button
+              onClick={handlePlayPause}
+              aria-label={playing ? "Pause episode" : "Play episode"}
+              className="text-accent hover:text-accent/80 transition-colors"
+            >
+              {playing ? (
+                <PauseCircle className="w-7 h-7" />
+              ) : (
+                <PlayCircle className="w-7 h-7" />
+              )}
+            </button>
+          )}
+          {externalHref && (
+            <a
+              href={externalHref}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open episode page"
+              className="text-muted-foreground hover:text-primary transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
           )}
         </div>
       </div>
-      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 self-center" />
-    </a>
+      {item.audioUrl && (
+        <div className={`px-4 pb-3 ${playing ? "" : "hidden"}`}>
+          <audio
+            ref={audioRef}
+            src={item.audioUrl}
+            controls
+            className="w-full h-8"
+            onEnded={() => setPlaying(false)}
+            onPause={() => setPlaying(false)}
+            onPlay={() => setPlaying(true)}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -299,7 +354,7 @@ export function CouncilMemberPage() {
       {/* Fireside Freedom Episodes */}
       {firesideEpisodes.length > 0 && (
         <section className="mb-12">
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex flex-wrap items-center gap-2 mb-5">
             <Radio className="w-4 h-4 text-accent" />
             <h2 className="font-serif text-xl font-bold text-foreground">
               Their Episodes
@@ -310,6 +365,15 @@ export function CouncilMemberPage() {
             <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {firesideEpisodes.length} episode{firesideEpisodes.length !== 1 ? "s" : ""}
             </span>
+            <a
+              href="https://feeds.captivate.fm/fireside-freedom/"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-accent border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors px-3 py-1.5 rounded-full"
+            >
+              <Rss className="w-3.5 h-3.5" />
+              Subscribe to Fireside Freedom
+            </a>
           </div>
           <div className="grid grid-cols-1 gap-3">
             {firesideEpisodes.slice(0, 20).map((item) => (
