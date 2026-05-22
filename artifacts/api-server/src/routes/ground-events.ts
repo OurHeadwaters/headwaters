@@ -31,9 +31,9 @@ const publicEventColumns = {
   breakEvenTickets: groundEventsTable.breakEvenTickets,
   platformSharePct: groundEventsTable.platformSharePct,
   // stripeConnectedAccountId intentionally omitted from public response — internal field.
-  // We expose a safe boolean instead so the UI can show the "Buy Ticket" button
-  // without leaking account IDs to unauthenticated callers.
-  isStripeReady: sql<boolean>`(${groundEventsTable.stripeConnectedAccountId} IS NOT NULL)`.as("is_stripe_ready"),
+  // isStripeReady reflects both: account ID exists AND charges are enabled (onboarding complete).
+  // stripeChargesEnabled is persisted when the host's connect/status endpoint is polled.
+  isStripeReady: groundEventsTable.stripeChargesEnabled,
   // hostToken intentionally omitted — auth credential
   createdAt: groundEventsTable.createdAt,
   updatedAt: groundEventsTable.updatedAt,

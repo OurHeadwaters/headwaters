@@ -132,6 +132,13 @@ router.get("/ground-events/:id/connect/status", async (req, res) => {
     const stripe = await getUncachableStripeClient();
     const account = await stripe.accounts.retrieve(event.stripeConnectedAccountId);
 
+    // Persist charges_enabled back to DB so the public isStripeReady field reflects reality.
+    // This is updated on every status poll (host lands back from Stripe onboarding).
+    await db
+      .update(groundEventsTable)
+      .set({ stripeChargesEnabled: account.charges_enabled, updatedAt: new Date() })
+      .where(eq(groundEventsTable.id, id));
+
     res.json({
       connected: true,
       chargesEnabled: account.charges_enabled,
@@ -203,34 +210,40 @@ router.post("/ground-events/:id/checkout", async (req, res) => {
     const stripe = await getUncachableStripeClient();
     const baseUrl = getBaseUrl(req);
 
-    const session = await stripe.checkout.sessions.create(
-      {
-        mode: "payment",
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              unit_amount: event.ticketPriceCents,
-              product_data: {
-                name: event.title,
-                description: `${event.hostName} · ${event.eventDate}`,
-              },
+    // Build the checkout session with correct Stripe Connect routing:
+    // - on_behalf_of: charges appear on the connected account's dashboard
+    // - payment_intent_data.transfer_data.destination: funds go to the host
+    // - payment_intent_data.application_fee_amount: platform's surplus share (0 pre-break-even)
+    const sessionParams: import("stripe").Stripe.Checkout.SessionCreateParams = {
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: event.ticketPriceCents,
+            product_data: {
+              name: event.title,
+              description: `${event.hostName} · ${event.eventDate}`,
             },
-            quantity: 1,
           },
-        ],
+          quantity: 1,
+        },
+      ],
+      payment_intent_data: {
         application_fee_amount: applicationFeeAmount,
-        success_url: `${baseUrl}/stomping-grounds?tab=workshop&checkout=success&eventId=${id}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/stomping-grounds?tab=workshop&checkout=cancelled&eventId=${id}`,
-        metadata: {
-          ground_event_id: String(id),
+        transfer_data: {
+          destination: event.stripeConnectedAccountId,
         },
       },
-      {
-        stripeAccount: event.stripeConnectedAccountId,
+      success_url: `${baseUrl}/stomping-grounds?tab=workshop&checkout=success&eventId=${id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/stomping-grounds?tab=workshop&checkout=cancelled&eventId=${id}`,
+      metadata: {
+        ground_event_id: String(id),
       },
-    );
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logger.info(
       {

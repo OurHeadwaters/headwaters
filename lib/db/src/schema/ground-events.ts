@@ -50,6 +50,7 @@ export const groundEventsTable = pgTable(
     breakEvenTickets: integer("break_even_tickets").notNull().default(0),
     platformSharePct: smallint("platform_share_pct"),
     stripeConnectedAccountId: text("stripe_connected_account_id"),
+    stripeChargesEnabled: boolean("stripe_charges_enabled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
