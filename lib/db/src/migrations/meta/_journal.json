@@ -127,6 +127,13 @@
       "when": 1779464142361,
       "tag": "0017_curious_blonde_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779464030623,
+      "tag": "0018_hard_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

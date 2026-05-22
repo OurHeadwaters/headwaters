@@ -106,18 +106,19 @@ async function ingestChannel(channelId: string): Promise<number> {
   let inserted = 0;
 
   for (const entry of entries) {
-    const contentText = [entry.title, entry.description].filter(Boolean).join("\n");
-    if (!contentText.trim()) continue;
+    const classifyText_ = [entry.title, entry.description].filter(Boolean).join("\n");
+    if (!classifyText_.trim()) continue;
 
     try {
-      const tags = classifyText(contentText);
+      const tags = classifyText(classifyText_);
 
       const result = await db
         .insert(curatedItemsTable)
         .values({
           sourceType: "youtube",
           externalId: entry.videoId,
-          rawContent: contentText,
+          rawContent: entry.description || entry.title,
+          metaTitle: entry.title || null,
           tags,
           published: true,
           metaUrl: entry.videoUrl,

@@ -1,0 +1,1 @@
+ALTER TABLE "curated_items" ADD COLUMN "meta_title" text;

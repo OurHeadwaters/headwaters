@@ -520,6 +520,7 @@ type FieldNote = {
   id: number;
   sourceType: string;
   rawContent: string;
+  metaTitle?: string | null;
   tags: string[];
   createdAt: string;
   metaUrl?: string | null;
@@ -684,6 +685,11 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
           </span>
         )}
       </div>
+      {isYouTube && note.metaTitle && (
+        <p className="text-sm font-semibold text-foreground leading-snug">
+          {note.metaTitle}
+        </p>
+      )}
       <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
         {preview}
       </p>
