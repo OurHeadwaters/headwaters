@@ -11,28 +11,34 @@ const FETCH_TIMEOUT_MS = 30_000;
  * keyword matches in the episode title and description.
  *
  * Zone mapping:
- *   zone-0  — self-reliance, liberty, freedom, sovereignty, preparedness
- *   zone-1  — financial independence, off-grid economics, barter
+ *   zone-0  — self-reliance, liberty, freedom, sovereignty, preparedness mindset
+ *   zone-1  — financial independence, off-grid economics, barter, small business
  *   zone-2  — homesteading, gardening, livestock, food production
- *   zone-3  — food preservation, cooking, off-grid kitchen
+ *   zone-3  — food preservation, cooking, brewing, off-grid kitchen
  *   zone-4  — wilderness skills, bushcraft, hunting, fishing
  *   zone-5  — survival skills, emergency preparedness, first aid
+ *
+ * Tuned after first ingest (May 2026):
+ *   - Broadened preparedness stem: prepar(ed|ing|edness) → prepar + added prepp/prep
+ *   - Added DIY and improv to zone-0 (self-reliance through resourcefulness)
+ *   - Added solar/energy, side hustle, monetization, entrepreneur to zone-1
+ *   - Added brew/distill to zone-3 (home fermentation/spirits)
  */
 const ZONE_RULES: Array<{ zones: string[]; pattern: RegExp }> = [
   {
     zones: ["zone-0"],
     pattern:
-      /\b(self.reli|liberty|freedom|sovere|patriot|constitution|civil.libert|decentrali|individual.rights?|voluntar|anarch|second.amend|gun.rights?|firearms?|2nd.amend)/i,
+      /\b(self.reli|liberty|freedom|sovere|patriot|constitution|civil.libert|decentrali|individual.rights?|voluntar|anarch|second.amend|gun.rights?|firearms?|2nd.amend|DIY|do.it.yourself|improv)/i,
   },
   {
     zones: ["zone-0", "zone-1"],
     pattern:
-      /\b(prepar(ed|ing|edness)|ready|resilience|self.suffici|independen|off.grid|off grid|bug.out|bug out|SHTF|TEOTWAWKI|grid.down|crisis|disaster|emergency)/i,
+      /\b(prepar|prepp|prep\b|ready|resilience|self.suffici|independen|off.grid|off grid|bug.out|bug out|SHTF|TEOTWAWKI|grid.down|crisis|disaster|emergency)/i,
   },
   {
     zones: ["zone-1"],
     pattern:
-      /\b(financ|econom|invest|bitcoin|crypto|barter|trade|bartering|money|wealth|debt.free|frugal|income|budget|tax)/i,
+      /\b(financ|econom|invest|bitcoin|crypto|barter|trade|bartering|money|wealth|debt.free|frugal|income|budget|tax|solar|side.hustle|small.business|monetiz|entrepreneur)/i,
   },
   {
     zones: ["zone-2"],
@@ -42,7 +48,7 @@ const ZONE_RULES: Array<{ zones: string[]; pattern: RegExp }> = [
   {
     zones: ["zone-3"],
     pattern:
-      /\b(food.preserv|canning|ferment|dehydrat|smoking|curing|cellar|larder|pantry|storag|food.storage|cook(ing)?|recipe|homestead.kitchen|bread|sourdough|lacto)/i,
+      /\b(food.preserv|canning|ferment|dehydrat|smoking|curing|cellar|larder|pantry|storag|food.storage|cook(ing)?|recipe|homestead.kitchen|bread|sourdough|lacto|brew(ing)?|distill)/i,
   },
   {
     zones: ["zone-4"],
