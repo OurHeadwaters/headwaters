@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock, Download } from "lucide-react";
+import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock, Download, Users } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -28,6 +28,69 @@ interface GroundEvent {
   breakEvenTickets: number;
   platformSharePct: number | null;
   isStripeReady: boolean;
+  transformationSlug: string | null;
+}
+
+interface HostSummary {
+  hostName: string;
+  contactEmail: string | null;
+  eventCount: number;
+  stripeConnected: boolean;
+  firstEvent: string;
+  latestEvent: string;
+  totalRsvps: number;
+}
+
+async function fetchHosts(): Promise<HostSummary[]> {
+  const res = await fetch(apiUrl("/admin/ground-events/hosts"), { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load hosts");
+  return res.json();
+}
+
+function HostDirectory() {
+  const { data, isLoading } = useQuery({ queryKey: ["admin-hosts"], queryFn: fetchHosts });
+  const hosts = data ?? [];
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Read-only directory of all hosts. No approval needed — Stripe identity verification handles trust.
+      </p>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1,2,3].map(i => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+        </div>
+      ) : hosts.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-border rounded-xl text-muted-foreground text-sm">
+          No hosts yet.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {hosts.map((host) => (
+            <div key={`${host.hostName}-${host.contactEmail}`} className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-foreground">{host.hostName}</span>
+                  {host.stripeConnected ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">✓ Stripe connected</span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">Stripe pending</span>
+                  )}
+                </div>
+                {host.contactEmail && (
+                  <a href={`mailto:${host.contactEmail}`} className="text-xs text-[#2C4A36] hover:underline">{host.contactEmail}</a>
+                )}
+              </div>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                <span><strong className="text-foreground">{host.eventCount}</strong> event{host.eventCount !== 1 ? "s" : ""}</span>
+                <span><strong className="text-foreground">{host.totalRsvps}</strong> RSVPs</span>
+                <span>Last: {host.latestEvent}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 async function fetchEvents(): Promise<GroundEvent[]> {
@@ -307,6 +370,8 @@ function EventRow({ event }: { event: GroundEvent }) {
 }
 
 export function AdminGroundEvents() {
+  const [activeTab, setActiveTab] = useState<"events" | "hosts">("events");
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin-ground-events"],
     queryFn: fetchEvents,
@@ -319,23 +384,45 @@ export function AdminGroundEvents() {
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 max-w-4xl">
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-6">
         <Hammer className="w-6 h-6 text-[#2C4A36]" />
         <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">Ground Events Admin</h1>
+          <h1 className="font-serif text-3xl font-bold text-foreground">Workshop Board Admin</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Review and approve community workshop submissions.
+            Events go live immediately. No approval needed — Stripe handles identity.
           </p>
         </div>
         <a
-          href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/stomping-grounds?tab=workshop`}
+          href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/workshops`}
           className="ml-auto text-xs text-[#2C4A36] hover:underline font-medium"
         >
           View public board →
         </a>
       </div>
 
-      {isLoading ? (
+      <div className="flex items-center gap-1 mb-6 border-b border-border">
+        {([
+          { id: "events" as const, label: "Events", icon: <Hammer className="w-3.5 h-3.5" /> },
+          { id: "hosts" as const, label: "Host Directory", icon: <Users className="w-3.5 h-3.5" /> },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              activeTab === tab.id
+                ? "border-[#2C4A36] text-[#2C4A36]"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "hosts" ? (
+        <HostDirectory />
+      ) : isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
@@ -350,7 +437,7 @@ export function AdminGroundEvents() {
           <div className="text-4xl mb-3">🔨</div>
           <p className="font-medium text-foreground mb-1">No workshop submissions yet</p>
           <p className="text-sm text-muted-foreground">
-            When community members submit via the Workshop Board, they'll appear here for review.
+            When community members list a workshop, they'll appear here.
           </p>
         </div>
       ) : (
@@ -359,7 +446,7 @@ export function AdminGroundEvents() {
             <section>
               <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5" />
-                Pending Review ({pending.length})
+                Pending ({pending.length})
               </h2>
               <div className="space-y-3">
                 {pending.map((e) => <EventRow key={e.id} event={e} />)}
@@ -371,7 +458,7 @@ export function AdminGroundEvents() {
             <section>
               <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                 <CheckCircle className="w-3.5 h-3.5" />
-                Approved ({approved.length})
+                Live ({approved.length})
               </h2>
               <div className="space-y-3">
                 {approved.map((e) => <EventRow key={e.id} event={e} />)}

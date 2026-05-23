@@ -32,6 +32,9 @@ import { AdminGear } from "@/pages/admin-gear";
 import { AdminNuggets } from "@/pages/admin-nuggets";
 import { AdminGroundEvents } from "@/pages/admin-ground-events";
 import WorkshopManagePage from "@/pages/workshop-manage";
+import WorkshopsBrowsePage from "@/pages/workshops-browse";
+import WorkshopsHostPage from "@/pages/workshops-host";
+import WorkshopsDashboardPage from "@/pages/workshops-dashboard";
 import HistoryPage from "@/pages/history";
 import { AdminWisdom } from "@/pages/admin-wisdom";
 import { AdminFieldNotes } from "@/pages/admin-field-notes";
@@ -84,7 +87,10 @@ function Router() {
         <Route path="/admin/wisdom" component={AdminWisdom} />
         <Route path="/admin/field-notes" component={AdminFieldNotes} />
         <Route path="/admin/ground-events" component={AdminGroundEvents} />
+        <Route path="/workshops/host" component={WorkshopsHostPage} />
+        <Route path="/workshops/dashboard" component={WorkshopsDashboardPage} />
         <Route path="/workshops/manage" component={WorkshopManagePage} />
+        <Route path="/workshops" component={WorkshopsBrowsePage} />
         <Route path="/wishing-well">
           {() => <Redirect to="/stomping-grounds?tab=well" />}
         </Route>

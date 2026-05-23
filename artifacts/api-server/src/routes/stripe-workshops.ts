@@ -61,8 +61,10 @@ router.post("/ground-events/:id/connect/start", async (req, res) => {
 
     const stripe = await getUncachableStripeClient();
     const baseUrl = getBaseUrl(req);
-    const returnUrl = `${baseUrl}/stomping-grounds?tab=workshop&stripe_connect=success&eventId=${id}`;
-    const refreshUrl = `${baseUrl}/stomping-grounds?tab=workshop&stripe_connect=refresh&eventId=${id}`;
+    // Include the host token in return/refresh URLs so the host lands directly
+    // on their personal dashboard after completing Stripe onboarding.
+    const returnUrl = `${baseUrl}/workshops/dashboard?id=${id}&token=${encodeURIComponent(event.hostToken!)}&stripe_connect=success`;
+    const refreshUrl = `${baseUrl}/workshops/dashboard?id=${id}&token=${encodeURIComponent(event.hostToken!)}&stripe_connect=refresh`;
 
     let accountId = event.stripeConnectedAccountId;
 

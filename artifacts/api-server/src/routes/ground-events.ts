@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
-import { eq, sql, and, desc, asc, gte, inArray } from "drizzle-orm";
+import { eq, sql, and, desc, asc, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
 import { sendRsvpNotification } from "../lib/email";
@@ -36,6 +36,8 @@ const publicEventColumns = {
   // stripeChargesEnabled is persisted when the host's connect/status endpoint is polled.
   isStripeReady: groundEventsTable.stripeChargesEnabled,
   // hostToken intentionally omitted — auth credential
+  transformationSlug: groundEventsTable.transformationSlug,
+  zoneSlug: groundEventsTable.zoneSlug,
   createdAt: groundEventsTable.createdAt,
   updatedAt: groundEventsTable.updatedAt,
 } as const;
@@ -45,16 +47,28 @@ const publicEventColumns = {
  * Returns only approved (and not rejected) events.
  * Featured events appear first, then sorted chronologically.
  * Query params:
- *   limit     (1-50, default 20)
- *   offset    (default 0)
- *   status    "upcoming" — restrict to events whose event_date >= today (YYYY-MM-DD)
- *   sessionId — stable device/session token; when provided each event gains hasRsvped boolean
+ *   limit          (1-50, default 20)
+ *   offset         (default 0)
+ *   status         "upcoming" — restrict to events whose event_date >= today (YYYY-MM-DD)
+ *   transformation — filter by transformation_slug
+ *   sessionId      — stable device/session token; when provided each event gains hasRsvped boolean
+ *
+ * Auto-hide: sold-out events (rsvp_count >= seats, where seats is not null) are excluded.
+ * Past events are excluded when status=upcoming (the default for public pages).
  */
 router.get("/ground-events", async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const offset = Math.max(0, Number(req.query.offset) || 0);
     const upcomingOnly = req.query.status === "upcoming";
+    const transformationFilter =
+      typeof req.query.transformation === "string" && req.query.transformation.trim()
+        ? req.query.transformation.trim()
+        : null;
+    const zoneFilter =
+      typeof req.query.zone === "string" && req.query.zone.trim()
+        ? req.query.zone.trim()
+        : null;
     const sessionId =
       typeof req.query.sessionId === "string" && req.query.sessionId.trim()
         ? req.query.sessionId.trim().slice(0, 128)
@@ -62,16 +76,38 @@ router.get("/ground-events", async (req, res) => {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    const whereClause = upcomingOnly
-      ? and(
-          eq(groundEventsTable.isApproved, true),
-          eq(groundEventsTable.isRejected, false),
-          gte(groundEventsTable.eventDate, today),
-        )
-      : and(
-          eq(groundEventsTable.isApproved, true),
-          eq(groundEventsTable.isRejected, false),
-        );
+    // Auto-hide sold-out events: only show where seats is null OR rsvp_count < seats
+    const notSoldOut = or(
+      isNull(groundEventsTable.seats),
+      lt(groundEventsTable.rsvpCount, groundEventsTable.seats),
+    );
+
+    // Paid events are only visible once the host has completed Stripe Connect
+    // (stripeChargesEnabled=true). Until then, the event exists in the DB but is
+    // not surfaced publicly — attendees can't buy tickets from an incomplete account.
+    const stripeGated = or(
+      isNull(groundEventsTable.ticketPriceCents),
+      eq(groundEventsTable.stripeChargesEnabled, true),
+    );
+
+    const baseConditions = [
+      eq(groundEventsTable.isApproved, true),
+      eq(groundEventsTable.isRejected, false),
+      notSoldOut,
+      stripeGated,
+    ];
+
+    if (upcomingOnly) {
+      baseConditions.push(gte(groundEventsTable.eventDate, today));
+    }
+    if (transformationFilter) {
+      baseConditions.push(eq(groundEventsTable.transformationSlug, transformationFilter));
+    }
+    if (zoneFilter) {
+      baseConditions.push(eq(groundEventsTable.zoneSlug, zoneFilter));
+    }
+
+    const whereClause = and(...baseConditions);
 
     const [events, [{ count }]] = await Promise.all([
       db
@@ -228,8 +264,26 @@ router.post("/ground-events", async (req, res) => {
     // ── Host management token ────────────────────────────────────────────────
     const hostToken = randomUUID();
 
+    // Optional transformation path tag
+    const transformationSlug =
+      typeof body.transformationSlug === "string" && body.transformationSlug.trim()
+        ? body.transformationSlug.trim().slice(0, 120)
+        : null;
+
+    // Optional zone tag
+    const zoneSlug =
+      typeof body.zoneSlug === "string" && body.zoneSlug.trim()
+        ? body.zoneSlug.trim().slice(0, 30)
+        : null;
+
     // Paid events use platform Stripe Checkout — external URL is not permitted.
     const externalUrl = ticketPriceCents ? null : rawExternalUrl;
+
+    // Auto-approval rules:
+    // - Free events go live immediately (no payment risk, Stripe identity not needed).
+    // - Paid events go live immediately too (Stripe identity check happens during Connect onboarding;
+    //   the event only accepts payments once stripe_charges_enabled is true).
+    const isApproved = true;
 
     const [row] = await db
       .insert(groundEventsTable)
@@ -247,8 +301,10 @@ router.post("/ground-events", async (req, res) => {
         ticketPriceCents,
         breakEvenTickets,
         platformSharePct,
+        transformationSlug,
+        zoneSlug,
         hostToken,
-        isApproved: false,
+        isApproved,
         isFeatured: false,
         isRejected: false,
       })
@@ -559,6 +615,161 @@ router.get("/ground-events/:id/manage/rsvps.csv", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "ground-events: GET /manage/rsvps.csv failed");
     res.status(500).json({ error: "Failed to export RSVPs" });
+  }
+});
+
+/**
+ * GET /api/ground-events/by-host?token=<hostToken>
+ * Returns all events belonging to the host identified by any one of their
+ * event host tokens.  Resolves host identity via contactEmail — all events
+ * that share the same contactEmail as the token-owning event are returned.
+ * If contactEmail is null, only the single token-matching event is returned.
+ *
+ * This is the foundation for the multi-event host dashboard.
+ * The hostToken field is stripped from each returned event.
+ */
+router.get("/ground-events/by-host", async (req, res) => {
+  try {
+    const token =
+      typeof req.query.token === "string" ? req.query.token.trim() : "";
+    if (!token) {
+      res.status(401).json({ error: "Missing host token" });
+      return;
+    }
+
+    // Find the event that owns this token — establishes host identity
+    const [seed] = await db
+      .select()
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.hostToken, token))
+      .limit(1);
+
+    if (!seed) {
+      res.status(403).json({ error: "Invalid host token" });
+      return;
+    }
+
+    // Collect all events for this host.
+    // If contactEmail is set, return everything with that email.
+    // Otherwise fall back to just the seed event.
+    const allEvents = seed.contactEmail
+      ? await db
+          .select()
+          .from(groundEventsTable)
+          .where(eq(groundEventsTable.contactEmail, seed.contactEmail))
+          .orderBy(asc(groundEventsTable.eventDate))
+      : [seed];
+
+    // Strip the host token before sending — it is an auth credential
+    const safe = allEvents.map(({ hostToken: _tok, ...rest }) => rest);
+
+    res.json({ events: safe });
+  } catch (err) {
+    logger.error({ err }, "ground-events: GET /by-host failed");
+    res.status(500).json({ error: "Failed to load host events" });
+  }
+});
+
+/**
+ * PATCH /api/ground-events/:id/manage
+ * Host-authenticated partial update for event details.
+ * Only fields that a host should be able to change post-submission are accepted.
+ * Body: { token, title?, description?, eventDate?, location?, seats?, externalUrl? }
+ */
+router.patch("/ground-events/:id/manage", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const body = req.body as Record<string, unknown>;
+    const token = typeof body.token === "string" ? body.token.trim() : "";
+    if (!token) {
+      res.status(401).json({ error: "Missing host token" });
+      return;
+    }
+
+    const [event] = await db
+      .select()
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.id, id))
+      .limit(1);
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.hostToken || event.hostToken !== token) {
+      res.status(403).json({ error: "Invalid host token" });
+      return;
+    }
+
+    const updates: Partial<typeof groundEventsTable.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+
+    if (typeof body.title === "string") {
+      const t = body.title.trim();
+      if (t.length < 3 || t.length > 120) {
+        res.status(400).json({ error: "title must be 3–120 characters" });
+        return;
+      }
+      updates.title = t;
+    }
+    if (typeof body.description === "string") {
+      const d = body.description.trim();
+      if (d.length < 10 || d.length > 2000) {
+        res.status(400).json({ error: "description must be 10–2000 characters" });
+        return;
+      }
+      updates.description = d;
+    }
+    if (typeof body.eventDate === "string" && body.eventDate.trim()) {
+      updates.eventDate = body.eventDate.trim();
+    }
+    if (typeof body.location === "string" && body.location.trim().length >= 2) {
+      updates.location = body.location.trim();
+    }
+    if (body.seats !== undefined) {
+      const s =
+        typeof body.seats === "number"
+          ? Math.floor(body.seats)
+          : typeof body.seats === "string"
+          ? parseInt(body.seats, 10)
+          : NaN;
+      updates.seats = Number.isFinite(s) && s > 0 ? s : null;
+    }
+    if (typeof body.externalUrl === "string") {
+      const u = body.externalUrl.trim();
+      updates.externalUrl = u.length > 0 ? u.slice(0, 500) : null;
+    }
+    if (typeof body.zoneSlug === "string") {
+      const zs = body.zoneSlug.trim();
+      updates.zoneSlug = zs.length > 0 ? zs.slice(0, 30) : null;
+    }
+    if (typeof body.transformationSlug === "string") {
+      const slug = body.transformationSlug.trim();
+      updates.transformationSlug = slug.length > 0 ? slug.slice(0, 120) : null;
+    }
+
+    const [updated] = await db
+      .update(groundEventsTable)
+      .set(updates)
+      .where(eq(groundEventsTable.id, id))
+      .returning();
+
+    logger.info({ id, updates: Object.keys(updates) }, "ground-events: host PATCH applied");
+
+    // Strip hostToken from response
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { hostToken: _tok, ...safeUpdated } = updated;
+    res.json(safeUpdated);
+  } catch (err) {
+    logger.error({ err }, "ground-events: PATCH /manage failed");
+    res.status(500).json({ error: "Failed to update event" });
   }
 });
 

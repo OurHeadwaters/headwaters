@@ -1,10 +1,38 @@
 import { Router, type IRouter } from "express";
 import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
+
+/**
+ * GET /api/admin/ground-events/hosts
+ * Returns a read-only host directory: one row per unique host (by contactEmail or hostName),
+ * with their Stripe Connect status and event count. No approval action — Stripe handles identity.
+ */
+router.get("/admin/ground-events/hosts", requireEditor, async (_req, res) => {
+  try {
+    const rows = await db
+      .select({
+        hostName: groundEventsTable.hostName,
+        contactEmail: groundEventsTable.contactEmail,
+        eventCount: sql<number>`count(*)::int`,
+        stripeConnected: sql<boolean>`bool_or(${groundEventsTable.stripeChargesEnabled})`,
+        firstEvent: sql<string>`min(${groundEventsTable.eventDate})`,
+        latestEvent: sql<string>`max(${groundEventsTable.eventDate})`,
+        totalRsvps: sql<number>`sum(${groundEventsTable.rsvpCount})::int`,
+      })
+      .from(groundEventsTable)
+      .groupBy(groundEventsTable.hostName, groundEventsTable.contactEmail)
+      .orderBy(desc(sql`count(*)`));
+
+    res.json(rows);
+  } catch (err) {
+    logger.error({ err }, "admin-ground-events: GET /hosts failed");
+    res.status(500).json({ error: "Failed to load host directory" });
+  }
+});
 
 /**
  * GET /api/admin/ground-events

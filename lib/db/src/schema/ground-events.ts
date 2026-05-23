@@ -51,6 +51,8 @@ export const groundEventsTable = pgTable(
     platformSharePct: smallint("platform_share_pct"),
     stripeConnectedAccountId: text("stripe_connected_account_id"),
     stripeChargesEnabled: boolean("stripe_charges_enabled").notNull().default(false),
+    transformationSlug: text("transformation_slug"),
+    zoneSlug: text("zone_slug"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
