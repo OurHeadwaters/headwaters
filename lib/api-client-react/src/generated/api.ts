@@ -20,16 +20,21 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminDeleteFiresideFlame200,
   ApiError,
   AuthUserEnvelope,
   BeginBrowserLoginParams,
   CategoryCount,
+  CreateFiresideFlameRequest,
   Episode,
   EpisodeDetail,
   EpisodePage,
   EpisodeStats,
   ErrorEnvelope,
+  FanFiresideFlame200,
+  FanFiresideFlameBody,
   Feed,
+  FiresideFlame,
   GetSeriesEpisodesParams,
   GetThisDayEpisodesParams,
   GetZoneEpisodesParams,
@@ -47,6 +52,9 @@ import type {
   LibraryPage,
   LibraryStats,
   ListEpisodesParams,
+  ListFiresideFlames200,
+  ListFiresideFlamesParams,
+  ListFiresideFreedomEpisodes200,
   ListLibraryTagsParams,
   ListSeriesParams,
   LogoutSuccess,
@@ -1917,6 +1925,380 @@ export const useLogoutMobileSession = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getLogoutMobileSessionMutationOptions(options));
+    }
+
+export const getListFiresideFlamesUrl = (params?: ListFiresideFlamesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/fireside-flames?${stringifiedParams}` : `/api/fireside-flames`
+}
+
+/**
+ * @summary List flames (community discussion posts)
+ */
+export const listFiresideFlames = async (params?: ListFiresideFlamesParams, options?: RequestInit): Promise<ListFiresideFlames200> => {
+
+  return customFetch<ListFiresideFlames200>(getListFiresideFlamesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListFiresideFlamesQueryKey = (params?: ListFiresideFlamesParams,) => {
+    return [
+    `/api/fireside-flames`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListFiresideFlamesQueryOptions = <TData = Awaited<ReturnType<typeof listFiresideFlames>>, TError = ErrorType<unknown>>(params?: ListFiresideFlamesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFiresideFlames>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListFiresideFlamesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFiresideFlames>>> = ({ signal }) => listFiresideFlames(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFiresideFlames>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListFiresideFlamesQueryResult = NonNullable<Awaited<ReturnType<typeof listFiresideFlames>>>
+export type ListFiresideFlamesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List flames (community discussion posts)
+ */
+
+export function useListFiresideFlames<TData = Awaited<ReturnType<typeof listFiresideFlames>>, TError = ErrorType<unknown>>(
+ params?: ListFiresideFlamesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFiresideFlames>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListFiresideFlamesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateFiresideFlameUrl = () => {
+
+
+
+
+  return `/api/fireside-flames`
+}
+
+/**
+ * @summary Spark a new flame
+ */
+export const createFiresideFlame = async (createFiresideFlameRequest: CreateFiresideFlameRequest, options?: RequestInit): Promise<FiresideFlame> => {
+
+  return customFetch<FiresideFlame>(getCreateFiresideFlameUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createFiresideFlameRequest,)
+  }
+);}
+
+
+
+
+export const getCreateFiresideFlameMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFiresideFlame>>, TError,{data: BodyType<CreateFiresideFlameRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFiresideFlame>>, TError,{data: BodyType<CreateFiresideFlameRequest>}, TContext> => {
+
+const mutationKey = ['createFiresideFlame'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFiresideFlame>>, {data: BodyType<CreateFiresideFlameRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFiresideFlame(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFiresideFlameMutationResult = NonNullable<Awaited<ReturnType<typeof createFiresideFlame>>>
+    export type CreateFiresideFlameMutationBody = BodyType<CreateFiresideFlameRequest>
+    export type CreateFiresideFlameMutationError = ErrorType<void>
+
+    /**
+ * @summary Spark a new flame
+ */
+export const useCreateFiresideFlame = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFiresideFlame>>, TError,{data: BodyType<CreateFiresideFlameRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createFiresideFlame>>,
+        TError,
+        {data: BodyType<CreateFiresideFlameRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateFiresideFlameMutationOptions(options));
+    }
+
+export const getListFiresideFreedomEpisodesUrl = () => {
+
+
+
+
+  return `/api/fireside-flames/episodes`
+}
+
+/**
+ * @summary Lightweight Fireside Freedom episode list for the spark selector
+ */
+export const listFiresideFreedomEpisodes = async ( options?: RequestInit): Promise<ListFiresideFreedomEpisodes200> => {
+
+  return customFetch<ListFiresideFreedomEpisodes200>(getListFiresideFreedomEpisodesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListFiresideFreedomEpisodesQueryKey = () => {
+    return [
+    `/api/fireside-flames/episodes`
+    ] as const;
+    }
+
+
+export const getListFiresideFreedomEpisodesQueryOptions = <TData = Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListFiresideFreedomEpisodesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>> = ({ signal }) => listFiresideFreedomEpisodes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListFiresideFreedomEpisodesQueryResult = NonNullable<Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>>
+export type ListFiresideFreedomEpisodesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Lightweight Fireside Freedom episode list for the spark selector
+ */
+
+export function useListFiresideFreedomEpisodes<TData = Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFiresideFreedomEpisodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListFiresideFreedomEpisodesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getFanFiresideFlameUrl = (id: number,) => {
+
+
+
+
+  return `/api/fireside-flames/${id}/fan`
+}
+
+/**
+ * @summary Fan a flame (idempotent per session)
+ */
+export const fanFiresideFlame = async (id: number,
+    fanFiresideFlameBody: FanFiresideFlameBody, options?: RequestInit): Promise<FanFiresideFlame200> => {
+
+  return customFetch<FanFiresideFlame200>(getFanFiresideFlameUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      fanFiresideFlameBody,)
+  }
+);}
+
+
+
+
+export const getFanFiresideFlameMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fanFiresideFlame>>, TError,{id: number;data: BodyType<FanFiresideFlameBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof fanFiresideFlame>>, TError,{id: number;data: BodyType<FanFiresideFlameBody>}, TContext> => {
+
+const mutationKey = ['fanFiresideFlame'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof fanFiresideFlame>>, {id: number;data: BodyType<FanFiresideFlameBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  fanFiresideFlame(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FanFiresideFlameMutationResult = NonNullable<Awaited<ReturnType<typeof fanFiresideFlame>>>
+    export type FanFiresideFlameMutationBody = BodyType<FanFiresideFlameBody>
+    export type FanFiresideFlameMutationError = ErrorType<void>
+
+    /**
+ * @summary Fan a flame (idempotent per session)
+ */
+export const useFanFiresideFlame = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fanFiresideFlame>>, TError,{id: number;data: BodyType<FanFiresideFlameBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof fanFiresideFlame>>,
+        TError,
+        {id: number;data: BodyType<FanFiresideFlameBody>},
+        TContext
+      > => {
+      return useMutation(getFanFiresideFlameMutationOptions(options));
+    }
+
+export const getAdminDeleteFiresideFlameUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/fireside-flames/${id}`
+}
+
+/**
+ * @summary Soft-delete a flame (editor only)
+ */
+export const adminDeleteFiresideFlame = async (id: number, options?: RequestInit): Promise<AdminDeleteFiresideFlame200> => {
+
+  return customFetch<AdminDeleteFiresideFlame200>(getAdminDeleteFiresideFlameUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getAdminDeleteFiresideFlameMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteFiresideFlame>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDeleteFiresideFlame>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['adminDeleteFiresideFlame'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDeleteFiresideFlame>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  adminDeleteFiresideFlame(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDeleteFiresideFlameMutationResult = NonNullable<Awaited<ReturnType<typeof adminDeleteFiresideFlame>>>
+
+    export type AdminDeleteFiresideFlameMutationError = ErrorType<void>
+
+    /**
+ * @summary Soft-delete a flame (editor only)
+ */
+export const useAdminDeleteFiresideFlame = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteFiresideFlame>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDeleteFiresideFlame>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getAdminDeleteFiresideFlameMutationOptions(options));
     }
 
 export const getGetHeadwatersDashboardUrl = () => {

@@ -220,6 +220,64 @@ function SignPostMarker({ isOpen }: { isOpen: boolean }) {
   );
 }
 
+function CampfireMarker({ isOpen }: { isOpen: boolean }) {
+  return (
+    <svg viewBox="0 0 52 72" className="w-full h-full" aria-hidden="true">
+      {/* Ground dirt */}
+      <ellipse cx="26" cy="62" rx="18" ry="5" fill="#3A1E08" opacity="0.5" />
+      {/* Logs */}
+      <rect x="8" y="52" width="36" height="9" rx="4.5" fill="#5A3010" transform="rotate(-16 26 56)" />
+      <rect x="8" y="52" width="36" height="9" rx="4.5" fill="#6A3818" transform="rotate(16 26 56)" />
+      {/* Ember glow */}
+      <ellipse cx="26" cy="55" rx="12" ry="5"
+        fill="#E85A2A"
+        opacity={isOpen ? "0.6" : "0.35"}
+        style={{ animation: "campfire-glow 2.2s ease-in-out infinite" }}
+      />
+      <ellipse cx="26" cy="55" rx="7" ry="3"
+        fill="#FF8C42"
+        opacity={isOpen ? "0.75" : "0.5"}
+        style={{ animation: "campfire-glow 2.2s ease-in-out 0.3s infinite" }}
+      />
+      {/* Main flame */}
+      <path
+        d="M18 54 Q14 40 20 28 Q24 18 26 10 Q28 20 25 30 Q30 20 33 12 Q38 26 35 38 Q38 30 38 42 Q38 54 34 54 Z"
+        fill="#E85A2A"
+        opacity={isOpen ? "0.95" : "0.75"}
+        style={{ animation: "campfire-sway 2.2s ease-in-out infinite" }}
+      />
+      {/* Inner flame */}
+      <path
+        d="M20 54 Q18 44 22 34 Q25 24 26 16 Q27 26 25 34 Q28 26 30 18 Q34 30 32 40 Q34 46 32 54 Z"
+        fill="#FF8C42"
+        opacity={isOpen ? "0.9" : "0.65"}
+        style={{ animation: "campfire-sway 2.2s ease-in-out 0.4s infinite" }}
+      />
+      {/* Core */}
+      <path
+        d="M22 53 Q21 46 24 38 Q26 30 26 22 Q27 30 26 36 Q28 30 29 24 Q31 34 30 42 Q30 48 28 53 Z"
+        fill="#FFD580"
+        opacity={isOpen ? "0.95" : "0.7"}
+        style={{ animation: "campfire-sway 2.2s ease-in-out 0.8s infinite" }}
+      />
+      {/* Embers */}
+      {isOpen && (
+        <>
+          <circle cx="18" cy="38" r="1.5" fill="#FF8C42" opacity="0.7"
+            style={{ animation: "campfire-spark 1.8s ease-out 0.2s infinite" }}
+          />
+          <circle cx="34" cy="32" r="1" fill="#FFD580" opacity="0.6"
+            style={{ animation: "campfire-spark 2.1s ease-out 0.8s infinite" }}
+          />
+          <circle cx="15" cy="28" r="1.2" fill="#FF6020" opacity="0.5"
+            style={{ animation: "campfire-spark 1.5s ease-out 1.2s infinite" }}
+          />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function MillWheelMarker({ spinning }: { spinning: boolean }) {
   return (
     <svg viewBox="0 0 60 72" className="w-full h-full" aria-hidden="true">
@@ -392,6 +450,7 @@ function ThematicHotspot({
         {station.id === "wishing-well" && <WellMarker isOpen={isOpen} />}
         {station.id === "transform" && <SignPostMarker isOpen={isOpen} />}
         {station.id === "water-wheel" && <MillWheelMarker spinning={spinning ?? false} />}
+        {station.id === "campfire" && <CampfireMarker isOpen={isOpen} />}
 
         {/* Badge */}
         {station.badge != null && (
@@ -1249,9 +1308,149 @@ function WishingWellInlinePanel() {
   );
 }
 
+// ─── Fireside Chats inline panel ─────────────────────────────────────────────
+
+interface InlineFlame {
+  id: number;
+  title: string;
+  fanCount: number;
+  authorName: string | null;
+  createdAt: string;
+}
+
+async function fetchHotFlames(): Promise<InlineFlame[]> {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const res = await fetch(`${base}/api/fireside-flames?sort=hot&limit=3`);
+  if (!res.ok) return [];
+  const data: { flames: InlineFlame[] } = await res.json();
+  return data.flames;
+}
+
+async function fanFlameInline(
+  flameId: number,
+  sessionId: string,
+): Promise<{ fanCount: number; alreadyFanned: boolean }> {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const res = await fetch(`${base}/api/fireside-flames/${flameId}/fan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ sessionId }),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({})) as { alreadyFanned?: boolean };
+    if (j.alreadyFanned) return { fanCount: 0, alreadyFanned: true };
+    return { fanCount: 0, alreadyFanned: false };
+  }
+  return res.json();
+}
+
+function getOrCreateFiresideSessionId(): string {
+  let id = sessionStorage.getItem("fc_session_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem("fc_session_id", id);
+  }
+  return id;
+}
+
+function FiresideChatsInlinePanel() {
+  const qc = useQueryClient();
+  const [, navigate] = useLocation();
+  const [fanned, setFanned] = useState<Set<number>>(new Set());
+
+  const { data: flames = [], isLoading } = useQuery({
+    queryKey: ["fireside-flames-preview"],
+    queryFn: fetchHotFlames,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  const fanMut = useMutation({
+    mutationFn: ({ id }: { id: number }) =>
+      fanFlameInline(id, getOrCreateFiresideSessionId()),
+    onSuccess: (_d, { id }) => {
+      setFanned((prev) => new Set(prev).add(id));
+      qc.invalidateQueries({ queryKey: ["fireside-flames-preview"] });
+    },
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-14 rounded-lg animate-pulse" style={{ background: "rgba(232,90,42,0.1)" }} />
+          ))}
+        </div>
+      ) : flames.length === 0 ? (
+        <p className="text-sm text-center py-4" style={{ color: "rgba(255,200,130,0.5)" }}>
+          No flames yet — be the first to spark a discussion.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {flames.map((flame) => {
+            const isFanned = fanned.has(flame.id);
+            return (
+              <div
+                key={flame.id}
+                className="rounded-xl p-3 flex flex-col gap-2"
+                style={{
+                  background: "rgba(232,90,42,0.08)",
+                  border: "1px solid rgba(232,90,42,0.2)",
+                }}
+              >
+                <p
+                  className="text-sm font-semibold leading-snug line-clamp-2"
+                  style={{ color: "#FFD580", fontFamily: "Georgia, serif" }}
+                >
+                  {flame.title}
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px]" style={{ color: "rgba(255,200,130,0.4)" }}>
+                    {flame.authorName ? flame.authorName : "Anonymous"}
+                    {flame.fanCount > 0 && (
+                      <span style={{ color: "#E85A2A" }}> · 🔥 {flame.fanCount}</span>
+                    )}
+                  </span>
+                  <button
+                    onClick={() => !isFanned && fanMut.mutate({ id: flame.id })}
+                    disabled={isFanned}
+                    className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-all"
+                    style={{
+                      background: isFanned ? "rgba(232,90,42,0.3)" : "transparent",
+                      color: isFanned ? "#FF8C42" : "rgba(255,140,66,0.6)",
+                      borderColor: isFanned ? "rgba(232,90,42,0.5)" : "rgba(232,90,42,0.25)",
+                      cursor: isFanned ? "default" : "pointer",
+                    }}
+                  >
+                    🔥 {isFanned ? "Fanned" : "Fan"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <button
+        onClick={() => navigate("/stomping-grounds?tab=chats")}
+        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
+        style={{
+          background: "linear-gradient(135deg, rgba(192,64,16,0.7) 0%, rgba(138,40,0,0.7) 100%)",
+          color: "#FFD580",
+          border: "1.5px solid rgba(232,90,42,0.4)",
+        }}
+      >
+        🔥 Join the fire <ArrowRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Station content router ───────────────────────────────────────────────────
 
-export type StationId = "wisdom-dig" | "wishing-well" | "transform" | "water-wheel";
+export type StationId = "wisdom-dig" | "wishing-well" | "transform" | "water-wheel" | "campfire";
 
 export function StationContent({
   stationId,
@@ -1268,6 +1467,7 @@ export function StationContent({
     return <TransformTrailPanel transformations={transformations} />;
   }
   if (stationId === "water-wheel") return <WaterWheelPanel />;
+  if (stationId === "campfire") return <FiresideChatsInlinePanel />;
   return null;
 }
 
@@ -1278,6 +1478,7 @@ const STATION_TEASERS: Record<string, { headline: string; teaser: string }> = {
   "wishing-well": { headline: "Wishing Well",        teaser: "Toss a coin, make a wish, build community momentum." },
   "transform":    { headline: "Transformation Trail", teaser: "Six paths of change — find the one that fits your life." },
   "water-wheel":  { headline: "Water Wheel",          teaser: "Let your drops accumulate and sweep them to your bucket." },
+  "campfire":     { headline: "Fireside Chats",       teaser: "Community flames sparked by Fireside Freedom episodes. Fan the fire." },
 };
 
 function WoodenSignSVG() {
@@ -1337,7 +1538,7 @@ function FrontPorchEmptyState({
           Welcome to the Grounds
         </h3>
         <p className="text-white/55 text-xs leading-relaxed">
-          Four stations, each with its own story. Dig for wisdom, make a wish,
+          Five stations, each with its own story. Dig for wisdom, make a wish,
           find your path, or set the wheel turning.
         </p>
       </div>
@@ -1717,6 +1918,17 @@ export function StompingGroundsScene({ compact = false }: { compact?: boolean })
       position: { top: "66%", left: "73%" },
       mobileOrder: 3,
     },
+    {
+      id: "campfire",
+      icon: "🔥",
+      label: "Fireside Chats",
+      description: "Community flames sparked by Fireside Freedom episodes.",
+      badge: null,
+      color: "#8A2800",
+      glowColor: "#E85A2A",
+      position: { top: "38%", left: "58%" },
+      mobileOrder: 4,
+    },
   ];
 
   const currentStation = stations.find((s) => s.id === openStation);
@@ -1856,7 +2068,7 @@ export function StompingGroundsScene({ compact = false }: { compact?: boolean })
           className="text-white/45 text-xs text-center mb-4"
           style={{ fontFamily: "Georgia, serif", letterSpacing: "0.04em" }}
         >
-          Four stations — tap to open
+          Five stations — tap to open
         </p>
         <div className="flex flex-col">
           {[...stations]

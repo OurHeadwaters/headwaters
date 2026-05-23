@@ -31,4 +31,8 @@ sort?: ListEpisodesSort;
  * When present, filter to only episodes that have a detectable 'This Day in History' segment
  */
 hasHistory?: boolean;
+/**
+ * Permaculture zone slug (zone-0 through zone-5) — expands into zone tags/categories as an additional filter
+ */
+zone?: string;
 };

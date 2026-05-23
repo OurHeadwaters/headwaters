@@ -15,3 +15,4 @@ export * from "./curated-items";
 export * from "./nostr-ingestion-log";
 export * from "./lifestyle-map";
 export * from "./headwaters";
+export * from "./fireside-chats";

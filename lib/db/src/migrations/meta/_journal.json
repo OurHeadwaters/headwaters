@@ -148,6 +148,13 @@
       "when": 1779466009163,
       "tag": "0020_shiny_emma_frost",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1748750000000,
+      "tag": "0021_fireside_chats",
+      "breakpoints": true
     }
   ]
 }

@@ -448,6 +448,32 @@ export interface HeadwatersPushResult {
   message?: string | null;
 }
 
+export interface FiresideFlame {
+  id: number;
+  title: string;
+  body: string;
+  /** @nullable */
+  authorName?: string | null;
+  /** @nullable */
+  episodeId?: number | null;
+  fanCount: number;
+  createdAt: string;
+  /** @nullable */
+  episodeTitle?: string | null;
+  /** @nullable */
+  episodeSlug?: string | null;
+}
+
+export interface CreateFiresideFlameRequest {
+  /** @maxLength 100 */
+  title: string;
+  /** @maxLength 500 */
+  body: string;
+  /** @maxLength 80 */
+  authorName?: string;
+  episodeId?: number;
+}
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */
@@ -478,7 +504,7 @@ sort?: ListEpisodesSort;
  */
 hasHistory?: boolean;
 /**
- * Zone slug (e.g. zone-4) — server resolves to zone tags and filters accordingly
+ * Permaculture zone slug (zone-0 through zone-5) — expands into zone tags/categories as an additional filter
  */
 zone?: string;
 };
@@ -602,5 +628,59 @@ export type HandleBrowserLoginCallbackParams = {
 code?: string;
 state?: string;
 iss?: string;
+};
+
+export type ListFiresideFlamesParams = {
+sort?: ListFiresideFlamesSort;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type ListFiresideFlamesSort = typeof ListFiresideFlamesSort[keyof typeof ListFiresideFlamesSort];
+
+
+export const ListFiresideFlamesSort = {
+  new: 'new',
+  hot: 'hot',
+} as const;
+
+export type ListFiresideFlames200 = {
+  flames: FiresideFlame[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type ListFiresideFreedomEpisodes200EpisodesItem = {
+  id: number;
+  title: string;
+  slug: string;
+  /** @nullable */
+  publishedAt?: string | null;
+};
+
+export type ListFiresideFreedomEpisodes200 = {
+  episodes: ListFiresideFreedomEpisodes200EpisodesItem[];
+};
+
+export type FanFiresideFlameBody = {
+  sessionId: string;
+};
+
+export type FanFiresideFlame200 = {
+  flameId: number;
+  fanCount: number;
+  alreadyFanned: boolean;
+};
+
+export type AdminDeleteFiresideFlame200 = {
+  ok: boolean;
 };
 

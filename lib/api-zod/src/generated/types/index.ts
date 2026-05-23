@@ -6,18 +6,23 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminDeleteFiresideFlame200';
 export * from './apiError';
 export * from './authorizationSessionHeaderParameter';
 export * from './authUser';
 export * from './authUserEnvelope';
 export * from './beginBrowserLoginParams';
 export * from './categoryCount';
+export * from './createFiresideFlameRequest';
 export * from './episode';
 export * from './episodeDetail';
 export * from './episodePage';
 export * from './episodeStats';
 export * from './errorEnvelope';
+export * from './fanFiresideFlame200';
+export * from './fanFiresideFlameBody';
 export * from './feed';
+export * from './firesideFlame';
 export * from './getSeriesEpisodesParams';
 export * from './getThisDayEpisodesParams';
 export * from './getZoneEpisodesParams';
@@ -41,6 +46,11 @@ export * from './libraryPage';
 export * from './libraryStats';
 export * from './listEpisodesParams';
 export * from './listEpisodesSort';
+export * from './listFiresideFlames200';
+export * from './listFiresideFlamesParams';
+export * from './listFiresideFlamesSort';
+export * from './listFiresideFreedomEpisodes200';
+export * from './listFiresideFreedomEpisodes200EpisodesItem';
 export * from './listLibraryTagsParams';
 export * from './listSeriesOrderBy';
 export * from './listSeriesParams';

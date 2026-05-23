@@ -25,7 +25,8 @@ tags:
   - name: track-progress
     description: Per-user learning track progress (requires authentication).
   - name: headwaters
-    description: Headwaters practitioner intake tool — brain dump, AI zone placement, push to TSP.
+  - name: fireside-chats
+    description: Community discussion flames — spark, fan, and browse posts tied to Fireside Freedom episodes.
 paths:
   /healthz:
     get:
@@ -86,6 +87,12 @@ paths:
           description: "When present, filter to only episodes that have a detectable 'This Day in History' segment"
           schema:
             type: boolean
+        - name: zone
+          in: query
+          required: false
+          description: "Permaculture zone slug (zone-0 through zone-5) — expands into zone tags/categories as an additional filter"
+          schema:
+            type: string
       responses:
         "200":
           description: Episodes page
@@ -453,6 +460,134 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogoutSuccess'
+  /fireside-flames:
+    get:
+      operationId: listFiresideFlames
+      tags: [fireside-chats]
+      summary: List flames (community discussion posts)
+      parameters:
+        - name: sort
+          in: query
+          schema: { type: string, enum: [new, hot], default: new }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '200':
+          description: List of flames
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [flames, total, limit, offset]
+                properties:
+                  flames:
+                    type: array
+                    items: { $ref: '#/components/schemas/FiresideFlame' }
+                  total: { type: integer }
+                  limit: { type: integer }
+                  offset: { type: integer }
+    post:
+      operationId: createFiresideFlame
+      tags: [fireside-chats]
+      summary: Spark a new flame
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateFiresideFlameRequest' }
+      responses:
+        '201':
+          description: Created flame
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FiresideFlame' }
+        '400':
+          description: Validation error
+  /fireside-flames/episodes:
+    get:
+      operationId: listFiresideFreedomEpisodes
+      tags: [fireside-chats]
+      summary: Lightweight Fireside Freedom episode list for the spark selector
+      responses:
+        '200':
+          description: Episodes list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [episodes]
+                properties:
+                  episodes:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title, slug]
+                      properties:
+                        id: { type: integer }
+                        title: { type: string }
+                        slug: { type: string }
+                        publishedAt: { type: ['string', 'null'] }
+  /fireside-flames/{id}/fan:
+    post:
+      operationId: fanFiresideFlame
+      tags: [fireside-chats]
+      summary: Fan a flame (idempotent per session)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId: { type: string }
+      responses:
+        '200':
+          description: Fan result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [flameId, fanCount, alreadyFanned]
+                properties:
+                  flameId: { type: integer }
+                  fanCount: { type: integer }
+                  alreadyFanned: { type: boolean }
+        '404':
+          description: Flame not found
+  /admin/fireside-flames/{id}:
+    delete:
+      operationId: adminDeleteFiresideFlame
+      tags: [fireside-chats]
+      summary: Soft-delete a flame (editor only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
   /headwaters/dashboard:
     get:
       operationId: getHeadwatersDashboard
@@ -1227,3 +1362,24 @@ components:
       properties:
         success: { type: boolean }
         message: { type: ["string", "null"] }
+    FiresideFlame:
+      type: object
+      required: [id, title, body, fanCount, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        body: { type: string }
+        authorName: { type: ["string", "null"] }
+        episodeId: { type: ["integer", "null"] }
+        fanCount: { type: integer }
+        createdAt: { type: string }
+        episodeTitle: { type: ["string", "null"] }
+        episodeSlug: { type: ["string", "null"] }
+    CreateFiresideFlameRequest:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string, maxLength: 100 }
+        body: { type: string, maxLength: 500 }
+        authorName: { type: string, maxLength: 80 }
+        episodeId: { type: integer }

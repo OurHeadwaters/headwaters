@@ -6,14 +6,16 @@ import { GordBird } from "@/components/gord-bird";
 import { WisdomDig } from "@/pages/wisdom-dig";
 import { WishingWell } from "@/pages/wishing-well";
 import { WorkshopBoard } from "@/pages/workshop";
+import { FiresideChats } from "@/pages/fireside-chats";
 
-type Tab = "grounds" | "wisdom" | "well" | "workshop";
+type Tab = "grounds" | "wisdom" | "well" | "workshop" | "chats";
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "grounds", label: "Grounds", emoji: "🏡" },
   { id: "wisdom", label: "Wisdom Dig", emoji: "💎" },
   { id: "well", label: "Wishing Well", emoji: "🪙" },
   { id: "workshop", label: "Workshop", emoji: "🔨" },
+  { id: "chats", label: "Fireside Chats", emoji: "🔥" },
 ];
 
 function WoodenTab({
@@ -64,7 +66,7 @@ export default function StompingGroundsPage() {
   const params = new URLSearchParams(search);
   const rawTab = params.get("tab");
   const activeTab: Tab =
-    rawTab === "wisdom" || rawTab === "well" || rawTab === "workshop"
+    rawTab === "wisdom" || rawTab === "well" || rawTab === "workshop" || rawTab === "chats"
       ? rawTab
       : "grounds";
 
@@ -104,6 +106,23 @@ export default function StompingGroundsPage() {
         @keyframes grounds-float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-4px); }
+        }
+
+        /* ─── Campfire animations ─── */
+        @keyframes campfire-sway {
+          0%, 100% { transform: skewX(-3deg) scaleX(0.97); }
+          25% { transform: skewX(4deg) scaleX(1.02); }
+          50% { transform: skewX(-2deg) scaleX(0.98); }
+          75% { transform: skewX(3deg) scaleX(1.01); }
+        }
+        @keyframes campfire-glow {
+          0%, 100% { opacity: 0.35; transform: scaleX(0.95); }
+          50% { opacity: 0.65; transform: scaleX(1.06); }
+        }
+        @keyframes campfire-spark {
+          0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+          60% { opacity: 0.5; }
+          100% { transform: translate(6px, -18px) scale(0.3); opacity: 0; }
         }
 
         /* ─── Lantern flicker ─── */
@@ -302,8 +321,8 @@ export default function StompingGroundsPage() {
               The Stomping Grounds
             </h1>
             <p className="text-white/65 max-w-xl leading-relaxed text-base">
-              Your homestead hub. Wander between four stations — dig for wisdom, toss a coin,
-              chart your transformation, and let the water wheel earn while you build.
+              Your homestead hub. Wander between five stations — dig for wisdom, toss a coin,
+              chart your transformation, let the water wheel earn, and gather round the fire circle.
             </p>
           </div>
 
@@ -340,6 +359,11 @@ export default function StompingGroundsPage() {
         {activeTab === "workshop" && (
           <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #1C3020 0%, #1A2820 100%)" }}>
             <WorkshopBoard />
+          </div>
+        )}
+        {activeTab === "chats" && (
+          <div className="min-h-screen">
+            <FiresideChats />
           </div>
         )}
       </div>

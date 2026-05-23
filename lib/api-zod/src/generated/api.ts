@@ -53,7 +53,7 @@ export const ListEpisodesQueryParams = zod.object({
   "tags": zod.array(zod.coerce.string()).optional().describe('One or more topic tags to filter by (sent as tags[] array)'),
   "sort": zod.enum(['newest', 'oldest', 'popular']).default(listEpisodesQuerySortDefault).describe('Sort order: newest (default), oldest, or popular (foundational\/evergreen episodes first by episode number ascending, nulls last)'),
   "hasHistory": zod.coerce.boolean().optional().describe('When present, filter to only episodes that have a detectable \'This Day in History\' segment'),
-  "zone": zod.coerce.string().optional().describe('Zone slug (e.g. zone-4) — server resolves to zone tags and filters accordingly')
+  "zone": zod.coerce.string().optional().describe('Permaculture zone slug (zone-0 through zone-5) — expands into zone tags\/categories as an additional filter')
 })
 
 export const ListEpisodesResponse = zod.object({
@@ -632,6 +632,104 @@ export const LogoutMobileSessionHeader = zod.object({
 
 export const LogoutMobileSessionResponse = zod.object({
   "success": zod.boolean()
+})
+
+
+/**
+ * @summary List flames (community discussion posts)
+ */
+export const listFiresideFlamesQuerySortDefault = `new`;
+export const listFiresideFlamesQueryLimitDefault = 20;
+export const listFiresideFlamesQueryLimitMax = 50;
+
+export const listFiresideFlamesQueryOffsetDefault = 0;
+export const listFiresideFlamesQueryOffsetMin = 0;
+
+
+
+export const ListFiresideFlamesQueryParams = zod.object({
+  "sort": zod.enum(['new', 'hot']).default(listFiresideFlamesQuerySortDefault),
+  "limit": zod.coerce.number().min(1).max(listFiresideFlamesQueryLimitMax).default(listFiresideFlamesQueryLimitDefault),
+  "offset": zod.coerce.number().min(listFiresideFlamesQueryOffsetMin).default(listFiresideFlamesQueryOffsetDefault)
+})
+
+export const ListFiresideFlamesResponse = zod.object({
+  "flames": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "authorName": zod.string().nullish(),
+  "episodeId": zod.number().nullish(),
+  "fanCount": zod.number(),
+  "createdAt": zod.string(),
+  "episodeTitle": zod.string().nullish(),
+  "episodeSlug": zod.string().nullish()
+})),
+  "total": zod.number(),
+  "limit": zod.number(),
+  "offset": zod.number()
+})
+
+
+/**
+ * @summary Spark a new flame
+ */
+export const createFiresideFlameBodyTitleMax = 100;
+
+export const createFiresideFlameBodyBodyMax = 500;
+
+export const createFiresideFlameBodyAuthorNameMax = 80;
+
+
+
+export const CreateFiresideFlameBody = zod.object({
+  "title": zod.string().max(createFiresideFlameBodyTitleMax),
+  "body": zod.string().max(createFiresideFlameBodyBodyMax),
+  "authorName": zod.string().max(createFiresideFlameBodyAuthorNameMax).optional(),
+  "episodeId": zod.number().optional()
+})
+
+
+/**
+ * @summary Lightweight Fireside Freedom episode list for the spark selector
+ */
+export const ListFiresideFreedomEpisodesResponse = zod.object({
+  "episodes": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "publishedAt": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Fan a flame (idempotent per session)
+ */
+export const FanFiresideFlameParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const FanFiresideFlameBody = zod.object({
+  "sessionId": zod.string()
+})
+
+export const FanFiresideFlameResponse = zod.object({
+  "flameId": zod.number(),
+  "fanCount": zod.number(),
+  "alreadyFanned": zod.boolean()
+})
+
+
+/**
+ * @summary Soft-delete a flame (editor only)
+ */
+export const AdminDeleteFiresideFlameParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminDeleteFiresideFlameResponse = zod.object({
+  "ok": zod.boolean()
 })
 
 

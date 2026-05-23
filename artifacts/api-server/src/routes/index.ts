@@ -30,6 +30,7 @@ import adminSyncStatusRouter from "./admin-sync-status";
 import mapRouter from "./map";
 import codetryAssessRouter from "./codetry-assess";
 import headwatersRouter from "./headwaters";
+import firesideChatsRouter from "./fireside-chats";
 
 const router: IRouter = Router();
 
@@ -64,5 +65,6 @@ router.use(adminSyncStatusRouter);
 router.use(mapRouter);
 router.use(codetryAssessRouter);
 router.use(headwatersRouter);
+router.use(firesideChatsRouter);
 
 export default router;
