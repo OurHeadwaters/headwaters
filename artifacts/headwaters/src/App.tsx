@@ -16,6 +16,7 @@ import IntakeReview from "@/pages/intake/review";
 import BusinessPriorities from "@/pages/business/priorities";
 import BusinessFinancials from "@/pages/business/financials";
 import BusinessNotes from "@/pages/business/notes";
+import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ function Router() {
             <Route path="/business/priorities" component={BusinessPriorities} />
             <Route path="/business/financials" component={BusinessFinancials} />
             <Route path="/business/notes" component={BusinessNotes} />
+            <Route path="/settings" component={SettingsPage} />
             <Route component={NotFound} />
           </Switch>
         </IntakeProvider>

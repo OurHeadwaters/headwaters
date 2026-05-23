@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, Home, Users, PlusCircle, Briefcase, ChevronDown, ChevronRight, DollarSign, NotebookPen, ListOrdered } from "lucide-react";
+import { LogOut, Home, Users, PlusCircle, Briefcase, ChevronDown, ChevronRight, DollarSign, NotebookPen, ListOrdered, Settings } from "lucide-react";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -85,13 +85,24 @@ export function Layout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <div className="pt-4 mt-4 border-t border-border">
+          <div className="pt-4 mt-4 border-t border-border space-y-1">
             <Link
               href="/clients/new"
               className="flex items-center gap-3 px-3 py-2 rounded-md text-primary hover:bg-primary/5 transition-colors font-medium"
             >
               <PlusCircle size={18} />
               <span>New Client</span>
+            </Link>
+            <Link
+              href="/settings"
+              className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                location === "/settings"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              }`}
+            >
+              <Settings size={18} />
+              <span>Settings</span>
             </Link>
           </div>
         </nav>
