@@ -9,28 +9,20 @@ import {
 import { eq, sql, desc, and, isNull } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getUncachableStripeClient } from "../stripeClient";
+import { getXrpUsdRate, getXrpRateMeta } from "../lib/xrp-rate";
 
 const FOUNDER_MATCH_THRESHOLD = 10;
 
 /**
- * XRP-to-USD exchange rate used for pot aggregation.
- * Configurable via XRP_USD_RATE env var; defaults to $0.50 / XRP.
- */
-function xrpUsdRate(): number {
-  const v = parseFloat(process.env.XRP_USD_RATE ?? "");
-  return Number.isFinite(v) && v > 0 ? v : 0.5;
-}
-
-/**
  * Convert a tip's amountUnits to USD cents.
  * - fiat (stripe): 1 unit = $1.00 = 100 cents
- * - crypto (XRP): amountUnits * XRP_USD_RATE * 100
+ * - crypto (XRP): amountUnits * live XRP/USD rate * 100
  */
 function tipToUsdCents(amountUnits: number, paymentMethod: string): number {
   if (paymentMethod === "stripe") {
     return amountUnits * 100;
   }
-  return Math.round(amountUnits * xrpUsdRate() * 100);
+  return Math.round(amountUnits * getXrpUsdRate() * 100);
 }
 
 const router: IRouter = Router();
@@ -58,7 +50,7 @@ function getBaseUrl(req: import("express").Request): string {
 router.get("/wishing-well/pot/today", async (_req, res) => {
   try {
     const date = todayUtc();
-    const rate = xrpUsdRate();
+    const rate = getXrpUsdRate();
     const [potRow, drawnRow] = await Promise.all([
       db.execute(sql.raw(`
         SELECT
@@ -501,7 +493,8 @@ router.post("/admin/wishing-well/draw", async (req, res) => {
       return;
     }
 
-    const rate = xrpUsdRate();
+    const rateMeta = getXrpRateMeta();
+    const rate = rateMeta.rate;
     const totalUnits = potRows.reduce((sum, t) => sum + t.amountUnits, 0);
     const totalUsdCents = potRows.reduce(
       (sum, t) => sum + tipToUsdCents(t.amountUnits, t.paymentMethod),
@@ -571,7 +564,9 @@ router.post("/admin/wishing-well/draw", async (req, res) => {
     res.status(201).json({
       distribution: { ...distribution, payoutStatus: creditIssued ? "credit_issued" : "pending" },
       creditIssued,
-      xrpUsdRate: rate,
+      xrpUsdRate: rateMeta.rate,
+      xrpRateSource: rateMeta.source,
+      xrpRateFetchedAt: rateMeta.fetchedAt,
     });
   } catch (err) {
     logger.error({ err }, "wishing-well: draw failed");
@@ -609,7 +604,8 @@ router.patch("/admin/wishing-well/distributions/:date/payout", async (req, res) 
 router.get("/admin/wishing-well", async (_req, res) => {
   try {
     const date = todayUtc();
-    const rate = xrpUsdRate();
+    const rateMeta = getXrpRateMeta();
+    const rate = rateMeta.rate;
     const [distributions, potRow] = await Promise.all([
       db
         .select()
@@ -657,7 +653,9 @@ router.get("/admin/wishing-well", async (_req, res) => {
         fiatUnits: pot.fiat_units,
         cryptoCount: pot.crypto_count,
         cryptoUnits: pot.crypto_units,
-        xrpUsdRate: rate,
+        xrpUsdRate: rateMeta.rate,
+        xrpRateSource: rateMeta.source,
+        xrpRateFetchedAt: rateMeta.fetchedAt,
       },
     });
   } catch (err) {

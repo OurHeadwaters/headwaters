@@ -7,6 +7,7 @@ import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-con
 import { seedExpertCouncil, seedUlgBusinesses, seedCouncilPodcastFeeds } from "./lib/seed-expert-council";
 import { startNostrIngestion } from "./lib/nostr-ingestion";
 import { startYouTubeIngestion } from "./lib/youtube-ingestion";
+import { startXrpRateRefresh } from "./lib/xrp-rate";
 
 const rawPort = process.env["PORT"];
 
@@ -104,4 +105,7 @@ app.listen(port, (err) => {
 
   // YouTube ingestion — runs once at startup then daily (non-blocking)
   startYouTubeIngestion();
+
+  // XRP/USD rate refresh — fetches from CoinGecko every 15 min (non-blocking)
+  startXrpRateRefresh();
 });
