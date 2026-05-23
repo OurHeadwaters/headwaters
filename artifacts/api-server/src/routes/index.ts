@@ -32,6 +32,8 @@ import codetryAssessRouter from "./codetry-assess";
 import headwatersRouter from "./headwaters";
 import firesideChatsRouter from "./fireside-chats";
 import brigadeRouter from "./brigade";
+import expertListingsRouter from "./expert-listings";
+import adminExpertListingsRouter from "./admin-expert-listings";
 
 const router: IRouter = Router();
 
@@ -68,5 +70,7 @@ router.use(mapRouter);
 router.use(codetryAssessRouter);
 router.use(headwatersRouter);
 router.use(firesideChatsRouter);
+router.use(expertListingsRouter);
+router.use(adminExpertListingsRouter);
 
 export default router;

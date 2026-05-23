@@ -27,6 +27,9 @@ import { AdminWishingWell } from "@/pages/admin-wishing-well";
 import { AdminSeriesHealth } from "@/pages/admin-series-health";
 import { CouncilPage } from "@/pages/council";
 import { CouncilMemberPage } from "@/pages/council-member";
+import { CouncilJoinPage } from "@/pages/council-join";
+import { CouncilListingSuccessPage } from "@/pages/council-listing-success";
+import { AdminExpertListings } from "@/pages/admin-expert-listings";
 import { AdminContentGaps } from "@/pages/admin-content-gaps";
 import { AdminGear } from "@/pages/admin-gear";
 import { AdminNuggets } from "@/pages/admin-nuggets";
@@ -77,6 +80,8 @@ function Router() {
         <Route path="/about" component={About} />
         <Route path="/admin/categories" component={AdminCategories} />
         <Route path="/admin/council" component={AdminCouncil} />
+        <Route path="/council/join" component={CouncilJoinPage} />
+        <Route path="/council/listing-success" component={CouncilListingSuccessPage} />
         <Route path="/council" component={CouncilPage} />
         <Route path="/council/:slug" component={CouncilMemberPage} />
         <Route path="/admin/wishing-well" component={AdminWishingWell} />
@@ -87,6 +92,7 @@ function Router() {
         <Route path="/admin/wisdom" component={AdminWisdom} />
         <Route path="/admin/field-notes" component={AdminFieldNotes} />
         <Route path="/admin/ground-events" component={AdminGroundEvents} />
+        <Route path="/admin/expert-listings" component={AdminExpertListings} />
         <Route path="/workshops/host" component={WorkshopsHostPage} />
         <Route path="/workshops/dashboard" component={WorkshopsDashboardPage} />
         <Route path="/workshops/manage" component={WorkshopManagePage} />

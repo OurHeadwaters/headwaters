@@ -1,5 +1,5 @@
 import { getStripeSync } from "./stripeClient";
-import { db, groundEventsTable, groundEventRsvpsTable, membershipsTable } from "@workspace/db";
+import { db, groundEventsTable, groundEventRsvpsTable, membershipsTable, expertCouncilTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
 import type Stripe from "stripe";
@@ -40,8 +40,6 @@ export class WebhookHandlers {
     }
 
     if (event.type === "checkout.session.completed") {
-      // Re-throw on failure: Stripe will retry the webhook, and our session-id unique
-      // constraint makes handleCheckoutComplete idempotent against those retries.
       await WebhookHandlers.handleCheckoutComplete(
         event.data.object as Stripe.Checkout.Session,
       );
@@ -59,21 +57,34 @@ export class WebhookHandlers {
         event.data.object as Stripe.Subscription,
       );
     }
+
+    // ── Expert listing subscription lifecycle ────────────────────────────────
+    if (
+      event.type === "customer.subscription.created" ||
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.deleted"
+    ) {
+      await WebhookHandlers.handleSubscriptionChange(
+        event.data.object as Stripe.Subscription,
+        event.type,
+      );
+    }
   }
 
   /**
    * On checkout.session.completed:
-   * - Insert a paid RSVP row in ground_event_rsvps (for workshop checkouts)
-   * - Increment rsvp_count atomically
-   * - Activate Brigade membership (for brigade subscription checkouts)
+   * - For workshop checkouts: Insert a paid RSVP row and increment rsvp_count
+   * - For Brigade subscription checkouts: Activate Brigade membership
+   * - For listing checkouts: Link the Stripe customer to the expert record
+   *   (listing goes active only after the subscription webhook fires)
    *
    * Idempotent: safe to call multiple times for the same session_id.
    */
   static async handleCheckoutComplete(session: Stripe.Checkout.Session): Promise<void> {
     // ── Workshop checkout ────────────────────────────────────────────────────
-    const eventIdStr = session.metadata?.ground_event_id;
-    if (eventIdStr) {
-      const eventId = parseInt(eventIdStr, 10);
+    const groundEventIdStr = session.metadata?.ground_event_id;
+    if (groundEventIdStr) {
+      const eventId = parseInt(groundEventIdStr, 10);
       if (!Number.isFinite(eventId)) return;
 
       const attendeeEmail =
@@ -127,6 +138,34 @@ export class WebhookHandlers {
         session,
         brigadeUserId,
         brigadePlan,
+      );
+    }
+
+    // ── Expert listing checkout ──────────────────────────────────────────────
+    const expertSlug = session.metadata?.expert_slug;
+    if (expertSlug && session.customer) {
+      // Store customer ID AND subscription ID so the subscription webhook
+      // fallback (lookup by stripe_subscription_id) works immediately even
+      // before the first customer.subscription.updated fires.
+      const customerId = typeof session.customer === "string"
+        ? session.customer
+        : session.customer.id;
+      const subscriptionId = typeof session.subscription === "string"
+        ? session.subscription
+        : session.subscription?.id ?? null;
+
+      await db
+        .update(expertCouncilTable)
+        .set({
+          stripeCustomerId: customerId,
+          ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(expertCouncilTable.slug, expertSlug));
+
+      logger.info(
+        { expertSlug, customerId, subscriptionId },
+        "webhookHandlers: expert listing checkout complete — customer + subscription linked",
       );
     }
   }
@@ -255,5 +294,95 @@ export class WebhookHandlers {
       { subscriptionId: sub.id, userId },
       "webhookHandlers: Brigade membership cancelled",
     );
+  }
+
+  /**
+   * On customer.subscription.created / updated / deleted:
+   * Sync listing_status and current_period_end on the expert_council row.
+   *
+   * Only acts on subscriptions with expert_slug in metadata; Brigade
+   * subscriptions (brigade_user_id metadata) are handled separately above.
+   *
+   * Falls back to looking up by stripe_subscription_id, then stripe_customer_id.
+   */
+  static async handleSubscriptionChange(
+    subscription: Stripe.Subscription,
+    eventType: string,
+  ): Promise<void> {
+    const expertSlug = subscription.metadata?.expert_slug;
+
+    const isActive =
+      eventType !== "customer.subscription.deleted" &&
+      (subscription.status === "active" || subscription.status === "trialing");
+
+    const newStatus: "active" | "lapsed" = isActive ? "active" : "lapsed";
+    // In Stripe SDK v22, current_period_end is on subscription items, not
+    // the top-level subscription object.
+    const itemPeriodEnd = subscription.items?.data[0]?.current_period_end;
+    const periodEnd = itemPeriodEnd ? new Date(itemPeriodEnd * 1000) : null;
+
+    if (expertSlug) {
+      await db
+        .update(expertCouncilTable)
+        .set({
+          listingStatus: newStatus,
+          stripeSubscriptionId: subscription.id,
+          stripeCustomerId: subscription.customer as string,
+          currentPeriodEnd: periodEnd,
+          approvedAt: isActive ? new Date() : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(expertCouncilTable.slug, expertSlug));
+
+      logger.info(
+        { expertSlug, newStatus, subscriptionId: subscription.id },
+        "webhookHandlers: expert listing status synced",
+      );
+      return;
+    }
+
+    const customerId = typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer.id;
+
+    // Fallback 1: find by stripe_subscription_id (set at checkout.session.completed)
+    let rows = await db
+      .select({ slug: expertCouncilTable.slug })
+      .from(expertCouncilTable)
+      .where(eq(expertCouncilTable.stripeSubscriptionId, subscription.id))
+      .limit(1);
+
+    // Fallback 2: find by stripe_customer_id (set whenever checkout completes)
+    if (rows.length === 0 && customerId) {
+      rows = await db
+        .select({ slug: expertCouncilTable.slug })
+        .from(expertCouncilTable)
+        .where(eq(expertCouncilTable.stripeCustomerId, customerId))
+        .limit(1);
+    }
+
+    if (rows.length > 0) {
+      await db
+        .update(expertCouncilTable)
+        .set({
+          listingStatus: newStatus,
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscription.id,
+          currentPeriodEnd: periodEnd,
+          approvedAt: isActive ? new Date() : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(expertCouncilTable.slug, rows[0].slug));
+
+      logger.info(
+        { slug: rows[0].slug, newStatus },
+        "webhookHandlers: expert listing status synced (fallback lookup)",
+      );
+    } else {
+      logger.warn(
+        { subscriptionId: subscription.id, customerId },
+        "webhookHandlers: no expert row found for subscription — skipping listing sync",
+      );
+    }
   }
 }

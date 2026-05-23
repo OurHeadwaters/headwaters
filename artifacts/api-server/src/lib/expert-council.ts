@@ -5,7 +5,7 @@
  */
 
 import { db, expertCouncilTable, ulgBusinessesTable } from "@workspace/db";
-import { asc } from "drizzle-orm";
+import { asc, or, isNull, eq } from "drizzle-orm";
 
 export type ExpertCouncilMember = {
   id: string;
@@ -29,10 +29,24 @@ export type UlgBusiness = {
   zones: string[];
 };
 
+/**
+ * Returns publicly visible council members:
+ *  - Legacy/free members (listing_status IS NULL)
+ *  - Active paid listings (listing_status = 'active')
+ *
+ * Excludes pending and lapsed paid listings so they don't appear
+ * on the public directory or zone resource pages.
+ */
 export async function getAllExperts(): Promise<ExpertCouncilMember[]> {
   const rows = await db
     .select()
     .from(expertCouncilTable)
+    .where(
+      or(
+        isNull(expertCouncilTable.listingStatus),
+        eq(expertCouncilTable.listingStatus, "active"),
+      ),
+    )
     .orderBy(asc(expertCouncilTable.sortOrder), asc(expertCouncilTable.name));
   return rows.map((r) => ({
     id: r.slug,

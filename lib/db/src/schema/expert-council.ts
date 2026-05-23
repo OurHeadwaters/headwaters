@@ -26,6 +26,17 @@ export const expertCouncilTable = pgTable(
     podcastFeedUrl: text("podcast_feed_url"),
     rssSlug: text("rss_slug"),
     sortOrder: integer("sort_order").notNull().default(0),
+
+    // Paid listing fields
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    listingStatus: text("listing_status").$type<"pending" | "active" | "lapsed">(),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    consultUrl: text("consult_url"),
+    photoUrl: text("photo_url"),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    contactEmail: text("contact_email"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -36,11 +47,55 @@ export const expertCouncilTable = pgTable(
   (t) => [
     index("expert_council_slug_idx").on(t.slug),
     index("expert_council_sort_idx").on(t.sortOrder),
+    index("expert_council_listing_status_idx").on(t.listingStatus),
+    index("expert_council_stripe_sub_idx").on(t.stripeSubscriptionId),
   ],
 );
 
 export type ExpertCouncilRow = typeof expertCouncilTable.$inferSelect;
 export type InsertExpertCouncilRow = typeof expertCouncilTable.$inferInsert;
+
+/**
+ * Listing applications — self-serve submissions from experts who want
+ * a paid featured listing. Approved applications trigger a Stripe
+ * Checkout session; the expert's council record is then linked.
+ */
+export const listingApplicationsTable = pgTable(
+  "listing_applications",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    role: text("role").notNull(),
+    bio: text("bio").notNull(),
+    website: text("website").notNull(),
+    podcastFeedUrl: text("podcast_feed_url"),
+    consultUrl: text("consult_url"),
+    photoUrl: text("photo_url"),
+    zones: jsonb("zones").$type<string[]>().notNull().default([]),
+    status: text("status").$type<"pending" | "approved" | "rejected">().notNull().default("pending"),
+
+    // Set when admin approves: points to the expert_council record
+    expertSlug: text("expert_slug"),
+
+    // Stripe Checkout session URL sent to the expert after approval
+    checkoutUrl: text("checkout_url"),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("listing_apps_status_idx").on(t.status),
+    index("listing_apps_email_idx").on(t.email),
+  ],
+);
+
+export type ListingApplicationRow = typeof listingApplicationsTable.$inferSelect;
+export type InsertListingApplicationRow = typeof listingApplicationsTable.$inferInsert;
 
 /**
  * ULG (Unloose the Goose) affiliated businesses — community members and
