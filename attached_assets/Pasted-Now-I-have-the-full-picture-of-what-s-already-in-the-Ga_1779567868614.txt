@@ -1,0 +1,121 @@
+Now I have the full picture of what's already in the Garden. This is important — the bones are already there and they map onto the zone model almost exactly. Let me show you what's already built before writing the brief:
+
+What's already in place and how it maps:
+
+Zone	Permaculture	What's already built in 807 Garden
+0	Self / hearth	Profile tab — the member's identity and tier
+1–2	Kitchen garden, daily tending	Three Sisters bed — the member names three personal things (habits, connections, joys) and tends them daily. Corn, Bean, Squash. Already personal, already private
+3	Field crops, community infrastructure	❌ Missing — no tab or screen for the platform artifacts yet
+4	Semi-wild, wider ecosystem	Community tab — membership tiers shown as ecosystem layers (Pollinators/Air, Rain/Water, Perennials/Roots, etc.)
+5	Wild	The world beyond — unrepresented, intentionally
+The personal Zone 1–2 is already private by design — the sister labels are the member's own and never shown publicly. The "private property sign" already exists in the UX (the labels are opt-in and user-named). The community ecosystem layer is Zone 4.
+
+What's missing is Zone 3 — the artifact launcher — and the bridge that lets something from a member's Zone 1–2 cross into Zone 3.
+
+Here's the full brief:
+
+807 Garden — Zone Map Redesign Brief
+Artifact: artifacts/807-garden/ (Expo / React Native)
+Context: The Garden is the mobile home for the 807 constellation. Every platform artifact should be accessible from it, organized by permaculture zone distance from self.
+
+The concept
+Permaculture zones describe distance from the centre of activity (yourself) by how often you visit and how much energy you invest. The 807 Garden app maps the entire platform onto this model:
+
+Zone 0 — You. Your identity, your membership tier, your private state
+Zone 1–2 — Your Three Sisters. Three personal things you tend daily. Already built: named by the member (habits, connections, joys), private, checked off each day
+Zone 3 — The co-op platform artifacts. Community infrastructure. Visited when needed, not daily. This is what's missing
+Zone 4 — The wider membership ecosystem. Already built: the Community tab showing tiers as ecosystem layers
+Zone 5 — The world beyond. Unbuilt, intentionally sparse
+What's already built — do not rebuild
+Three Sisters bed (Zone 1–2) ✅
+app/(tabs)/index.tsx — the main tending screen
+Three animated plants (Corn, Bean, Squash) with SVG renders, growth states, pruning, haptics
+contexts/GardenContext.tsx — streak, points, tending log, sister labels, pruning state, bookmarks
+components/GardenBed.tsx — full SVG plant animations with dry/watered/tended states
+Sister labels are member-named, private, stored in AsyncStorage + server-synced
+Membership ecosystem (Zone 4) ✅
+app/(tabs)/community.tsx — five membership tiers shown as ecosystem layers
+Tier-aware rendering (highlights "You" in the stack)
+Supporting infrastructure ✅
+Weather strip (Dryden coordinates: 48.3809, -89.2477)
+Offline-first with AsyncStorage, sync to API server
+Clerk auth + per-user server sync
+Earn tab, Profile tab, Knowledge Base, Onboarding
+What needs to be built
+1. Zone 3 tab — "The Constellation"
+A new tab between the current Garden (index) and Community tabs. This is the artifact launcher — every platform tool accessible at arms length.
+
+Tab name: "Zone 3" or "Constellation" or just a zone-ring icon
+Layout: A visual zone map — concentric rings or a radial layout — with each artifact placed at Zone 3 distance from centre. Not a flat list. The spatial layout communicates the model.
+
+Artifacts to show:
+
+Artifact	Icon metaphor	What it does in one line
+807 Benefits	Hub / member pass	Membership, benefits, events, knowledge base
+Deadhead	Floating log	Vetting checkpoint — ideas earn their place or lose their head
+Market Mosaic	Market stall	Local market operations
+Grants Finder	Compass	NOHFC and regional grant workspace
+Pavilion	Tent / threshold	Intern program and business tools
+Rootwork	Studio	Practitioner tooling
+AGM Guide	Acorn	Annual meeting guide (seasonal, not always visible)
+Each tile: name, one-line description, icon, a tap opens a browser sheet (the app already has components/BrowserSheet.tsx) pointing to the artifact's URL.
+
+Visual treatment: Zone 3 items should feel further out than the sisters — lower saturation, slightly smaller, arranged in a ring. The member is at the centre (implied). The sisters (Zone 1–2) are visible as a small reminder at the top of the screen, not interactive — just present to reinforce the spatial model.
+
+2. Private plot — Zone 1–2 with "private property" sign
+The Three Sisters screen should get a subtle framing addition: a visual marker that communicates these are your zones — private to you. The "private property" sign.
+
+Implementation:
+
+A small lock or plot-boundary visual on the garden bed screen — not a barrier, a frame. Something that says "this is yours"
+The sister labels that haven't been named yet show a gentle "name your plot" prompt (currently they show — — this is close but can be more evocative)
+No sharing of sister content to Zone 3 unless the member explicitly initiates it
+3. Crossing the boundary — linking Zone 1–2 into Zone 3
+This is the most interesting part. A member can take something from their private zone and carry it into Zone 3:
+
+Three crossing actions (start with one or two):
+
+From	To	What the crossing looks like
+Member has surplus produce (Zone 1–2)	Market Mosaic (Zone 3)	A "share to market" action from the sister detail sheet
+Member spots a community need	Deadhead (Zone 3)	The "Drop a deadhead" button, already present in 807 Benefits, should appear in the Garden too
+Member interested in a Pavilion placement	Pavilion (Zone 3)	A "I'm interested" action from the Earn tab or Zone 3 constellation tile
+The "drop a deadhead" action is the most immediately useful crossing — it already exists in 807 Benefits as a floating button. Bringing it into the Garden gives every mobile user a quick way to surface ideas or needs from wherever they are.
+
+4. Community zone map — what others see
+When a member visits the Zone 3 / Constellation screen, they can optionally see how others have linked into Zone 3:
+
+Private by default — sister labels and personal tending data never shown
+Plot markers visible — the community map shows claimed plots (members who have named their sisters and are actively tending) as anonymous plot shapes — present but without content
+Linked items visible — if a member has crossed a boundary (shared to market, dropped a deadhead), that action appears in a community feed without identifying the source if they chose private
+This is the "private property sign" in the community view — you can see the fence, not what's behind it.
+
+Technical notes for the agent
+Stack
+Expo / React Native with Expo Router (file-based routing)
+app/(tabs)/ for the tab layout — add a new file for Zone 3
+app/(tabs)/_layout.tsx controls the tab bar — add the new tab here
+Animations: react-native-reanimated (already used throughout)
+Icons: @expo/vector-icons (Ionicons + MaterialCommunityIcons already imported)
+Auth: @clerk/expo — already wired into GardenContext
+API: fetch to https://${process.env.EXPO_PUBLIC_DOMAIN}/api/...
+BrowserSheet
+components/BrowserSheet.tsx already exists — use it to open artifact URLs in-app. The Zone 3 artifact tiles should open their destination in this sheet, not navigate away entirely.
+
+Tab bar
+Current tabs: index (Garden), earn, community, profile. The new Zone 3 tab goes between index and community. app/(tabs)/_layout.tsx is where tabs are declared.
+
+Privacy model
+All Zone 1–2 data stays in GardenContext (AsyncStorage + server bookmark sync). Nothing in Zone 1–2 is sent to Zone 3 endpoints unless a crossing action explicitly fires. The server has no endpoint for sister labels — keep it that way.
+
+What to NOT build
+Don't rebuild the Three Sisters screen — it's complete and polished
+Don't rebuild the Community ecosystem screen — it works
+Don't add an onboarding flow for the zone model — introduce it through the UI itself, not a wizard
+Don't add a Zone 4 or Zone 5 screen — they're conceptual, not interactive
+Definition of done
+ New "Zone 3 / Constellation" tab renders with all artifacts as tiles
+ Tapping an artifact tile opens BrowserSheet to the correct URL
+ Zone ring visual treatment communicates spatial distance from self
+ Private plot framing is visible on the Three Sisters screen
+ "Drop a deadhead" crossing action is available from within the Garden
+ Existing tabs (Garden, Earn, Community, Profile) unchanged
