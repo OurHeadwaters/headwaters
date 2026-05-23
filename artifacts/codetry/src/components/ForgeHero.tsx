@@ -44,7 +44,7 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
       >
         <motion.div variants={fadeInUp} className="flex justify-center mb-2">
           <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase bg-[#D9A066]/10 border border-[#D9A066]/20 px-3 py-1 rounded-full">
-            The Forge — See It Come Alive
+            The Forge — Word Playground
           </span>
         </motion.div>
 
