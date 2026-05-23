@@ -937,7 +937,7 @@ function MapView({
                   ? `You're in ${ZONES.find((z) => z.slug === primaryZone)?.name ?? "the territory"}.`
                   : "The Territory"}
               </h1>
-              {map.rationale && (
+              {map.rationale && isGuided && (
                 <p
                   className="text-base leading-relaxed max-w-xl"
                   style={{ color: "#C8D4C0" }}
@@ -977,6 +977,14 @@ function MapView({
                 <p className="text-xs" style={{ color: "#C8D4C0" }}>
                   Placed by {map.practitionerName || "your practitioner"} · Practitioner intake
                 </p>
+                {map.rationale && (
+                  <p
+                    className="text-sm leading-relaxed mt-1 max-w-xs"
+                    style={{ color: "#C8D4C0" }}
+                  >
+                    {map.rationale}
+                  </p>
+                )}
               </div>
             )}
           </div>
