@@ -531,6 +531,29 @@ export default function HomeScreen() {
         </View>
       )}
 
+      {/* Ambient Listening Callout */}
+      <TouchableOpacity
+        onPress={() => router.push("/(tabs)/stomp")}
+        activeOpacity={0.85}
+        style={[styles.ambientCallout, { backgroundColor: colors.forestDeep, borderColor: colors.woodBorder }]}
+      >
+        <View style={[styles.ambientIconWrap, { backgroundColor: colors.forestMid }]}>
+          <Ionicons name="mic" size={18} color={colors.amberGold} />
+        </View>
+        <View style={styles.ambientBody}>
+          <Text style={[styles.ambientLabel, { color: colors.amberGold, fontFamily: "DMSans_700Bold" }]}>
+            SIGNAL → EXTINGUISHER
+          </Text>
+          <Text style={[styles.ambientText, { color: colors.woodLight, fontFamily: "DMSans_400Regular" }]}>
+            No new meetings. No pitch deck. Bobbie observes through the channels your community already uses — listening for friction before it becomes a crisis.
+          </Text>
+          <Text style={[styles.ambientSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            Zero disruption. Problems surface the moment they happen.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={colors.amberGold} style={styles.ambientChevron} />
+      </TouchableOpacity>
+
       <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, marginBottom: 8 }]}>
         <Ionicons name="albums" size={15} color={colors.woodBrown} />
         <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
@@ -845,4 +868,33 @@ const styles = StyleSheet.create({
   modalBtnSecondaryText: { fontSize: 15 },
   modalBtnPrimary: { flex: 2, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   modalBtnPrimaryText: { fontSize: 15 },
+  ambientCallout: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    marginTop: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  ambientIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    marginTop: 2,
+  },
+  ambientBody: { flex: 1, gap: 4 },
+  ambientLabel: {
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  ambientText: { fontSize: 12, lineHeight: 17 },
+  ambientSub: { fontSize: 11, lineHeight: 15 },
+  ambientChevron: { flexShrink: 0, marginTop: 2 },
 });
