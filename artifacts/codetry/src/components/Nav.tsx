@@ -39,7 +39,7 @@ export default function Nav() {
             return (
               <Link key={href} href={href}>
                 <span
-                  className={`text-sm font-medium transition-colors cursor-pointer ${
+                  className={`hidden md:inline text-sm font-medium transition-colors cursor-pointer ${
                     active
                       ? "text-[#D9A066]"
                       : "text-white/80 hover:text-[#D9A066]"
@@ -52,7 +52,7 @@ export default function Nav() {
           })}
           <Link href="/discover">
             <span
-              className={`text-sm font-semibold px-4 py-2 rounded-md border transition-colors cursor-pointer ${
+              className={`whitespace-nowrap text-sm font-semibold px-4 py-2 rounded-md border transition-colors cursor-pointer ${
                 location === "/discover"
                   ? "bg-[#D9A066] text-[#2B2825] border-[#D9A066]"
                   : "border-[#D9A066] text-[#D9A066] hover:bg-[#D9A066] hover:text-[#2B2825]"
