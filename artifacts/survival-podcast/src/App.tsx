@@ -38,6 +38,7 @@ import WorkshopManagePage from "@/pages/workshop-manage";
 import WorkshopsBrowsePage from "@/pages/workshops-browse";
 import WorkshopsHostPage from "@/pages/workshops-host";
 import WorkshopsDashboardPage from "@/pages/workshops-dashboard";
+import WorkshopsResendLinkPage from "@/pages/workshops-resend-link";
 import HistoryPage from "@/pages/history";
 import { AdminWisdom } from "@/pages/admin-wisdom";
 import { AdminFieldNotes } from "@/pages/admin-field-notes";
@@ -98,6 +99,7 @@ function Router() {
         <Route path="/admin/ground-events" component={AdminGroundEvents} />
         <Route path="/admin/expert-listings" component={AdminExpertListings} />
         <Route path="/workshops/host" component={WorkshopsHostPage} />
+        <Route path="/workshops/resend-link" component={WorkshopsResendLinkPage} />
         <Route path="/workshops/dashboard" component={WorkshopsDashboardPage} />
         <Route path="/workshops/manage" component={WorkshopManagePage} />
         <Route path="/workshops" component={WorkshopsBrowsePage} />

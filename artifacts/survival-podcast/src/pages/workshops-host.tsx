@@ -245,6 +245,13 @@ export default function WorkshopsHostPage() {
               >
                 View Workshop Board →
               </button>
+              <button
+                onClick={() => navigate("/workshops/resend-link")}
+                className="text-xs"
+                style={{ color: "#4A6850" }}
+              >
+                Lost your dashboard link? Resend it →
+              </button>
             </div>
           </div>
         </div>

@@ -226,7 +226,7 @@ router.post("/ground-events", async (req, res) => {
 
     const contactEmail =
       typeof body.contactEmail === "string" && body.contactEmail.trim()
-        ? body.contactEmail.trim().slice(0, 160)
+        ? body.contactEmail.trim().toLowerCase().slice(0, 160)
         : null;
 
     // ── Stripe Connect payment fields ────────────────────────────────────────
@@ -345,6 +345,82 @@ router.post("/ground-events", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "ground-events: POST failed");
     res.status(500).json({ error: "Failed to submit event" });
+  }
+});
+
+// In-memory rate-limit store: email → last resend timestamp (ms)
+const resendCooldownMs = 10 * 60 * 1000; // 10 minutes
+const resendLastSent = new Map<string, number>();
+
+/**
+ * POST /api/ground-events/resend-confirmation
+ * Self-service: resend the host dashboard link to a contact email.
+ * Body: { email: string }
+ * Rate-limited to one resend per email per 10 minutes.
+ * Always returns 200 (vague) so email enumeration is not possible.
+ */
+router.post("/ground-events/resend-confirmation", async (req, res) => {
+  try {
+    const body = req.body as Record<string, unknown>;
+    const email =
+      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+
+    if (!email || !email.includes("@")) {
+      res.status(400).json({ error: "A valid email address is required" });
+      return;
+    }
+
+    // Rate-limit check
+    const lastSent = resendLastSent.get(email) ?? 0;
+    const now = Date.now();
+    if (now - lastSent < resendCooldownMs) {
+      const waitSecs = Math.ceil((resendCooldownMs - (now - lastSent)) / 1000);
+      res.status(429).json({
+        error: `Please wait ${waitSecs} seconds before requesting another resend`,
+      });
+      return;
+    }
+
+    // Look up all events for this email — case-insensitive via lower()
+    const events = await db
+      .select()
+      .from(groundEventsTable)
+      .where(sql`lower(${groundEventsTable.contactEmail}) = ${email}`)
+      .orderBy(asc(groundEventsTable.eventDate));
+
+    // Always record the attempt so spam is rate-limited even on no-match
+    resendLastSent.set(email, now);
+
+    if (events.length > 0) {
+      const appBaseUrl = (
+        process.env.APP_BASE_URL ?? "https://www.thesurvivalpodcast.com"
+      ).replace(/\/$/, "");
+
+      // Fire-and-forget: send one confirmation email per event
+      for (const event of events) {
+        if (!event.hostToken) continue;
+        const dashboardUrl = `${appBaseUrl}/workshops/dashboard?token=${event.hostToken}`;
+        sendHostConfirmationEmail({
+          hostEmail: email,
+          hostName: event.hostName,
+          eventTitle: event.title,
+          eventDate: event.eventDate,
+          dashboardUrl,
+        }).catch((e: unknown) =>
+          logger.error({ e, eventId: event.id }, "ground-events: resend confirmation email failed"),
+        );
+      }
+
+      logger.info({ email, eventCount: events.length }, "ground-events: dashboard link(s) resent");
+    } else {
+      logger.info({ email }, "ground-events: resend-confirmation — no events found for email");
+    }
+
+    // Return vague success regardless so callers can't enumerate emails
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error({ err }, "ground-events: POST /resend-confirmation failed");
+    res.status(500).json({ error: "Failed to process resend request" });
   }
 });
 
