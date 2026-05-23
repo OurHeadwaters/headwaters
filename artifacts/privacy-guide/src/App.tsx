@@ -176,9 +176,13 @@ function GordPerched() {
   const [headTurn, setHeadTurn] = useState(0);
   const [patrolX, setPatrolX] = useState(0);
   const [isPatrolling, setIsPatrolling] = useState(false);
+  // Ref mirrors isPatrolling so the idle interval callback always sees the current value
+  const isPatrollingRef = useRef(false);
 
   useEffect(() => {
+    // Only twitch head when idle — patrol controls head direction during movement
     const headTimer = setInterval(() => {
+      if (isPatrollingRef.current) return;
       setHeadTurn((p) => (p === 0 ? (Math.random() > 0.5 ? 8 : -8) : 0));
     }, 2800);
     return () => clearInterval(headTimer);
@@ -188,22 +192,33 @@ function GordPerched() {
     let timeout: ReturnType<typeof setTimeout>;
     function patrol() {
       timeout = setTimeout(() => {
-        // Pick a short distance left or right from the post centre
-        const dist = 30 + Math.random() * 10; // 30–40 px
-        const dir = Math.random() > 0.5 ? 1 : -1;
-        const step = dist * dir;
-        // Face the direction of travel
-        setHeadTurn(dir > 0 ? 8 : -8);
+        // Full left-right-left (or right-left-right) pacing sequence
+        const dist = 30 + Math.random() * 10; // 30–40 px per leg
+        const firstDir = Math.random() > 0.5 ? 1 : -1;
+        const step1 = dist * firstDir;
+        const step2 = dist * -firstDir; // opposite direction
+
+        // Leg 1: move in first direction, head faces that way
+        isPatrollingRef.current = true;
         setIsPatrolling(true);
-        setPatrolX(step);
+        setHeadTurn(firstDir > 0 ? 8 : -8);
+        setPatrolX(step1);
+
+        // Leg 2: move in opposite direction, head follows
         timeout = setTimeout(() => {
-          // Return to centre, face forward
-          setPatrolX(0);
-          setHeadTurn(0);
+          setHeadTurn(firstDir > 0 ? -8 : 8);
+          setPatrolX(step2);
+
+          // Leg 3: return to centre, face forward
           timeout = setTimeout(() => {
-            setIsPatrolling(false);
-            patrol();
-          }, 1800);
+            setPatrolX(0);
+            setHeadTurn(0);
+            timeout = setTimeout(() => {
+              isPatrollingRef.current = false;
+              setIsPatrolling(false);
+              patrol();
+            }, 1800);
+          }, 2400);
         }, 2200);
       }, 8000 + Math.random() * 6000);
     }
