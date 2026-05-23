@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, cohortsTable, cohortEnrollmentsTable, expertCouncilTable } from "@workspace/db";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { db, cohortsTable, cohortEnrollmentsTable, cohortWaitlistTable, expertCouncilTable } from "@workspace/db";
+import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getUncachableStripeClient } from "../stripeClient";
 import { TRANSFORMATIONS } from "../lib/transformations";
@@ -256,6 +256,31 @@ router.post("/cohorts/:id/enroll", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "cohorts: POST /cohorts/:id/enroll failed");
     res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
+/**
+ * POST /api/cohorts/waitlist
+ * Capture a pre-launch waitlist email for the founding cohort.
+ * Persists to the cohort_waitlist DB table (unique per email + cohort slug).
+ * Duplicate submissions are silently ignored (onConflictDoNothing).
+ */
+router.post("/cohorts/waitlist", async (req, res) => {
+  try {
+    const { email, cohortSlug = "founding" } = req.body as { email?: string; cohortSlug?: string };
+    if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "A valid email address is required" });
+    }
+    const trimmed = email.trim().toLowerCase();
+    await db
+      .insert(cohortWaitlistTable)
+      .values({ email: trimmed, cohortSlug, source: "web" })
+      .onConflictDoNothing();
+    logger.info({ emailDomain: trimmed.split("@")[1], cohortSlug }, "cohorts: waitlist signup persisted");
+    res.json({ ok: true, message: "You're on the list! We'll email you when enrollment opens." });
+  } catch (err) {
+    logger.error({ err }, "cohorts: POST /cohorts/waitlist failed");
+    res.status(500).json({ error: "Failed to join waitlist" });
   }
 });
 

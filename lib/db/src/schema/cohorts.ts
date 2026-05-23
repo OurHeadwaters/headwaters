@@ -76,3 +76,27 @@ export const cohortEnrollmentsTable = pgTable(
 
 export type CohortEnrollmentRow = typeof cohortEnrollmentsTable.$inferSelect;
 export type InsertCohortEnrollmentRow = typeof cohortEnrollmentsTable.$inferInsert;
+
+/**
+ * Cohort Waitlist — pre-launch email capture for the founding cohort.
+ * Collected before Stripe / enrollment is live (Task #585).
+ * email is unique per cohort slug so we never store duplicates.
+ */
+export const cohortWaitlistTable = pgTable(
+  "cohort_waitlist",
+  {
+    id: serial("id").primaryKey(),
+    email: text("email").notNull(),
+    cohortSlug: text("cohort_slug").notNull().default("founding"),
+    source: text("source").notNull().default("web"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("cohort_waitlist_email_cohort_unique").on(t.email, t.cohortSlug),
+    index("cohort_waitlist_cohort_idx").on(t.cohortSlug),
+    index("cohort_waitlist_created_idx").on(t.createdAt),
+  ],
+);
+
+export type CohortWaitlistRow = typeof cohortWaitlistTable.$inferSelect;
+export type InsertCohortWaitlistRow = typeof cohortWaitlistTable.$inferInsert;
