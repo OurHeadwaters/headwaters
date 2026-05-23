@@ -188,10 +188,18 @@ function GordPerched() {
     let timeout: ReturnType<typeof setTimeout>;
     function patrol() {
       timeout = setTimeout(() => {
+        // Pick a short distance left or right from the post centre
+        const dist = 30 + Math.random() * 10; // 30–40 px
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        const step = dist * dir;
+        // Face the direction of travel
+        setHeadTurn(dir > 0 ? 8 : -8);
         setIsPatrolling(true);
-        setPatrolX(120);
+        setPatrolX(step);
         timeout = setTimeout(() => {
+          // Return to centre, face forward
           setPatrolX(0);
+          setHeadTurn(0);
           timeout = setTimeout(() => {
             setIsPatrolling(false);
             patrol();
