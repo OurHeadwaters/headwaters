@@ -558,6 +558,7 @@ function MapView({
   const secondaryZone = map.secondaryZone;
   const visitedZones = (map.visitedZones as string[]) ?? [];
   const isGuided = map.entryMode === "guided";
+  const isPractitioner = map.entryMode === "practitioner";
   const shownZones = filteredZones(ZONES, map.entryMode, map.riskProfile ?? null, primaryZone, secondaryZone);
 
   const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
@@ -617,7 +618,7 @@ function MapView({
                   {map.rationale}
                 </p>
               )}
-              {!isGuided && (
+              {!isGuided && !isPractitioner && (
                 <p
                   className="text-base leading-relaxed max-w-xl"
                   style={{ color: "#C8D4C0" }}
@@ -627,6 +628,30 @@ function MapView({
                 </p>
               )}
             </div>
+
+            {/* Headwaters Member badge — hero right */}
+            {isPractitioner && (
+              <div
+                className="flex-shrink-0 rounded-xl px-4 py-3 flex flex-col gap-1.5"
+                style={{
+                  background: "#4A7A3A18",
+                  border: "1px solid #4A7A3A44",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg leading-none">💧</span>
+                  <span
+                    className="font-serif text-base font-bold"
+                    style={{ color: "#4A7A3A" }}
+                  >
+                    Headwaters Member
+                  </span>
+                </div>
+                <p className="text-xs" style={{ color: "#C8D4C0" }}>
+                  Placed by Tasha Parr · Practitioner intake
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Controls */}
@@ -757,6 +782,63 @@ function MapView({
             ))}
           </div>
         </div>
+
+        {/* Headwaters callout for non-members */}
+        {!isPractitioner && (
+          <div
+            className="rounded-2xl border p-6"
+            style={{
+              background: "#0A180A",
+              borderColor: "#4A7A3A33",
+            }}
+          >
+            <div className="flex items-start gap-4">
+              <span className="text-2xl leading-none mt-0.5">💧</span>
+              <div className="flex-1 min-w-0">
+                <h3
+                  className="font-serif text-lg font-bold mb-1"
+                  style={{ color: "#FDFBF7" }}
+                >
+                  Not a Headwaters member yet
+                </h3>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: "#C8D4C0" }}>
+                  Headwaters members get a personal intake session with Tasha Parr — a practitioner who places you on the zone map based on where you actually are, not just a quiz score.
+                </p>
+                <div
+                  className="rounded-lg p-4 mb-4"
+                  style={{ background: "#FDFBF708", border: "1px solid #4A7A3A22" }}
+                >
+                  <p
+                    className="text-[10px] font-bold uppercase tracking-widest mb-2"
+                    style={{ color: "#4A7A3A" }}
+                  >
+                    Member-only features
+                  </p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "Practitioner-placed zone on your Lifestyle Map",
+                      "Curated map view filtered to your risk profile",
+                      "Personalized rationale from your intake session",
+                    ].map((item) => (
+                      <li key={item} className="flex items-center gap-2 text-sm" style={{ color: "#C8D4C0" }}>
+                        <span style={{ color: "#4A7A3A55" }}>🔒</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <Link
+                  href="/headwaters"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                  style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+                >
+                  Learn about Headwaters
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer hints */}
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground border-t border-border pt-6">
