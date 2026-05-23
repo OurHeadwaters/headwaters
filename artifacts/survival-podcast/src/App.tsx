@@ -51,6 +51,7 @@ import { CohortsPage } from "@/pages/cohorts";
 import { CohortDetailPage } from "@/pages/cohort-detail";
 import { AdminCohorts } from "@/pages/admin-cohorts";
 import { CohortFoundingWaitlistPage } from "@/pages/cohort-founding-waitlist";
+import HeadwatersPage from "@/pages/headwaters";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,7 @@ function Router() {
         <Route path="/cohorts" component={CohortsPage} />
         <Route path="/cohorts/:id" component={CohortDetailPage} />
         <Route path="/admin/cohorts" component={AdminCohorts} />
+        <Route path="/headwaters" component={HeadwatersPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
