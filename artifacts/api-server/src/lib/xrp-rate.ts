@@ -62,3 +62,25 @@ export function getXrpRateMeta(): { rate: number; fetchedAt: string | null; sour
     source: lastFetchedAt ? "coingecko" : "fallback",
   };
 }
+
+const STALE_THRESHOLD_MS = 30 * 60 * 1000;
+
+export function getXrpRateHealth(): {
+  rate: number;
+  source: string;
+  fetchedAt: string | null;
+  ageMinutes: number | null;
+  isStale: boolean;
+} {
+  const now = Date.now();
+  const ageMs = lastFetchedAt ? now - lastFetchedAt.getTime() : null;
+  const ageMinutes = ageMs !== null ? Math.floor(ageMs / 60_000) : null;
+  const isStale = ageMs === null || ageMs > STALE_THRESHOLD_MS;
+  return {
+    rate: cachedRate,
+    source: lastFetchedAt ? "coingecko" : "fallback",
+    fetchedAt: lastFetchedAt?.toISOString() ?? null,
+    ageMinutes,
+    isStale,
+  };
+}

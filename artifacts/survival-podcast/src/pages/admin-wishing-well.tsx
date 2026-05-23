@@ -30,6 +30,14 @@ interface DrawResult {
   xrpUsdRate: number;
 }
 
+interface XrpRateHealth {
+  rate: number;
+  source: string;
+  fetchedAt: string | null;
+  ageMinutes: number | null;
+  isStale: boolean;
+}
+
 interface AdminData {
   distributions: Distribution[];
   todayPot: {
@@ -46,6 +54,12 @@ interface AdminData {
     xrpRateSource?: string;
     xrpRateFetchedAt?: string;
   };
+}
+
+async function fetchXrpRateHealth(): Promise<XrpRateHealth> {
+  const res = await fetch(apiUrl("/admin/xrp-rate/health"), { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load XRP rate health");
+  return res.json();
 }
 
 async function fetchAdminData(): Promise<AdminData> {
@@ -214,6 +228,12 @@ export function AdminWishingWell() {
     refetchInterval: 60_000,
   });
 
+  const { data: rateHealth } = useQuery({
+    queryKey: ["xrp-rate-health"],
+    queryFn: fetchXrpRateHealth,
+    refetchInterval: 60_000,
+  });
+
   const todayDrawn = data
     ? data.distributions.some((d) => d.drawDate === data.todayPot.date)
     : false;
@@ -244,6 +264,22 @@ export function AdminWishingWell() {
           Monitor daily pot totals, run draws, and track payout status.
         </p>
       </header>
+
+      {/* XRP Rate Staleness Warning */}
+      {rateHealth?.isStale && (
+        <div className="mb-6 flex items-start gap-3 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-500" />
+          <div className="text-sm">
+            <p className="font-semibold mb-0.5">XRP price feed may be stale</p>
+            <p>
+              {rateHealth.fetchedAt === null
+                ? "No live rate has been fetched yet — using the fallback default. CoinGecko may be unreachable."
+                : `Last successful fetch was ${rateHealth.ageMinutes} min${rateHealth.ageMinutes === 1 ? "" : "s"} ago (expected every 15 min). CoinGecko may be down.`}
+              {" "}Pot USD values are based on a rate of <strong>${rateHealth.rate.toFixed(4)}</strong> and may not reflect the current market price.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Today's Pot + Draw Action */}
       {data && (

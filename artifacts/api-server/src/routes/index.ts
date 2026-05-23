@@ -36,6 +36,7 @@ import expertListingsRouter from "./expert-listings";
 import adminExpertListingsRouter from "./admin-expert-listings";
 import cohortsRouter from "./cohorts";
 import adminCohortsRouter from "./admin-cohorts";
+import adminXrpRateRouter from "./admin-xrp-rate";
 
 const router: IRouter = Router();
 
@@ -76,5 +77,6 @@ router.use(expertListingsRouter);
 router.use(adminExpertListingsRouter);
 router.use(cohortsRouter);
 router.use(adminCohortsRouter);
+router.use(adminXrpRateRouter);
 
 export default router;
