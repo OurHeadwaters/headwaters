@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Rss, Plus, Trash2, Leaf, TrendingUp, Zap, BookOpen, ShoppingBag, Link2, MoreHorizontal } from "lucide-react";
+import { Rss, Plus, Trash2, Leaf, TrendingUp, Zap, BookOpen, ShoppingBag, Link2, MoreHorizontal, Target, CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type StreamType = "content" | "course" | "product" | "affiliate" | "other";
@@ -158,24 +158,36 @@ export default function OnlineEngine() {
   const patch = usePatchHeadwatersBusinessSection();
 
   const [rows, setRows] = useState<OnlineEngineRow[]>([]);
+  const [monthlyTarget, setMonthlyTarget] = useState<number>(0);
+  const [targetInput, setTargetInput] = useState<string>("");
   const initialized = useRef(false);
 
   useEffect(() => {
     if (data && !initialized.current) {
-      const loaded = Array.isArray(data.value) ? (data.value as OnlineEngineRow[]) : [];
-      setRows(loaded.map((r) => ({
+      const raw = data.value as any;
+      let loadedRows: OnlineEngineRow[] = [];
+      let loadedTarget = 0;
+      if (Array.isArray(raw)) {
+        loadedRows = raw as OnlineEngineRow[];
+      } else if (raw && typeof raw === "object") {
+        loadedRows = Array.isArray(raw.rows) ? (raw.rows as OnlineEngineRow[]) : [];
+        loadedTarget = typeof raw.monthlyTarget === "number" ? raw.monthlyTarget : 0;
+      }
+      setRows(loadedRows.map((r) => ({
         streamType: "content" as StreamType,
         lifestyleOverlap: false,
         ...r,
       })));
+      setMonthlyTarget(loadedTarget);
+      setTargetInput(loadedTarget > 0 ? String(loadedTarget) : "");
       initialized.current = true;
     }
   }, [data]);
 
   const persist = useCallback(
-    (next: OnlineEngineRow[]) => {
+    (nextRows: OnlineEngineRow[], nextTarget: number) => {
       patch.mutate(
-        { section: "online-engine", data: { value: next } },
+        { section: "online-engine", data: { value: { rows: nextRows, monthlyTarget: nextTarget } } },
         { onError: () => toast({ title: "Save failed", variant: "destructive" }) }
       );
     },
@@ -184,7 +196,13 @@ export default function OnlineEngine() {
 
   const updateAndSave = (next: OnlineEngineRow[]) => {
     setRows(next);
-    persist(next);
+    persist(next, monthlyTarget);
+  };
+
+  const saveTarget = (raw: string) => {
+    const val = parseFloat(raw) || 0;
+    setMonthlyTarget(val);
+    persist(rows, val);
   };
 
   const addRow = () =>
@@ -214,7 +232,7 @@ export default function OnlineEngine() {
     updateAndSave(next);
   };
 
-  const saveOnBlur = () => persist(rows);
+  const saveOnBlur = () => persist(rows, monthlyTarget);
 
   const totalLow = rows.reduce((s, r) => s + (r.monthlyLow || 0), 0);
   const totalHigh = rows.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
@@ -262,9 +280,67 @@ export default function OnlineEngine() {
         </Button>
       </div>
 
+      {/* Monthly target input — always visible */}
+      <div className="flex items-center gap-3">
+        <Target size={16} className="text-muted-foreground shrink-0" />
+        <label className="text-sm font-semibold text-muted-foreground whitespace-nowrap">Monthly target</label>
+        <div className="relative w-44">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">$</span>
+          <Input
+            type="number"
+            min={0}
+            value={targetInput}
+            onChange={(e) => setTargetInput(e.target.value)}
+            onBlur={(e) => saveTarget(e.target.value)}
+            placeholder="e.g. 5000"
+            className="pl-6 h-9 w-full"
+          />
+        </div>
+        {monthlyTarget > 0 && (
+          <span className="text-xs text-muted-foreground">/ mo</span>
+        )}
+      </div>
+
       {/* Summary cards */}
       {hasRows && (
         <div className="space-y-3">
+          {/* Goal progress bar */}
+          {monthlyTarget > 0 && (() => {
+            const pct = Math.min(Math.round((totalHigh / monthlyTarget) * 100), 100);
+            const overTarget = totalHigh >= monthlyTarget;
+            const gap = Math.abs(totalHigh - monthlyTarget);
+            return (
+              <Card className={overTarget
+                ? "border-emerald-300/70 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-700/50"
+                : "border-amber-200/70 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-700/40"}>
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      {overTarget
+                        ? <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        : <AlertCircle size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                      }
+                      <span className={`text-sm font-bold ${overTarget ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+                        {overTarget
+                          ? `Above target by ${fmt(gap)} / mo`
+                          : `${fmt(gap)} / mo below target`}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {fmt(totalHigh)} of {fmt(monthlyTarget)} goal · {pct}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${overTarget ? "bg-emerald-500 dark:bg-emerald-400" : "bg-amber-400 dark:bg-amber-500"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           <div className="grid sm:grid-cols-3 gap-4">
             <Card className="border-cyan-200/60 bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-800/40">
               <CardContent className="p-5 flex items-start gap-3">
