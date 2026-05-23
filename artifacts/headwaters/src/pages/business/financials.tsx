@@ -35,7 +35,25 @@ const BOTTLENECK_FILL: Record<BottleneckType, string> = {
   "none": "#94a3b8",
 };
 
-function DonutChart({ segments }: { segments: { type: BottleneckType; value: number; label: string }[] }) {
+interface DonutSegment {
+  type: BottleneckType;
+  value: number;
+  label: string;
+  low: number;
+  high: number;
+  pct: number;
+}
+
+interface TooltipState {
+  segment: DonutSegment;
+  x: number;
+  y: number;
+}
+
+function DonutChart({ segments }: { segments: DonutSegment[] }) {
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const total = segments.reduce((s, seg) => s + seg.value, 0);
   if (total === 0) return null;
 
@@ -46,7 +64,7 @@ function DonutChart({ segments }: { segments: { type: BottleneckType; value: num
   const gap = 0.03;
 
   let startAngle = -Math.PI / 2;
-  const paths: { d: string; fill: string; type: BottleneckType }[] = [];
+  const paths: { d: string; fill: string; segment: DonutSegment }[] = [];
 
   for (const seg of segments) {
     const fraction = seg.value / total;
@@ -66,18 +84,62 @@ function DonutChart({ segments }: { segments: { type: BottleneckType; value: num
     paths.push({
       d: `M ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${r} ${r} 0 ${largeArc} 0 ${x4} ${y4} Z`,
       fill: BOTTLENECK_FILL[seg.type],
-      type: seg.type,
+      segment: seg,
     });
 
     startAngle = endAngle + gap;
   }
 
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>, seg: DonutSegment) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setTooltip({
+      segment: seg,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   return (
-    <svg viewBox="0 0 104 104" className="w-20 h-20 shrink-0">
-      {paths.map((p) => (
-        <path key={p.type} d={p.d} fill={p.fill} opacity="0.85" />
-      ))}
-    </svg>
+    <div ref={containerRef} className="relative shrink-0">
+      <svg
+        viewBox="0 0 104 104"
+        className="w-20 h-20"
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {paths.map((p) => (
+          <path
+            key={p.segment.type}
+            d={p.d}
+            fill={p.fill}
+            opacity={tooltip?.segment.type === p.segment.type ? "1" : "0.85"}
+            className="cursor-pointer transition-opacity"
+            onMouseEnter={(e) => handleMouseMove(e, p.segment)}
+            onMouseMove={(e) => handleMouseMove(e, p.segment)}
+          />
+        ))}
+      </svg>
+      {tooltip && (
+        <div
+          className="pointer-events-none absolute z-50 rounded-md border border-border bg-popover px-3 py-2 shadow-md text-xs"
+          style={{
+            left: tooltip.x + 12,
+            top: tooltip.y - 8,
+            transform: tooltip.x > 60 ? "translateX(-110%)" : undefined,
+          }}
+        >
+          <p className="font-semibold text-foreground mb-0.5" style={{ color: BOTTLENECK_FILL[tooltip.segment.type] }}>
+            {tooltip.segment.label}
+          </p>
+          <p className="text-muted-foreground tabular-nums">
+            {fmt(tooltip.segment.low)}
+            {tooltip.segment.high !== tooltip.segment.low && <> – {fmt(tooltip.segment.high)}</>}
+            <span className="ml-1">/ mo</span>
+          </p>
+          <p className="text-muted-foreground tabular-nums">{tooltip.segment.pct}% of time-dependent</p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -278,11 +340,11 @@ export default function BusinessFinancials() {
                 </p>
                 <div className="flex items-center gap-5 flex-wrap sm:flex-nowrap">
                   <DonutChart
-                    segments={bottleneckBreakdown.map(({ type, high }) => ({
-                      type,
-                      value: high,
-                      label: bottleneckMeta(type).label,
-                    }))}
+                    segments={bottleneckBreakdown.map(({ type, low, high }) => {
+                      const donutTotal = bottleneckBreakdown.reduce((s, b) => s + b.high, 0);
+                      const pct = donutTotal > 0 ? Math.round((high / donutTotal) * 100) : 0;
+                      return { type, value: high, label: bottleneckMeta(type).label, low, high, pct };
+                    })}
                   />
                   <div className="flex flex-col gap-2 min-w-0">
                     {bottleneckBreakdown.map(({ type, low, high }) => {
