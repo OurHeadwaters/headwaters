@@ -7,7 +7,7 @@ import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
 
-router.use(requireEditor);
+router.use("/admin/categories", requireEditor);
 
 let seeded = false;
 
