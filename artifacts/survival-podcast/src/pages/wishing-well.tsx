@@ -11,6 +11,8 @@ import {
   Layers,
   Flame,
   Zap,
+  CreditCard,
+  Gift,
 } from "lucide-react";
 
 function apiUrl(path: string): string {
@@ -29,10 +31,17 @@ function getOrCreateSessionId(): string {
 
 const FOUNDER_MATCH_THRESHOLD = 10;
 
+const FIAT_AMOUNTS = [
+  { units: 1, label: "$1" },
+  { units: 2, label: "$2" },
+  { units: 5, label: "$5" },
+];
+
 interface WishingWellTip {
   id: number;
   amountUnits: number;
   currency: string;
+  paymentMethod: string;
   wishText: string;
   listenerName: string | null;
   drawDate: string;
@@ -48,6 +57,10 @@ interface PotToday {
   tipCount: number;
   totalUnits: number;
   currency: string;
+  totalUsdCents: number;
+  fiatCount: number;
+  cryptoCount: number;
+  xrpUsdRate: number;
   drawn: boolean;
 }
 
@@ -55,11 +68,14 @@ interface Distribution {
   id: number;
   drawDate: string;
   totalUnits: number;
+  totalUsdCents?: number;
   creatorShareUnits: number;
   winnerShareUnits: number;
+  winnerShareUsdCents?: number;
   winnerWishText: string | null;
   winnerListenerName: string | null;
   winnerImpactNote: string | null;
+  winnerPaymentMethod?: string;
   payoutStatus: string;
   currency: string;
   createdAt: string;
@@ -93,7 +109,7 @@ async function fetchWishes(): Promise<WishesResponse> {
   return res.json();
 }
 
-async function submitTip(data: {
+async function submitCryptoTip(data: {
   amountUnits: number;
   wishText: string;
   listenerName: string;
@@ -108,6 +124,24 @@ async function submitTip(data: {
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
     throw new Error((j as { error?: string }).error ?? "Failed to submit tip");
+  }
+  return res.json();
+}
+
+async function createStripeCheckout(data: {
+  amountUnits: number;
+  wishText: string;
+  listenerName: string;
+}): Promise<{ checkoutUrl: string; sessionId: string }> {
+  const res = await fetch(apiUrl("/wishing-well/tip/stripe"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    throw new Error((j as { error?: string }).error ?? "Failed to create checkout");
   }
   return res.json();
 }
@@ -145,6 +179,10 @@ function formatDate(d: string): string {
   } catch {
     return d;
   }
+}
+
+function formatUsd(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function CoinIcon({ size = 20 }: { size?: number }) {
@@ -217,8 +255,16 @@ function WishCard({
 
       <div className="flex items-center justify-between">
         <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-          <CoinIcon size={12} />
-          <span>{wish.amountUnits} coin{wish.amountUnits !== 1 ? "s" : ""}</span>
+          {wish.paymentMethod === "stripe" ? (
+            <CreditCard className="w-3 h-3 text-blue-500" />
+          ) : (
+            <CoinIcon size={12} />
+          )}
+          <span>
+            {wish.paymentMethod === "stripe"
+              ? `$${wish.amountUnits} via card`
+              : `${wish.amountUnits} coin${wish.amountUnits !== 1 ? "s" : ""}`}
+          </span>
           {wish.listenerName && (
             <>
               <span>·</span>
@@ -248,6 +294,7 @@ function WishCard({
 
 function WinnerCard({ dist, label }: { dist: Distribution; label: string }) {
   const [showImpact, setShowImpact] = useState(false);
+  const isFiat = dist.winnerPaymentMethod === "stripe";
   return (
     <div className="rounded-xl border border-[#D9A066]/40 bg-gradient-to-br from-[#D9A066]/10 to-[#2C4A36]/10 p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
@@ -255,6 +302,11 @@ function WinnerCard({ dist, label }: { dist: Distribution; label: string }) {
         <span className="text-xs font-bold uppercase tracking-widest text-[#D9A066]">
           {label}
         </span>
+        {isFiat && (
+          <span className="ml-auto flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+            <Gift className="w-3 h-3" /> Platform credit issued
+          </span>
+        )}
       </div>
       <p className="text-base font-serif italic text-foreground leading-relaxed mb-3">
         "{dist.winnerWishText}"
@@ -264,10 +316,17 @@ function WinnerCard({ dist, label }: { dist: Distribution; label: string }) {
           {dist.winnerListenerName ?? "Anonymous"}
         </span>
         <span>·</span>
-        <span className="flex items-center gap-1">
-          <CoinIcon size={14} />
-          {dist.winnerShareUnits} coins won
-        </span>
+        {dist.winnerShareUsdCents != null ? (
+          <span className="flex items-center gap-1">
+            <Coins className="w-3.5 h-3.5" />
+            {formatUsd(dist.winnerShareUsdCents)} won
+          </span>
+        ) : (
+          <span className="flex items-center gap-1">
+            <CoinIcon size={14} />
+            {dist.winnerShareUnits} coins won
+          </span>
+        )}
         <span>·</span>
         <span>{formatDate(dist.drawDate)}</span>
       </div>
@@ -289,19 +348,87 @@ function WinnerCard({ dist, label }: { dist: Distribution; label: string }) {
   );
 }
 
+type PaymentTab = "card" | "crypto";
+
 function TipForm({ onSuccess }: { onSuccess: () => void }) {
+  const [paymentTab, setPaymentTab] = useState<PaymentTab>("card");
+
+  // Card (fiat) state
+  const [fiatAmount, setFiatAmount] = useState(1);
+  const [fiatWishText, setFiatWishText] = useState("");
+  const [fiatListenerName, setFiatListenerName] = useState("");
+  const [fiatRedirecting, setFiatRedirecting] = useState(false);
+
+  // Crypto state
   const [amountUnits, setAmountUnits] = useState(1);
   const [wishText, setWishText] = useState("");
   const [listenerName, setListenerName] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const mutation = useMutation({
-    mutationFn: submitTip,
+  // Check for Stripe return
+  const [stripeResult, setStripeResult] = useState<"success" | "cancelled" | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripe = params.get("stripe");
+    if (stripe === "success") setStripeResult("success");
+    else if (stripe === "cancelled") setStripeResult("cancelled");
+  }, []);
+
+  const cryptoMutation = useMutation({
+    mutationFn: submitCryptoTip,
     onSuccess: () => {
       setSubmitted(true);
       onSuccess();
     },
   });
+
+  const stripeMutation = useMutation({
+    mutationFn: createStripeCheckout,
+    onSuccess: (data) => {
+      setFiatRedirecting(true);
+      window.location.href = data.checkoutUrl;
+    },
+  });
+
+  if (stripeResult === "success") {
+    return (
+      <div className="rounded-xl border border-[#2C4A36]/40 bg-[#2C4A36]/8 p-6 text-center">
+        <div className="text-3xl mb-2">🎉</div>
+        <p className="font-serif text-lg font-semibold text-foreground mb-1">
+          Payment confirmed — your coin is in the well!
+        </p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Your wish has been added to today's pot. If you win, you'll receive a platform credit redeemable on Brigade membership or cohort enrollment.
+        </p>
+        <button
+          onClick={() => setStripeResult(null)}
+          className="text-xs text-muted-foreground hover:text-foreground underline"
+        >
+          Toss another coin
+        </button>
+      </div>
+    );
+  }
+
+  if (stripeResult === "cancelled") {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+        <div className="text-3xl mb-2">💸</div>
+        <p className="font-serif text-lg font-semibold text-foreground mb-1">
+          Payment cancelled
+        </p>
+        <p className="text-sm text-muted-foreground mb-4">
+          No charge was made. Try again whenever you're ready.
+        </p>
+        <button
+          onClick={() => setStripeResult(null)}
+          className="text-xs text-muted-foreground hover:text-foreground underline"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -329,95 +456,226 @@ function TipForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="w-5 h-5 text-[#D9A066]" />
-        <h3 className="font-serif text-lg font-bold text-foreground">Toss a Coin</h3>
-      </div>
-      <p className="text-sm text-muted-foreground mb-5">
-        Each coin you toss enters you into today's draw. Half the day's pot goes to
-        the randomly selected winner — the other half supports The Stomping Path.
-      </p>
-
-      {mutation.isError && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {mutation.error instanceof Error ? mutation.error.message : "Something went wrong"}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4">
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
-            Your name (optional)
-          </label>
-          <input
-            type="text"
-            value={listenerName}
-            onChange={(e) => setListenerName(e.target.value)}
-            placeholder="e.g. Jack from Texas"
-            maxLength={80}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C4A36]"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
-            Coins to toss
-          </label>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setAmountUnits((v) => Math.max(1, v - 1))}
-              className="w-8 h-8 rounded-full border border-border text-lg font-bold flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              −
-            </button>
-            <span className="w-12 text-center font-bold text-lg text-foreground">
-              {amountUnits}
-            </span>
-            <button
-              onClick={() => setAmountUnits((v) => Math.min(100, v + 1))}
-              className="w-8 h-8 rounded-full border border-border text-lg font-bold flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              +
-            </button>
-            <span className="text-sm text-muted-foreground ml-1">
-              {amountUnits === 1 ? "coin" : "coins"}
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
-            Your wish <span className="text-destructive">*</span>
-          </label>
-          <textarea
-            value={wishText}
-            onChange={(e) => setWishText(e.target.value)}
-            placeholder="Make a wish… something meaningful to you or your community"
-            maxLength={280}
-            rows={3}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2C4A36]"
-          />
-          <div className="text-right text-xs text-muted-foreground mt-0.5">
-            {wishText.length}/280
-          </div>
-        </div>
-
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      {/* Tab switcher */}
+      <div className="flex border-b border-border">
         <button
-          onClick={() =>
-            mutation.mutate({ amountUnits, wishText, listenerName, currency: "BTC" })
-          }
-          disabled={!wishText.trim() || wishText.trim().length < 3 || mutation.isPending}
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#2C4A36] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+          onClick={() => setPaymentTab("card")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
+            paymentTab === "card"
+              ? "bg-[#2C4A36] text-white"
+              : "bg-muted/40 text-muted-foreground hover:text-foreground"
+          }`}
         >
-          <CoinIcon size={16} />
-          {mutation.isPending
-            ? "Tossing…"
-            : `Toss ${amountUnits} coin${amountUnits !== 1 ? "s" : ""} into the Well`}
+          <CreditCard className="w-4 h-4" />
+          Pay by Card
         </button>
-        <p className="text-xs text-muted-foreground text-center -mt-1">
-          Bitcoin-only. Crypto payouts pending legal review — currency and payout mechanism to be confirmed.
-        </p>
+        <button
+          onClick={() => setPaymentTab("crypto")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
+            paymentTab === "crypto"
+              ? "bg-[#2C4A36] text-white"
+              : "bg-muted/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <CoinIcon size={14} />
+          Crypto (XRP)
+        </button>
+      </div>
+
+      <div className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-[#D9A066]" />
+          <h3 className="font-serif text-lg font-bold text-foreground">Toss a Coin</h3>
+        </div>
+
+        {paymentTab === "card" ? (
+          <>
+            <p className="text-sm text-muted-foreground mb-2">
+              Pay by card — no crypto wallet needed. Half the pot goes to today's lucky winner.
+            </p>
+            <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-blue-50 text-blue-700 text-xs">
+              <Gift className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                <strong>Card winners receive a platform credit</strong> — redeemable against Brigade membership or cohort enrollment. No crypto required.
+              </span>
+            </div>
+
+            {stripeMutation.isError && (
+              <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                {stripeMutation.error instanceof Error ? stripeMutation.error.message : "Something went wrong"}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
+                  Your name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={fiatListenerName}
+                  onChange={(e) => setFiatListenerName(e.target.value)}
+                  placeholder="e.g. Jack from Texas"
+                  maxLength={80}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C4A36]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
+                  Coin amount
+                </label>
+                <div className="flex gap-2">
+                  {FIAT_AMOUNTS.map((a) => (
+                    <button
+                      key={a.units}
+                      onClick={() => setFiatAmount(a.units)}
+                      className={`flex-1 py-2.5 rounded-lg border text-sm font-bold transition-all ${
+                        fiatAmount === a.units
+                          ? "bg-[#2C4A36] text-white border-[#2C4A36]"
+                          : "border-border text-foreground hover:border-[#2C4A36]/50"
+                      }`}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">1 coin = $1 USD</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
+                  Your wish <span className="text-destructive">*</span>
+                </label>
+                <textarea
+                  value={fiatWishText}
+                  onChange={(e) => setFiatWishText(e.target.value)}
+                  placeholder="Make a wish… something meaningful to you or your community"
+                  maxLength={280}
+                  rows={3}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2C4A36]"
+                />
+                <div className="text-right text-xs text-muted-foreground mt-0.5">
+                  {fiatWishText.length}/280
+                </div>
+              </div>
+
+              <button
+                onClick={() =>
+                  stripeMutation.mutate({
+                    amountUnits: fiatAmount,
+                    wishText: fiatWishText,
+                    listenerName: fiatListenerName,
+                  })
+                }
+                disabled={
+                  !fiatWishText.trim() ||
+                  fiatWishText.trim().length < 3 ||
+                  stripeMutation.isPending ||
+                  fiatRedirecting
+                }
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#2C4A36] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                <CreditCard className="w-4 h-4" />
+                {stripeMutation.isPending || fiatRedirecting
+                  ? "Redirecting to checkout…"
+                  : `Pay $${fiatAmount} & Toss ${fiatAmount} Coin${fiatAmount !== 1 ? "s" : ""}`}
+              </button>
+              <p className="text-xs text-muted-foreground text-center -mt-1">
+                Secure checkout via Stripe. You'll be redirected to complete payment.
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground mb-5">
+              Each coin you toss enters you into today's draw. Half the day's pot goes to
+              the randomly selected winner — the other half supports The Stomping Path.
+            </p>
+
+            {cryptoMutation.isError && (
+              <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                {cryptoMutation.error instanceof Error ? cryptoMutation.error.message : "Something went wrong"}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
+                  Your name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={listenerName}
+                  onChange={(e) => setListenerName(e.target.value)}
+                  placeholder="e.g. Jack from Texas"
+                  maxLength={80}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C4A36]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
+                  Coins to toss
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setAmountUnits((v) => Math.max(1, v - 1))}
+                    className="w-8 h-8 rounded-full border border-border text-lg font-bold flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="w-12 text-center font-bold text-lg text-foreground">
+                    {amountUnits}
+                  </span>
+                  <button
+                    onClick={() => setAmountUnits((v) => Math.min(100, v + 1))}
+                    className="w-8 h-8 rounded-full border border-border text-lg font-bold flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    +
+                  </button>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    {amountUnits === 1 ? "coin" : "coins"}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">
+                  Your wish <span className="text-destructive">*</span>
+                </label>
+                <textarea
+                  value={wishText}
+                  onChange={(e) => setWishText(e.target.value)}
+                  placeholder="Make a wish… something meaningful to you or your community"
+                  maxLength={280}
+                  rows={3}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2C4A36]"
+                />
+                <div className="text-right text-xs text-muted-foreground mt-0.5">
+                  {wishText.length}/280
+                </div>
+              </div>
+
+              <button
+                onClick={() =>
+                  cryptoMutation.mutate({ amountUnits, wishText, listenerName, currency: "XRP" })
+                }
+                disabled={!wishText.trim() || wishText.trim().length < 3 || cryptoMutation.isPending}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#2C4A36] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                <CoinIcon size={16} />
+                {cryptoMutation.isPending
+                  ? "Tossing…"
+                  : `Toss ${amountUnits} coin${amountUnits !== 1 ? "s" : ""} into the Well`}
+              </button>
+              <p className="text-xs text-muted-foreground text-center -mt-1">
+                XRP. Crypto payouts pending legal review — currency and payout mechanism to be confirmed.
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -539,17 +797,14 @@ export function WishingWell() {
           The Wishing Well
         </h1>
         <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
-          Toss a coin, make a wish. Stack the wishes you believe in to build community momentum.
-          When enough hearts align, the founder matches her share — a flywheel of giving for massive impact.
+          Toss a coin, make a wish. Pay by card or crypto — both enter the same pot.
+          Stack the wishes you believe in to build community momentum. When enough hearts align,
+          the founder matches her share — a flywheel of giving for massive impact.
         </p>
       </header>
 
-      <div className="mb-8 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm">
-        <strong>Note:</strong> This feature is in preview. Bitcoin-only. Crypto payouts require legal
-        review (Ontario gaming regulations). Payout mechanism to be confirmed before launch.
-      </div>
-
       <div className="grid md:grid-cols-2 gap-8 mb-12">
+        {/* Today's Pot */}
         <div className="rounded-xl border border-[#2C4A36]/30 bg-gradient-to-br from-[#2C4A36]/8 to-transparent p-6">
           <div className="flex items-center gap-2 mb-4">
             <Coins className="w-5 h-5 text-[#2C4A36]" />
@@ -563,12 +818,37 @@ export function WishingWell() {
           ) : pot ? (
             <>
               <div className="text-4xl font-bold text-foreground mb-1 font-serif">
-                {pot.totalUnits}{" "}
-                <span className="text-xl text-muted-foreground font-sans font-normal">coins</span>
+                {pot.totalUsdCents != null ? (
+                  <>
+                    {formatUsd(pot.totalUsdCents)}{" "}
+                    <span className="text-xl text-muted-foreground font-sans font-normal">USD equiv</span>
+                  </>
+                ) : (
+                  <>
+                    {pot.totalUnits}{" "}
+                    <span className="text-xl text-muted-foreground font-sans font-normal">coins</span>
+                  </>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-sm text-muted-foreground mb-1">
                 from {pot.tipCount} {pot.tipCount === 1 ? "wish" : "wishes"} today
               </p>
+              {(pot.fiatCount > 0 || pot.cryptoCount > 0) && pot.tipCount > 0 && (
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                  {pot.fiatCount > 0 && (
+                    <span className="flex items-center gap-1">
+                      <CreditCard className="w-3 h-3 text-blue-500" />
+                      {pot.fiatCount} card
+                    </span>
+                  )}
+                  {pot.cryptoCount > 0 && (
+                    <span className="flex items-center gap-1">
+                      <CoinIcon size={10} />
+                      {pot.cryptoCount} crypto
+                    </span>
+                  )}
+                </div>
+              )}
               {pot.drawn ? (
                 <div className="flex items-center gap-2 text-sm font-medium text-[#D9A066]">
                   <Trophy className="w-4 h-4" />
@@ -586,6 +866,7 @@ export function WishingWell() {
           )}
         </div>
 
+        {/* Today's Winner */}
         <div>
           {board?.todayWinner ? (
             <WinnerCard dist={board.todayWinner} label="🎉 Today's Winner" />

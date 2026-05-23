@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, membershipsTable } from "@workspace/db";
-import { and, count, eq, gt, sql } from "drizzle-orm";
+import { db, membershipsTable, wishingWellCreditsTable } from "@workspace/db";
+import { and, count, eq, gt, isNull, sql, sum } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getUncachableStripeClient } from "../stripeClient";
 import { getBrigadePriceIds } from "../lib/brigade-products";
@@ -122,38 +122,94 @@ router.post("/brigade/checkout", async (req, res) => {
     const priceId = plan === "monthly" ? monthlyPriceId : annualPriceId;
     const baseUrl = getBaseUrl(req);
 
+    // ── Check for unredeemed Wishing Well credits ──────────────────────────
+    // If the user has platform credits, apply them as a Stripe coupon discount.
+    // Plan prices: monthly = $9 (900 cents), annual = $97 (9700 cents).
+    const planPriceCents = plan === "monthly" ? 900 : 9700;
+    const unredeemedCredits = await db
+      .select({ id: wishingWellCreditsTable.id, amountCents: wishingWellCreditsTable.amountCents })
+      .from(wishingWellCreditsTable)
+      .where(
+        and(
+          eq(wishingWellCreditsTable.userId, req.user.id),
+          isNull(wishingWellCreditsTable.redeemedAt),
+        ),
+      );
+
+    const totalCreditCents = unredeemedCredits.reduce((s, c) => s + c.amountCents, 0);
+    const discountCents = Math.min(totalCreditCents, planPriceCents);
+
+    let couponId: string | undefined;
+    if (discountCents > 0) {
+      // Create a one-time coupon for the exact discount amount
+      const coupon = await stripe.coupons.create({
+        amount_off: discountCents,
+        currency: "usd",
+        duration: "once",
+        name: `Wishing Well Credit — $${(discountCents / 100).toFixed(2)}`,
+        max_redemptions: 1,
+        metadata: {
+          brigade_user_id: req.user.id,
+          source: "wishing_well_credit",
+        },
+      });
+      couponId = coupon.id;
+
+      // Mark credits as redeemed immediately (before session creation to avoid
+      // race conditions; the coupon max_redemptions=1 prevents double-use).
+      const now = new Date();
+      for (const credit of unredeemedCredits) {
+        await db
+          .update(wishingWellCreditsTable)
+          .set({ redeemedAt: now })
+          .where(eq(wishingWellCreditsTable.id, credit.id));
+      }
+
+      logger.info(
+        { userId: req.user.id, discountCents, couponId },
+        "brigade: applying Wishing Well credit discount",
+      );
+    }
+
     // Idempotency key: scoped to user + plan so duplicate requests within
     // Stripe's 24-hour window don't create a second session.
-    const idempotencyKey = `brigade-checkout-${req.user.id}-${plan}`;
+    const idempotencyKey = `brigade-checkout-${req.user.id}-${plan}-${discountCents}`;
 
-    const session = await stripe.checkout.sessions.create(
-      {
-        mode: "subscription",
-        payment_method_types: ["card"],
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${baseUrl}/brigade?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/brigade?checkout=cancelled`,
+    const sessionParams: import("stripe").Stripe.Checkout.SessionCreateParams = {
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${baseUrl}/brigade?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/brigade?checkout=cancelled`,
+      metadata: {
+        brigade_user_id: req.user.id,
+        brigade_plan: plan,
+      },
+      subscription_data: {
         metadata: {
           brigade_user_id: req.user.id,
           brigade_plan: plan,
         },
-        subscription_data: {
-          metadata: {
-            brigade_user_id: req.user.id,
-            brigade_plan: plan,
-          },
-        },
-        customer_email: req.user.email ?? undefined,
+        ...(couponId ? { coupon: couponId } : {}),
       },
+      customer_email: req.user.email ?? undefined,
+    };
+
+    const session = await stripe.checkout.sessions.create(
+      sessionParams,
       { idempotencyKey },
     );
 
     logger.info(
-      { userId: req.user.id, plan, sessionId: session.id },
+      { userId: req.user.id, plan, sessionId: session.id, discountCents },
       "brigade: checkout session created",
     );
 
-    res.json({ url: session.url, sessionId: session.id });
+    res.json({
+      url: session.url,
+      sessionId: session.id,
+      creditAppliedCents: discountCents,
+    });
   } catch (err) {
     logger.error({ err }, "brigade: checkout failed");
     res.status(500).json({ error: "Failed to create checkout session" });

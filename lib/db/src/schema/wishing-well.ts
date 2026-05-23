@@ -18,14 +18,19 @@ import { usersTable } from "./auth";
  * at random, and the day's pot splits 50/50 between the platform and the
  * winning listener.
  *
- * `amountUnits` is an integer count of "coins" tossed. The denomination
- * (XRP, BTC, stablecoin, etc.) is tracked separately in `currency` and will
- * be finalised after legal review. The minimum is 1 unit.
+ * `amountUnits` is an integer count of "coins" tossed:
+ *   - For crypto (XRP): number of XRP coins
+ *   - For fiat (Stripe): dollar amount ($1 = 1 unit, $2 = 2 units, $5 = 5 units)
+ *
+ * `paymentMethod`:
+ *   crypto — XRP/crypto coin (legacy default)
+ *   stripe — paid via Stripe Checkout (card)
  *
  * `status` lifecycle:
- *   pending   — in today's pot, draw not yet run
- *   drawn     — this tip was selected as the day's winner
- *   not_drawn — the draw ran but this tip was not selected
+ *   payment_pending — Stripe checkout created, waiting for payment confirmation
+ *   pending         — in today's pot, draw not yet run
+ *   drawn           — this tip was selected as the day's winner
+ *   not_drawn       — the draw ran but this tip was not selected
  */
 export const wishingWellTipsTable = pgTable(
   "wishing_well_tips",
@@ -33,6 +38,8 @@ export const wishingWellTipsTable = pgTable(
     id: serial("id").primaryKey(),
     amountUnits: integer("amount_units").notNull(),
     currency: text("currency").notNull().default("XRP"),
+    paymentMethod: text("payment_method").notNull().default("crypto"),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     wishText: text("wish_text").notNull(),
     listenerId: varchar("listener_id").references(() => usersTable.id, {
       onDelete: "set null",
@@ -52,6 +59,8 @@ export const wishingWellTipsTable = pgTable(
     index("wishing_well_tips_status_idx").on(t.status),
     index("wishing_well_tips_listener_id_idx").on(t.listenerId),
     index("wishing_well_tips_stack_count_idx").on(t.stackCount),
+    index("wishing_well_tips_payment_method_idx").on(t.paymentMethod),
+    uniqueIndex("wishing_well_tips_stripe_session_idx").on(t.stripeCheckoutSessionId),
   ],
 );
 
@@ -92,8 +101,12 @@ export type InsertWishingWellTip = typeof wishingWellTipsTable.$inferInsert;
  * their share — this shows on the public Wishing Well Board.
  *
  * `payoutStatus`:
- *   pending — crypto payout not yet sent (awaiting integration)
- *   sent    — payout initiated via crypto processor
+ *   pending       — not yet processed
+ *   sent          — crypto payout initiated via crypto processor
+ *   credit_issued — fiat winner received a platform credit (wishing_well_credits)
+ *
+ * `winnerPaymentMethod`: mirrors the winning tip's paymentMethod, used to
+ * decide whether to issue crypto or a platform credit to the winner.
  */
 export const wishingWellDistributionsTable = pgTable(
   "wishing_well_distributions",
@@ -101,8 +114,10 @@ export const wishingWellDistributionsTable = pgTable(
     id: serial("id").primaryKey(),
     drawDate: text("draw_date").notNull(),
     totalUnits: integer("total_units").notNull(),
+    totalUsdCents: integer("total_usd_cents").notNull().default(0),
     creatorShareUnits: integer("creator_share_units").notNull(),
     winnerShareUnits: integer("winner_share_units").notNull(),
+    winnerShareUsdCents: integer("winner_share_usd_cents").notNull().default(0),
     winnerTipId: integer("winner_tip_id").references(
       () => wishingWellTipsTable.id,
     ),
@@ -110,6 +125,7 @@ export const wishingWellDistributionsTable = pgTable(
     winnerListenerName: text("winner_listener_name"),
     winnerListenerId: varchar("winner_listener_id"),
     winnerImpactNote: text("winner_impact_note"),
+    winnerPaymentMethod: text("winner_payment_method").notNull().default("crypto"),
     payoutStatus: text("payout_status").notNull().default("pending"),
     currency: text("currency").notNull().default("XRP"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -126,3 +142,39 @@ export type WishingWellDistribution =
   typeof wishingWellDistributionsTable.$inferSelect;
 export type InsertWishingWellDistribution =
   typeof wishingWellDistributionsTable.$inferInsert;
+
+/**
+ * Platform credits awarded to fiat Wishing Well winners instead of crypto.
+ *
+ * Credits can be redeemed against Brigade membership or cohort enrollment
+ * at checkout. Each credit row represents a single award; `redeemedAt` is set
+ * when the credit is consumed at checkout.
+ *
+ * `source`: how the credit was earned (e.g. 'wishing_well_win').
+ */
+export const wishingWellCreditsTable = pgTable(
+  "wishing_well_credits",
+  {
+    id: serial("id").primaryKey(),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    amountCents: integer("amount_cents").notNull(),
+    source: text("source").notNull().default("wishing_well_win"),
+    distributionId: integer("distribution_id").references(
+      () => wishingWellDistributionsTable.id,
+      { onDelete: "set null" },
+    ),
+    redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("wishing_well_credits_user_id_idx").on(t.userId),
+    index("wishing_well_credits_redeemed_at_idx").on(t.redeemedAt),
+  ],
+);
+
+export type WishingWellCredit = typeof wishingWellCreditsTable.$inferSelect;
+export type InsertWishingWellCredit = typeof wishingWellCreditsTable.$inferInsert;

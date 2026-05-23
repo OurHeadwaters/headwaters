@@ -1,9 +1,37 @@
 import { Router, type IRouter } from "express";
-import { db, wishingWellTipsTable, wishingWellDistributionsTable, wishStacksTable } from "@workspace/db";
-import { eq, sql, desc, and } from "drizzle-orm";
+import {
+  db,
+  wishingWellTipsTable,
+  wishingWellDistributionsTable,
+  wishingWellCreditsTable,
+  wishStacksTable,
+} from "@workspace/db";
+import { eq, sql, desc, and, isNull } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { getUncachableStripeClient } from "../stripeClient";
 
 const FOUNDER_MATCH_THRESHOLD = 10;
+
+/**
+ * XRP-to-USD exchange rate used for pot aggregation.
+ * Configurable via XRP_USD_RATE env var; defaults to $0.50 / XRP.
+ */
+function xrpUsdRate(): number {
+  const v = parseFloat(process.env.XRP_USD_RATE ?? "");
+  return Number.isFinite(v) && v > 0 ? v : 0.5;
+}
+
+/**
+ * Convert a tip's amountUnits to USD cents.
+ * - fiat (stripe): 1 unit = $1.00 = 100 cents
+ * - crypto (XRP): amountUnits * XRP_USD_RATE * 100
+ */
+function tipToUsdCents(amountUnits: number, paymentMethod: string): number {
+  if (paymentMethod === "stripe") {
+    return amountUnits * 100;
+  }
+  return Math.round(amountUnits * xrpUsdRate() * 100);
+}
 
 const router: IRouter = Router();
 
@@ -17,29 +45,59 @@ function clampInt(value: unknown, min: number, max: number, fallback: number): n
   return Math.min(Math.max(n, min), max);
 }
 
+function getBaseUrl(req: import("express").Request): string {
+  const domain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0];
+  if (domain) return `https://${domain}`;
+  return `${req.protocol}://${req.get("host") ?? "localhost"}`;
+}
+
 /**
  * GET /api/wishing-well/pot/today
- * Returns today's pot statistics (tip count, total coins, draw status).
+ * Returns today's pot statistics including combined USD-equivalent total.
  */
 router.get("/wishing-well/pot/today", async (_req, res) => {
   try {
     const date = todayUtc();
+    const rate = xrpUsdRate();
     const [potRow, drawnRow] = await Promise.all([
       db.execute(sql.raw(`
-        SELECT count(*)::int AS tip_count, coalesce(sum(amount_units),0)::int AS total_units, max(currency) AS currency
+        SELECT
+          count(*)::int AS tip_count,
+          coalesce(sum(amount_units),0)::int AS total_units,
+          max(currency) AS currency,
+          coalesce(sum(
+            CASE
+              WHEN payment_method = 'stripe' THEN amount_units * 100
+              ELSE round(amount_units * ${rate} * 100)::int
+            END
+          ), 0)::int AS total_usd_cents,
+          count(CASE WHEN payment_method = 'stripe' THEN 1 END)::int AS fiat_count,
+          count(CASE WHEN payment_method != 'stripe' THEN 1 END)::int AS crypto_count
         FROM wishing_well_tips
         WHERE draw_date = '${date}'
+          AND status IN ('pending')
       `)),
       db.execute(sql.raw(`
         SELECT id FROM wishing_well_distributions WHERE draw_date = '${date}' LIMIT 1
       `)),
     ]);
-    const row = potRow.rows[0] as { tip_count: number; total_units: number; currency: string };
+    const row = potRow.rows[0] as {
+      tip_count: number;
+      total_units: number;
+      currency: string;
+      total_usd_cents: number;
+      fiat_count: number;
+      crypto_count: number;
+    };
     res.json({
       date,
       tipCount: row.tip_count,
       totalUnits: row.total_units,
       currency: row.currency ?? "XRP",
+      totalUsdCents: row.total_usd_cents,
+      fiatCount: row.fiat_count,
+      cryptoCount: row.crypto_count,
+      xrpUsdRate: rate,
       drawn: (drawnRow.rows as unknown[]).length > 0,
     });
   } catch (err) {
@@ -51,7 +109,6 @@ router.get("/wishing-well/pot/today", async (_req, res) => {
 /**
  * GET /api/wishing-well/wishes
  * Returns all active (pending) wishes for today, sorted by stack count desc.
- * Used by the community wall so listeners can stack onto each other's wishes.
  */
 router.get("/wishing-well/wishes", async (_req, res) => {
   try {
@@ -73,11 +130,6 @@ router.get("/wishing-well/wishes", async (_req, res) => {
 /**
  * POST /api/wishing-well/stack/:tipId
  * Stack community momentum onto an existing wish.
- * Anonymous: tracked by sessionId (client-generated UUID).
- * Each session can stack once per wish. When stackCount >= FOUNDER_MATCH_THRESHOLD,
- * founderMatchTriggered is set to true — the founder commits to matching her 50%
- * back to the community for that cause.
- * Body: { sessionId }
  */
 router.post("/wishing-well/stack/:tipId", async (req, res) => {
   try {
@@ -135,10 +187,7 @@ router.post("/wishing-well/stack/:tipId", async (req, res) => {
 
     const [updated] = await db
       .update(wishingWellTipsTable)
-      .set({
-        stackCount: newCount,
-        founderMatchTriggered,
-      })
+      .set({ stackCount: newCount, founderMatchTriggered })
       .where(eq(wishingWellTipsTable.id, tipId))
       .returning();
 
@@ -160,9 +209,7 @@ router.post("/wishing-well/stack/:tipId", async (req, res) => {
 
 /**
  * POST /api/wishing-well/tip
- * Submit a tip (coin) with an attached wish.
- * Authentication optional — anonymous tips are allowed.
- * Body: { amountUnits, currency?, wishText, listenerName?, episodeSlug? }
+ * Submit a crypto tip with an attached wish (existing XRP path).
  */
 router.post("/wishing-well/tip", async (req, res) => {
   try {
@@ -212,6 +259,7 @@ router.post("/wishing-well/tip", async (req, res) => {
       .values({
         amountUnits,
         currency,
+        paymentMethod: "crypto",
         wishText,
         listenerId,
         listenerName: resolvedName,
@@ -225,6 +273,7 @@ router.post("/wishing-well/tip", async (req, res) => {
       id: tip.id,
       amountUnits: tip.amountUnits,
       currency: tip.currency,
+      paymentMethod: tip.paymentMethod,
       wishText: tip.wishText,
       listenerName: tip.listenerName,
       drawDate: tip.drawDate,
@@ -233,6 +282,91 @@ router.post("/wishing-well/tip", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "wishing-well: POST /tip failed");
     res.status(500).json({ error: "Failed to record tip" });
+  }
+});
+
+/**
+ * POST /api/wishing-well/tip/stripe
+ * Create a Stripe Checkout session for a fiat coin tip.
+ * Body: { amountUnits: 1|2|5, wishText, listenerName? }
+ * Returns: { checkoutUrl } — frontend should redirect there.
+ *
+ * On checkout.session.completed webhook, the tip is written to the DB.
+ */
+router.post("/wishing-well/tip/stripe", async (req, res) => {
+  try {
+    const body = req.body as Record<string, unknown>;
+
+    const amountUnits = clampInt(body.amountUnits, 1, 5, 0);
+    if (![1, 2, 5].includes(amountUnits)) {
+      res.status(400).json({ error: "amountUnits must be 1, 2, or 5 (dollars)" });
+      return;
+    }
+
+    const wishText =
+      typeof body.wishText === "string" ? body.wishText.trim() : "";
+    if (!wishText || wishText.length < 3) {
+      res.status(400).json({ error: "wishText must be at least 3 characters" });
+      return;
+    }
+    if (wishText.length > 280) {
+      res.status(400).json({ error: "wishText must be 280 characters or fewer" });
+      return;
+    }
+
+    const listenerName =
+      typeof body.listenerName === "string" && body.listenerName.trim()
+        ? body.listenerName.trim().slice(0, 80)
+        : null;
+
+    const listenerId = req.isAuthenticated() ? req.user.id : null;
+    const resolvedName =
+      listenerName ??
+      (req.isAuthenticated()
+        ? [req.user.firstName, req.user.lastName].filter(Boolean).join(" ") || "Anonymous"
+        : "Anonymous");
+
+    const stripe = await getUncachableStripeClient();
+    const baseUrl = getBaseUrl(req);
+    const amountCents = amountUnits * 100;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: amountCents,
+            product_data: {
+              name: `Wishing Well Coin${amountUnits > 1 ? "s" : ""} — $${amountUnits}`,
+              description: `"${wishText.slice(0, 100)}"`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        wishing_well: "true",
+        wish_text: wishText.slice(0, 500),
+        listener_name: resolvedName,
+        listener_id: listenerId ?? "",
+        amount_units: String(amountUnits),
+        draw_date: todayUtc(),
+      },
+      success_url: `${baseUrl}/stomping-grounds?tab=well&stripe=success`,
+      cancel_url: `${baseUrl}/stomping-grounds?tab=well&stripe=cancelled`,
+    });
+
+    logger.info(
+      { sessionId: session.id, amountUnits, listenerId },
+      "wishing-well: stripe checkout session created",
+    );
+
+    res.json({ checkoutUrl: session.url, sessionId: session.id });
+  } catch (err) {
+    logger.error({ err }, "wishing-well: POST /tip/stripe failed");
+    res.status(500).json({ error: "Failed to create Stripe checkout" });
   }
 });
 
@@ -262,8 +396,6 @@ router.get("/wishing-well/board", async (_req, res) => {
 /**
  * PATCH /api/wishing-well/winner/:date/impact
  * The winning listener adds an impact note to their entry.
- * Authentication required. Must match the winner's listener ID.
- * Body: { impactNote }
  */
 router.patch("/wishing-well/winner/:date/impact", async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -306,10 +438,39 @@ router.patch("/wishing-well/winner/:date/impact", async (req, res) => {
 });
 
 /**
+ * GET /api/wishing-well/credits
+ * Returns the authenticated user's unredeemed Wishing Well credits.
+ */
+router.get("/wishing-well/credits", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.json({ totalCents: 0, credits: [] });
+    return;
+  }
+  try {
+    const credits = await db
+      .select()
+      .from(wishingWellCreditsTable)
+      .where(
+        and(
+          eq(wishingWellCreditsTable.userId, req.user.id),
+          isNull(wishingWellCreditsTable.redeemedAt),
+        ),
+      )
+      .orderBy(desc(wishingWellCreditsTable.createdAt));
+
+    const totalCents = credits.reduce((sum, c) => sum + c.amountCents, 0);
+    res.json({ totalCents, credits });
+  } catch (err) {
+    logger.error({ err }, "wishing-well: GET /credits failed");
+    res.status(500).json({ error: "Failed to load credits" });
+  }
+});
+
+/**
  * POST /api/admin/wishing-well/draw
- * Run the daily draw for a given date (defaults to today).
- * Picks one random pending tip, computes 50/50 split, writes distribution.
- * Body: { date? } — ISO date string YYYY-MM-DD
+ * Run the daily draw. Picks one random pending tip, computes 50/50 split,
+ * writes distribution. For fiat winners, issues a platform credit instead
+ * of crypto.
  */
 router.post("/admin/wishing-well/draw", async (req, res) => {
   try {
@@ -340,10 +501,17 @@ router.post("/admin/wishing-well/draw", async (req, res) => {
       return;
     }
 
+    const rate = xrpUsdRate();
     const totalUnits = potRows.reduce((sum, t) => sum + t.amountUnits, 0);
+    const totalUsdCents = potRows.reduce(
+      (sum, t) => sum + tipToUsdCents(t.amountUnits, t.paymentMethod),
+      0,
+    );
+
     const winnerTip = potRows[Math.floor(Math.random() * potRows.length)];
     const creatorShareUnits = Math.floor(totalUnits / 2);
     const winnerShareUnits = totalUnits - creatorShareUnits;
+    const winnerShareUsdCents = Math.floor(totalUsdCents / 2);
     const currency = winnerTip.currency;
 
     await db
@@ -362,22 +530,49 @@ router.post("/admin/wishing-well/draw", async (req, res) => {
       .values({
         drawDate: date,
         totalUnits,
+        totalUsdCents,
         creatorShareUnits,
         winnerShareUnits,
+        winnerShareUsdCents,
         winnerTipId: winnerTip.id,
         winnerWishText: winnerTip.wishText,
         winnerListenerName: winnerTip.listenerName,
         winnerListenerId: winnerTip.listenerId ?? null,
+        winnerPaymentMethod: winnerTip.paymentMethod,
         payoutStatus: "pending",
         currency,
       })
       .returning();
 
+    let creditIssued = false;
+    if (winnerTip.paymentMethod === "stripe" && winnerTip.listenerId) {
+      await db.insert(wishingWellCreditsTable).values({
+        userId: winnerTip.listenerId,
+        amountCents: winnerShareUsdCents,
+        source: "wishing_well_win",
+        distributionId: distribution.id,
+      });
+      await db
+        .update(wishingWellDistributionsTable)
+        .set({ payoutStatus: "credit_issued" })
+        .where(eq(wishingWellDistributionsTable.id, distribution.id));
+      creditIssued = true;
+      logger.info(
+        { date, winnerTipId: winnerTip.id, winnerShareUsdCents },
+        "wishing-well: fiat winner credit issued",
+      );
+    }
+
     logger.info(
-      { date, winnerTipId: winnerTip.id, totalUnits },
+      { date, winnerTipId: winnerTip.id, totalUnits, totalUsdCents, creditIssued },
       "wishing-well: draw complete",
     );
-    res.status(201).json({ distribution });
+
+    res.status(201).json({
+      distribution: { ...distribution, payoutStatus: creditIssued ? "credit_issued" : "pending" },
+      creditIssued,
+      xrpUsdRate: rate,
+    });
   } catch (err) {
     logger.error({ err }, "wishing-well: draw failed");
     res.status(500).json({ error: "Draw failed" });
@@ -409,11 +604,12 @@ router.patch("/admin/wishing-well/distributions/:date/payout", async (req, res) 
 
 /**
  * GET /api/admin/wishing-well
- * Admin dashboard: all distributions + today's pending pot summary.
+ * Admin dashboard: distributions + today's pot summary with fiat/crypto breakdown.
  */
 router.get("/admin/wishing-well", async (_req, res) => {
   try {
     const date = todayUtc();
+    const rate = xrpUsdRate();
     const [distributions, potRow] = await Promise.all([
       db
         .select()
@@ -424,19 +620,44 @@ router.get("/admin/wishing-well", async (_req, res) => {
         SELECT
           count(*)::int AS tip_count,
           coalesce(sum(amount_units), 0)::int AS total_units,
-          max(currency) AS currency
+          max(currency) AS currency,
+          coalesce(sum(
+            CASE
+              WHEN payment_method = 'stripe' THEN amount_units * 100
+              ELSE round(amount_units * ${rate} * 100)::int
+            END
+          ), 0)::int AS total_usd_cents,
+          count(CASE WHEN payment_method = 'stripe' THEN 1 END)::int AS fiat_count,
+          coalesce(sum(CASE WHEN payment_method = 'stripe' THEN amount_units ELSE 0 END), 0)::int AS fiat_units,
+          count(CASE WHEN payment_method != 'stripe' THEN 1 END)::int AS crypto_count,
+          coalesce(sum(CASE WHEN payment_method != 'stripe' THEN amount_units ELSE 0 END), 0)::int AS crypto_units
         FROM wishing_well_tips
         WHERE draw_date = '${date}' AND status = 'pending'
       `)),
     ]);
-    const pot = potRow.rows[0] as { tip_count: number; total_units: number; currency: string };
+    const pot = potRow.rows[0] as {
+      tip_count: number;
+      total_units: number;
+      currency: string;
+      total_usd_cents: number;
+      fiat_count: number;
+      fiat_units: number;
+      crypto_count: number;
+      crypto_units: number;
+    };
     res.json({
       distributions,
       todayPot: {
         date,
         tipCount: pot.tip_count,
         totalUnits: pot.total_units,
+        totalUsdCents: pot.total_usd_cents,
         currency: pot.currency ?? "XRP",
+        fiatCount: pot.fiat_count,
+        fiatUnits: pot.fiat_units,
+        cryptoCount: pot.crypto_count,
+        cryptoUnits: pot.crypto_units,
+        xrpUsdRate: rate,
       },
     });
   } catch (err) {

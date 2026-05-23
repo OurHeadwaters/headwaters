@@ -7,6 +7,7 @@ import {
   expertCouncilTable,
   cohortsTable,
   cohortEnrollmentsTable,
+  wishingWellTipsTable,
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
@@ -145,6 +146,12 @@ export class WebhookHandlers {
       return;
     }
 
+    // ── Wishing Well fiat checkout ───────────────────────────────────────────
+    if (session.metadata?.wishing_well === "true") {
+      await WebhookHandlers.handleWishingWellCheckoutComplete(session);
+      return;
+    }
+
     // ── Brigade subscription checkout ────────────────────────────────────────
     const brigadeUserId = session.metadata?.brigade_user_id;
     const brigadePlan = session.metadata?.brigade_plan;
@@ -228,6 +235,59 @@ export class WebhookHandlers {
       { cohortId, userId, amountPaid },
       "webhookHandlers: cohort enrollment recorded via Stripe",
     );
+  }
+
+  /**
+   * Inserts a fiat tip into wishing_well_tips once a Stripe checkout is confirmed.
+   * Idempotent via unique constraint on stripe_checkout_session_id.
+   */
+  static async handleWishingWellCheckoutComplete(
+    session: Stripe.Checkout.Session,
+  ): Promise<void> {
+    const { metadata } = session;
+    if (!metadata) return;
+
+    const wishText = metadata.wish_text ?? "";
+    const listenerName = metadata.listener_name ?? "Anonymous";
+    const listenerId = metadata.listener_id || null;
+    const amountUnits = parseInt(metadata.amount_units ?? "1", 10);
+    const drawDate = metadata.draw_date ?? new Date().toISOString().slice(0, 10);
+
+    if (!wishText || amountUnits < 1) {
+      logger.warn(
+        { sessionId: session.id },
+        "webhookHandlers: wishing-well webhook missing required metadata — skipping",
+      );
+      return;
+    }
+
+    const [tip] = await db
+      .insert(wishingWellTipsTable)
+      .values({
+        amountUnits,
+        currency: "USD",
+        paymentMethod: "stripe",
+        stripeCheckoutSessionId: session.id,
+        wishText,
+        listenerId,
+        listenerName,
+        drawDate,
+        status: "pending",
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (tip) {
+      logger.info(
+        { tipId: tip.id, sessionId: session.id, amountUnits, drawDate },
+        "webhookHandlers: wishing-well fiat tip inserted",
+      );
+    } else {
+      logger.info(
+        { sessionId: session.id },
+        "webhookHandlers: wishing-well duplicate webhook, skipped",
+      );
+    }
   }
 
   /**
