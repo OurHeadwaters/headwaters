@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PassphraseGuard } from "@/components/passphrase";
 import { Layout } from "@/components/layout";
 import { IntakeProvider } from "@/context/intake";
+import { ProfileProvider } from "@/context/profile";
 
 // Pages
 import Dashboard from "@/pages/dashboard";
@@ -24,6 +25,7 @@ const queryClient = new QueryClient();
 
 function Router() {
   return (
+    <ProfileProvider>
     <PassphraseGuard>
       <Layout>
         <IntakeProvider>
@@ -44,6 +46,7 @@ function Router() {
         </IntakeProvider>
       </Layout>
     </PassphraseGuard>
+    </ProfileProvider>
   );
 }
 
