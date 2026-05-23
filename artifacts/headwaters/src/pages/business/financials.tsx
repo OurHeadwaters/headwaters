@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Plus, Trash2, Clock, Zap, Users, Settings, Wrench } from "lucide-react";
+import { DollarSign, Plus, Trash2, Clock, Zap, Users, Settings, Wrench, ArrowRight, Rss } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 type BottleneckType = "client-facing" | "admin" | "one-time" | "none";
 
@@ -178,6 +179,7 @@ export default function BusinessFinancials() {
   const { toast } = useToast();
 
   const { data, isLoading, error } = useGetHeadwatersBusinessSection("financials");
+  const { data: oeData } = useGetHeadwatersBusinessSection("online-engine");
   const patch = usePatchHeadwatersBusinessSection();
 
   const [rows, setRows] = useState<FinancialRow[]>([]);
@@ -257,6 +259,12 @@ export default function BusinessFinancials() {
   const hasRows = rows.length > 0;
   const passivePct = totalHigh > 0 ? Math.round((passiveHigh / totalHigh) * 100) : 0;
 
+  const oeRows = Array.isArray(oeData?.value) ? (oeData.value as { monthlyLow?: number; monthlyHigh?: number }[]) : [];
+  const oeTotalLow = oeRows.reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const oeTotalHigh = oeRows.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+  const combinedLow = totalLow + oeTotalLow;
+  const combinedHigh = totalHigh + oeTotalHigh;
+
   const timeRows = rows.filter((r) => r.requiresTime);
   const bottleneckBreakdown = (["client-facing", "admin", "one-time"] as BottleneckType[]).map((type) => {
     const matched = timeRows.filter((r) => r.bottleneckType === type);
@@ -287,6 +295,46 @@ export default function BusinessFinancials() {
           Add Row
         </Button>
       </div>
+
+      {/* Combined capacity callout */}
+      {(combinedLow > 0 || combinedHigh > 0) && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <DollarSign size={13} className="text-primary" />
+                Grindstone
+              </div>
+              <span className="text-sm font-bold text-foreground tabular-nums">
+                {fmt(totalLow)}{totalHigh !== totalLow && <> – {fmt(totalHigh)}</>}
+              </span>
+              <span className="text-muted-foreground text-xs">+</span>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Rss size={13} className="text-cyan-500" />
+                Online Engine
+              </div>
+              <span className="text-sm font-bold text-foreground tabular-nums">
+                {fmt(oeTotalLow)}{oeTotalHigh !== oeTotalLow && <> – {fmt(oeTotalHigh)}</>}
+              </span>
+              <span className="text-muted-foreground text-xs">=</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Combined</span>
+                <span className="text-sm font-bold text-primary tabular-nums">
+                  {fmt(combinedLow)}{combinedHigh !== combinedLow && <> – {fmt(combinedHigh)}</>}
+                  <span className="font-normal text-muted-foreground text-xs ml-1">/ mo</span>
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/business/online-engine"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline underline-offset-2 shrink-0 whitespace-nowrap"
+            >
+              See Online Engine
+              <ArrowRight size={13} />
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Time Leverage Summary */}
       {hasRows && (

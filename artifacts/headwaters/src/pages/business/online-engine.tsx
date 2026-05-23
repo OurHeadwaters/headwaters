@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Rss, Plus, Trash2, Leaf, TrendingUp, Zap, BookOpen, ShoppingBag, Link2, MoreHorizontal, Target, CheckCircle2, AlertCircle } from "lucide-react";
+import { Rss, Plus, Trash2, Leaf, TrendingUp, Zap, BookOpen, ShoppingBag, Link2, MoreHorizontal, Target, CheckCircle2, AlertCircle, ArrowRight, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 type StreamType = "content" | "course" | "product" | "affiliate" | "other";
 
@@ -155,6 +156,7 @@ export default function OnlineEngine() {
   const { toast } = useToast();
 
   const { data, isLoading, error } = useGetHeadwatersBusinessSection("online-engine");
+  const { data: finData } = useGetHeadwatersBusinessSection("financials");
   const patch = usePatchHeadwatersBusinessSection();
 
   const [rows, setRows] = useState<OnlineEngineRow[]>([]);
@@ -257,6 +259,12 @@ export default function OnlineEngine() {
 
   const hasRows = rows.length > 0;
 
+  const finRows = Array.isArray(finData?.value) ? (finData.value as { monthlyLow?: number; monthlyHigh?: number }[]) : [];
+  const finTotalLow = finRows.reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const finTotalHigh = finRows.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+  const combinedLow = totalLow + finTotalLow;
+  const combinedHigh = totalHigh + finTotalHigh;
+
   if (isLoading)
     return <div className="p-8 text-center text-muted-foreground">Loading online engine...</div>;
   if (error)
@@ -300,6 +308,46 @@ export default function OnlineEngine() {
           <span className="text-xs text-muted-foreground">/ mo</span>
         )}
       </div>
+
+      {/* Combined capacity callout */}
+      {(combinedLow > 0 || combinedHigh > 0) && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Rss size={13} className="text-cyan-500" />
+                Online Engine
+              </div>
+              <span className="text-sm font-bold text-foreground tabular-nums">
+                {fmt(totalLow)}{totalHigh !== totalLow && <> – {fmt(totalHigh)}</>}
+              </span>
+              <span className="text-muted-foreground text-xs">+</span>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <DollarSign size={13} className="text-primary" />
+                Grindstone
+              </div>
+              <span className="text-sm font-bold text-foreground tabular-nums">
+                {fmt(finTotalLow)}{finTotalHigh !== finTotalLow && <> – {fmt(finTotalHigh)}</>}
+              </span>
+              <span className="text-muted-foreground text-xs">=</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Combined</span>
+                <span className="text-sm font-bold text-primary tabular-nums">
+                  {fmt(combinedLow)}{combinedHigh !== combinedLow && <> – {fmt(combinedHigh)}</>}
+                  <span className="font-normal text-muted-foreground text-xs ml-1">/ mo</span>
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/business/financials"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline underline-offset-2 shrink-0 whitespace-nowrap"
+            >
+              See Financial Model
+              <ArrowRight size={13} />
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary cards */}
       {hasRows && (
