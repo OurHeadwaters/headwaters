@@ -1,5 +1,17 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { ChevronRight, Droplets, MapPin, User, Compass, Lock, CheckCircle2, Shield } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Droplets,
+  MapPin,
+  User,
+  Compass,
+  Lock,
+  CheckCircle2,
+  Shield,
+  Loader2,
+} from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useLifestyleMap } from "../hooks/use-lifestyle-map";
 
@@ -28,6 +40,11 @@ const RISK_PROFILE_LABELS: Record<number, string> = {
   4: "Open — wider exploration",
   5: "Self-directed — full map",
 };
+
+function apiUrl(path: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${base}/api${path}`;
+}
 
 const MEMBER_FEATURES = [
   {
@@ -186,6 +203,419 @@ function PlacementStatus({
   );
 }
 
+const RISK_OPTIONS = [
+  {
+    value: "conservative",
+    label: "Conservative",
+    description: "I prefer to take one step at a time and get each piece right before moving on.",
+  },
+  {
+    value: "moderate",
+    label: "Moderate",
+    description: "I like structure and guidance but can handle a few things at once.",
+  },
+  {
+    value: "open",
+    label: "Open",
+    description: "I'm motivated, can handle a bigger map, and like having options to explore.",
+  },
+  {
+    value: "self-directed",
+    label: "Self-directed",
+    description: "I'm experienced and learn best by wandering. Give me the full picture.",
+  },
+];
+
+interface FormData {
+  name: string;
+  email: string;
+  householdSize: string;
+  landSituation: string;
+  landYears: string;
+  keySkills: string;
+  primaryGoals: string;
+  riskTolerance: string;
+  additionalNotes: string;
+}
+
+const EMPTY_FORM: FormData = {
+  name: "",
+  email: "",
+  householdSize: "",
+  landSituation: "",
+  landYears: "",
+  keySkills: "",
+  primaryGoals: "",
+  riskTolerance: "",
+  additionalNotes: "",
+};
+
+const INPUT_STYLE = {
+  background: "#0E1F0E",
+  borderColor: "#4A7A3A44",
+  color: "#FDFBF7",
+};
+
+const LABEL_STYLE = { color: "#C8D4C0" };
+const HINT_STYLE = { color: "#8AAB82", fontSize: "0.8rem" };
+
+function StepIndicator({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="flex items-center gap-2 mb-8">
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          className="h-1 rounded-full flex-1 transition-all"
+          style={{ background: i < current ? "#4A7A3A" : "#4A7A3A33" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function IntakeForm() {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<FormData>(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const totalSteps = 4;
+
+  function set(field: keyof FormData, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function canProceed(): boolean {
+    if (step === 1) return form.name.trim().length > 0 && form.email.trim().includes("@");
+    if (step === 2) return form.landSituation.trim().length > 0;
+    if (step === 3) return form.primaryGoals.trim().length > 0;
+    if (step === 4) return form.riskTolerance.length > 0;
+    return false;
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl("/headwaters/intake"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          householdSize: form.householdSize ? parseInt(form.householdSize, 10) : null,
+          landSituation: form.landSituation.trim() || null,
+          landYears: form.landYears.trim() || null,
+          keySkills: form.keySkills.trim() || null,
+          primaryGoals: form.primaryGoals.trim() || null,
+          riskTolerance: form.riskTolerance || null,
+          additionalNotes: form.additionalNotes.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Submission failed");
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div
+        className="rounded-2xl border p-8 md:p-10 text-center"
+        style={{ background: "#0A180A", borderColor: "#4A7A3A55" }}
+      >
+        <div
+          className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+          style={{ background: "#4A7A3A22" }}
+        >
+          <CheckCircle2 className="w-7 h-7" style={{ color: "#4A7A3A" }} />
+        </div>
+        <h3 className="font-serif text-2xl font-bold mb-3" style={{ color: "#FDFBF7" }}>
+          You're in the queue
+        </h3>
+        <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: "#C8D4C0" }}>
+          Tasha will review your intake and reach out to schedule your session. Keep an eye on{" "}
+          <span style={{ color: "#FDFBF7" }}>{form.email}</span> — she typically follows up within
+          a few business days.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-2xl border p-7 md:p-10"
+      style={{ background: "#0A180A", borderColor: "#4A7A3A33" }}
+    >
+      <StepIndicator current={step} total={totalSteps} />
+
+      {step === 1 && (
+        <div className="space-y-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#4A7A3A" }}>
+              Step 1 of 4
+            </p>
+            <h3 className="font-serif text-2xl font-bold mb-1" style={{ color: "#FDFBF7" }}>
+              About you
+            </h3>
+            <p className="text-sm mb-6" style={HINT_STYLE}>
+              Your contact info so Tasha can reach you to schedule the session.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Full name <span style={{ color: "#4A7A3A" }}>*</span>
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              style={{ ...INPUT_STYLE, "--tw-ring-color": "#4A7A3A" } as React.CSSProperties}
+              placeholder="Your name"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Email address <span style={{ color: "#4A7A3A" }}>*</span>
+            </label>
+            <input
+              type="email"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+              style={INPUT_STYLE}
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Household size
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+              style={INPUT_STYLE}
+              placeholder="Number of people in your household"
+              value={form.householdSize}
+              onChange={(e) => set("householdSize", e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#4A7A3A" }}>
+              Step 2 of 4
+            </p>
+            <h3 className="font-serif text-2xl font-bold mb-1" style={{ color: "#FDFBF7" }}>
+              Your land
+            </h3>
+            <p className="text-sm mb-6" style={HINT_STYLE}>
+              Describe where you live and what you're working with. No land at all is a valid answer.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Land situation <span style={{ color: "#4A7A3A" }}>*</span>
+            </label>
+            <textarea
+              rows={4}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none resize-none"
+              style={INPUT_STYLE}
+              placeholder="e.g. 2-acre suburban lot in Tennessee, mostly lawn right now. Renting, so limited to container gardening on a patio. City apartment with a small balcony. 20 acres of mixed timber in rural Ontario…"
+              value={form.landSituation}
+              onChange={(e) => set("landSituation", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              How long have you been working this land / situation?
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+              style={INPUT_STYLE}
+              placeholder="e.g. Just moved in, 3 years, 10+ years"
+              value={form.landYears}
+              onChange={(e) => set("landYears", e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="space-y-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#4A7A3A" }}>
+              Step 3 of 4
+            </p>
+            <h3 className="font-serif text-2xl font-bold mb-1" style={{ color: "#FDFBF7" }}>
+              Skills &amp; goals
+            </h3>
+            <p className="text-sm mb-6" style={HINT_STYLE}>
+              Be honest about where you actually are — not where you want to be. That's how Tasha
+              gets the placement right.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Key skills you already have
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none resize-none"
+              style={INPUT_STYLE}
+              placeholder="e.g. Basic food storage, raised bed gardening, some canning. Or: nothing yet — that's why I'm here."
+              value={form.keySkills}
+              onChange={(e) => set("keySkills", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Primary goals <span style={{ color: "#4A7A3A" }}>*</span>
+            </label>
+            <textarea
+              rows={4}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none resize-none"
+              style={INPUT_STYLE}
+              placeholder="What are you working toward? What problem are you trying to solve? What does 'more resilient' look like for your family?"
+              value={form.primaryGoals}
+              onChange={(e) => set("primaryGoals", e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="space-y-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#4A7A3A" }}>
+              Step 4 of 4
+            </p>
+            <h3 className="font-serif text-2xl font-bold mb-1" style={{ color: "#FDFBF7" }}>
+              How you approach new things
+            </h3>
+            <p className="text-sm mb-6" style={HINT_STYLE}>
+              This shapes your risk profile — which determines how the site filters content for you
+              after your placement.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {RISK_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => set("riskTolerance", opt.value)}
+                className="w-full rounded-xl border p-4 text-left transition-all"
+                style={{
+                  background: form.riskTolerance === opt.value ? "#4A7A3A22" : "#0E1F0E",
+                  borderColor: form.riskTolerance === opt.value ? "#4A7A3A" : "#4A7A3A33",
+                }}
+              >
+                <p className="font-semibold text-sm mb-0.5" style={{ color: "#FDFBF7" }}>
+                  {opt.label}
+                </p>
+                <p className="text-xs leading-relaxed" style={{ color: "#C8D4C0" }}>
+                  {opt.description}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-1 pt-2">
+            <label className="block text-sm font-medium" style={LABEL_STYLE}>
+              Anything else Tasha should know?
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none resize-none"
+              style={INPUT_STYLE}
+              placeholder="Constraints, timeline, specific concerns, or context that didn't fit above."
+              value={form.additionalNotes}
+              onChange={(e) => set("additionalNotes", e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p className="mt-4 text-sm rounded-lg px-3 py-2" style={{ background: "#3A0A0A", color: "#F5A0A0" }}>
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between mt-7">
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={() => setStep((s) => s - 1)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+            style={{ color: "#C8D4C0", border: "1px solid #4A7A3A33" }}
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+        ) : (
+          <div />
+        )}
+
+        {step < totalSteps ? (
+          <button
+            type="button"
+            disabled={!canProceed()}
+            onClick={() => setStep((s) => s + 1)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+          >
+            Next
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={!canProceed() || submitting}
+            onClick={handleSubmit}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Submitting…
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Submit intake
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HeadwatersPage() {
   const { isAuthenticated } = useAuth();
   const { map, loading: mapLoading } = useLifestyleMap();
@@ -237,7 +667,7 @@ export default function HeadwatersPage() {
             </p>
             {!isPlaced && (
               <a
-                href="mailto:headwaters@thestompingpath.com?subject=Headwaters%20Intake%20Inquiry"
+                href="#intake-form"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
                 style={{ background: "#4A7A3A", color: "#FDFBF7" }}
               >
@@ -408,44 +838,56 @@ export default function HeadwatersPage() {
           </div>
         </section>
 
-        {/* CTA — only shown to non-placed visitors */}
+        {/* Intake Form — only shown to non-placed visitors */}
         {!isPlaced && (
-          <section>
-            <div
-              className="rounded-2xl border p-8 md:p-10 text-center"
-              style={{ background: "#0A180A", borderColor: "#4A7A3A33" }}
+          <section id="intake-form">
+            <p
+              className="text-xs font-bold uppercase tracking-widest mb-4"
+              style={{ color: "#4A7A3A" }}
             >
-              <Droplets className="w-10 h-10 mx-auto mb-4" style={{ color: "#4A7A3A" }} />
-              <h2
-                className="font-serif text-2xl md:text-3xl font-bold mb-3"
-                style={{ color: "#FDFBF7" }}
-              >
-                Ready to get placed?
-              </h2>
-              <p className="text-base leading-relaxed mb-6 max-w-xl mx-auto" style={{ color: "#C8D4C0" }}>
-                Send a short message to Tasha to kick off the intake process. She'll send you the
-                pre-session form and schedule a time that works.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a
-                  href="mailto:headwaters@thestompingpath.com?subject=Headwaters%20Intake%20Inquiry"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
-                  style={{ background: "#4A7A3A", color: "#FDFBF7" }}
-                >
-                  <CheckCircle2 className="w-5 h-5" />
-                  Start intake — email Tasha
-                </a>
-                <Link
-                  href="/map"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base border transition-all hover:opacity-80"
-                  style={{ borderColor: "#4A7A3A44", color: "#C8D4C0" }}
-                >
-                  View the Lifestyle Map
-                </Link>
-              </div>
-            </div>
+              Apply now
+            </p>
+            <h2
+              className="font-serif text-3xl md:text-4xl font-bold mb-3"
+              style={{ color: "#FDFBF7" }}
+            >
+              Submit your intake
+            </h2>
+            <p className="text-base leading-relaxed mb-8 max-w-2xl" style={{ color: "#C8D4C0" }}>
+              Fill out the form below. Tasha reviews every submission personally and will reach out
+              to schedule your session.
+            </p>
+            <IntakeForm />
           </section>
         )}
+
+        {/* Bottom CTA — View the map */}
+        <section>
+          <div
+            className="rounded-2xl border p-8 md:p-10 text-center"
+            style={{ background: "#0A180A", borderColor: "#4A7A3A33" }}
+          >
+            <Droplets className="w-10 h-10 mx-auto mb-4" style={{ color: "#4A7A3A" }} />
+            <h2
+              className="font-serif text-2xl md:text-3xl font-bold mb-3"
+              style={{ color: "#FDFBF7" }}
+            >
+              {isPlaced ? "Your placement is active" : "Curious what the map looks like?"}
+            </h2>
+            <p className="text-base leading-relaxed mb-6 max-w-xl mx-auto" style={{ color: "#C8D4C0" }}>
+              {isPlaced
+                ? "Your zone and risk profile are shaping what the site shows you. Visit your Lifestyle Map to see your filtered view."
+                : "You can explore the Lifestyle Map before your session. Your zone placement will activate once Tasha completes your intake."}
+            </p>
+            <Link
+              href="/map"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base border transition-all hover:opacity-80"
+              style={{ borderColor: "#4A7A3A44", color: "#C8D4C0" }}
+            >
+              View the Lifestyle Map
+            </Link>
+          </div>
+        </section>
 
       </div>
     </div>

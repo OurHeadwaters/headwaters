@@ -28,3 +28,24 @@ export const headwatersBusinessDataTable = pgTable("headwaters_business_data", {
 });
 
 export type HeadwatersBusinessData = typeof headwatersBusinessDataTable.$inferSelect;
+
+export const headwatersIntakeSubmissionsTable = pgTable("headwaters_intake_submissions", {
+  submissionId: varchar("submission_id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  email: varchar("email").notNull(),
+  householdSize: integer("household_size"),
+  landSituation: text("land_situation"),
+  landYears: varchar("land_years"),
+  keySkills: text("key_skills"),
+  primaryGoals: text("primary_goals"),
+  riskTolerance: varchar("risk_tolerance"),
+  additionalNotes: text("additional_notes"),
+  status: varchar("status").notNull().default("new"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export type HeadwatersIntakeSubmission = typeof headwatersIntakeSubmissionsTable.$inferSelect;
+export type InsertHeadwatersIntakeSubmission = typeof headwatersIntakeSubmissionsTable.$inferInsert;

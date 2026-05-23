@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, headwatersClientsTable, userLifestyleMapsTable, headwatersBusinessDataTable } from "@workspace/db";
+import { db, headwatersClientsTable, userLifestyleMapsTable, headwatersBusinessDataTable, headwatersIntakeSubmissionsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
@@ -503,6 +503,132 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
   } catch (err) {
     logger.error({ err }, "headwaters push failed");
     res.status(500).json({ error: "Failed to push placement" });
+  }
+});
+
+/**
+ * POST /api/headwaters/intake
+ * Public endpoint — no passphrase required. Visitors submit the pre-session intake form.
+ */
+router.post("/headwaters/intake", async (req: Request, res: Response) => {
+  const {
+    name,
+    email,
+    householdSize,
+    landSituation,
+    landYears,
+    keySkills,
+    primaryGoals,
+    riskTolerance,
+    additionalNotes,
+  } = req.body as {
+    name: string;
+    email: string;
+    householdSize?: number | null;
+    landSituation?: string | null;
+    landYears?: string | null;
+    keySkills?: string | null;
+    primaryGoals?: string | null;
+    riskTolerance?: string | null;
+    additionalNotes?: string | null;
+  };
+
+  if (!name || typeof name !== "string" || name.trim().length === 0) {
+    res.status(400).json({ error: "name is required" });
+    return;
+  }
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    res.status(400).json({ error: "A valid email is required" });
+    return;
+  }
+
+  try {
+    const [row] = await db
+      .insert(headwatersIntakeSubmissionsTable)
+      .values({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        householdSize: typeof householdSize === "number" ? householdSize : null,
+        landSituation: landSituation ?? null,
+        landYears: landYears ?? null,
+        keySkills: keySkills ?? null,
+        primaryGoals: primaryGoals ?? null,
+        riskTolerance: riskTolerance ?? null,
+        additionalNotes: additionalNotes ?? null,
+        status: "new",
+      })
+      .returning();
+
+    res.status(201).json({
+      submissionId: row.submissionId,
+      message: "Intake submitted. Tasha will be in touch to schedule your session.",
+    });
+  } catch (err) {
+    logger.error({ err }, "headwaters intake submit failed");
+    res.status(500).json({ error: "Failed to save your intake. Please try again." });
+  }
+});
+
+/**
+ * GET /api/headwaters/intake
+ * Passphrase-protected. Returns all intake submissions for Tasha to review.
+ */
+router.get("/headwaters/intake", async (req: Request, res: Response) => {
+  if (!checkPassphrase(req, res)) return;
+
+  try {
+    const rows = await db
+      .select()
+      .from(headwatersIntakeSubmissionsTable)
+      .orderBy(desc(headwatersIntakeSubmissionsTable.createdAt));
+
+    res.json(rows.map((r) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    })));
+  } catch (err) {
+    logger.error({ err }, "headwaters intake list failed");
+    res.status(500).json({ error: "Failed to load intake submissions" });
+  }
+});
+
+/**
+ * PATCH /api/headwaters/intake/:submissionId
+ * Passphrase-protected. Update status of a submission.
+ */
+router.patch("/headwaters/intake/:submissionId", async (req: Request, res: Response) => {
+  if (!checkPassphrase(req, res)) return;
+
+  const { submissionId } = req.params as { submissionId: string };
+  const { status } = req.body as { status?: string };
+
+  const validStatuses = ["new", "reviewed", "scheduled", "completed", "declined"];
+  if (!status || !validStatuses.includes(status)) {
+    res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
+    return;
+  }
+
+  try {
+    const [row] = await db
+      .update(headwatersIntakeSubmissionsTable)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(headwatersIntakeSubmissionsTable.submissionId, submissionId))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Submission not found" });
+      return;
+    }
+
+    res.json({
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, "headwaters intake patch failed");
+    res.status(500).json({ error: "Failed to update submission" });
   }
 });
 

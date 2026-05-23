@@ -17,6 +17,7 @@ import BusinessPriorities from "@/pages/business/priorities";
 import BusinessFinancials from "@/pages/business/financials";
 import BusinessNotes from "@/pages/business/notes";
 import SettingsPage from "@/pages/settings";
+import SubmissionsPage from "@/pages/submissions/index";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ function Router() {
             <Route path="/business/financials" component={BusinessFinancials} />
             <Route path="/business/notes" component={BusinessNotes} />
             <Route path="/settings" component={SettingsPage} />
+            <Route path="/submissions" component={SubmissionsPage} />
             <Route component={NotFound} />
           </Switch>
         </IntakeProvider>
