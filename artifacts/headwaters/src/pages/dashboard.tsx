@@ -19,7 +19,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-4xl font-bold text-foreground">Overview</h1>
-          <p className="text-muted-foreground mt-2">Welcome back, Tasha. Here is the current state of your practice.</p>
+          <p className="text-muted-foreground mt-2">Welcome back, Bobbie. Here is the current state of your practice.</p>
         </div>
         <Link href="/clients/new" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors">
           <PlusCircle size={18} />
