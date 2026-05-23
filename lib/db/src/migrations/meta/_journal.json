@@ -194,8 +194,15 @@
     {
       "idx": 27,
       "version": "7",
-      "when": 1748900000000,
+      "when": 1748810000001,
       "tag": "0027_cohort_waitlist",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1748900000000,
+      "tag": "0024_ground_events_confirmation_email",
       "breakpoints": true
     }
   ]

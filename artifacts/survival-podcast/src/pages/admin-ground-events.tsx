@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock, Download, Users } from "lucide-react";
+import { Hammer, Trash2, ChevronDown, ChevronUp, Star, CheckCircle, XCircle, Clock, Download, Users, Mail, MailX } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -29,6 +29,7 @@ interface GroundEvent {
   platformSharePct: number | null;
   isStripeReady: boolean;
   transformationSlug: string | null;
+  confirmationEmailSent: boolean;
 }
 
 interface HostSummary {
@@ -217,6 +218,23 @@ function EventRow({ event }: { event: GroundEvent }) {
             {event.seats !== null && ` · ${event.seats} seats`}
             {` · ${event.rsvpCount} RSVPs`}
           </p>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            {event.contactEmail ? (
+              event.confirmationEmailSent ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <Mail className="w-2.5 h-2.5" />Confirmation sent
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                  <MailX className="w-2.5 h-2.5" />Confirmation not sent
+                </span>
+              )
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                <MailX className="w-2.5 h-2.5" />No contact email
+              </span>
+            )}
+          </div>
 
           {/* Stripe Connect payment summary */}
           {event.ticketPriceCents && (

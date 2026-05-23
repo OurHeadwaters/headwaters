@@ -3,7 +3,7 @@ import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
 import { eq, sql, and, desc, asc, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
-import { sendRsvpNotification } from "../lib/email";
+import { sendRsvpNotification, sendHostConfirmationEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -314,6 +314,33 @@ router.post("/ground-events", async (req, res) => {
       { id: row.id, title, ticketPriceCents, platformSharePct },
       "ground-events: new submission (pending approval)",
     );
+
+    // Send host confirmation email with their private dashboard link.
+    // This runs after the response-critical DB write so a failed email never
+    // blocks the 201 response.  We update the flag in the background.
+    if (contactEmail) {
+      const appBaseUrl = (process.env.APP_BASE_URL ?? "https://www.thesurvivalpodcast.com").replace(/\/$/, "");
+      const dashboardUrl = `${appBaseUrl}/workshops/dashboard?token=${row.hostToken}`;
+      sendHostConfirmationEmail({
+        hostEmail: contactEmail,
+        hostName,
+        eventTitle: title,
+        eventDate: eventDate as string,
+        dashboardUrl,
+      }).then((sent) => {
+        if (sent) {
+          db.update(groundEventsTable)
+            .set({ confirmationEmailSent: true })
+            .where(eq(groundEventsTable.id, row.id))
+            .catch((e: unknown) =>
+              logger.error({ e, id: row.id }, "ground-events: failed to set confirmation_email_sent"),
+            );
+        }
+      }).catch((e: unknown) =>
+        logger.error({ e, id: row.id }, "ground-events: confirmation email promise rejected"),
+      );
+    }
+
     res.status(201).json(row);
   } catch (err) {
     logger.error({ err }, "ground-events: POST failed");
