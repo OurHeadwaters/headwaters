@@ -610,6 +610,7 @@ export default function DiscoverPage() {
   const [phase, setPhase] = useState<Phase>("entryGate");
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
@@ -643,10 +644,12 @@ export default function DiscoverPage() {
   }
 
   async function handleQuestionnaireComplete(answers: Record<string, string>) {
+    setSavedAnswers(answers);
     setPhase("assessing");
     setError(null);
     try {
-      const res = await fetch("/api/codetry/assess", {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/codetry/assess`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers }),
@@ -698,7 +701,7 @@ export default function DiscoverPage() {
       {phase === "questionnaire" && (
         <Questionnaire
           onComplete={handleQuestionnaireComplete}
-          initialAnswers={assessment?.answers ?? {}}
+          initialAnswers={assessment?.answers ?? savedAnswers}
         />
       )}
       {phase === "assessing" && <AssessingScreen />}

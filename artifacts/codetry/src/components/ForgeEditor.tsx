@@ -42,6 +42,7 @@ const TEMPLATES: { label: string; lang: "html"; code: string }[] = [
 <html lang="en">
 <head>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Georgia, serif;
       background: #0E1F10;
@@ -50,29 +51,97 @@ const TEMPLATES: { label: string; lang: "html"; code: string }[] = [
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      margin: 0;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
+      overflow: hidden;
     }
-    h1 { color: #D9A066; font-size: 2rem; margin: 0; }
-    p { color: #8A9E8A; max-width: 400px; text-align: center; }
+    h1 { color: #D9A066; font-size: 2rem; text-align: center; }
+    p { color: #8A9E8A; max-width: 380px; text-align: center; line-height: 1.6; }
     button {
       background: #D9A066;
       color: #2B2825;
       border: none;
-      padding: 10px 24px;
+      padding: 12px 32px;
       border-radius: 6px;
-      font-size: 1rem;
+      font-size: 1.05rem;
       cursor: pointer;
       font-family: Georgia, serif;
+      font-weight: bold;
+      transition: background 0.15s, transform 0.08s;
     }
     button:hover { background: #C88E55; }
+    button:active { transform: scale(0.94) translateY(2px); }
+    .count { color: #D9A066; font-size: 0.8rem; letter-spacing: 0.08em; min-height: 1.2rem; }
+    .spark {
+      position: fixed;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: fly var(--d,0.6s) ease-out forwards;
+    }
+    @keyframes fly {
+      0%   { opacity: 1; transform: translate(0,0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--x),var(--y)) scale(0.15); }
+    }
+    .flash {
+      position: fixed; inset: 0;
+      background: rgba(217,160,102,0.12);
+      pointer-events: none;
+      animation: flash 0.25s ease-out forwards;
+    }
+    @keyframes flash { to { opacity: 0; } }
+    @keyframes thud {
+      0%,100% { transform: scale(1); }
+      40%      { transform: scale(0.91) translateY(3px); }
+    }
+    button.striking { animation: thud 0.18s ease-in-out; }
   </style>
 </head>
 <body>
   <h1>Welcome to the Forge 🔥</h1>
   <p>Your ideas, your tools, your craft. Start building something real.</p>
-  <button onclick="this.textContent='Forged!'">Strike the Anvil</button>
+  <button id="btn" onclick="strike(this)">Strike the Anvil</button>
+  <div class="count" id="tally"></div>
+  <script>
+    var hits = 0;
+    var palette = ['#D9A066','#F0C040','#FF8C00','#FFD700','#FF6040'];
+    function strike(btn) {
+      hits++;
+      btn.classList.remove('striking');
+      void btn.offsetWidth;
+      btn.classList.add('striking');
+      btn.textContent = hits === 1 ? 'Forged!' : 'Strike again!';
+      document.getElementById('tally').textContent =
+        hits === 1 ? 'First strike — something is taking shape.' :
+        hits < 5   ? hits + ' strikes — keep going.' :
+                     hits + ' strikes — a true smith never stops.';
+      sparks(btn); flash();
+    }
+    function sparks(btn) {
+      var r = btn.getBoundingClientRect();
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      for (var i = 0; i < 18; i++) {
+        var el = document.createElement('div');
+        el.className = 'spark';
+        var a = Math.PI * 2 * i / 18 + (Math.random() - .5) * .9;
+        var d = 55 + Math.random() * 90;
+        var dur = (.38 + Math.random() * .38).toFixed(2);
+        el.style.cssText = 'left:' + cx + 'px;top:' + cy + 'px;' +
+          'background:' + palette[i % palette.length] + ';' +
+          '--x:' + (Math.cos(a)*d).toFixed(1) + 'px;' +
+          '--y:' + (Math.sin(a)*d - 18).toFixed(1) + 'px;' +
+          '--d:' + dur + 's';
+        document.body.appendChild(el);
+        el.addEventListener('animationend', function(){ this.remove(); });
+      }
+    }
+    function flash() {
+      var el = document.createElement('div');
+      el.className = 'flash';
+      document.body.appendChild(el);
+      el.addEventListener('animationend', function(){ this.remove(); });
+    }
+  </script>
 </body>
 </html>`,
   },

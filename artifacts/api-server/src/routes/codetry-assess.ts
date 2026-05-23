@@ -61,7 +61,7 @@ Response format (strict JSON):
   "rationale": "2–3 sentence plain-language explanation"
 }`;
 
-router.post("/api/codetry/assess", async (req: Request, res: Response) => {
+router.post("/codetry/assess", async (req: Request, res: Response) => {
   const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? req.socket.remoteAddress ?? "unknown";
 
   if (isRateLimited(ip)) {
