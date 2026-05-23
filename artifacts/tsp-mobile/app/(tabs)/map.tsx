@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useCallback } from "react";
 import {
@@ -384,6 +384,7 @@ export default function MapScreen() {
   const rationale = state.status === "ready" ? state.map.rationale : null;
   const entryMode = state.status === "ready" ? state.map.entryMode : null;
   const riskProfile = state.status === "ready" ? (state.map.riskProfile ?? null) : null;
+  const createdAt = state.status === "ready" ? state.map.createdAt : null;
 
   const shownZones = visibleZones(ALL_ZONES, entryMode, riskProfile, primaryZone, secondaryZone);
 
@@ -481,6 +482,17 @@ export default function MapScreen() {
                   >
                     {rationale}
                   </Text>
+                  {createdAt != null && (
+                    <View style={[screenStyles.sessionDateRow, { borderTopColor: colors.fieldNoteBorder }]}>
+                      <Ionicons name="calendar-outline" size={13} color={colors.mutedForeground} style={{ marginRight: 5 }} />
+                      <Text style={[screenStyles.sessionDateLabel, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
+                        Session date:{" "}
+                      </Text>
+                      <Text style={[screenStyles.sessionDateValue, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                        {new Date(createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               ) : null}
             </WoodCard>
@@ -570,6 +582,15 @@ const screenStyles = StyleSheet.create({
     marginBottom: 6,
   },
   rationaleText: { fontSize: 14, lineHeight: 21 },
+  sessionDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  sessionDateLabel: { fontSize: 12 },
+  sessionDateValue: { fontSize: 12 },
   zonesHeadingRow: {
     flexDirection: "row",
     alignItems: "center",
