@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Coins,
@@ -13,6 +13,7 @@ import {
   Zap,
   CreditCard,
   Gift,
+  RefreshCw,
 } from "lucide-react";
 
 function apiUrl(path: string): string {
@@ -295,16 +296,22 @@ function WishCard({
 function WinnerCard({ dist, label }: { dist: Distribution; label: string }) {
   const [showImpact, setShowImpact] = useState(false);
   const isFiat = dist.winnerPaymentMethod === "stripe";
+  const isCrypto = dist.winnerPaymentMethod && dist.winnerPaymentMethod !== "stripe";
   return (
     <div className="rounded-xl border border-[#D9A066]/40 bg-gradient-to-br from-[#D9A066]/10 to-[#2C4A36]/10 p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <Trophy className="w-4 h-4 text-[#D9A066]" />
         <span className="text-xs font-bold uppercase tracking-widest text-[#D9A066]">
           {label}
         </span>
         {isFiat && (
-          <span className="ml-auto flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+          <span className="ml-auto flex items-center gap-1 text-xs text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
             <Gift className="w-3 h-3" /> Platform credit issued
+          </span>
+        )}
+        {isCrypto && (
+          <span className="ml-auto flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+            <CoinIcon size={11} /> Crypto payout
           </span>
         )}
       </div>
@@ -771,6 +778,8 @@ function CommunityWishesWall() {
 
 export function WishingWell() {
   const qc = useQueryClient();
+  const [newWinnerBanner, setNewWinnerBanner] = useState(false);
+  const prevTodayWinnerRef = useRef<Distribution | null | undefined>(undefined);
 
   const { data: pot, isLoading: potLoading } = useQuery({
     queryKey: ["wishing-well-pot"],
@@ -778,16 +787,43 @@ export function WishingWell() {
     refetchInterval: 30_000,
   });
 
+  const drawHasRun = pot?.drawn ?? false;
+
   const { data: board, isLoading: boardLoading } = useQuery({
     queryKey: ["wishing-well-board"],
     queryFn: fetchBoard,
+    refetchInterval: (query) => {
+      const data = query.state.data as Board | undefined;
+      const today = new Date().toISOString().slice(0, 10);
+      const todayWinner = data?.todayWinner ?? null;
+      if (drawHasRun && !todayWinner) {
+        return 5_000;
+      }
+      if (todayWinner && todayWinner.drawDate === today) {
+        return 60_000;
+      }
+      return 30_000;
+    },
   });
+
+  useEffect(() => {
+    const prev = prevTodayWinnerRef.current;
+    const curr = board?.todayWinner ?? null;
+    if (prev !== undefined && prev === null && curr !== null) {
+      setNewWinnerBanner(true);
+      const t = setTimeout(() => setNewWinnerBanner(false), 8_000);
+      return () => clearTimeout(t);
+    }
+    prevTodayWinnerRef.current = curr;
+  }, [board?.todayWinner]);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["wishing-well-pot"] });
     qc.invalidateQueries({ queryKey: ["wishing-well-board"] });
     qc.invalidateQueries({ queryKey: ["wishing-well-wishes"] });
   };
+
+  const waitingForWinner = drawHasRun && !boardLoading && !board?.todayWinner;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 max-w-4xl">
@@ -802,6 +838,22 @@ export function WishingWell() {
           the founder matches her share — a flywheel of giving for massive impact.
         </p>
       </header>
+
+      {newWinnerBanner && (
+        <div className="mb-6 flex items-center gap-3 px-5 py-4 rounded-xl border border-[#D9A066] bg-[#D9A066]/12 text-foreground animate-in fade-in slide-in-from-top-3 duration-500">
+          <Trophy className="w-5 h-5 text-[#D9A066] shrink-0" />
+          <span className="font-semibold text-sm">
+            🎉 A new winner has just been drawn! Scroll up to see today's winning wish.
+          </span>
+          <button
+            onClick={() => setNewWinnerBanner(false)}
+            className="ml-auto text-muted-foreground hover:text-foreground text-lg leading-none"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         {/* Today's Pot */}
@@ -870,6 +922,19 @@ export function WishingWell() {
         <div>
           {board?.todayWinner ? (
             <WinnerCard dist={board.todayWinner} label="🎉 Today's Winner" />
+          ) : waitingForWinner ? (
+            <div className="rounded-xl border border-[#D9A066]/40 bg-[#D9A066]/6 p-6 flex flex-col items-center justify-center text-center h-full min-h-[160px] gap-3">
+              <RefreshCw className="w-7 h-7 text-[#D9A066] animate-spin" />
+              <p className="text-sm font-medium text-foreground">
+                Draw complete — loading today's winner…
+              </p>
+              <button
+                onClick={refresh}
+                className="text-xs text-[#D9A066] underline underline-offset-2 hover:opacity-80 transition-opacity"
+              >
+                Refresh now
+              </button>
+            </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center text-center h-full min-h-[160px]">
               <Sparkles className="w-8 h-8 text-muted-foreground/40 mb-3" />
