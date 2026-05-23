@@ -1,6 +1,33 @@
 import { Link } from "wouter";
-import { ChevronRight, Droplets, MapPin, User, Compass, Lock, CheckCircle2 } from "lucide-react";
+import { ChevronRight, Droplets, MapPin, User, Compass, Lock, CheckCircle2, Shield } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useLifestyleMap } from "../hooks/use-lifestyle-map";
+
+const ZONE_NAMES: Record<string, string> = {
+  "zone-0": "Zone 0 — The Self",
+  "zone-1": "Zone 1 — The Home",
+  "zone-2": "Zone 2 — The Garden",
+  "zone-3": "Zone 3 — The Homestead",
+  "zone-4": "Zone 4 — The Forest",
+  "zone-5": "Zone 5 — The Wild",
+};
+
+const ZONE_COLORS: Record<string, string> = {
+  "zone-0": "#B5853A",
+  "zone-1": "#C4A05A",
+  "zone-2": "#6B8F47",
+  "zone-3": "#4A7A3A",
+  "zone-4": "#2C5F2E",
+  "zone-5": "#1A3A1C",
+};
+
+const RISK_PROFILE_LABELS: Record<number, string> = {
+  1: "Tight — one step at a time",
+  2: "Guided — structured focus",
+  3: "Balanced — curated view",
+  4: "Open — wider exploration",
+  5: "Self-directed — full map",
+};
 
 const MEMBER_FEATURES = [
   {
@@ -38,8 +65,136 @@ const PROCESS_STEPS = [
   },
 ];
 
+function PlacementStatus({
+  primaryZone,
+  secondaryZone,
+  riskProfile,
+  rationale,
+}: {
+  primaryZone: string;
+  secondaryZone: string | null;
+  riskProfile: number | null;
+  rationale: string | null;
+}) {
+  const primaryColor = ZONE_COLORS[primaryZone] ?? "#4A7A3A";
+  const secondaryColor = secondaryZone ? (ZONE_COLORS[secondaryZone] ?? "#4A7A3A") : null;
+
+  return (
+    <div
+      className="rounded-2xl border p-6 md:p-8"
+      style={{ background: "#0A180A", borderColor: `${primaryColor}44` }}
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <CheckCircle2 className="w-4 h-4" style={{ color: primaryColor }} />
+        <span
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: primaryColor }}
+        >
+          Your Headwaters placement
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        {/* Primary zone */}
+        <div
+          className="rounded-xl p-4"
+          style={{ background: `${primaryColor}12`, border: `1px solid ${primaryColor}33` }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: primaryColor }}>
+            Primary zone
+          </p>
+          <p className="font-semibold text-base" style={{ color: "#FDFBF7" }}>
+            {ZONE_NAMES[primaryZone] ?? primaryZone}
+          </p>
+        </div>
+
+        {/* Secondary zone */}
+        {secondaryZone && secondaryColor ? (
+          <div
+            className="rounded-xl p-4"
+            style={{ background: `${secondaryColor}12`, border: `1px solid ${secondaryColor}33` }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: secondaryColor }}>
+              Secondary zone
+            </p>
+            <p className="font-semibold text-base" style={{ color: "#FDFBF7" }}>
+              {ZONE_NAMES[secondaryZone] ?? secondaryZone}
+            </p>
+          </div>
+        ) : (
+          /* Risk profile takes the second slot if no secondary zone */
+          riskProfile != null && (
+            <div
+              className="rounded-xl p-4"
+              style={{ background: "#FDFBF708", border: "1px solid #4A7A3A33" }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#8BAD78" }}>
+                Risk profile
+              </p>
+              <p className="font-semibold text-base" style={{ color: "#FDFBF7" }}>
+                {RISK_PROFILE_LABELS[riskProfile] ?? `Level ${riskProfile}`}
+              </p>
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Risk profile row (only shown when secondary zone is also present) */}
+      {secondaryZone && riskProfile != null && (
+        <div
+          className="rounded-xl p-4 mb-5"
+          style={{ background: "#FDFBF708", border: "1px solid #4A7A3A33" }}
+        >
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 flex-shrink-0" style={{ color: "#8BAD78" }} />
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider mr-2" style={{ color: "#8BAD78" }}>
+                Risk profile
+              </span>
+              <span className="text-sm" style={{ color: "#C8D4C0" }}>
+                {RISK_PROFILE_LABELS[riskProfile] ?? `Level ${riskProfile}`}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rationale */}
+      {rationale && (
+        <div
+          className="rounded-xl p-4 mb-5"
+          style={{ background: "#FDFBF705", border: "1px solid #FDFBF710" }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#8BAD78" }}>
+            Your placement rationale
+          </p>
+          <p className="text-sm leading-relaxed italic" style={{ color: "#C8D4C0" }}>
+            "{rationale}"
+          </p>
+        </div>
+      )}
+
+      <Link
+        href="/map"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90"
+        style={{ background: primaryColor, color: "#FDFBF7" }}
+      >
+        View your Lifestyle Map
+        <ChevronRight className="w-4 h-4" />
+      </Link>
+    </div>
+  );
+}
+
 export default function HeadwatersPage() {
   const { isAuthenticated } = useAuth();
+  const { map, loading: mapLoading } = useLifestyleMap();
+
+  const isPlaced =
+    isAuthenticated &&
+    map !== null &&
+    map.entryMode === "practitioner" &&
+    map.primaryZone != null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,19 +235,33 @@ export default function HeadwatersPage() {
               your land, your resources, your risk profile — and unlocks a filtered view of the site
               built around where you are today.
             </p>
-            <a
-              href="mailto:headwaters@thestompingpath.com?subject=Headwaters%20Intake%20Inquiry"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
-              style={{ background: "#4A7A3A", color: "#FDFBF7" }}
-            >
-              Start the intake process
-              <ChevronRight className="w-5 h-5" />
-            </a>
+            {!isPlaced && (
+              <a
+                href="mailto:headwaters@thestompingpath.com?subject=Headwaters%20Intake%20Inquiry"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
+                style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+              >
+                Start the intake process
+                <ChevronRight className="w-5 h-5" />
+              </a>
+            )}
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 md:px-6 py-16 md:py-20 max-w-4xl space-y-20">
+
+        {/* Member placement status — shown to authenticated placed members */}
+        {isAuthenticated && !mapLoading && isPlaced && map && map.primaryZone && (
+          <section>
+            <PlacementStatus
+              primaryZone={map.primaryZone}
+              secondaryZone={map.secondaryZone}
+              riskProfile={map.riskProfile}
+              rationale={map.rationale}
+            />
+          </section>
+        )}
 
         {/* Who is Tasha Parr */}
         <section>
@@ -239,42 +408,44 @@ export default function HeadwatersPage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section>
-          <div
-            className="rounded-2xl border p-8 md:p-10 text-center"
-            style={{ background: "#0A180A", borderColor: "#4A7A3A33" }}
-          >
-            <Droplets className="w-10 h-10 mx-auto mb-4" style={{ color: "#4A7A3A" }} />
-            <h2
-              className="font-serif text-2xl md:text-3xl font-bold mb-3"
-              style={{ color: "#FDFBF7" }}
+        {/* CTA — only shown to non-placed visitors */}
+        {!isPlaced && (
+          <section>
+            <div
+              className="rounded-2xl border p-8 md:p-10 text-center"
+              style={{ background: "#0A180A", borderColor: "#4A7A3A33" }}
             >
-              Ready to get placed?
-            </h2>
-            <p className="text-base leading-relaxed mb-6 max-w-xl mx-auto" style={{ color: "#C8D4C0" }}>
-              Send a short message to Tasha to kick off the intake process. She'll send you the
-              pre-session form and schedule a time that works.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="mailto:headwaters@thestompingpath.com?subject=Headwaters%20Intake%20Inquiry"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
-                style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+              <Droplets className="w-10 h-10 mx-auto mb-4" style={{ color: "#4A7A3A" }} />
+              <h2
+                className="font-serif text-2xl md:text-3xl font-bold mb-3"
+                style={{ color: "#FDFBF7" }}
               >
-                <CheckCircle2 className="w-5 h-5" />
-                Start intake — email Tasha
-              </a>
-              <Link
-                href="/map"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base border transition-all hover:opacity-80"
-                style={{ borderColor: "#4A7A3A44", color: "#C8D4C0" }}
-              >
-                View the Lifestyle Map
-              </Link>
+                Ready to get placed?
+              </h2>
+              <p className="text-base leading-relaxed mb-6 max-w-xl mx-auto" style={{ color: "#C8D4C0" }}>
+                Send a short message to Tasha to kick off the intake process. She'll send you the
+                pre-session form and schedule a time that works.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a
+                  href="mailto:headwaters@thestompingpath.com?subject=Headwaters%20Intake%20Inquiry"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
+                  style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  Start intake — email Tasha
+                </a>
+                <Link
+                  href="/map"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base border transition-all hover:opacity-80"
+                  style={{ borderColor: "#4A7A3A44", color: "#C8D4C0" }}
+                >
+                  View the Lifestyle Map
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
       </div>
     </div>
