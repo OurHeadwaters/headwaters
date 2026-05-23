@@ -284,9 +284,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* The Headwaters */}
             <Link
-              href="/brigade"
+              href="/headwaters"
               className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
-                location === "/brigade"
+                location === "/headwaters"
                   ? "text-white border-b-2 border-[#D9A066]"
                   : "text-white/65 hover:text-white"
               }`}
@@ -486,9 +486,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* The Headwaters */}
             <Link
-              href="/brigade"
+              href="/headwaters"
               className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
-                location === "/brigade"
+                location === "/headwaters"
                   ? "bg-white/10 text-white"
                   : "text-white/70 hover:text-white hover:bg-white/5"
               }`}
