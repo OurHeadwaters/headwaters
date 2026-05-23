@@ -11,6 +11,7 @@ import {
   Wand2,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   CheckCircle2,
   Zap,
   Star,
@@ -492,140 +493,6 @@ function riskProfileExplanation(level: number): string {
   return "Your map shows all zones across the full self-reliance path. You have the capacity and context to work across the complete range at once.";
 }
 
-function IntakeModal({
-  open,
-  onClose,
-  rationale,
-  riskProfile,
-  practitionerName,
-}: {
-  open: boolean;
-  onClose: () => void;
-  rationale: string | null;
-  riskProfile: number | null;
-  practitionerName?: string | null;
-}) {
-  if (!open) return null;
-
-  const name = practitionerName || "your practitioner";
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
-      style={{ background: "rgba(0,0,0,0.7)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col"
-        style={{ background: "#0F1F0F", border: "1px solid #4A7A3A33", maxHeight: "90vh" }}
-      >
-        {/* Header */}
-        <div
-          className="px-6 pt-6 pb-5 flex items-start justify-between shrink-0"
-          style={{
-            background: "linear-gradient(160deg, #0A180A 0%, #12241A 100%)",
-            borderBottom: "1px solid #4A7A3A33",
-          }}
-        >
-          <div>
-            <h2 className="font-serif text-xl font-bold mb-1" style={{ color: "#FDFBF7" }}>
-              💧 My Intake
-            </h2>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-              Your Headwaters session with {name}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
-            style={{ color: "rgba(255,255,255,0.7)", marginTop: "2px" }}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="overflow-y-auto p-6 space-y-6">
-          {/* Risk Profile */}
-          {riskProfile != null && (
-            <div>
-              <p
-                className="text-[10px] font-bold uppercase tracking-widest mb-3"
-                style={{ color: "#7A9A6A" }}
-              >
-                Risk Profile
-              </p>
-              <div
-                className="rounded-xl border p-4"
-                style={{ background: "#B5853A14", borderColor: "#B5853A44" }}
-              >
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="flex items-baseline gap-1 shrink-0">
-                    <span className="font-serif text-4xl font-bold leading-none" style={{ color: "#B5853A" }}>
-                      {riskProfile}
-                    </span>
-                    <span className="text-base" style={{ color: "#7A9A6A" }}>/ 5</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm mb-2" style={{ color: "#FDFBF7" }}>
-                      {riskProfileLabel(riskProfile)}
-                    </p>
-                    <div className="flex gap-1.5">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <div
-                          key={n}
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ background: n <= riskProfile ? "#B5853A" : "#4A7A3A33" }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
-                  {riskProfileExplanation(riskProfile)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Practitioner Notes */}
-          <div>
-            <p
-              className="text-[10px] font-bold uppercase tracking-widest mb-3"
-              style={{ color: "#7A9A6A" }}
-            >
-              Practitioner Notes
-            </p>
-            {rationale ? (
-              <div
-                className="rounded-xl border p-4 space-y-3"
-                style={{ background: "#4A7A3A0D", borderColor: "#4A7A3A33" }}
-              >
-                <p className="text-sm leading-relaxed" style={{ color: "#FDFBF7" }}>
-                  {rationale}
-                </p>
-                <p className="text-xs text-right" style={{ color: "#7A9A6A" }}>
-                  — {name}, Headwaters Practitioner
-                </p>
-              </div>
-            ) : (
-              <div
-                className="rounded-xl border p-4"
-                style={{ background: "#4A7A3A0D", borderColor: "#4A7A3A33" }}
-              >
-                <p className="text-sm" style={{ color: "#7A9A6A" }}>
-                  No notes have been added to your intake yet.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function HeadwatersMemberPerksCard({
   rationale,
   riskProfile,
@@ -635,8 +502,9 @@ function HeadwatersMemberPerksCard({
   riskProfile: number | null;
   practitionerName?: string | null;
 }) {
-  const [showIntake, setShowIntake] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const name = practitionerName || "your practitioner";
+  const hasIntake = !!(rationale || riskProfile != null);
   const perks = [
     { icon: "🗺️", text: "Personalized zone placement tailored to where you are right now" },
     { icon: "🎯", text: "Curated zone map filtered to your risk profile — no overwhelm" },
@@ -644,11 +512,12 @@ function HeadwatersMemberPerksCard({
   ];
 
   return (
-    <>
-      <div
-        className="rounded-2xl border p-6"
-        style={{ background: "#4A7A3A12", borderColor: "#4A7A3A44" }}
-      >
+    <div
+      className="rounded-2xl border overflow-hidden"
+      style={{ background: "#4A7A3A12", borderColor: "#4A7A3A44" }}
+    >
+      {/* Main card body */}
+      <div className="p-6">
         <div className="flex items-center gap-3 mb-5">
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
@@ -680,25 +549,111 @@ function HeadwatersMemberPerksCard({
           ))}
         </div>
 
-        {rationale && (
+        {hasIntake && (
           <button
-            onClick={() => setShowIntake(true)}
+            onClick={() => setExpanded((v) => !v)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all w-full justify-center"
             style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+            aria-expanded={expanded}
           >
-            View My Intake
-            <ChevronRight className="w-4 h-4" />
+            {expanded ? "Hide My Intake" : "View My Intake"}
+            <ChevronDown
+              className="w-4 h-4 transition-transform duration-300"
+              style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            />
           </button>
         )}
       </div>
 
-      <IntakeModal
-        open={showIntake}
-        onClose={() => setShowIntake(false)}
-        rationale={rationale}
-        riskProfile={riskProfile}
-      />
-    </>
+      {/* Inline accordion — intake details */}
+      {hasIntake && (
+        <div
+          style={{
+            maxHeight: expanded ? "600px" : "0px",
+            opacity: expanded ? 1 : 0,
+            overflow: "hidden",
+            transition: "max-height 0.35s ease, opacity 0.25s ease",
+          }}
+        >
+          <div
+            className="px-6 pb-6 pt-1 space-y-6"
+            style={{ borderTop: "1px solid #4A7A3A33" }}
+          >
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest pt-5"
+              style={{ color: "#4A7A3A" }}
+            >
+              My Intake · Session with {name}
+            </p>
+
+            {/* Risk Profile */}
+            {riskProfile != null && (
+              <div>
+                <p
+                  className="text-[10px] font-bold uppercase tracking-widest mb-3"
+                  style={{ color: "#7A9A6A" }}
+                >
+                  Risk Profile
+                </p>
+                <div
+                  className="rounded-xl border p-4"
+                  style={{ background: "#B5853A14", borderColor: "#B5853A44" }}
+                >
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="flex items-baseline gap-1 shrink-0">
+                      <span className="font-serif text-4xl font-bold leading-none" style={{ color: "#B5853A" }}>
+                        {riskProfile}
+                      </span>
+                      <span className="text-base" style={{ color: "#7A9A6A" }}>/ 5</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm mb-2" style={{ color: "#FDFBF7" }}>
+                        {riskProfileLabel(riskProfile)}
+                      </p>
+                      <div className="flex gap-1.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <div
+                            key={n}
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ background: n <= riskProfile ? "#B5853A" : "#4A7A3A33" }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
+                    {riskProfileExplanation(riskProfile)}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Practitioner Notes */}
+            {rationale && (
+              <div>
+                <p
+                  className="text-[10px] font-bold uppercase tracking-widest mb-3"
+                  style={{ color: "#7A9A6A" }}
+                >
+                  Practitioner Notes
+                </p>
+                <div
+                  className="rounded-xl border p-4 space-y-3"
+                  style={{ background: "#4A7A3A0D", borderColor: "#4A7A3A33" }}
+                >
+                  <p className="text-sm leading-relaxed" style={{ color: "#FDFBF7" }}>
+                    {rationale}
+                  </p>
+                  <p className="text-xs text-right" style={{ color: "#7A9A6A" }}>
+                    — {name}, Headwaters Practitioner
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
