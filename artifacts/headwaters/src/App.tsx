@@ -13,6 +13,9 @@ import NewClient from "@/pages/clients/new";
 import ClientDetail from "@/pages/clients/detail";
 import IntakeDump from "@/pages/intake/index";
 import IntakeReview from "@/pages/intake/review";
+import BusinessPriorities from "@/pages/business/priorities";
+import BusinessFinancials from "@/pages/business/financials";
+import BusinessNotes from "@/pages/business/notes";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -29,6 +32,9 @@ function Router() {
             <Route path="/clients/:clientId" component={ClientDetail} />
             <Route path="/intake/:clientId" component={IntakeDump} />
             <Route path="/intake/:clientId/review" component={IntakeReview} />
+            <Route path="/business/priorities" component={BusinessPriorities} />
+            <Route path="/business/financials" component={BusinessFinancials} />
+            <Route path="/business/notes" component={BusinessNotes} />
             <Route component={NotFound} />
           </Switch>
         </IntakeProvider>

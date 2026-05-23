@@ -27,6 +27,8 @@ export * from './getSeriesEpisodesParams';
 export * from './getThisDayEpisodesParams';
 export * from './getZoneEpisodesParams';
 export * from './handleBrowserLoginCallbackParams';
+export * from './headwatersBusinessSection';
+export * from './headwatersBusinessSectionPatch';
 export * from './headwatersClient';
 export * from './headwatersClientInput';
 export * from './headwatersClientPatch';

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, headwatersClientsTable, userLifestyleMapsTable } from "@workspace/db";
+import { db, headwatersClientsTable, userLifestyleMapsTable, headwatersBusinessDataTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
@@ -456,6 +456,84 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
   } catch (err) {
     logger.error({ err }, "headwaters push failed");
     res.status(500).json({ error: "Failed to push placement" });
+  }
+});
+
+const VALID_SECTIONS = ["priorities", "financials", "notes"] as const;
+type BusinessSection = (typeof VALID_SECTIONS)[number];
+
+/**
+ * GET /api/headwaters/business/:section
+ */
+router.get("/headwaters/business/:section", async (req: Request, res: Response) => {
+  if (!checkPassphrase(req, res)) return;
+
+  const section = req.params.section as BusinessSection;
+  if (!VALID_SECTIONS.includes(section)) {
+    res.status(400).json({ error: "Invalid section — must be priorities, financials, or notes" });
+    return;
+  }
+
+  try {
+    const [row] = await db
+      .select()
+      .from(headwatersBusinessDataTable)
+      .where(eq(headwatersBusinessDataTable.key, section))
+      .limit(1);
+
+    const defaults: Record<BusinessSection, unknown> = {
+      priorities: [],
+      financials: [],
+      notes: "",
+    };
+
+    res.json({
+      section,
+      value: row ? JSON.parse(row.value) : defaults[section],
+      updatedAt: row?.updatedAt.toISOString() ?? new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, "headwaters business get failed");
+    res.status(500).json({ error: "Failed to load business section" });
+  }
+});
+
+/**
+ * PATCH /api/headwaters/business/:section
+ */
+router.patch("/headwaters/business/:section", async (req: Request, res: Response) => {
+  if (!checkPassphrase(req, res)) return;
+
+  const section = req.params.section as BusinessSection;
+  if (!VALID_SECTIONS.includes(section)) {
+    res.status(400).json({ error: "Invalid section — must be priorities, financials, or notes" });
+    return;
+  }
+
+  const { value } = req.body as { value: unknown };
+  if (value === undefined) {
+    res.status(400).json({ error: "value is required" });
+    return;
+  }
+
+  try {
+    const [row] = await db
+      .insert(headwatersBusinessDataTable)
+      .values({ key: section, value: JSON.stringify(value) })
+      .onConflictDoUpdate({
+        target: headwatersBusinessDataTable.key,
+        set: { value: JSON.stringify(value), updatedAt: new Date() },
+      })
+      .returning();
+
+    res.json({
+      section,
+      value: JSON.parse(row.value),
+      updatedAt: row.updatedAt.toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, "headwaters business patch failed");
+    res.status(500).json({ error: "Failed to save business section" });
   }
 });
 

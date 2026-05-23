@@ -20,3 +20,11 @@ export const headwatersClientsTable = pgTable("headwaters_clients", {
 
 export type HeadwatersClient = typeof headwatersClientsTable.$inferSelect;
 export type InsertHeadwatersClient = typeof headwatersClientsTable.$inferInsert;
+
+export const headwatersBusinessDataTable = pgTable("headwaters_business_data", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull().default("null"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export type HeadwatersBusinessData = typeof headwatersBusinessDataTable.$inferSelect;

@@ -766,6 +766,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /headwaters/business/{section}:
+    get:
+      operationId: getHeadwatersBusinessSection
+      tags: [headwaters]
+      summary: Get a business section (priorities, financials, or notes)
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+        - { name: section, in: path, required: true, schema: { type: string, enum: [priorities, financials, notes] } }
+      responses:
+        "200":
+          description: Business section data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersBusinessSection"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: patchHeadwatersBusinessSection
+      tags: [headwaters]
+      summary: Save a business section (priorities, financials, or notes)
+      parameters:
+        - { name: x-hw-passphrase, in: header, required: false, schema: { type: string } }
+        - { name: section, in: path, required: true, schema: { type: string, enum: [priorities, financials, notes] } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeadwatersBusinessSectionPatch"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadwatersBusinessSection"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /track-progress/{slug}:
     get:
       tags: [track-progress]
@@ -1362,6 +1409,18 @@ components:
       properties:
         success: { type: boolean }
         message: { type: ["string", "null"] }
+    HeadwatersBusinessSection:
+      type: object
+      required: [section, value, updatedAt]
+      properties:
+        section: { type: string }
+        value: {}
+        updatedAt: { type: string }
+    HeadwatersBusinessSectionPatch:
+      type: object
+      required: [value]
+      properties:
+        value: {}
     FiresideFlame:
       type: object
       required: [id, title, body, fanCount, createdAt]

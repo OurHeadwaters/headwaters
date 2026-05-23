@@ -39,6 +39,8 @@ import type {
   GetThisDayEpisodesParams,
   GetZoneEpisodesParams,
   HandleBrowserLoginCallbackParams,
+  HeadwatersBusinessSection,
+  HeadwatersBusinessSectionPatch,
   HeadwatersClient,
   HeadwatersClientInput,
   HeadwatersClientPatch,
@@ -2815,6 +2817,155 @@ export const usePushHeadwatersPlacement = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getPushHeadwatersPlacementMutationOptions(options));
+    }
+
+export const getGetHeadwatersBusinessSectionUrl = (section: 'priorities' | 'financials' | 'notes',) => {
+
+
+
+
+  return `/api/headwaters/business/${section}`
+}
+
+/**
+ * @summary Get a business section (priorities, financials, or notes)
+ */
+export const getHeadwatersBusinessSection = async (section: 'priorities' | 'financials' | 'notes', options?: RequestInit): Promise<HeadwatersBusinessSection> => {
+
+  return customFetch<HeadwatersBusinessSection>(getGetHeadwatersBusinessSectionUrl(section),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHeadwatersBusinessSectionQueryKey = (section: 'priorities' | 'financials' | 'notes',) => {
+    return [
+    `/api/headwaters/business/${section}`
+    ] as const;
+    }
+
+
+export const getGetHeadwatersBusinessSectionQueryOptions = <TData = Awaited<ReturnType<typeof getHeadwatersBusinessSection>>, TError = ErrorType<ApiError>>(section: 'priorities' | 'financials' | 'notes', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersBusinessSection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHeadwatersBusinessSectionQueryKey(section);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHeadwatersBusinessSection>>> = ({ signal }) => getHeadwatersBusinessSection(section, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(section), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersBusinessSection>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHeadwatersBusinessSectionQueryResult = NonNullable<Awaited<ReturnType<typeof getHeadwatersBusinessSection>>>
+export type GetHeadwatersBusinessSectionQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get a business section (priorities, financials, or notes)
+ */
+
+export function useGetHeadwatersBusinessSection<TData = Awaited<ReturnType<typeof getHeadwatersBusinessSection>>, TError = ErrorType<ApiError>>(
+ section: 'priorities' | 'financials' | 'notes', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadwatersBusinessSection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHeadwatersBusinessSectionQueryOptions(section,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getPatchHeadwatersBusinessSectionUrl = (section: 'priorities' | 'financials' | 'notes',) => {
+
+
+
+
+  return `/api/headwaters/business/${section}`
+}
+
+/**
+ * @summary Save a business section (priorities, financials, or notes)
+ */
+export const patchHeadwatersBusinessSection = async (section: 'priorities' | 'financials' | 'notes',
+    headwatersBusinessSectionPatch: HeadwatersBusinessSectionPatch, options?: RequestInit): Promise<HeadwatersBusinessSection> => {
+
+  return customFetch<HeadwatersBusinessSection>(getPatchHeadwatersBusinessSectionUrl(section),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      headwatersBusinessSectionPatch,)
+  }
+);}
+
+
+
+
+export const getPatchHeadwatersBusinessSectionMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchHeadwatersBusinessSection>>, TError,{section: 'priorities' | 'financials' | 'notes';data: BodyType<HeadwatersBusinessSectionPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchHeadwatersBusinessSection>>, TError,{section: 'priorities' | 'financials' | 'notes';data: BodyType<HeadwatersBusinessSectionPatch>}, TContext> => {
+
+const mutationKey = ['patchHeadwatersBusinessSection'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchHeadwatersBusinessSection>>, {section: 'priorities' | 'financials' | 'notes';data: BodyType<HeadwatersBusinessSectionPatch>}> = (props) => {
+          const {section,data} = props ?? {};
+
+          return  patchHeadwatersBusinessSection(section,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchHeadwatersBusinessSectionMutationResult = NonNullable<Awaited<ReturnType<typeof patchHeadwatersBusinessSection>>>
+    export type PatchHeadwatersBusinessSectionMutationBody = BodyType<HeadwatersBusinessSectionPatch>
+    export type PatchHeadwatersBusinessSectionMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Save a business section (priorities, financials, or notes)
+ */
+export const usePatchHeadwatersBusinessSection = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchHeadwatersBusinessSection>>, TError,{section: 'priorities' | 'financials' | 'notes';data: BodyType<HeadwatersBusinessSectionPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchHeadwatersBusinessSection>>,
+        TError,
+        {section: 'priorities' | 'financials' | 'notes';data: BodyType<HeadwatersBusinessSectionPatch>},
+        TContext
+      > => {
+      return useMutation(getPatchHeadwatersBusinessSectionMutationOptions(options));
     }
 
 export const getGetTrackProgressUrl = (slug: string,) => {

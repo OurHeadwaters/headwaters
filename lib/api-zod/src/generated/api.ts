@@ -918,6 +918,46 @@ export const PushHeadwatersPlacementResponse = zod.object({
 
 
 /**
+ * @summary Get a business section (priorities, financials, or notes)
+ */
+export const GetHeadwatersBusinessSectionParams = zod.object({
+  "section": zod.enum(['priorities', 'financials', 'notes'])
+})
+
+export const GetHeadwatersBusinessSectionHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const GetHeadwatersBusinessSectionResponse = zod.object({
+  "section": zod.string(),
+  "value": zod.unknown(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Save a business section (priorities, financials, or notes)
+ */
+export const PatchHeadwatersBusinessSectionParams = zod.object({
+  "section": zod.enum(['priorities', 'financials', 'notes'])
+})
+
+export const PatchHeadwatersBusinessSectionHeader = zod.object({
+  "x-hw-passphrase": zod.string().optional()
+})
+
+export const PatchHeadwatersBusinessSectionBody = zod.object({
+  "value": zod.unknown()
+})
+
+export const PatchHeadwatersBusinessSectionResponse = zod.object({
+  "section": zod.string(),
+  "value": zod.unknown(),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * @summary Get the current user's progress for a learning track
  */
 export const GetTrackProgressParams = zod.object({

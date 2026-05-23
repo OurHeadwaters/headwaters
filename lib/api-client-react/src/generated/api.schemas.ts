@@ -448,6 +448,16 @@ export interface HeadwatersPushResult {
   message?: string | null;
 }
 
+export interface HeadwatersBusinessSection {
+  section: string;
+  value: unknown;
+  updatedAt: string;
+}
+
+export interface HeadwatersBusinessSectionPatch {
+  value: unknown;
+}
+
 export interface FiresideFlame {
   id: number;
   title: string;

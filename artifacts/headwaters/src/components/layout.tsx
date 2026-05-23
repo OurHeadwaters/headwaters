@@ -1,13 +1,21 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, Home, Users, PlusCircle } from "lucide-react";
+import { LogOut, Home, Users, PlusCircle, Briefcase, ChevronDown, ChevronRight, DollarSign, NotebookPen, ListOrdered } from "lucide-react";
 
 export function Layout({ children }: { children: ReactNode }) {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
+  const isBusinessActive = location.startsWith("/business");
+  const [businessOpen, setBusinessOpen] = useState(isBusinessActive);
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: Home },
     { href: "/clients", label: "Clients", icon: Users },
+  ];
+
+  const businessSubItems = [
+    { href: "/business/priorities", label: "Priorities", icon: ListOrdered },
+    { href: "/business/financials", label: "Financials", icon: DollarSign },
+    { href: "/business/notes", label: "Notes", icon: NotebookPen },
   ];
 
   return (
@@ -18,7 +26,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <h1 className="font-serif text-2xl font-bold tracking-tight text-primary">Headwaters</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-wider">Field Journal</p>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             const Icon = item.icon;
@@ -37,7 +45,46 @@ export function Layout({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          
+
+          {/* Business section with collapsible sub-nav */}
+          <div>
+            <button
+              onClick={() => setBusinessOpen((o) => !o)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isBusinessActive
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              }`}
+            >
+              <Briefcase size={18} />
+              <span className="flex-1 text-left">Business</span>
+              {businessOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            </button>
+
+            {businessOpen && (
+              <div className="mt-1 ml-4 pl-3 border-l border-border space-y-1">
+                {businessSubItems.map((sub) => {
+                  const isActive = location === sub.href || location.startsWith(sub.href);
+                  const Icon = sub.icon;
+                  return (
+                    <Link
+                      key={sub.href}
+                      href={sub.href}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm ${
+                        isActive
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      }`}
+                    >
+                      <Icon size={15} />
+                      <span>{sub.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="pt-4 mt-4 border-t border-border">
             <Link
               href="/clients/new"
