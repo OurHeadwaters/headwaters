@@ -27,6 +27,7 @@ interface GroundEvent {
   breakEvenTickets: number;
   platformSharePct: number | null;
   isStripeReady: boolean;
+  transformationSlug: string | null;
 }
 
 interface EventsResponse {
@@ -60,12 +61,12 @@ async function postRsvp(data: {
 }
 
 const TRANSFORMATIONS = [
-  { slug: "conventional-to-regenerative", label: "Conventional → Regenerative", icon: "🌱" },
-  { slug: "tradfi-to-hard-assets", label: "TradFi → Hard Assets", icon: "⚖️" },
-  { slug: "employee-to-owner", label: "Employee → Owner", icon: "🔑" },
-  { slug: "grid-to-off-grid", label: "Grid → Off-Grid", icon: "⚡" },
-  { slug: "outsourced-health-to-health-sovereign", label: "Outsourced Health → Health Sovereign", icon: "🌿" },
-  { slug: "individual-to-community-scale", label: "Individual → Community Scale", icon: "🤝" },
+  { slug: "conventional-to-regenerative", label: "Regenerative", icon: "🌱", color: "#4A7A3A" },
+  { slug: "tradfi-to-hard-assets", label: "Hard Assets", icon: "⚖️", color: "#B5853A" },
+  { slug: "employee-to-owner", label: "Owner Mindset", icon: "🔑", color: "#C4622D" },
+  { slug: "grid-to-off-grid", label: "Off-Grid", icon: "⚡", color: "#2C6E8A" },
+  { slug: "outsourced-health-to-health-sovereign", label: "Health Sovereign", icon: "🌿", color: "#7B5EA7" },
+  { slug: "individual-to-community-scale", label: "Community Scale", icon: "🤝", color: "#8A6A2C" },
 ];
 
 async function submitEvent(data: {
@@ -335,6 +336,9 @@ function EventCard({
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const isFull = event.seats !== null && event.rsvpCount >= event.seats;
   const seatsLeft = event.seats !== null ? event.seats - event.rsvpCount : null;
+  const transformation = event.transformationSlug
+    ? TRANSFORMATIONS.find((t) => t.slug === event.transformationSlug)
+    : null;
   const capacityPct =
     event.seats && event.seats > 0
       ? Math.min(100, (event.rsvpCount / event.seats) * 100)
@@ -378,6 +382,14 @@ function EventCard({
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
               style={{ background: "rgba(217,160,102,0.25)", color: "#D9A066", border: "1px solid rgba(217,160,102,0.5)" }}>
               <Star className="w-2.5 h-2.5" />Featured
+            </span>
+          )}
+          {transformation && (
+            <span
+              className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: `${transformation.color}20`, color: transformation.color, border: `1px solid ${transformation.color}50` }}
+            >
+              {transformation.icon} {transformation.label}
             </span>
           )}
           <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "#D9A066" }} />
