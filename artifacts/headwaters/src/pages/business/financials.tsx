@@ -28,6 +28,59 @@ function fmt(n: number) {
   return "$" + Math.round(n).toLocaleString();
 }
 
+const BOTTLENECK_FILL: Record<BottleneckType, string> = {
+  "client-facing": "#7c3aed",
+  "admin": "#0284c7",
+  "one-time": "#ea580c",
+  "none": "#94a3b8",
+};
+
+function DonutChart({ segments }: { segments: { type: BottleneckType; value: number; label: string }[] }) {
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  if (total === 0) return null;
+
+  const R = 42;
+  const r = 26;
+  const cx = 52;
+  const cy = 52;
+  const gap = 0.03;
+
+  let startAngle = -Math.PI / 2;
+  const paths: { d: string; fill: string; type: BottleneckType }[] = [];
+
+  for (const seg of segments) {
+    const fraction = seg.value / total;
+    const angle = fraction * 2 * Math.PI - gap;
+    const endAngle = startAngle + angle;
+    const largeArc = angle > Math.PI ? 1 : 0;
+
+    const x1 = cx + R * Math.cos(startAngle + gap / 2);
+    const y1 = cy + R * Math.sin(startAngle + gap / 2);
+    const x2 = cx + R * Math.cos(endAngle);
+    const y2 = cy + R * Math.sin(endAngle);
+    const x3 = cx + r * Math.cos(endAngle);
+    const y3 = cy + r * Math.sin(endAngle);
+    const x4 = cx + r * Math.cos(startAngle + gap / 2);
+    const y4 = cy + r * Math.sin(startAngle + gap / 2);
+
+    paths.push({
+      d: `M ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${r} ${r} 0 ${largeArc} 0 ${x4} ${y4} Z`,
+      fill: BOTTLENECK_FILL[seg.type],
+      type: seg.type,
+    });
+
+    startAngle = endAngle + gap;
+  }
+
+  return (
+    <svg viewBox="0 0 104 104" className="w-20 h-20 shrink-0">
+      {paths.map((p) => (
+        <path key={p.type} d={p.d} fill={p.fill} opacity="0.85" />
+      ))}
+    </svg>
+  );
+}
+
 const BOTTLENECK_OPTIONS: { value: BottleneckType; label: string; icon: React.ReactNode; color: string }[] = [
   {
     value: "client-facing",
@@ -212,23 +265,39 @@ export default function BusinessFinancials() {
                   <Clock size={12} />
                   Time-dependent breakdown by bottleneck type
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  {bottleneckBreakdown.map(({ type, low, high }) => {
-                    const meta = bottleneckMeta(type);
-                    return (
-                      <div key={type} className="flex items-center gap-2 bg-background/70 rounded-lg border border-border/60 px-3 py-2">
-                        <span className={`flex items-center gap-1 text-xs font-semibold ${meta.color}`}>
-                          {meta.icon}
-                          {meta.label}
-                        </span>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-sm font-bold text-foreground tabular-nums">
-                          {fmt(low)}{high !== low && <> – {fmt(high)}</>}
-                        </span>
-                        <span className="text-xs text-muted-foreground">/ mo</span>
-                      </div>
-                    );
-                  })}
+                <div className="flex items-center gap-5 flex-wrap sm:flex-nowrap">
+                  <DonutChart
+                    segments={bottleneckBreakdown.map(({ type, high }) => ({
+                      type,
+                      value: high,
+                      label: bottleneckMeta(type).label,
+                    }))}
+                  />
+                  <div className="flex flex-col gap-2 min-w-0">
+                    {bottleneckBreakdown.map(({ type, low, high }) => {
+                      const meta = bottleneckMeta(type);
+                      const totalHigh = bottleneckBreakdown.reduce((s, b) => s + b.high, 0);
+                      const pct = totalHigh > 0 ? Math.round((high / totalHigh) * 100) : 0;
+                      return (
+                        <div key={type} className="flex items-center gap-2">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: BOTTLENECK_FILL[type] }}
+                          />
+                          <span className={`text-xs font-semibold ${meta.color} flex items-center gap-1`}>
+                            {meta.icon}
+                            {meta.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">·</span>
+                          <span className="text-sm font-bold text-foreground tabular-nums">
+                            {fmt(low)}{high !== low && <> – {fmt(high)}</>}
+                          </span>
+                          <span className="text-xs text-muted-foreground">/ mo</span>
+                          <span className="text-xs text-muted-foreground ml-auto pl-2 tabular-nums">{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
