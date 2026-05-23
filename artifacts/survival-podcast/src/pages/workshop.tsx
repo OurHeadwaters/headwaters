@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { MapPin, Calendar, Users, ExternalLink, ChevronDown, ChevronUp, Hammer, Wifi, Star, Ticket, X } from "lucide-react";
 
 function apiUrl(path: string): string {
@@ -334,6 +335,7 @@ function EventCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showRsvpModal, setShowRsvpModal] = useState(false);
+  const [, navigate] = useLocation();
   const isFull = event.seats !== null && event.rsvpCount >= event.seats;
   const seatsLeft = event.seats !== null ? event.seats - event.rsvpCount : null;
   const transformation = event.transformationSlug
@@ -385,12 +387,17 @@ function EventCard({
             </span>
           )}
           {transformation && (
-            <span
-              className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/workshops?path=${transformation.slug}`);
+              }}
+              className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full transition-opacity hover:opacity-75 cursor-pointer"
               style={{ background: `${transformation.color}20`, color: transformation.color, border: `1px solid ${transformation.color}50` }}
+              title={`Browse all ${transformation.label} workshops`}
             >
               {transformation.icon} {transformation.label}
-            </span>
+            </button>
           )}
           <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "#D9A066" }} />
           <span className="text-xs font-semibold" style={{ color: "#D9A066" }}>
