@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, groundEventsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
+import { eq, and, isNotNull } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getUncachableStripeClient } from "../stripeClient";
 
@@ -261,6 +261,217 @@ router.post("/ground-events/:id/checkout", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "stripe-workshops: checkout failed");
     res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/ground-events/:id/payout-summary
+//
+// Returns real Stripe payout data for the host:
+//   - eventRevenueCents:   sum of amountPaidCents from confirmed paid RSVPs
+//                         (set by Stripe webhook from session.amount_total)
+//   - platformFeeCents:   our cut (break-even surplus logic)
+//   - hostPayoutCents:    eventRevenue - platformFee
+//   - accountBalance:     live available + pending balance from Stripe API
+//   - recentPayouts:      last 5 bank transfers (settled amounts) from Stripe API
+//
+// Requires the host management token for authentication.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/ground-events/:id/payout-summary", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const hostToken =
+      typeof req.query.token === "string" ? req.query.token.trim() :
+      typeof req.body?.token === "string" ? req.body.token.trim() : "";
+
+    if (!hostToken) {
+      res.status(401).json({ error: "Missing host token" });
+      return;
+    }
+
+    const [event] = await db
+      .select()
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.id, id))
+      .limit(1);
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.hostToken || event.hostToken !== hostToken) {
+      res.status(403).json({ error: "Invalid host token" });
+      return;
+    }
+
+    // ── Per-event revenue from DB (populated by Stripe webhook) ─────────────
+    // amountPaidCents was set directly from session.amount_total in the webhook,
+    // making this authoritative Stripe-sourced data, not a local estimate.
+    const paidRsvps = await db
+      .select({
+        amountPaidCents: groundEventRsvpsTable.amountPaidCents,
+        stripeCheckoutSessionId: groundEventRsvpsTable.stripeCheckoutSessionId,
+      })
+      .from(groundEventRsvpsTable)
+      .where(
+        and(
+          eq(groundEventRsvpsTable.eventId, id),
+          eq(groundEventRsvpsTable.paymentStatus, "paid"),
+          isNotNull(groundEventRsvpsTable.stripeCheckoutSessionId),
+        ),
+      );
+
+    const eventRevenueCents = paidRsvps.reduce(
+      (sum, r) => sum + (r.amountPaidCents ?? 0),
+      0,
+    );
+
+    // Break-even surplus fee calculation (matches checkout endpoint logic)
+    const ticketPriceCents = event.ticketPriceCents ?? 0;
+    const breakEvenTickets = event.breakEvenTickets ?? 0;
+    const platformSharePct = event.platformSharePct ?? 0;
+    const surplusTickets = Math.max(0, paidRsvps.length - breakEvenTickets);
+    const platformFeeCents = Math.round(
+      (surplusTickets * ticketPriceCents * platformSharePct) / 100,
+    );
+    const hostPayoutCents = eventRevenueCents - platformFeeCents;
+
+    // ── Live Stripe account data ─────────────────────────────────────────────
+    const accountId = event.stripeConnectedAccountId;
+    if (!accountId || !event.stripeChargesEnabled) {
+      // Stripe Connect not yet set up — return DB-only revenue data
+      res.json({
+        eventRevenueCents,
+        platformFeeCents,
+        hostPayoutCents,
+        paidTicketCount: paidRsvps.length,
+        surplusTickets,
+        stripeConnected: false,
+        accountBalance: null,
+        recentPayouts: [],
+      });
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
+
+    // Fetch account balance and recent payouts in parallel.
+    // stripeAccount is a request option (second arg), not a params field.
+    const [balance, payoutsList] = await Promise.all([
+      stripe.balance.retrieve({}, { stripeAccount: accountId }),
+      stripe.payouts.list({ limit: 5 }, { stripeAccount: accountId }),
+    ]);
+
+    const availableCents = balance.available.reduce(
+      (sum, b) => (b.currency === "usd" ? sum + b.amount : sum),
+      0,
+    );
+    const pendingCents = balance.pending.reduce(
+      (sum, b) => (b.currency === "usd" ? sum + b.amount : sum),
+      0,
+    );
+
+    const recentPayouts = payoutsList.data.map((p) => ({
+      id: p.id,
+      amountCents: p.amount,
+      status: p.status,
+      arrivalDate: p.arrival_date,
+      description: p.description ?? null,
+    }));
+
+    logger.info(
+      { id, accountId, eventRevenueCents, hostPayoutCents, availableCents },
+      "stripe-workshops: payout-summary fetched",
+    );
+
+    res.json({
+      eventRevenueCents,
+      platformFeeCents,
+      hostPayoutCents,
+      paidTicketCount: paidRsvps.length,
+      surplusTickets,
+      stripeConnected: true,
+      accountBalance: {
+        availableCents,
+        pendingCents,
+      },
+      recentPayouts,
+    });
+  } catch (err) {
+    logger.error({ err }, "stripe-workshops: payout-summary failed");
+    res.status(500).json({ error: "Failed to fetch payout summary" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/ground-events/:id/connect/express-login
+//
+// Generates a one-time Stripe Express dashboard login link for the host so they
+// can view their balance, payouts, and transaction history directly in Stripe.
+// Requires the host management token for authentication.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/ground-events/:id/connect/express-login", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const hostToken =
+      typeof req.body?.token === "string" ? req.body.token.trim() :
+      typeof req.query.token === "string" ? req.query.token.trim() : "";
+
+    if (!hostToken) {
+      res.status(401).json({ error: "Missing host token" });
+      return;
+    }
+
+    const [event] = await db
+      .select({
+        hostToken: groundEventsTable.hostToken,
+        stripeConnectedAccountId: groundEventsTable.stripeConnectedAccountId,
+        stripeChargesEnabled: groundEventsTable.stripeChargesEnabled,
+      })
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.id, id))
+      .limit(1);
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.hostToken || event.hostToken !== hostToken) {
+      res.status(403).json({ error: "Invalid host token" });
+      return;
+    }
+
+    if (!event.stripeConnectedAccountId) {
+      res.status(400).json({ error: "Stripe Connect onboarding has not been started for this event" });
+      return;
+    }
+
+    if (!event.stripeChargesEnabled) {
+      res.status(400).json({ error: "Stripe Connect onboarding is not yet complete" });
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
+    const loginLink = await stripe.accounts.createLoginLink(event.stripeConnectedAccountId);
+
+    logger.info({ id, accountId: event.stripeConnectedAccountId }, "stripe-workshops: express login link created");
+
+    res.json({ url: loginLink.url });
+  } catch (err) {
+    logger.error({ err }, "stripe-workshops: express-login failed");
+    res.status(500).json({ error: "Failed to create Stripe Express login link" });
   }
 });
 

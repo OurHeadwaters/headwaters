@@ -49,6 +49,23 @@ interface ManageData {
   rsvps: Rsvp[];
 }
 
+interface PayoutSummary {
+  eventRevenueCents: number;
+  platformFeeCents: number;
+  hostPayoutCents: number;
+  paidTicketCount: number;
+  surplusTickets: number;
+  stripeConnected: boolean;
+  accountBalance: { availableCents: number; pendingCents: number } | null;
+  recentPayouts: Array<{
+    id: string;
+    amountCents: number;
+    status: string;
+    arrivalDate: number;
+    description: string | null;
+  }>;
+}
+
 const TRANSFORMATIONS: Record<string, { label: string; icon: string }> = {
   "conventional-to-regenerative": { label: "Conventional → Regenerative", icon: "🌱" },
   "tradfi-to-hard-assets": { label: "TradFi → Hard Assets", icon: "⚖️" },
@@ -317,12 +334,30 @@ function EventDetailView({
     retry: false,
   });
 
+  const isPaidEvent = !!data?.event?.ticketPriceCents;
+
+  const { data: payoutData, refetch: refetchPayout } = useQuery({
+    queryKey: ["payout-summary", eventId, token],
+    queryFn: async () => {
+      const res = await fetch(
+        apiUrl(`/ground-events/${eventId}/payout-summary?token=${encodeURIComponent(token)}`),
+        { credentials: "include" },
+      );
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) return null;
+      return j as PayoutSummary;
+    },
+    enabled: !!(eventId && token && isPaidEvent),
+    staleTime: 60_000,
+    retry: false,
+  });
+
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const connectResult = p.get("stripe_connect");
     if ((connectResult === "success" || connectResult === "refresh") && eventId && token) {
       fetch(apiUrl(`/ground-events/${eventId}/connect/status`), { credentials: "include" })
-        .then(() => void refetch())
+        .then(() => { void refetch(); void refetchPayout(); })
         .catch(() => void 0);
       const clean = new URL(window.location.href);
       clean.searchParams.delete("stripe_connect");
@@ -337,11 +372,24 @@ function EventDetailView({
   const { event, rsvps } = data!;
   const capacityPct = event.seats && event.seats > 0 ? Math.min(100, (event.rsvpCount / event.seats) * 100) : null;
   const isPaid = !!event.ticketPriceCents;
+
+  // Use Stripe-sourced figures from the payout-summary endpoint when available.
+  // Fall back to local estimates (from RSVP counts) while the summary is loading
+  // or when Stripe Connect hasn't been set up yet.
   const paidRsvps = rsvps.filter(r => r.paymentStatus === "paid");
-  const grossRevenue = isPaid && event.ticketPriceCents ? (paidRsvps.length * event.ticketPriceCents) / 100 : 0;
-  const surplusTickets = Math.max(0, paidRsvps.length - event.breakEvenTickets);
-  const platformEarned = isPaid && event.ticketPriceCents && event.platformSharePct
-    ? (surplusTickets * event.ticketPriceCents * event.platformSharePct) / 10000 : 0;
+  const localGrossRevenueCents = isPaid && event.ticketPriceCents ? paidRsvps.length * event.ticketPriceCents : 0;
+  const localSurplusTickets = Math.max(0, paidRsvps.length - event.breakEvenTickets);
+  const localPlatformFeeCents = isPaid && event.ticketPriceCents && event.platformSharePct
+    ? Math.round((localSurplusTickets * event.ticketPriceCents * event.platformSharePct) / 100) : 0;
+
+  const grossRevenueCents = payoutData?.eventRevenueCents ?? localGrossRevenueCents;
+  const platformFeeCents = payoutData?.platformFeeCents ?? localPlatformFeeCents;
+  const hostPayoutCents = payoutData?.hostPayoutCents ?? (grossRevenueCents - platformFeeCents);
+  const surplusTickets = payoutData?.surplusTickets ?? localSurplusTickets;
+
+  const grossRevenue = grossRevenueCents / 100;
+  const platformEarned = platformFeeCents / 100;
+  const hostPayout = hostPayoutCents / 100;
   const transformation = event.transformationSlug ? TRANSFORMATIONS[event.transformationSlug] : null;
 
   const downloadCsv = () => {
@@ -359,6 +407,16 @@ function EventDetailView({
     const j = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed");
     window.location.href = (j as { url: string }).url;
+  };
+
+  const openStripeDashboard = async () => {
+    const res = await fetch(apiUrl(`/ground-events/${eventId}/connect/express-login`), {
+      method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+      body: JSON.stringify({ token }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed");
+    window.open((j as { url: string }).url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -426,15 +484,23 @@ function EventDetailView({
                   { label: "Capacity", value: event.seats ? `${event.seats - event.rsvpCount} left` : "∞" },
                   ...(isPaid ? [
                     { label: "Gross Revenue", value: `$${grossRevenue.toFixed(2)}` },
-                    { label: "Platform Earned", value: `$${platformEarned.toFixed(2)}` },
+                    { label: "Host Payout", value: `$${hostPayout.toFixed(2)}`, highlight: true },
                   ] : []),
                 ].map(stat => (
-                  <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(58,80,64,0.3)" }}>
-                    <div className="text-xl font-bold mb-0.5" style={{ color: "#F2CA8C" }}>{stat.value}</div>
+                  <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: (stat as { highlight?: boolean }).highlight ? "rgba(44,74,54,0.25)" : "rgba(0,0,0,0.2)", border: (stat as { highlight?: boolean }).highlight ? "1px solid rgba(44,100,54,0.45)" : "1px solid rgba(58,80,64,0.3)" }}>
+                    <div className="text-xl font-bold mb-0.5" style={{ color: (stat as { highlight?: boolean }).highlight ? "#6DCA8A" : "#F2CA8C" }}>{stat.value}</div>
                     <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#5A8070" }}>{stat.label}</div>
                   </div>
                 ))}
               </div>
+              {isPaid && paidRsvps.length > 0 && (
+                <div className="rounded-lg px-3 py-2 mb-5 text-xs flex flex-wrap gap-x-4 gap-y-1" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(58,80,64,0.25)", color: "#5A8070" }}>
+                  <span>Break-even: <span style={{ color: "#8AB8A0" }}>{event.breakEvenTickets} tickets</span></span>
+                  <span>Platform share (surplus only): <span style={{ color: "#8AB8A0" }}>{event.platformSharePct ?? 0}%</span></span>
+                  <span>Surplus tickets sold: <span style={{ color: "#8AB8A0" }}>{surplusTickets}</span></span>
+                  <span>Platform earned: <span style={{ color: "#D9A066" }}>${platformEarned.toFixed(2)}</span></span>
+                </div>
+              )}
 
               {capacityPct !== null && (
                 <div className="mb-5">
@@ -453,13 +519,56 @@ function EventDetailView({
 
               {isPaid && (
                 <div className="rounded-xl p-4 mb-5" style={{ background: "rgba(217,160,102,0.06)", border: "1px solid rgba(217,160,102,0.2)" }}>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#8A7050" }}>Stripe Connect</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#8A7050" }}>Stripe Connect</p>
+                    {event.stripeChargesEnabled && (
+                      <button
+                        onClick={() => void openStripeDashboard()}
+                        className="flex items-center gap-1 text-xs transition-opacity hover:opacity-80"
+                        style={{ color: "#D9A066" }}
+                      >
+                        Open Express Dashboard <ExternalLink className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                   {event.stripeChargesEnabled ? (
-                    <div className="flex items-center gap-2 text-sm" style={{ color: "#6DCA8A" }}>
-                      <span>✓ Connected — payouts active</span>
-                      <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs ml-auto" style={{ color: "#D9A066" }}>
-                        Stripe Dashboard <ExternalLink className="w-3 h-3" />
-                      </a>
+                    <div className="space-y-3">
+                      <p className="text-xs" style={{ color: "#6DCA8A" }}>✓ Connected — payouts active</p>
+                      {payoutData?.accountBalance ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(44,74,54,0.2)", border: "1px solid rgba(44,100,54,0.3)" }}>
+                            <div className="text-base font-bold" style={{ color: "#6DCA8A" }}>
+                              ${(payoutData.accountBalance.availableCents / 100).toFixed(2)}
+                            </div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "#4A7060" }}>Available</div>
+                          </div>
+                          <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(58,80,64,0.25)" }}>
+                            <div className="text-base font-bold" style={{ color: "#D9A066" }}>
+                              ${(payoutData.accountBalance.pendingCents / 100).toFixed(2)}
+                            </div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "#4A7060" }}>Pending</div>
+                          </div>
+                        </div>
+                      ) : null}
+                      {payoutData?.recentPayouts && payoutData.recentPayouts.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "#5A7060" }}>Recent Bank Transfers</p>
+                          <div className="space-y-1.5">
+                            {payoutData.recentPayouts.map(p => (
+                              <div key={p.id} className="flex items-center justify-between text-xs rounded-lg px-2.5 py-1.5" style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(58,80,64,0.2)" }}>
+                                <span style={{ color: "#7AB8A0" }}>
+                                  {new Date(p.arrivalDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                  {p.description ? ` · ${p.description}` : ""}
+                                </span>
+                                <span className="font-semibold" style={{ color: p.status === "paid" ? "#6DCA8A" : "#D9A066" }}>
+                                  ${(p.amountCents / 100).toFixed(2)}
+                                  <span className="ml-1 text-[10px]" style={{ color: "#5A8070" }}>{p.status}</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-3 flex-wrap">
