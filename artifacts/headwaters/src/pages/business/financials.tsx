@@ -3,7 +3,7 @@ import { useGetHeadwatersBusinessSection, usePatchHeadwatersBusinessSection } fr
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Plus, Trash2 } from "lucide-react";
+import { DollarSign, Plus, Trash2, Clock, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FinancialRow {
@@ -12,6 +12,7 @@ interface FinancialRow {
   monthlyLow: number;
   monthlyHigh: number;
   timeline: string;
+  requiresTime: boolean;
 }
 
 function genId() {
@@ -34,7 +35,8 @@ export default function BusinessFinancials() {
 
   useEffect(() => {
     if (data && !initialized.current) {
-      setRows(Array.isArray(data.value) ? (data.value as FinancialRow[]) : []);
+      const loaded = Array.isArray(data.value) ? (data.value as FinancialRow[]) : [];
+      setRows(loaded.map((r) => ({ requiresTime: true, ...r })));
       initialized.current = true;
     }
   }, [data]);
@@ -55,7 +57,7 @@ export default function BusinessFinancials() {
   };
 
   const addRow = () =>
-    updateAndSave([...rows, { id: genId(), name: "", monthlyLow: 0, monthlyHigh: 0, timeline: "" }]);
+    updateAndSave([...rows, { id: genId(), name: "", monthlyLow: 0, monthlyHigh: 0, timeline: "", requiresTime: true }]);
 
   const removeRow = (id: string) =>
     updateAndSave(rows.filter((r) => r.id !== id));
@@ -69,12 +71,25 @@ export default function BusinessFinancials() {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
   };
 
+  const toggleRequiresTime = (id: string) => {
+    const next = rows.map((r) => (r.id === id ? { ...r, requiresTime: !r.requiresTime } : r));
+    updateAndSave(next);
+  };
+
   const saveOnBlur = () => {
     persist(rows);
   };
 
   const totalLow = rows.reduce((s, r) => s + (r.monthlyLow || 0), 0);
   const totalHigh = rows.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+
+  const activeLow = rows.filter((r) => r.requiresTime).reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const activeHigh = rows.filter((r) => r.requiresTime).reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+  const passiveLow = rows.filter((r) => !r.requiresTime).reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const passiveHigh = rows.filter((r) => !r.requiresTime).reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+
+  const hasRows = rows.length > 0;
+  const passivePct = totalHigh > 0 ? Math.round((passiveHigh / totalHigh) * 100) : 0;
 
   if (isLoading)
     return <div className="p-8 text-center text-muted-foreground">Loading financials...</div>;
@@ -90,7 +105,7 @@ export default function BusinessFinancials() {
             Financial Model
           </h1>
           <p className="text-muted-foreground mt-2">
-            Monthly revenue estimates per stream. Totals roll up at the bottom.
+            Monthly revenue estimates per stream. Toggle whether each stream requires your active time.
           </p>
         </div>
         <Button onClick={addRow} className="gap-2 shrink-0">
@@ -98,6 +113,48 @@ export default function BusinessFinancials() {
           Add Row
         </Button>
       </div>
+
+      {/* Time Leverage Summary */}
+      {hasRows && (
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Card className="border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/40">
+            <CardContent className="p-5 flex items-start gap-3">
+              <Clock size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1">Requires your time</p>
+                <p className="text-lg font-bold text-foreground tabular-nums">
+                  {fmt(activeLow)}{activeHigh !== activeLow && <> – {fmt(activeHigh)}</>}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">per month</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-emerald-200/60 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800/40">
+            <CardContent className="p-5 flex items-start gap-3">
+              <Zap size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Passive / runs itself</p>
+                <p className="text-lg font-bold text-foreground tabular-nums">
+                  {fmt(passiveLow)}{passiveHigh !== passiveLow && <> – {fmt(passiveHigh)}</>}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">per month</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60">
+            <CardContent className="p-5 flex items-start gap-3">
+              <DollarSign size={20} className="text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Passive share</p>
+                <p className="text-lg font-bold text-foreground tabular-nums">{passivePct}%</p>
+                <p className="text-xs text-muted-foreground mt-0.5">of total high estimate</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-0 overflow-x-auto">
@@ -108,13 +165,19 @@ export default function BusinessFinancials() {
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Monthly Low</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Monthly High</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Target Timeline</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Clock size={13} />
+                    My time?
+                  </span>
+                </th>
                 <th className="px-4 py-3 w-10" />
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground italic">
                     No revenue streams yet. Hit "Add Row" to start.
                   </td>
                 </tr>
@@ -161,6 +224,23 @@ export default function BusinessFinancials() {
                       className="bg-transparent border-0 shadow-none px-1 h-9 focus-visible:ring-0 focus-visible:bg-card"
                     />
                   </td>
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      onClick={() => toggleRequiresTime(r.id)}
+                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                        r.requiresTime
+                          ? "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300"
+                          : "bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300"
+                      }`}
+                      title={r.requiresTime ? "Click to mark as passive" : "Click to mark as time-dependent"}
+                    >
+                      {r.requiresTime ? (
+                        <><Clock size={11} /> Yes</>
+                      ) : (
+                        <><Zap size={11} /> Passive</>
+                      )}
+                    </button>
+                  </td>
                   <td className="px-3 py-2">
                     <button
                       onClick={() => removeRow(r.id)}
@@ -181,12 +261,14 @@ export default function BusinessFinancials() {
                   <td className="px-4 py-3 text-right text-foreground tabular-nums">{fmt(totalHigh)}</td>
                   <td className="px-4 py-3 text-muted-foreground text-sm">per month</td>
                   <td />
+                  <td />
                 </tr>
                 <tr className="bg-secondary/20 font-semibold text-muted-foreground">
                   <td className="px-4 py-3">Annual Total</td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(totalLow * 12)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(totalHigh * 12)}</td>
                   <td className="px-4 py-3 text-sm">per year</td>
+                  <td />
                   <td />
                 </tr>
               </tfoot>

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, type Variants } from "framer-motion";
-import { CheckCircle2, ArrowRight, Map, Hammer, Network } from "lucide-react";
+import { CheckCircle2, ArrowRight, Map, Hammer, Network, Flame, Radio } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Nav from "@/components/Nav";
@@ -23,9 +23,9 @@ const engagements = [
     price: "$1,500 – $3,000",
     timeline: "3 – 5 weeks",
     description:
-      "A structured analysis of your community economy across the six Headwaters zones. We identify where the capacity is, where the gaps are, and which Zone your community is ready to tackle first. You get a written report and a recommended path — no obligation to proceed.",
+      "A structured read of your community economy across the six Headwaters zones — with zero disruption to how your community already works. Bobbie asks how your people already communicate, then listens through those existing channels. Problems surface naturally. You get a written report and a recommended path — no obligation to proceed.",
     includes: [
-      "Community listening sessions (in-person or remote)",
+      "Ambient signal capture through your existing channels — no new meetings required",
       "Zone-by-zone gap analysis report",
       "Prioritised tool recommendations",
       "Capacity and readiness assessment",
@@ -73,6 +73,29 @@ const engagements = [
   },
 ];
 
+const signalSteps = [
+  {
+    num: "01",
+    title: "Problems surface in your channels",
+    body: "Bobbie asks how your community already communicates — phone, WhatsApp, Teams, group texts. She plugs into those same channels as a quiet observer. You change nothing about how you work.",
+  },
+  {
+    num: "02",
+    title: "Patterns become visible",
+    body: "Over weeks, recurring friction, gaps, and needs surface naturally — not because anyone called a meeting, but because that's where real problems live.",
+  },
+  {
+    num: "03",
+    title: "The right extinguisher gets matched",
+    body: "Every problem is a fire. Bobbie identifies which extinguisher fits — a specific tool, fix, or system from the toolkit. She makes the call; your community doesn't need to.",
+  },
+  {
+    num: "04",
+    title: "Maintained and trained monthly",
+    body: "The extinguisher stays current. Monthly upkeep keeps it sharp, and your community gets trained on exactly when to reach for it — so they're never stuck guessing.",
+  },
+];
+
 const tools = [
   { name: "Producer directory", desc: "Searchable, filterable registry of local growers and makers. Member-managed with admin approval." },
   { name: "Order management", desc: "Seasonal order forms, order confirmation emails, and admin tallying — no spreadsheet required." },
@@ -86,8 +109,8 @@ const tools = [
 const process = [
   {
     step: "01",
-    title: "Community listening session",
-    desc: "No pitch deck. A real conversation about your community, your current tools, and where the pressure is.",
+    title: "Plug into how you already communicate",
+    desc: "No pitch deck. No new meeting on your calendar. Bobbie asks how your community already talks — then observes through those same channels. Problems are already there; they just need someone listening.",
   },
   {
     step: "02",
@@ -207,6 +230,70 @@ export default function Services() {
             </motion.div>
           ))}
         </motion.div>
+      </section>
+
+      {/* Signal → Extinguisher explainer */}
+      <section className="py-24 px-6 md:px-12 bg-gradient-to-br from-[#1A2C18] to-[#0A180A] text-white">
+        <div className="max-w-5xl mx-auto space-y-16">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="text-center space-y-4"
+          >
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <Radio className="w-5 h-5 text-[#D9A066]" />
+              <p className="text-sm font-bold tracking-widest text-[#D9A066] uppercase">How the Zone Assessment actually works</p>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-serif text-[#FEFDFC]">
+              Signal captured. Extinguisher matched.
+            </h2>
+            <p className="text-[#E3D9CC] text-lg max-w-2xl mx-auto leading-relaxed">
+              Every problem is a fire. The Zone Assessment isn't a scheduled check-in — it's ambient listening through the channels your community already uses, so friction surfaces the moment it happens, not when someone finally calls a meeting about it.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid sm:grid-cols-2 gap-6"
+          >
+            {signalSteps.map((s) => (
+              <motion.div
+                key={s.num}
+                variants={fadeInUp}
+                className="flex gap-5 items-start p-6 rounded-xl border border-white/10 bg-white/5 hover:border-[#D9A066]/30 transition-colors"
+              >
+                <span className="text-3xl font-serif font-bold text-[#D9A066]/40 leading-none shrink-0 w-8">
+                  {s.num}
+                </span>
+                <div>
+                  <h4 className="font-bold text-[#FEFDFC] mb-2">{s.title}</h4>
+                  <p className="text-[#C8C0B4] text-sm leading-relaxed">{s.body}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="flex items-start gap-5 p-7 rounded-xl border border-[#D9A066]/30 bg-[#D9A066]/8"
+          >
+            <Flame className="w-6 h-6 text-[#D9A066] shrink-0 mt-1" />
+            <div className="space-y-1">
+              <p className="font-bold text-[#FEFDFC]">The client changes nothing about how they work.</p>
+              <p className="text-[#C8C0B4] text-sm leading-relaxed">
+                No new software. No new habits. No onboarding your team into a new platform. Bobbie listens through the channels already in use, surfaces the pattern, and delivers the decision. That decision — which extinguisher, when — is the only thing that requires her active time. Everything else runs on your existing infrastructure.
+              </p>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* The Seven Tools */}
