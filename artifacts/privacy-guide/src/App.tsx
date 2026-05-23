@@ -176,13 +176,17 @@ function GordPerched() {
   const [headTurn, setHeadTurn] = useState(0);
   const [patrolX, setPatrolX] = useState(0);
   const [isPatrolling, setIsPatrolling] = useState(false);
+  const [isStartled, setIsStartled] = useState(false);
   // Ref mirrors isPatrolling so the idle interval callback always sees the current value
   const isPatrollingRef = useRef(false);
+  const isStartledRef = useRef(false);
+  const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Only twitch head when idle — patrol controls head direction during movement
     const headTimer = setInterval(() => {
       if (isPatrollingRef.current) return;
+      if (isStartledRef.current) return;
       setHeadTurn((p) => (p === 0 ? (Math.random() > 0.5 ? 8 : -8) : 0));
     }, 2800);
     return () => clearInterval(headTimer);
@@ -192,6 +196,11 @@ function GordPerched() {
     let timeout: ReturnType<typeof setTimeout>;
     function patrol() {
       timeout = setTimeout(() => {
+        if (isStartledRef.current) {
+          // Delay patrol start if Gord is currently startled
+          patrol();
+          return;
+        }
         // Full left-right-left (or right-left-right) pacing sequence
         const dist = 30 + Math.random() * 10; // 30–40 px per leg
         const firstDir = Math.random() > 0.5 ? 1 : -1;
@@ -226,19 +235,53 @@ function GordPerched() {
     return () => clearTimeout(timeout);
   }, []);
 
+  // Scroll → startled reaction (debounced, once per scroll burst)
+  useEffect(() => {
+    function handleScroll() {
+      // Clear any pending debounce so we fire once at the end of a burst
+      if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+      scrollDebounceRef.current = setTimeout(() => {
+        if (isStartledRef.current) return; // already reacting
+        isStartledRef.current = true;
+        setIsStartled(true);
+        // Flick head to a random side then snap back
+        setHeadTurn(Math.random() > 0.5 ? 20 : -20);
+        // After the hop settles, relax the head and clear startled state
+        setTimeout(() => {
+          setHeadTurn(0);
+          isStartledRef.current = false;
+          setIsStartled(false);
+        }, 900);
+      }, 120);
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+    };
+  }, []);
+
   return (
     <motion.div
       className="gord-hero"
-      animate={{ x: isPatrolling ? patrolX : 0 }}
+      animate={{ x: isPatrolling && !isStartled ? patrolX : 0 }}
       transition={{ type: "spring", stiffness: 60, damping: 16 }}
     >
       <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+        animate={
+          isStartled
+            ? { y: [0, -18, 4, -10, 2, 0], rotate: [0, -4, 4, -2, 0] }
+            : { y: [0, -5, 0] }
+        }
+        transition={
+          isStartled
+            ? { duration: 0.7, ease: "easeOut" }
+            : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
+        }
       >
         <motion.div
           animate={{ rotateY: headTurn }}
-          transition={{ type: "spring", stiffness: 120, damping: 18 }}
+          transition={{ type: "spring", stiffness: 200, damping: 14 }}
         >
           <GordBird size={72} variant="full" />
         </motion.div>
