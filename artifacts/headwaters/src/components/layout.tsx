@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, Home, Users, PlusCircle, Briefcase, ChevronDown, ChevronRight, DollarSign, NotebookPen, ListOrdered, Settings, ClipboardList } from "lucide-react";
+import { LogOut, Home, Users, PlusCircle, Briefcase, ChevronDown, ChevronRight, DollarSign, NotebookPen, ListOrdered, Settings, ClipboardList, Rss } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -18,6 +18,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const businessSubItems = [
     { href: "/business/priorities", label: "Priorities", icon: ListOrdered },
     { href: "/business/financials", label: "Financials", icon: DollarSign },
+    { href: "/business/online-engine", label: "Online Engine", icon: Rss },
     { href: "/business/notes", label: "Notes", icon: NotebookPen },
   ];
 

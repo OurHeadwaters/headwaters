@@ -17,6 +17,7 @@ import IntakeReview from "@/pages/intake/review";
 import BusinessPriorities from "@/pages/business/priorities";
 import BusinessFinancials from "@/pages/business/financials";
 import BusinessNotes from "@/pages/business/notes";
+import OnlineEngine from "@/pages/business/online-engine";
 import SettingsPage from "@/pages/settings";
 import SubmissionsPage from "@/pages/submissions/index";
 import NotFound from "@/pages/not-found";
@@ -39,6 +40,7 @@ function Router() {
             <Route path="/business/priorities" component={BusinessPriorities} />
             <Route path="/business/financials" component={BusinessFinancials} />
             <Route path="/business/notes" component={BusinessNotes} />
+            <Route path="/business/online-engine" component={OnlineEngine} />
             <Route path="/settings" component={SettingsPage} />
             <Route path="/submissions" component={SubmissionsPage} />
             <Route component={NotFound} />
