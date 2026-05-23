@@ -59,6 +59,15 @@ async function postRsvp(data: {
   return j as { eventId: number; rsvpCount: number; rsvpId: number };
 }
 
+const TRANSFORMATIONS = [
+  { slug: "conventional-to-regenerative", label: "Conventional → Regenerative", icon: "🌱" },
+  { slug: "tradfi-to-hard-assets", label: "TradFi → Hard Assets", icon: "⚖️" },
+  { slug: "employee-to-owner", label: "Employee → Owner", icon: "🔑" },
+  { slug: "grid-to-off-grid", label: "Grid → Off-Grid", icon: "⚡" },
+  { slug: "outsourced-health-to-health-sovereign", label: "Outsourced Health → Health Sovereign", icon: "🌿" },
+  { slug: "individual-to-community-scale", label: "Individual → Community Scale", icon: "🤝" },
+];
+
 async function submitEvent(data: {
   title: string;
   description: string;
@@ -70,6 +79,7 @@ async function submitEvent(data: {
   externalUrl: string | null;
   seats: number | null;
   contactEmail: string;
+  transformationSlug?: string | null;
   ticketPriceCents?: number | null;
   breakEvenTickets?: number;
   platformSharePct?: number | null;
@@ -569,6 +579,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
   const [paidAmount, setPaidAmount] = useState("");
   const [breakEvenStr, setBreakEvenStr] = useState("");
   const [platformShare, setPlatformShare] = useState<5 | 10 | 15>(10);
+  const [transformationSlug, setTransformationSlug] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
   const [seatsStr, setSeatsStr] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -871,6 +882,26 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
           </div>
         </div>
 
+        <div>
+          <label style={labelStyle}>
+            Transformation path{" "}
+            <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#4A6850" }}>(optional)</span>
+          </label>
+          <select
+            value={transformationSlug}
+            onChange={(e) => setTransformationSlug(e.target.value)}
+            style={{ ...inputStyle, cursor: "pointer" }}
+          >
+            <option value="">— Not tagged —</option>
+            {TRANSFORMATIONS.map((t) => (
+              <option key={t.slug} value={t.slug}>{t.icon} {t.label}</option>
+            ))}
+          </select>
+          <p className="text-xs mt-1" style={{ color: "#4A6850" }}>
+            Tag this workshop so it shows up in transformation-filtered views.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label style={labelStyle}>Seats available</label>
@@ -1000,6 +1031,7 @@ function HostForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: ()
               externalUrl: externalUrl.trim() || null,
               seats: seatsVal,
               contactEmail: contactEmail.trim(),
+              transformationSlug: transformationSlug || null,
               ticketPriceCents: ticketPriceCents,
               breakEvenTickets: breakEvenTickets,
               platformSharePct: !isFree ? platformShare : null,
