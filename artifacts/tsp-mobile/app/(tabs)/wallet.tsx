@@ -9,6 +9,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -526,6 +527,28 @@ function IntakeModal({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (!rationale) return;
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const shareText = `My Headwaters intake note from Tasha Parr:\n\n"${rationale}"`;
+    if (Platform.OS === "web") {
+      try {
+        await (navigator as any).clipboard.writeText(shareText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        Alert.alert("Copy failed", "Unable to copy to clipboard.");
+      }
+    } else {
+      try {
+        await Share.share({ message: shareText });
+      } catch {}
+    }
+  };
 
   return (
     <Modal
@@ -638,6 +661,25 @@ function IntakeModal({
                 <Text style={[intakeStyles.rationaleAttrib, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
                   — Tasha Parr, Headwaters Practitioner
                 </Text>
+                <Pressable
+                  onPress={handleShare}
+                  style={({ pressed }) => [
+                    intakeStyles.shareBtn,
+                    {
+                      backgroundColor: pressed ? colors.primary + "cc" : colors.primary + "18",
+                      borderColor: colors.primary + "55",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={Platform.OS === "web" ? (copied ? "checkmark-outline" : "copy-outline") : "share-outline"}
+                    size={15}
+                    color={colors.primary}
+                  />
+                  <Text style={[intakeStyles.shareBtnText, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
+                    {Platform.OS === "web" ? (copied ? "Copied!" : "Copy Note") : "Share Note"}
+                  </Text>
+                </Pressable>
               </View>
             ) : (
               <View style={[intakeStyles.rationaleCard, { backgroundColor: colors.muted, borderColor: colors.woodBorder }]}>
@@ -901,4 +943,16 @@ const intakeStyles = StyleSheet.create({
     paddingVertical: 12,
   },
   dateText: { fontSize: 15 },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginTop: 4,
+  },
+  shareBtnText: { fontSize: 14 },
 });
