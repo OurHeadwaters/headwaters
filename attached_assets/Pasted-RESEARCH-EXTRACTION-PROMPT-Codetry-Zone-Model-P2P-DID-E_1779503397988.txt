@@ -1,0 +1,20 @@
+RESEARCH EXTRACTION PROMPT — Codetry Zone Model, P2P DID Engine, Reserve Nation Economics
+
+I need you to search this entire codebase and any session history for all framing, briefs, documents, or notes related to the following two structural declarations about the Codetry zone model:
+
+Declaration 1 — Zone 1 & Zone 5 as the P2P DID engine:
+Zone 1 (The Eave / Circle / immediate trust network) and Zone 5 (The Shallows / Wild / anonymous public commons) together form the peer-to-peer DID engine for sovereign people and reserve nation economics. These two zones operate outside the western commercial stack. They are connected by: anonymous DID on XRPL, trust-based identity (name + passphrase + invite), no organizational overhead, and economic flow that is ambient, ungoverned, and peer-to-peer.
+
+Declaration 2 — Zone 2, 3, 4 as the western commercial stack:
+Zone 2 (Workbench / The Deck / private business — contractual, practitioner-managed), Zone 3 (Community / The Field / organizations and industry networks — XRPL wallet identity, above-board), and Zone 4 (Trade / Nursery / Community Hall — informal volunteer forming layers and networks) together constitute the western commercial activity layer. These zones interface with grants, contracts, co-op bylaws, regulatory bodies, and formal organizational structures.
+
+What I need you to return:
+
+Every document, attached asset, session note, or code comment that explicitly or implicitly frames this two-stack structure (Z1+Z5 sovereign / Z2-4 commercial)
+Every mention of reserve nation economics, First Nations, indigenous sovereignty, or treaty economics in connection with the zone model
+Every mention of a "P2P engine," "DID engine," or peer-to-peer economic layer in connection with Zone 1 or Zone 5
+Any brief, even partial or draft, that was written about Zone 2 as "the grindstone" or "private business" layer distinct from Zone 3 organizations
+Anything about how Zone 1 (household trust network) and Zone 5 (anonymous wild commons) connect to each other structurally — what the seam looks like, what flows between them, what the P2P mechanism is
+Search: attached_assets/, docs/, documents/, replit.md, .local/tasks/, and any route files or guide content that might contain this framing.
+
+Return everything you find as a single compounded brief, verbatim where possible, with the file path of each source. If it doesn't exist in the codebase at all and only exists in conversation history, say so explicitly. Do not summarize or interpret — return the raw material

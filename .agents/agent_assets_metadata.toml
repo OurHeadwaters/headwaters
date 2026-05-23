@@ -71,3 +71,9 @@ id = "RnZ3GJBDHrRWlown1_okN"
 uri = "file://.local/handoffs/the-gate.md"
 type = "text"
 title = "The Gate — Complete Build Context & Handoff"
+
+[[outputs]]
+id = "gxQ7BnqnzEPzxVS74XLN6"
+uri = "file://.local/tasks/807-garden-visual-alignment.md"
+type = "text"
+title = "807 Garden — Visual Alignment Plan"
