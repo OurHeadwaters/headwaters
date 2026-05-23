@@ -238,6 +238,7 @@ export default function ForgeEditor() {
   const [activeTemplate, setActiveTemplate] = useState(0);
   const [gordPerching, setGordPerching] = useState(false);
   const [showToolWallMobile, setShowToolWallMobile] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   const editorRef = useRef<any>(null);
 
   useEffect(() => {
@@ -301,12 +302,29 @@ export default function ForgeEditor() {
               </button>
 
               <button
-                onClick={handleReset}
-                className="forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
+                onClick={() => setShowEditor(v => !v)}
+                className="hidden md:inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border transition-colors"
+                style={{
+                  borderColor: showEditor ? "#4A8C5C" : "#2A4A2A",
+                  color: showEditor ? "#A3C97A" : "#5A7A5A",
+                }}
               >
-                Reset
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+                </svg>
+                {showEditor ? "Hide code" : "Edit code"}
               </button>
 
+              {showEditor && (
+                <button
+                  onClick={handleReset}
+                  className="forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
+                >
+                  Reset
+                </button>
+              )}
+
+              {showEditor && (
               <motion.button
                 onClick={handleRun}
                 className="forge-btn-run text-sm px-5 py-1.5 rounded font-medium relative overflow-hidden"
@@ -337,45 +355,49 @@ export default function ForgeEditor() {
                   transition={{ duration: 0.4 }}
                 />
               </motion.button>
+              )}
             </div>
           </div>
 
           <div className="relative flex gap-0">
-            <div className="hidden md:flex flex-col w-[200px] shrink-0 forge-toolwall-panel">
-              <div className="px-4 py-3 border-b border-[#1E3820]">
-                <span className="text-[10px] font-bold tracking-widest text-[#5A7A5A] uppercase">Tool Wall</span>
-              </div>
-              <div className="flex flex-col gap-1 p-3">
-                {TEMPLATES.map((t, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleTemplateSelect(i)}
-                    className={`forge-plaque text-left text-xs px-3 py-2.5 rounded transition-all ${activeTemplate === i ? "forge-plaque-active" : ""}`}
-                  >
-                    <span className="block font-medium text-[#C4B49A]">{t.label}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Tool wall — only show when editor is open on desktop */}
+            {showEditor && (
+              <div className="hidden md:flex flex-col w-[200px] shrink-0 forge-toolwall-panel">
+                <div className="px-4 py-3 border-b border-[#1E3820]">
+                  <span className="text-[10px] font-bold tracking-widest text-[#5A7A5A] uppercase">Tool Wall</span>
+                </div>
+                <div className="flex flex-col gap-1 p-3">
+                  {TEMPLATES.map((t, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleTemplateSelect(i)}
+                      className={`forge-plaque text-left text-xs px-3 py-2.5 rounded transition-all ${activeTemplate === i ? "forge-plaque-active" : ""}`}
+                    >
+                      <span className="block font-medium text-[#C4B49A]">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
 
-              <div className="mt-auto px-4 py-3 border-t border-[#1E3820]">
-                <div className="text-[10px] font-bold tracking-widest text-[#5A7A5A] uppercase mb-2">Resources</div>
-                {[
-                  { label: "MDN Web Docs", url: "https://developer.mozilla.org" },
-                  { label: "CSS Tricks", url: "https://css-tricks.com" },
-                  { label: "JS.info", url: "https://javascript.info" },
-                ].map((r) => (
-                  <a
-                    key={r.url}
-                    href={r.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-xs text-[#8A9E8A] hover:text-[#D9A066] py-1 transition-colors"
-                  >
-                    → {r.label}
-                  </a>
-                ))}
+                <div className="mt-auto px-4 py-3 border-t border-[#1E3820]">
+                  <div className="text-[10px] font-bold tracking-widest text-[#5A7A5A] uppercase mb-2">Resources</div>
+                  {[
+                    { label: "MDN Web Docs", url: "https://developer.mozilla.org" },
+                    { label: "CSS Tricks", url: "https://css-tricks.com" },
+                    { label: "JS.info", url: "https://javascript.info" },
+                  ].map((r) => (
+                    <a
+                      key={r.url}
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-xs text-[#8A9E8A] hover:text-[#D9A066] py-1 transition-colors"
+                    >
+                      → {r.label}
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <AnimatePresence>
               {showToolWallMobile && (
@@ -399,69 +421,105 @@ export default function ForgeEditor() {
             </AnimatePresence>
 
             <div className="flex-1 min-w-0">
+              {/* Desktop: preview-only by default, split when editor is open */}
               <div className="hidden md:block">
-                <ResizablePanelGroup direction="horizontal" className="forge-panels-h">
-                  <ResizablePanel defaultSize={50} minSize={30}>
-                    <div className="forge-editor-pane h-full">
-                      <div className="forge-pane-label">editor</div>
-                      <Editor
-                        height="460px"
-                        language="html"
-                        value={code}
-                        onChange={(v) => setCode(v ?? "")}
-                        onMount={handleEditorMount}
-                        theme="forge-dark"
-                        options={{
-                          fontSize: 13,
-                          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                          lineNumbers: "on",
-                          minimap: { enabled: false },
-                          scrollBeyondLastLine: false,
-                          wordWrap: "on",
-                          padding: { top: 12, bottom: 12 },
-                          renderLineHighlight: "line",
-                          scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
-                        }}
-                      />
-                    </div>
-                  </ResizablePanel>
+                {showEditor ? (
+                  <ResizablePanelGroup direction="horizontal" className="forge-panels-h">
+                    <ResizablePanel defaultSize={42} minSize={28}>
+                      <div className="forge-editor-pane h-full">
+                        <div className="forge-pane-label">editor</div>
+                        <Editor
+                          height="460px"
+                          language="html"
+                          value={code}
+                          onChange={(v) => setCode(v ?? "")}
+                          onMount={handleEditorMount}
+                          theme="forge-dark"
+                          options={{
+                            fontSize: 13,
+                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+                            lineNumbers: "on",
+                            minimap: { enabled: false },
+                            scrollBeyondLastLine: false,
+                            wordWrap: "on",
+                            padding: { top: 12, bottom: 12 },
+                            renderLineHighlight: "line",
+                            scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+                          }}
+                        />
+                      </div>
+                    </ResizablePanel>
 
-                  <ResizableHandle withHandle className="forge-resize-handle" />
+                    <ResizableHandle withHandle className="forge-resize-handle" />
 
-                  <ResizablePanel defaultSize={50} minSize={30}>
-                    <div className="forge-preview-pane h-full relative">
-                      <div className="forge-pane-label">preview</div>
-                      <SparkBurst trigger={sparkTrigger} />
-                      <iframe
-                        key={previewSrc}
-                        srcDoc={previewSrc}
-                        sandbox="allow-scripts"
-                        className="w-full h-[460px] border-0 bg-white"
-                        title="Live preview"
-                      />
-
-                      <AnimatePresence>
-                        {gordPerching && (
-                          <motion.div
-                            initial={{ x: 20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: 20, opacity: 0 }}
-                            className="absolute bottom-2 right-2 pointer-events-none"
-                          >
+                    <ResizablePanel defaultSize={58} minSize={30}>
+                      <div className="forge-preview-pane h-full relative">
+                        <div className="forge-pane-label">preview</div>
+                        <SparkBurst trigger={sparkTrigger} />
+                        <iframe
+                          key={previewSrc}
+                          srcDoc={previewSrc}
+                          sandbox="allow-scripts"
+                          className="w-full h-[460px] border-0 bg-white"
+                          title="Live preview"
+                        />
+                        <AnimatePresence>
+                          {gordPerching && (
                             <motion.div
-                              animate={{ y: [0, -2, 0] }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                              initial={{ x: 20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              exit={{ x: 20, opacity: 0 }}
+                              className="absolute bottom-2 right-2 pointer-events-none"
                             >
-                              <GordBird size={42} variant="head" eyeTarget={{ dx: -0.3, dy: -0.2 }} />
+                              <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
+                                <GordBird size={42} variant="head" eyeTarget={{ dx: -0.3, dy: -0.2 }} />
+                              </motion.div>
                             </motion.div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                ) : (
+                  /* Preview-only state */
+                  <div className="forge-preview-pane relative">
+                    <div className="forge-pane-label">preview</div>
+                    <SparkBurst trigger={sparkTrigger} />
+                    <iframe
+                      key={previewSrc}
+                      srcDoc={previewSrc}
+                      sandbox="allow-scripts"
+                      className="w-full h-[460px] border-0 bg-white"
+                      title="Live preview"
+                    />
+                    {/* Subtle "Edit code" nudge overlay */}
+                    <div className="absolute bottom-4 right-4 pointer-events-none">
+                      <div className="text-[11px] text-[#4A6A4A] flex items-center gap-1.5">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+                        </svg>
+                        Edit code to customise
+                      </div>
                     </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                    <AnimatePresence>
+                      {gordPerching && (
+                        <motion.div
+                          initial={{ x: 20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          exit={{ x: 20, opacity: 0 }}
+                          className="absolute bottom-2 right-2 pointer-events-none"
+                        >
+                          <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
+                            <GordBird size={42} variant="head" eyeTarget={{ dx: -0.3, dy: -0.2 }} />
+                          </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
 
+              {/* Mobile: always show editor + preview stacked */}
               <div className="md:hidden flex flex-col">
                 <div className="forge-editor-pane">
                   <div className="forge-pane-label">editor</div>
