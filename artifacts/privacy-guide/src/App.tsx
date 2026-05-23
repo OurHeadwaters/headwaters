@@ -327,11 +327,7 @@ function GordPerched() {
         }
         transition={
           isStartled
-<<<<<<< HEAD
-            ? { duration: 0.75, ease: "easeOut" }
-=======
             ? { duration: startleLevel === 0 ? 0.7 : startleLevel === 1 ? 0.85 : 1.0, ease: "easeOut" }
->>>>>>> 2705890 (feat(privacy-guide): escalate Gord's startle reaction on consecutive scrolls)
             : isSettling
             ? { duration: startleLevel === 0 ? 0.42 : startleLevel === 1 ? 0.52 : 0.65, ease: "easeOut" }
             : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
