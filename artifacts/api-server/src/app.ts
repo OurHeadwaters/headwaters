@@ -78,4 +78,13 @@ app.get("/headwaters/*splat", (_req, res) => {
   res.sendFile(path.join(hwDist, "index.html"));
 });
 
+// ─── Crypto Castle static SPA ─────────────────────────────────────────────────
+// Serves the pre-built Crypto Castle React app at /crypto-castle/.
+// Run `pnpm --filter @workspace/crypto-castle run build` to update the assets.
+const castleDist = path.resolve(__dirname, "../../../artifacts/crypto-castle/dist/public");
+app.use("/crypto-castle", express.static(castleDist));
+app.get("/crypto-castle/*splat", (_req, res) => {
+  res.sendFile(path.join(castleDist, "index.html"));
+});
+
 export default app;
