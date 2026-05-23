@@ -13,6 +13,8 @@ import {
   ExternalLink,
   AlertCircle,
   CheckCircle,
+  Gift,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 
@@ -30,6 +32,26 @@ interface BrigadeStatus {
 
 interface MemberCountData {
   count: number;
+}
+
+interface WishingWellCredit {
+  id: number;
+  amountCents: number;
+  source: string;
+  distributionId: number | null;
+  redeemedAt: string | null;
+  createdAt: string;
+}
+
+interface CreditsData {
+  totalCents: number;
+  credits: WishingWellCredit[];
+}
+
+async function fetchCredits(): Promise<CreditsData> {
+  const res = await fetch(apiUrl("/wishing-well/credits"), { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch credits");
+  return res.json();
 }
 
 async function fetchBrigadeStatus(): Promise<BrigadeStatus> {
@@ -165,6 +187,13 @@ export function BrigadePage() {
   const { data: memberCount } = useQuery({
     queryKey: ["brigade-member-count"],
     queryFn: fetchMemberCount,
+  });
+
+  const { data: creditsData } = useQuery({
+    queryKey: ["wishing-well-credits"],
+    queryFn: fetchCredits,
+    enabled: isAuthenticated,
+    retry: false,
   });
 
   const checkoutMutation = useMutation({
@@ -322,6 +351,19 @@ export function BrigadePage() {
               />
             </div>
 
+            {/* Wishing Well credit balance banner */}
+            {isAuthenticated && creditsData && creditsData.totalCents > 0 && (
+              <div className="flex items-start gap-3 bg-[#D9A066]/10 border border-[#D9A066]/40 rounded-xl px-4 py-3.5 mb-4">
+                <Gift className="w-4 h-4 text-[#D9A066] flex-shrink-0 mt-0.5" />
+                <p className="text-[#D9A066] text-sm">
+                  <span className="font-semibold">
+                    You have ${(creditsData.totalCents / 100).toFixed(2)} in Wishing Well credits
+                  </span>{" "}
+                  — applied automatically at checkout.
+                </p>
+              </div>
+            )}
+
             {checkoutMutation.isError && (
               <div className="flex items-start gap-2 bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-3 text-red-300 text-sm mb-4">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -345,6 +387,63 @@ export function BrigadePage() {
             <p className="text-white/30 text-xs text-center mt-4">
               Payments processed securely by Stripe. Cancel anytime from your account.
             </p>
+          </div>
+        )}
+
+        {/* Wishing Well credits history — shown to authenticated users who have any credits */}
+        {isAuthenticated && creditsData && creditsData.credits.length > 0 && (
+          <div className="mt-12 max-w-md mx-auto">
+            <h2 className="font-serif text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Gift className="w-5 h-5 text-[#D9A066]" />
+              Wishing Well Credits
+            </h2>
+
+            {creditsData.totalCents > 0 && (
+              <div className="bg-[#1e3428] border border-[#D9A066]/30 rounded-xl px-5 py-4 mb-4">
+                <div className="text-white/60 text-sm">Available balance</div>
+                <div className="text-[#D9A066] font-bold text-2xl mt-0.5">
+                  ${(creditsData.totalCents / 100).toFixed(2)}
+                </div>
+                <div className="text-white/40 text-xs mt-1">
+                  Applied automatically when you join the Brigade
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              {creditsData.credits.map((credit) => (
+                <div
+                  key={credit.id}
+                  className="flex items-center justify-between bg-white/5 border border-white/8 rounded-xl px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded-lg ${credit.redeemedAt ? "bg-white/10" : "bg-[#D9A066]/15"}`}>
+                      {credit.redeemedAt ? (
+                        <Check className="w-3.5 h-3.5 text-white/40" />
+                      ) : (
+                        <Gift className="w-3.5 h-3.5 text-[#D9A066]" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-white text-sm font-medium">
+                        {credit.redeemedAt ? "Credit redeemed" : "Wishing Well win"}
+                      </div>
+                      <div className="flex items-center gap-1 text-white/40 text-xs mt-0.5">
+                        <Clock className="w-3 h-3" />
+                        {new Date(credit.redeemedAt ?? credit.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`font-semibold text-sm ${credit.redeemedAt ? "text-white/40 line-through" : "text-[#D9A066]"}`}>
+                    ${(credit.amountCents / 100).toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

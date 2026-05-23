@@ -431,7 +431,9 @@ router.patch("/wishing-well/winner/:date/impact", async (req, res) => {
 
 /**
  * GET /api/wishing-well/credits
- * Returns the authenticated user's unredeemed Wishing Well credits.
+ * Returns the authenticated user's Wishing Well credit balance and full history.
+ * - `totalCents`: sum of unredeemed credits
+ * - `credits`: all credit records (both redeemed and unredeemed), newest first
  */
 router.get("/wishing-well/credits", async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -442,15 +444,13 @@ router.get("/wishing-well/credits", async (req, res) => {
     const credits = await db
       .select()
       .from(wishingWellCreditsTable)
-      .where(
-        and(
-          eq(wishingWellCreditsTable.userId, req.user.id),
-          isNull(wishingWellCreditsTable.redeemedAt),
-        ),
-      )
+      .where(eq(wishingWellCreditsTable.userId, req.user.id))
       .orderBy(desc(wishingWellCreditsTable.createdAt));
 
-    const totalCents = credits.reduce((sum, c) => sum + c.amountCents, 0);
+    const totalCents = credits
+      .filter((c) => c.redeemedAt === null)
+      .reduce((sum, c) => sum + c.amountCents, 0);
+
     res.json({ totalCents, credits });
   } catch (err) {
     logger.error({ err }, "wishing-well: GET /credits failed");
