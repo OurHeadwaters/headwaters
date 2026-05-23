@@ -623,97 +623,6 @@ function HeroEntrance() {
   );
 }
 
-// ─── Chapter One Portal (Silent Mall Story gateway) ────────────────────────────
-
-function ChapterOnePortal() {
-  return (
-    <section className="relative bg-[#0a0e0b] py-12 sm:py-16 md:py-28 overflow-hidden border-y border-white/5">
-      {/* Cinematic vignette background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(44,74,54,0.18)_0%,transparent_70%)]" />
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `url(https://silent-mall-story.replit.app/og-image.jpg)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "blur(18px) brightness(0.3)",
-        }}
-      />
-
-      <div className="relative container mx-auto px-4 md:px-6 max-w-5xl">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 md:gap-20 items-center">
-          {/* Left — narrative */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.9 }}
-          >
-            <div className="flex items-center gap-3 mb-5">
-              <div className="h-px w-8 bg-[#D9A066]/60" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D9A066]/80">
-                Exit and Build · A Field Note
-              </span>
-            </div>
-
-            <h2 className="font-serif text-4xl md:text-5xl text-[#FDFBF7] font-bold leading-tight mb-4">
-              Before the path,<br />
-              <span className="italic text-[#D9A066]">the silent mall.</span>
-            </h2>
-
-            <p className="text-[#FDFBF7]/60 text-base md:text-lg leading-relaxed max-w-xl mb-8">
-              A short film and field note about what happens when the systems
-              you were built for stop working — and what you do next.
-              Chapter One. Companion piece to this path.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <a
-                href="https://silent-mall-story.replit.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full font-bold text-[#2C4A36] bg-gradient-to-r from-[#D9A066] to-[#e8b06b] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(217,160,102,0.4)] transition-all shadow-lg"
-              >
-                <PlayCircle className="w-4 h-4" />
-                Watch the film
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a
-                href="https://silent-mall-story.replit.app/pitch-deck/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-[#FDFBF7]/80 border border-[#FDFBF7]/15 hover:bg-[#FDFBF7]/5 hover:text-[#FDFBF7] transition-all"
-              >
-                Read the field note
-              </a>
-            </div>
-          </motion.div>
-
-          {/* Right — chapter badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="hidden md:flex flex-col items-center justify-center gap-3 text-center"
-          >
-            <div className="relative w-36 h-36 rounded-full border border-[#D9A066]/25 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm shadow-[0_0_60px_rgba(217,160,102,0.15)]">
-              <span className="text-[#D9A066]/50 text-[9px] font-bold uppercase tracking-[0.3em] mb-1">Chapter</span>
-              <span className="font-serif text-5xl text-[#D9A066] font-bold leading-none">01</span>
-              <span className="text-[#FDFBF7]/40 text-[9px] font-bold uppercase tracking-[0.3em] mt-1">Companion</span>
-              <span className="absolute inset-0 rounded-full animate-tsp-pulse-ring opacity-30" style={{ background: "rgba(217,160,102,0.1)" }} />
-            </div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#FDFBF7]/25 max-w-[120px]">
-              Start where you are.<br />Do what you can.<br />
-              <span className="text-[#D9A066]/60">See the ripple effect.</span>
-            </p>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ─── Problems → Solutions (Storm to Bloom) ─────────────────────────────────────
 
 const STORM_SOLUTIONS = [
@@ -1259,7 +1168,6 @@ export function Home() {
       <DailyStompOrb />
 
       <HeroEntrance />
-      <ChapterOnePortal />
       <StormToBloomSection />
       <JourneyMapSection />
       <CuratedPathsSection />

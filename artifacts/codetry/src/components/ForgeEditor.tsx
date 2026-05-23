@@ -294,13 +294,50 @@ export default function ForgeEditor() {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Mobile-only controls — always visible */}
               <button
                 className="md:hidden text-[#8A9E8A] hover:text-[#D9A066] text-xs border border-[#2A4A2A] px-3 py-1.5 rounded transition-colors"
                 onClick={() => setShowToolWallMobile(v => !v)}
               >
                 Templates
               </button>
+              <button
+                onClick={handleReset}
+                className="md:hidden forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
+              >
+                Reset
+              </button>
+              <motion.button
+                onClick={handleRun}
+                className="md:hidden forge-btn-run text-sm px-4 py-1.5 rounded font-medium relative overflow-hidden"
+                whileTap={{ scale: 0.95 }}
+                animate={isRunning ? { scale: [1, 0.97, 1] } : {}}
+                transition={{ duration: 0.3 }}
+              >
+                {isRunning ? (
+                  <span className="flex items-center gap-1.5">
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: "linear" }}
+                      className="inline-block"
+                    >⚙</motion.span>
+                    Running…
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z" /></svg>
+                    Run
+                  </span>
+                )}
+                <motion.div
+                  className="absolute inset-0 rounded bg-[#F0C07A]/20"
+                  initial={{ scale: 0, opacity: 0.8 }}
+                  animate={isRunning ? { scale: 1.5, opacity: 0 } : { scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </motion.button>
 
+              {/* Desktop-only controls */}
               <button
                 onClick={() => setShowEditor(v => !v)}
                 className="hidden md:inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border transition-colors"
@@ -318,7 +355,7 @@ export default function ForgeEditor() {
               {showEditor && (
                 <button
                   onClick={handleReset}
-                  className="forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
+                  className="hidden md:inline-flex forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
                 >
                   Reset
                 </button>
@@ -327,7 +364,7 @@ export default function ForgeEditor() {
               {showEditor && (
               <motion.button
                 onClick={handleRun}
-                className="forge-btn-run text-sm px-5 py-1.5 rounded font-medium relative overflow-hidden"
+                className="hidden md:inline-flex forge-btn-run text-sm px-5 py-1.5 rounded font-medium relative overflow-hidden"
                 whileTap={{ scale: 0.95 }}
                 animate={isRunning ? { scale: [1, 0.97, 1] } : {}}
                 transition={{ duration: 0.3 }}
