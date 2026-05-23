@@ -6,6 +6,7 @@ import { refreshAll, getSyncStatus } from "../lib/library";
 import { invalidateTagQueryCache } from "./episodes";
 import { SERIES_REGISTRY } from "../lib/series";
 import { logger } from "../lib/logger";
+import { requireBrigade } from "../middlewares/requireBrigade";
 
 const router: IRouter = Router();
 
@@ -48,7 +49,7 @@ function toApiItem(row: typeof contentItemsTable.$inferSelect) {
   };
 }
 
-router.get("/library/search", async (req, res) => {
+router.get("/library/search", requireBrigade, async (req, res) => {
   try {
     const limit = safeInt(req.query.limit, 20, 1, 100);
     const offset = safeInt(req.query.offset, 0, 0, 100_000);

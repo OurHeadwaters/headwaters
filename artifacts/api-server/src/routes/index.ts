@@ -31,6 +31,7 @@ import mapRouter from "./map";
 import codetryAssessRouter from "./codetry-assess";
 import headwatersRouter from "./headwaters";
 import firesideChatsRouter from "./fireside-chats";
+import brigadeRouter from "./brigade";
 
 const router: IRouter = Router();
 
@@ -45,6 +46,7 @@ router.use(tracksRouter);
 router.use(transformationsRouter);
 router.use(gapsRouter);
 router.use(gearRouter);
+router.use(brigadeRouter);
 router.use(trackProgressRouter);
 router.use(wishingWellRouter);
 router.use(v4vRouter);

@@ -1,10 +1,11 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, userTrackProgressTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
+import { requireBrigade } from "../middlewares/requireBrigade";
 
 const router: IRouter = Router();
 
-router.get("/track-progress/:slug", async (req: Request, res: Response) => {
+router.get("/track-progress/:slug", requireBrigade, async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -26,7 +27,7 @@ router.get("/track-progress/:slug", async (req: Request, res: Response) => {
   res.json({ doneIds: rows.map((r) => r.episodeId) });
 });
 
-router.patch("/track-progress/:slug", async (req: Request, res: Response) => {
+router.patch("/track-progress/:slug", requireBrigade, async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -61,7 +62,7 @@ router.patch("/track-progress/:slug", async (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-router.post("/track-progress/:slug/merge", async (req: Request, res: Response) => {
+router.post("/track-progress/:slug/merge", requireBrigade, async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
     return;

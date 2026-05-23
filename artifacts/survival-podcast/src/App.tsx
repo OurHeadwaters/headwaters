@@ -38,6 +38,8 @@ import { AdminFieldNotes } from "@/pages/admin-field-notes";
 import StompingGroundsPage from "@/pages/stomping-grounds";
 import MapPage from "@/pages/map";
 import NotFound from "@/pages/not-found";
+import BrigadePage from "@/pages/brigade";
+import AdminBrigade from "@/pages/admin-brigade";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +94,8 @@ function Router() {
         <Route path="/stomping-grounds" component={StompingGroundsPage} />
         <Route path="/history" component={HistoryPage} />
         <Route path="/map" component={MapPage} />
+        <Route path="/brigade" component={BrigadePage} />
+        <Route path="/admin/brigade" component={AdminBrigade} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

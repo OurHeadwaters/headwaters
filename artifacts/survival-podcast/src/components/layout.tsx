@@ -1,11 +1,31 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogIn, LogOut, User, ChevronDown, Map } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, ChevronDown, Map, Shield } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
 import { GordGuide } from "./gord-guide";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
+
+function apiUrl(path: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${base}/api${path}`;
+}
+
+function useBrigadeStatus(isAuthenticated: boolean) {
+  return useQuery({
+    queryKey: ["brigade-status"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/brigade/status"), { credentials: "include" });
+      if (!res.ok) return { isMember: false };
+      return res.json() as Promise<{ isMember: boolean }>;
+    },
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
 
 const journeyItems = [
   { href: "/tracks", label: "Tracks", desc: "Structured learning paths through TSP's best content" },
@@ -20,6 +40,7 @@ const communityItems = [
 ];
 
 const adminItems = [
+  { href: "/admin/brigade", label: "Brigade", desc: "Membership stats: members, MRR, renewals" },
   { href: "/admin/ground-events", label: "Workshop Board", desc: "Manage ground events and workshops" },
   { href: "/admin/categories", label: "Category Descriptions", desc: "Edit category descriptions" },
   { href: "/admin/content-gaps", label: "Content Gaps", desc: "Identify content gaps" },
@@ -172,6 +193,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [adminOpen, setAdminOpen] = useState(false);
   const { episode } = usePlayer();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
+  const { data: brigadeData } = useBrigadeStatus(isAuthenticated);
+  const isBrigadeMember = brigadeData?.isMember === true;
 
   const journeyPaths = journeyItems.map((i) => i.href);
   const communityPaths = communityItems.map((i) => i.href);
@@ -259,6 +282,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Grounds
             </Link>
 
+            {/* Brigade */}
+            <Link
+              href="/brigade"
+              className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
+                location === "/brigade"
+                  ? "text-white border-b-2 border-[#D9A066]"
+                  : "text-white/65 hover:text-white"
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Brigade
+            </Link>
+
             {/* Admin dropdown */}
             <DropdownMenu
               label="Admin"
@@ -285,6 +321,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {!authLoading && (
               isAuthenticated ? (
                 <div className="flex items-center gap-2 ml-1">
+                  {isBrigadeMember && (
+                    <Link
+                      href="/brigade"
+                      className="flex items-center gap-1 bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D9A066]/40 hover:bg-[#D9A066]/30 transition-colors uppercase tracking-wider"
+                      title="Brigade Member"
+                    >
+                      <Shield className="w-2.5 h-2.5" />
+                      Brigade
+                    </Link>
+                  )}
                   {user?.profileImageUrl ? (
                     <img
                       src={user.profileImageUrl}
@@ -436,6 +482,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
               onClick={() => setMenuOpen(false)}
             >
               Grounds
+            </Link>
+
+            {/* Brigade */}
+            <Link
+              href="/brigade"
+              className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
+                location === "/brigade"
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+              onClick={() => setMenuOpen(false)}
+            >
+              <Shield className="w-4 h-4" />
+              Brigade
+              {isBrigadeMember && (
+                <span className="ml-auto bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D9A066]/40 uppercase tracking-wider">
+                  Member
+                </span>
+              )}
             </Link>
 
             {/* Admin accordion */}

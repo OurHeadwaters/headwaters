@@ -89,6 +89,16 @@ app.listen(port, (err) => {
   // Initialise Stripe after server is ready (non-blocking)
   initStripe();
 
+  // Ensure Brigade Stripe product + prices exist (non-blocking)
+  import("./lib/brigade-products")
+    .then(({ ensureBrigadeProducts }) => ensureBrigadeProducts())
+    .then(({ monthlyPriceId, annualPriceId }) =>
+      logger.info({ monthlyPriceId, annualPriceId }, "brigade-products: prices ready"),
+    )
+    .catch((err) =>
+      logger.warn({ err }, "brigade-products: setup skipped (non-fatal) — Stripe may not be connected"),
+    );
+
   // Nostr ingestion — runs once at startup then daily (non-blocking)
   startNostrIngestion();
 
