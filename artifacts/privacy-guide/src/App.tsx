@@ -177,9 +177,11 @@ function GordPerched() {
   const [patrolX, setPatrolX] = useState(0);
   const [isPatrolling, setIsPatrolling] = useState(false);
   const [isStartled, setIsStartled] = useState(false);
+  const [isSettling, setIsSettling] = useState(false);
   // Ref mirrors isPatrolling so the idle interval callback always sees the current value
   const isPatrollingRef = useRef(false);
   const isStartledRef = useRef(false);
+  const isSettlingRef = useRef(false);
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -196,8 +198,8 @@ function GordPerched() {
     let timeout: ReturnType<typeof setTimeout>;
     function patrol() {
       timeout = setTimeout(() => {
-        if (isStartledRef.current) {
-          // Delay patrol start if Gord is currently startled
+        if (isStartledRef.current || isSettlingRef.current) {
+          // Delay patrol start if Gord is currently startled or settling
           patrol();
           return;
         }
@@ -246,11 +248,18 @@ function GordPerched() {
         setIsStartled(true);
         // Flick head to a random side then snap back
         setHeadTurn(Math.random() > 0.5 ? 20 : -20);
-        // After the hop settles, relax the head and clear startled state
+        // After the hop lands, run a brief settling ruffle then return to idle
         setTimeout(() => {
           setHeadTurn(0);
           isStartledRef.current = false;
           setIsStartled(false);
+          // Settling phase: brief body ruffle before resuming patrol
+          isSettlingRef.current = true;
+          setIsSettling(true);
+          setTimeout(() => {
+            isSettlingRef.current = false;
+            setIsSettling(false);
+          }, 420);
         }, 900);
       }, 120);
     }
@@ -271,11 +280,15 @@ function GordPerched() {
         animate={
           isStartled
             ? { y: [0, -18, 4, -10, 2, 0], rotate: [0, -4, 4, -2, 0] }
+            : isSettling
+            ? { scaleX: [1, 1.08, 0.96, 1.04, 1], scaleY: [1, 0.94, 1.06, 0.98, 1], rotate: [0, -2, 2, -1, 0] }
             : { y: [0, -5, 0] }
         }
         transition={
           isStartled
             ? { duration: 0.7, ease: "easeOut" }
+            : isSettling
+            ? { duration: 0.42, ease: "easeOut" }
             : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
         }
       >
