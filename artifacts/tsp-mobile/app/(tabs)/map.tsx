@@ -486,14 +486,25 @@ export default function MapScreen() {
             </WoodCard>
           )}
 
-          <Text
-            style={[
-              screenStyles.sectionHeading,
-              { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" },
-            ]}
-          >
-            All Zones
-          </Text>
+          <View style={screenStyles.zonesHeadingRow}>
+            <Text
+              style={[
+                screenStyles.sectionHeading,
+                { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" },
+              ]}
+            >
+              {entryMode === "practitioner" && shownZones.length < ALL_ZONES.length
+                ? "Your Curated Zones"
+                : "All Zones"}
+            </Text>
+            {entryMode === "practitioner" && (
+              <View style={[screenStyles.hwPerkBadge, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "33" }]}>
+                <Text style={[screenStyles.hwPerkText, { color: colors.primary, fontFamily: "DMSans_600SemiBold" }]}>
+                  💧 Headwaters Member
+                </Text>
+              </View>
+            )}
+          </View>
 
           {shownZones.map((slug) => (
             <ZoneRow
@@ -559,13 +570,27 @@ const screenStyles = StyleSheet.create({
     marginBottom: 6,
   },
   rationaleText: { fontSize: 14, lineHeight: 21 },
+  zonesHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    marginTop: 4,
+    flexWrap: "wrap",
+    gap: 6,
+  },
   sectionHeading: {
     fontSize: 11,
     letterSpacing: 0.9,
     textTransform: "uppercase",
-    marginBottom: 10,
-    marginTop: 4,
   },
+  hwPerkBadge: {
+    borderRadius: 5,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  hwPerkText: { fontSize: 11, letterSpacing: 0.2 },
   webLink: {
     flexDirection: "row",
     alignItems: "center",

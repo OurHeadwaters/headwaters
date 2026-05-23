@@ -18,12 +18,19 @@ import { useColors } from "@/hooks/useColors";
 import { useV4V } from "@/context/V4VContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { WoodCard } from "@/components/homestead/WoodCard";
+import { useMobileAuth } from "@/context/MobileAuthContext";
+import { useLifestyleMap } from "@/hooks/useLifestyleMap";
 
 export default function WalletScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { wallet, isSupporter, stats, connectLightning, connectXrpl, disconnectWallet } = useV4V();
   const { replayTour } = useOnboarding();
+  const { isAuthenticated } = useMobileAuth();
+  const { state: mapState } = useLifestyleMap();
+
+  const isHeadwatersMember =
+    mapState.status === "ready" && mapState.map.entryMode === "practitioner";
 
   const [tab, setTab] = useState<"lightning" | "xrpl">("lightning");
   const [lightningInput, setLightningInput] = useState("");
@@ -292,6 +299,88 @@ export default function WalletScreen() {
           </View>
         </View>
 
+        {/* Headwaters Membership */}
+        {isAuthenticated && mapState.status !== "loading" && mapState.status !== "unauthenticated" && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+              Headwaters
+            </Text>
+            {isHeadwatersMember ? (
+              <WoodCard>
+                <View style={[hwStyles.memberBanner, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "44", borderWidth: 1, borderRadius: 10, marginBottom: 14 }]}>
+                  <Text style={hwStyles.dropEmoji}>💧</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[hwStyles.memberTitle, { color: colors.primary, fontFamily: "Fraunces_700Bold" }]}>
+                      Headwaters Member
+                    </Text>
+                    <Text style={[hwStyles.memberSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                      Placed by Tasha Parr · Practitioner intake
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[hwStyles.perksLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                  YOUR MEMBER PERKS
+                </Text>
+                {[
+                  { icon: "🗺", text: "Personalized zone placement tailored to where you are right now" },
+                  { icon: "🎯", text: "Curated zone map filtered to your risk profile — no overwhelm" },
+                  { icon: "📋", text: "Practitioner rationale written just for you on your Lifestyle Map" },
+                  { icon: "🌿", text: "Headwaters-placed practitioners shown on the map view" },
+                ].map((perk, i) => (
+                  <View key={i} style={hwStyles.perkRow}>
+                    <Text style={hwStyles.perkIcon}>{perk.icon}</Text>
+                    <Text style={[hwStyles.perkText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+                      {perk.text}
+                    </Text>
+                  </View>
+                ))}
+              </WoodCard>
+            ) : (
+              <WoodCard>
+                <View style={hwStyles.discoverRow}>
+                  <Text style={hwStyles.dropEmoji}>💧</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[hwStyles.discoverTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+                      Not a Headwaters member yet
+                    </Text>
+                    <Text style={[hwStyles.discoverBody, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                      Headwaters members get a personal intake session with Tasha Parr — a practitioner who places you on the zone map based on where you actually are, not just a quiz score.
+                    </Text>
+                  </View>
+                </View>
+                <View style={[hwStyles.memberOnlyBox, { backgroundColor: colors.muted, borderColor: colors.woodBorder }]}>
+                  <Text style={[hwStyles.memberOnlyLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                    MEMBER-ONLY FEATURES
+                  </Text>
+                  {[
+                    "Practitioner-placed zone on your Lifestyle Map",
+                    "Curated map view filtered to your risk profile",
+                    "Personalized rationale from your intake session",
+                  ].map((item, i) => (
+                    <View key={i} style={hwStyles.lockedRow}>
+                      <Ionicons name="lock-closed-outline" size={13} color={colors.mutedForeground} />
+                      <Text style={[hwStyles.lockedText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                        {item}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Pressable
+                  onPress={() => Linking.openURL(`https://${process.env.EXPO_PUBLIC_DOMAIN}/headwaters`)}
+                  style={({ pressed }) => [
+                    hwStyles.learnBtn,
+                    { backgroundColor: pressed ? colors.primary + "cc" : colors.primary },
+                  ]}
+                >
+                  <Text style={[hwStyles.learnBtnText, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                    Learn About Headwaters
+                  </Text>
+                </Pressable>
+              </WoodCard>
+            )}
+          </View>
+        )}
+
         {/* How it works */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
@@ -465,4 +554,64 @@ const styles = StyleSheet.create({
   aboutRowText: { flex: 1, gap: 2 },
   aboutRowLabel: { fontSize: 15 },
   aboutRowSub: { fontSize: 12 },
+});
+
+const hwStyles = StyleSheet.create({
+  memberBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+  },
+  dropEmoji: { fontSize: 28 },
+  memberTitle: { fontSize: 17, marginBottom: 2 },
+  memberSub: { fontSize: 12 },
+  perksLabel: {
+    fontSize: 10,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  perkRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 10,
+  },
+  perkIcon: { fontSize: 15, width: 22 },
+  perkText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  discoverRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 14,
+  },
+  discoverTitle: { fontSize: 16, marginBottom: 6 },
+  discoverBody: { fontSize: 14, lineHeight: 21 },
+  memberOnlyBox: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+    gap: 8,
+    marginBottom: 14,
+  },
+  memberOnlyLabel: {
+    fontSize: 10,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  lockedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  lockedText: { fontSize: 13, lineHeight: 18, flex: 1 },
+  learnBtn: {
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  learnBtnText: { fontSize: 15 },
 });
