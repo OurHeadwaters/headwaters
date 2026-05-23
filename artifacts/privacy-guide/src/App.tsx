@@ -344,6 +344,36 @@ function GordPerched() {
   );
 }
 
+/* ── Gord corner perch ── */
+function GordPerch({ side = "right", size = 38 }: { side?: "left" | "right"; size?: number }) {
+  const [headTilt, setHeadTilt] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setHeadTilt((p) => (p === 0 ? (Math.random() > 0.6 ? 10 : -7) : 0));
+    }, 3400 + Math.random() * 1200);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div
+      className={`gord-corner-perch gord-corner-perch-${side} no-print`}
+      aria-hidden="true"
+      style={{ transform: side === "left" ? "scaleX(-1)" : undefined }}
+    >
+      <motion.div
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <motion.div
+          animate={{ rotateY: side === "left" ? -headTilt : headTilt }}
+          transition={{ type: "spring", stiffness: 180, damping: 14 }}
+        >
+          <GordBird size={size} variant="full" />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+}
+
 /* ── Scroll-reveal hook ── */
 function useReveal() {
   const ref = useRef<HTMLDivElement>(null);
@@ -939,21 +969,24 @@ export default function App() {
             </JournalCard>
           </div>
 
-          <JournalCard delay={0.15}>
-            <EditableSection
-              id="zone-identity"
-              label="Zone Identity"
-              html={sections["zone-identity"]}
-              isEditing={editingId === "zone-identity"}
-              onStartEdit={() => setEditingId("zone-identity")}
-              onSave={handleSectionSave}
-              icon="zone"
-              showModified
-            />
-            <TipCallout>
-              Zone 0 = your hearth. Zone 2 = the co-op noticeboard. Never mix them.
-            </TipCallout>
-          </JournalCard>
+          <div className="gord-perch-wrapper">
+            <GordPerch side="right" size={40} />
+            <JournalCard delay={0.15}>
+              <EditableSection
+                id="zone-identity"
+                label="Zone Identity"
+                html={sections["zone-identity"]}
+                isEditing={editingId === "zone-identity"}
+                onStartEdit={() => setEditingId("zone-identity")}
+                onSave={handleSectionSave}
+                icon="zone"
+                showModified
+              />
+              <TipCallout>
+                Zone 0 = your hearth. Zone 2 = the co-op noticeboard. Never mix them.
+              </TipCallout>
+            </JournalCard>
+          </div>
 
           {/* What's stored where table */}
           <FieldTable
@@ -1032,9 +1065,12 @@ export default function App() {
           </JournalCard>
 
           {/* Nightfall Checklist */}
-          <JournalCard delay={0.2}>
-            <NightfallChecklist />
-          </JournalCard>
+          <div className="gord-perch-wrapper">
+            <GordPerch side="left" size={36} />
+            <JournalCard delay={0.2}>
+              <NightfallChecklist />
+            </JournalCard>
+          </div>
         </section>
 
         <LanternDivider />
@@ -1046,21 +1082,24 @@ export default function App() {
             <h2 className="signpost-title">Threat Clearing</h2>
           </div>
 
-          <JournalCard delay={0}>
-            <EditableSection
-              id="covered-wagon"
-              label="The Covered Wagon Route"
-              html={sections["covered-wagon"]}
-              isEditing={editingId === "covered-wagon"}
-              onStartEdit={() => setEditingId("covered-wagon")}
-              onSave={handleSectionSave}
-              icon="vpn"
-              showModified
-            />
-            <TipCallout>
-              Choose a VPN with a jurisdiction outside the Five Eyes alliance for best privacy.
-            </TipCallout>
-          </JournalCard>
+          <div className="gord-perch-wrapper">
+            <GordPerch side="right" size={34} />
+            <JournalCard delay={0}>
+              <EditableSection
+                id="covered-wagon"
+                label="The Covered Wagon Route"
+                html={sections["covered-wagon"]}
+                isEditing={editingId === "covered-wagon"}
+                onStartEdit={() => setEditingId("covered-wagon")}
+                onSave={handleSectionSave}
+                icon="vpn"
+                showModified
+              />
+              <TipCallout>
+                Choose a VPN with a jurisdiction outside the Five Eyes alliance for best privacy.
+              </TipCallout>
+            </JournalCard>
+          </div>
         </section>
 
         <LanternDivider />

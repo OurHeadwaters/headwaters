@@ -207,6 +207,27 @@ html, body {
   100% { opacity: 0.6; transform: translateX(20px); }
 }
 
+/* Gord corner perch — wrapper keeps overflow visible so he sticks above the card */
+.gord-perch-wrapper {
+  position: relative;
+}
+
+.gord-corner-perch {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  pointer-events: none;
+  transform: translateY(-62%);
+}
+
+.gord-corner-perch-right {
+  right: 20px;
+}
+
+.gord-corner-perch-left {
+  left: 20px;
+}
+
 /* Gord perched on hero lantern */
 .gord-hero {
   position: absolute;
