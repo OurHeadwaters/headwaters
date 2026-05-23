@@ -19,8 +19,8 @@ const WHY_CARDS = [
         <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
-    title: "Self-Reliance",
-    body: "Own your tools from day one. No subscriptions, no lock-in, no platform that disappears. Write it, run it, keep it.",
+    title: "Built from the soil up",
+    body: "Not a bootcamp. Not a subscription. One-time access, lifetime ownership. No ongoing fees, no dependency on platforms you didn't build.",
     accent: "#4A8C5C",
   },
   {
@@ -31,8 +31,8 @@ const WHY_CARDS = [
         <path d="M7 8l3 3-3 3M13 14h4" />
       </svg>
     ),
-    title: "Digital Sovereignty",
-    body: "Your ideas run in your browser. No cloud, no server, no account required. The Forge is a workbench you control.",
+    title: "A method, not a shortcut",
+    body: "Codetry uses literate programming and AI tools to give you the method to create real, working systems — without writing a line of traditional code.",
     accent: "#D9A066",
   },
   {
@@ -43,36 +43,33 @@ const WHY_CARDS = [
         <path d="M12 2C8 5.5 6 9 6 12s2 6.5 6 10M12 2c4 3.5 6 7 6 10s-2 6.5-6 10" />
       </svg>
     ),
-    title: "Community Building",
-    body: "Every snippet you write is a seed. Share knowledge, templates, and working tools with your community without middlemen.",
+    title: "A node in something bigger",
+    body: "Codetry is part of a decentralized, grassroots economic system fifteen years in the making. We are the soil — the activity network — growing something different before the flood.",
     accent: "#89C4A8",
   },
 ];
 
 const BLUEPRINTS = [
   {
-    title: "Food Hub Inventory",
-    desc: "Track produce, members, and weekly orders for a local food co-op — fully owned, no SaaS fees.",
-    tags: ["HTML", "CSS", "Local Storage"],
+    zone: "Blueprint 1 — Zone 0",
+    title: "Root Work",
+    desc: "Health is infrastructure. Before you build anything else, you build the body and habits that make everything else possible. Map what a stable Zone 0 looks like — and get the tools to get there.",
+    tags: ["Zone 0", "Health", "Foundation"],
     color: "#2C4A36",
   },
   {
-    title: "Community Map",
-    desc: "An interactive Leaflet.js map showing local producers within your bioregion.",
-    tags: ["JS", "Leaflet", "GeoJSON"],
+    zone: "Blueprint 2 — Zone 1",
+    title: "Follow the Money",
+    desc: "Channel your income and watch the ripple effect. See where your dollars are going, redirect them with intention, and build a financial picture that belongs to your household — not a bank's spreadsheet.",
+    tags: ["Zone 1", "Finance", "Sovereignty"],
     color: "#3A3010",
   },
   {
-    title: "Skill Trade Board",
-    desc: "A simple P2P skill-exchange board — post what you have, post what you need.",
-    tags: ["HTML", "CSS", "JS"],
-    color: "#1A1A3A",
-  },
-  {
-    title: "Water Quality Logger",
-    desc: "Log daily well readings, flag anomalies, export to CSV for your records.",
-    tags: ["JS", "CSV Export"],
-    color: "#2C3A20",
+    zone: "Blueprint 3 — Zone 3",
+    title: "Community Architecture",
+    desc: "Build community like a pro, even if you'd rather be shovelling. The relational and organizational infrastructure of a local economy — how to run a table, hold a room, and create conditions where people show up and stay.",
+    tags: ["Zone 3", "Community", "Local Economy"],
+    color: "#1A2C3A",
   },
 ];
 
@@ -143,7 +140,7 @@ export function BlueprintGallery() {
             <p className="text-[#8A9E8A] max-w-xl mx-auto">Real examples — not demos. Each one solves an actual community need.</p>
           </motion.div>
 
-          <motion.div variants={stagger} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <motion.div variants={stagger} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {BLUEPRINTS.map((bp) => (
               <motion.div
                 key={bp.title}
@@ -151,7 +148,7 @@ export function BlueprintGallery() {
                 className="forge-blueprint-card rounded-lg overflow-hidden group cursor-pointer"
               >
                 <div
-                  className="h-28 flex items-center justify-center relative overflow-hidden"
+                  className="h-32 flex items-center justify-center relative overflow-hidden"
                   style={{ background: bp.color }}
                 >
                   <svg
@@ -177,8 +174,9 @@ export function BlueprintGallery() {
                   </svg>
                   <div className="absolute bottom-2 right-3 text-[10px] text-[#D9A066]/60 font-mono">blueprint</div>
                 </div>
-                <div className="p-4 space-y-2 bg-[#111B0F] border border-[#1E3820] border-t-0 rounded-b-lg">
-                  <h3 className="text-sm font-medium text-[#D4C9B8] group-hover:text-[#D9A066] transition-colors">{bp.title}</h3>
+                <div className="p-5 space-y-2 bg-[#111B0F] border border-[#1E3820] border-t-0 rounded-b-lg">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#D9A066]/60">{bp.zone}</div>
+                  <h3 className="text-base font-serif font-medium text-[#D4C9B8] group-hover:text-[#D9A066] transition-colors">{bp.title}</h3>
                   <p className="text-xs text-[#5A7A5A] leading-relaxed">{bp.desc}</p>
                   <div className="flex flex-wrap gap-1 pt-1">
                     {bp.tags.map(t => (

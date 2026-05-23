@@ -102,7 +102,13 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           variants={fadeInUp}
           className="text-lg md:text-xl text-[#C4B49A] max-w-2xl mx-auto leading-relaxed"
         >
-          A homestead-workshop for your ideas. Write HTML, CSS &amp; JavaScript — see it come alive. Own your tools, own your craft.
+          Build it yourself. Own it forever. Start from where you are.
+        </motion.p>
+        <motion.p
+          variants={fadeInUp}
+          className="text-sm text-[#8A9E8A] max-w-xl mx-auto leading-relaxed -mt-2"
+        >
+          The method for people who see the problem clearly and are finally ready to build the solution — with tools they own, in a community they're already part of.
         </motion.p>
 
         <motion.div variants={fadeInUp} className="flex flex-wrap gap-3 justify-center pt-2">
