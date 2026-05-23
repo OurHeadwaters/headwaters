@@ -56,8 +56,8 @@ function checkPassphrase(req: Request, res: Response): boolean {
     res.status(503).json({ error: "Headwaters passphrase not configured on server" });
     return false;
   }
-  const provided = req.headers["x-hw-passphrase"] as string | undefined;
-  if (!provided || provided !== expected) {
+  const provided = (req.headers["x-hw-passphrase"] as string | undefined)?.trim();
+  if (!provided || provided !== expected.trim()) {
     res.status(401).json({ error: "Invalid or missing passphrase" });
     return false;
   }
