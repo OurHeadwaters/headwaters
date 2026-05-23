@@ -472,6 +472,52 @@ function ZoneCard({
   );
 }
 
+function HeadwatersMemberPerksCard() {
+  const perks = [
+    { icon: "🗺️", text: "Personalized zone placement tailored to where you are right now" },
+    { icon: "🎯", text: "Curated zone map filtered to your risk profile — no overwhelm" },
+    { icon: "📋", text: "Practitioner rationale written just for you on your Lifestyle Map" },
+  ];
+
+  return (
+    <div
+      className="rounded-2xl border p-6"
+      style={{ background: "#4A7A3A12", borderColor: "#4A7A3A44" }}
+    >
+      <div className="flex items-center gap-3 mb-5">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: "#4A7A3A22", border: "1px solid #4A7A3A44" }}
+        >
+          <span className="text-base leading-none">💧</span>
+        </div>
+        <div>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
+            style={{ color: "#4A7A3A" }}
+          >
+            Headwaters Membership
+          </p>
+          <h3 className="font-serif text-base font-bold" style={{ color: "#FDFBF7" }}>
+            Your member perks
+          </h3>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {perks.map((perk, i) => (
+          <div key={i} className="flex items-start gap-3">
+            <span className="text-base leading-none mt-0.5 shrink-0">{perk.icon}</span>
+            <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
+              {perk.text}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SurrenderModeCard({ map }: { map: LifestyleMap }) {
   const primaryZone = ZONES.find((z) => z.slug === map.primaryZone);
   if (!primaryZone) return null;
@@ -710,6 +756,9 @@ function MapView({
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+        {/* Headwaters member perks card */}
+        {isPractitioner && <HeadwatersMemberPerksCard />}
+
         {/* Surrender mode card */}
         {map.surrenderMode && isGuided && map.primaryZone && (
           <SurrenderModeCard map={map} />
