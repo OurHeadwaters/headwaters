@@ -179,12 +179,18 @@ function GordPerched() {
   const [isStartled, setIsStartled] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
   const [scrollDir, setScrollDir] = useState<"down" | "up" | null>(null);
+  // 0 = normal, 1 = agitated (2nd startle), 2 = fed-up (3rd+ startle)
+  const [startleLevel, setStartleLevel] = useState(0);
   // Ref mirrors isPatrolling so the idle interval callback always sees the current value
   const isPatrollingRef = useRef(false);
   const isStartledRef = useRef(false);
   const isSettlingRef = useRef(false);
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastScrollYRef = useRef(typeof window !== "undefined" ? window.scrollY : 0);
+  // Consecutive startle tracking (resets ~3 s after last startle)
+  const startleCountRef = useRef(0);
+  const startleLevelRef = useRef(0);
+  const startleResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Only twitch head when idle — patrol controls head direction during movement
@@ -250,31 +256,48 @@ function GordPerched() {
       if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
       scrollDebounceRef.current = setTimeout(() => {
         if (isStartledRef.current) return; // already reacting
+
+        // Increment consecutive startle counter; reset it ~3 s after this startle
+        if (startleResetRef.current) clearTimeout(startleResetRef.current);
+        startleCountRef.current += 1;
+        const level = Math.min(startleCountRef.current - 1, 2); // 0 | 1 | 2
+        startleLevelRef.current = level;
+        setStartleLevel(level);
+        startleResetRef.current = setTimeout(() => {
+          startleCountRef.current = 0;
+          startleLevelRef.current = 0;
+          setStartleLevel(0);
+        }, 3000);
+
         isStartledRef.current = true;
         setScrollDir(dir);
         setIsStartled(true);
-        // Directional head flick: crane forward (positive) on down, pull back (negative) on up
-        setHeadTurn(dir === "down" ? 18 : -18);
-        // After the hop lands, relax head, then run a brief settling ruffle before resuming patrol
+        // Directional head flick at level 0; escalate magnitude on repeat startles
+        const headFlick = level === 0 ? 18 : level === 1 ? 28 : 35;
+        setHeadTurn(dir === "down" ? headFlick : -headFlick);
+        // After the hop lands, relax head then run a settling ruffle before resuming patrol
+        const hopDuration = level === 0 ? 900 : level === 1 ? 1000 : 1100;
         setTimeout(() => {
           setHeadTurn(0);
           isStartledRef.current = false;
           setIsStartled(false);
           setScrollDir(null);
-          // Settling phase: brief body ruffle before resuming patrol
+          // Settling phase: ruffle intensity scales with level
           isSettlingRef.current = true;
           setIsSettling(true);
+          const settleDuration = level === 0 ? 420 : level === 1 ? 520 : 650;
           setTimeout(() => {
             isSettlingRef.current = false;
             setIsSettling(false);
-          }, 420);
-        }, 900);
+          }, settleDuration);
+        }, hopDuration);
       }, 120);
     }
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
       if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+      if (startleResetRef.current) clearTimeout(startleResetRef.current);
     };
   }, []);
 
@@ -287,18 +310,30 @@ function GordPerched() {
       <motion.div
         animate={
           isStartled
-            ? scrollDir === "down"
-              ? { y: [0, -14, 4, -8, 1, 0], rotate: [0, 8, -3, 5, 0] }   // lean forward, tip ahead
-              : { y: [0, -10, 6, -5, 1, 0], rotate: [0, -10, 4, -5, 0] }  // pull back, recoil
+            ? startleLevel === 0
+              ? scrollDir === "down"
+                ? { y: [0, -14, 4, -8, 1, 0], rotate: [0, 8, -3, 5, 0] }   // lean forward on scroll-down
+                : { y: [0, -10, 6, -5, 1, 0], rotate: [0, -10, 4, -5, 0] } // pull back on scroll-up
+              : startleLevel === 1
+              ? { y: [0, -28, 6, -14, 3, 0],  rotate: [0, -7, 7, -3, 0] }
+              : { y: [0, -38, 8, -18, 4, -2, 0], rotate: [0, -10, 10, -5, 2, 0] }
             : isSettling
-            ? { scaleX: [1, 1.08, 0.96, 1.04, 1], scaleY: [1, 0.94, 1.06, 0.98, 1], rotate: [0, -2, 2, -1, 0] }
+            ? startleLevel === 0
+              ? { scaleX: [1, 1.08, 0.96, 1.04, 1], scaleY: [1, 0.94, 1.06, 0.98, 1], rotate: [0, -2,  2, -1, 0] }
+              : startleLevel === 1
+              ? { scaleX: [1, 1.14, 0.92, 1.06, 1], scaleY: [1, 0.88, 1.10, 0.96, 1], rotate: [0, -4,  4, -2, 0] }
+              : { scaleX: [1, 1.20, 0.88, 1.10, 1], scaleY: [1, 0.82, 1.14, 0.94, 1], rotate: [0, -6,  6, -3, 0] }
             : { y: [0, -5, 0] }
         }
         transition={
           isStartled
+<<<<<<< HEAD
             ? { duration: 0.75, ease: "easeOut" }
+=======
+            ? { duration: startleLevel === 0 ? 0.7 : startleLevel === 1 ? 0.85 : 1.0, ease: "easeOut" }
+>>>>>>> 2705890 (feat(privacy-guide): escalate Gord's startle reaction on consecutive scrolls)
             : isSettling
-            ? { duration: 0.42, ease: "easeOut" }
+            ? { duration: startleLevel === 0 ? 0.42 : startleLevel === 1 ? 0.52 : 0.65, ease: "easeOut" }
             : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
         }
       >
