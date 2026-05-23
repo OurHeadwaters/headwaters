@@ -181,6 +181,17 @@ export default function BusinessFinancials() {
   const passiveLow = rows.filter((r) => !r.requiresTime).reduce((s, r) => s + (r.monthlyLow || 0), 0);
   const passiveHigh = rows.filter((r) => !r.requiresTime).reduce((s, r) => s + (r.monthlyHigh || 0), 0);
 
+  const [bottleneckFilter, setBottleneckFilter] = useState<BottleneckType | null>(null);
+
+  const visibleRows = bottleneckFilter === null ? rows : rows.filter((r) => r.bottleneckType === bottleneckFilter);
+
+  const filterTotalLow = visibleRows.reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const filterTotalHigh = visibleRows.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+
+  const presentBottleneckTypes = Array.from(new Set(rows.map((r) => r.bottleneckType))).filter(
+    (t) => t !== "none"
+  ) as BottleneckType[];
+
   const hasRows = rows.length > 0;
   const passivePct = totalHigh > 0 ? Math.round((passiveHigh / totalHigh) * 100) : 0;
 
@@ -305,6 +316,38 @@ export default function BusinessFinancials() {
         </div>
       )}
 
+      {hasRows && presentBottleneckTypes.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Filter:</span>
+          {presentBottleneckTypes.map((type) => {
+            const meta = bottleneckMeta(type);
+            const isActive = bottleneckFilter === type;
+            return (
+              <button
+                key={type}
+                onClick={() => setBottleneckFilter(isActive ? null : type)}
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                  isActive
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                }`}
+              >
+                {meta.icon}
+                {meta.label}
+              </button>
+            );
+          })}
+          {bottleneckFilter !== null && (
+            <button
+              onClick={() => setBottleneckFilter(null)}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
@@ -332,7 +375,14 @@ export default function BusinessFinancials() {
                   </td>
                 </tr>
               )}
-              {rows.map((r) => (
+              {rows.length > 0 && visibleRows.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground italic">
+                    No rows match this filter.
+                  </td>
+                </tr>
+              )}
+              {visibleRows.map((r) => (
                 <tr key={r.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
                   <td className="px-3 py-2">
                     <Input
@@ -430,9 +480,16 @@ export default function BusinessFinancials() {
             {rows.length > 0 && (
               <tfoot>
                 <tr className="border-t-2 border-primary/20 bg-primary/5 font-semibold">
-                  <td className="px-4 py-3 text-foreground">Monthly Total</td>
-                  <td className="px-4 py-3 text-right text-foreground tabular-nums">{fmt(totalLow)}</td>
-                  <td className="px-4 py-3 text-right text-foreground tabular-nums">{fmt(totalHigh)}</td>
+                  <td className="px-4 py-3 text-foreground">
+                    Monthly Total
+                    {bottleneckFilter !== null && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        ({bottleneckMeta(bottleneckFilter).label} only)
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right text-foreground tabular-nums">{fmt(filterTotalLow)}</td>
+                  <td className="px-4 py-3 text-right text-foreground tabular-nums">{fmt(filterTotalHigh)}</td>
                   <td className="px-4 py-3 text-muted-foreground text-sm">per month</td>
                   <td />
                   <td />
@@ -440,8 +497,8 @@ export default function BusinessFinancials() {
                 </tr>
                 <tr className="bg-secondary/20 font-semibold text-muted-foreground">
                   <td className="px-4 py-3">Annual Total</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{fmt(totalLow * 12)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{fmt(totalHigh * 12)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{fmt(filterTotalLow * 12)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{fmt(filterTotalHigh * 12)}</td>
                   <td className="px-4 py-3 text-sm">per year</td>
                   <td />
                   <td />
