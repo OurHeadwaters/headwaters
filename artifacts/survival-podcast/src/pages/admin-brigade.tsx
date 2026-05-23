@@ -62,7 +62,7 @@ export function AdminBrigade() {
               <Shield className="w-5 h-5 text-[#D9A066]" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Brigade Membership</h1>
+              <h1 className="text-xl font-bold text-white">Headwaters Membership</h1>
               <p className="text-white/40 text-sm">Read-only overview · auto-refreshes every minute</p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export function AdminBrigade() {
 
             {data.activeMembers === 0 && (
               <div className="mt-4 text-center text-white/30 text-sm py-8">
-                No active Brigade members yet. Share <code className="text-white/50">/brigade</code> to get started.
+                No active Headwaters members yet. Share <code className="text-white/50">/brigade</code> to get started.
               </div>
             )}
           </>

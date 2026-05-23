@@ -398,7 +398,7 @@ function TipForm({ onSuccess }: { onSuccess: () => void }) {
           Payment confirmed — your coin is in the well!
         </p>
         <p className="text-sm text-muted-foreground mb-4">
-          Your wish has been added to today's pot. If you win, you'll receive a platform credit redeemable on Brigade membership or cohort enrollment.
+          Your wish has been added to today's pot. If you win, you'll receive a platform credit redeemable on Headwaters membership or cohort enrollment.
         </p>
         <button
           onClick={() => setStripeResult(null)}
@@ -497,7 +497,7 @@ function TipForm({ onSuccess }: { onSuccess: () => void }) {
             <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-blue-50 text-blue-700 text-xs">
               <Gift className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
-                <strong>Card winners receive a platform credit</strong> — redeemable against Brigade membership or cohort enrollment. No crypto required.
+                <strong>Card winners receive a platform credit</strong> — redeemable against Headwaters membership or cohort enrollment. No crypto required.
               </span>
             </div>
 

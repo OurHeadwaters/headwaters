@@ -40,7 +40,7 @@ const communityItems = [
 ];
 
 const adminItems = [
-  { href: "/admin/brigade", label: "Brigade", desc: "Membership stats: members, MRR, renewals" },
+  { href: "/admin/brigade", label: "The Headwaters", desc: "Membership stats: members, MRR, renewals" },
   { href: "/admin/ground-events", label: "Workshop Board", desc: "Manage ground events and workshops" },
   { href: "/admin/categories", label: "Category Descriptions", desc: "Edit category descriptions" },
   { href: "/admin/content-gaps", label: "Content Gaps", desc: "Identify content gaps" },
@@ -282,7 +282,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Grounds
             </Link>
 
-            {/* Brigade */}
+            {/* The Headwaters */}
             <Link
               href="/brigade"
               className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
@@ -292,7 +292,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
-              Brigade
+              The Headwaters
             </Link>
 
             {/* Admin dropdown */}
@@ -325,10 +325,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Link
                       href="/brigade"
                       className="flex items-center gap-1 bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D9A066]/40 hover:bg-[#D9A066]/30 transition-colors uppercase tracking-wider"
-                      title="Brigade Member"
+                      title="Headwaters Member"
                     >
                       <Shield className="w-2.5 h-2.5" />
-                      Brigade
+                      Headwaters
                     </Link>
                   )}
                   {user?.profileImageUrl ? (
@@ -484,7 +484,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Grounds
             </Link>
 
-            {/* Brigade */}
+            {/* The Headwaters */}
             <Link
               href="/brigade"
               className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
@@ -495,7 +495,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               onClick={() => setMenuOpen(false)}
             >
               <Shield className="w-4 h-4" />
-              Brigade
+              The Headwaters
               {isBrigadeMember && (
                 <span className="ml-auto bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D9A066]/40 uppercase tracking-wider">
                   Member

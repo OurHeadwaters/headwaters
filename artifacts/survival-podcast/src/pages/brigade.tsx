@@ -109,7 +109,7 @@ const features = [
   {
     icon: Zap,
     title: "Early Access",
-    desc: "Brigade members get early access to new tools, tracks, and features as they roll out.",
+    desc: "Headwaters members get early access to new tools, tracks, and features as they roll out.",
   },
   {
     icon: Star,
@@ -228,7 +228,7 @@ export function BrigadePage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-[#D9A066]/15 text-[#D9A066] px-4 py-1.5 rounded-full text-sm font-semibold mb-6 border border-[#D9A066]/30">
             <Shield className="w-4 h-4" />
-            Brigade Membership
+            The Headwaters
           </div>
 
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
@@ -238,14 +238,14 @@ export function BrigadePage() {
 
           <p className="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed mb-8">
             The Survival Podcast has been independent and sponsor-free for 15+ years.
-            Brigade members keep it that way — and get the tools to go deeper.
+            Headwaters members keep it that way — and get the tools to go deeper.
           </p>
 
           {memberCount && memberCount.count > 0 && (
             <div className="inline-flex items-center gap-2 text-white/50 text-sm">
               <Users className="w-4 h-4 text-[#D9A066]" />
               <span>
-                <strong className="text-white">{memberCount.count.toLocaleString()}</strong> Brigade members and counting
+                <strong className="text-white">{memberCount.count.toLocaleString()}</strong> Headwaters members and counting
               </span>
             </div>
           )}
@@ -258,7 +258,7 @@ export function BrigadePage() {
           <div className="mb-8 flex items-start gap-3 bg-emerald-900/40 border border-emerald-500/40 rounded-xl px-5 py-4 text-emerald-300">
             <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div>
-              <div className="font-semibold">Welcome to the Brigade!</div>
+              <div className="font-semibold">Welcome to The Headwaters!</div>
               <div className="text-sm text-emerald-400 mt-0.5">
                 Your membership is active. All features are unlocked.
               </div>
@@ -286,7 +286,7 @@ export function BrigadePage() {
                 <Shield className="w-5 h-5 text-[#D9A066]" />
               </div>
               <div>
-                <div className="text-white font-bold">You're a Brigade Member</div>
+                <div className="text-white font-bold">You're a Headwaters Member</div>
                 <div className="text-white/50 text-sm capitalize">
                   {statusData.plan} plan
                   {statusData.currentPeriodEnd &&
@@ -330,7 +330,7 @@ export function BrigadePage() {
         {!isLoading && !isMember && (
           <div className="max-w-md mx-auto">
             <h2 className="font-serif text-2xl font-bold text-white text-center mb-6">
-              Join the Brigade
+              Join The Headwaters
             </h2>
 
             <div className="flex flex-col gap-4 mb-6">
@@ -381,7 +381,7 @@ export function BrigadePage() {
                 ? "Redirecting…"
                 : !isAuthenticated
                 ? "Log in to Join"
-                : `Join Brigade · ${selectedPlan === "monthly" ? "$9/mo" : "$97/yr"}`}
+                : `Join The Headwaters · ${selectedPlan === "monthly" ? "$9/mo" : "$97/yr"}`}
             </button>
 
             <p className="text-white/30 text-xs text-center mt-4">
@@ -405,7 +405,7 @@ export function BrigadePage() {
                   ${(creditsData.totalCents / 100).toFixed(2)}
                 </div>
                 <div className="text-white/40 text-xs mt-1">
-                  Applied automatically when you join the Brigade
+                  Applied automatically when you join The Headwaters
                 </div>
               </div>
             )}
