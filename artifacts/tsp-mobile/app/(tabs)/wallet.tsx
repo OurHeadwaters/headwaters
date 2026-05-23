@@ -41,6 +41,10 @@ export default function WalletScreen() {
     mapState.status === "ready" && mapState.map.entryMode === "practitioner"
       ? mapState.map.riskProfile
       : null;
+  const intakeCreatedAt =
+    mapState.status === "ready" && mapState.map.entryMode === "practitioner"
+      ? mapState.map.createdAt
+      : null;
 
   const [showIntakeModal, setShowIntakeModal] = useState(false);
 
@@ -483,6 +487,7 @@ export default function WalletScreen() {
         onClose={() => setShowIntakeModal(false)}
         rationale={intakeRationale}
         riskProfile={intakeRiskProfile}
+        createdAt={intakeCreatedAt}
       />
     </ScrollView>
   );
@@ -511,11 +516,13 @@ function IntakeModal({
   onClose,
   rationale,
   riskProfile,
+  createdAt,
 }: {
   visible: boolean;
   onClose: () => void;
   rationale: string | null;
   riskProfile: number | null;
+  createdAt: string | null;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -560,6 +567,21 @@ function IntakeModal({
           contentContainerStyle={[intakeStyles.body, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
         >
+          {/* Session date */}
+          {createdAt != null && (
+            <View style={intakeStyles.section}>
+              <Text style={[intakeStyles.sectionLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                SESSION DATE
+              </Text>
+              <View style={[intakeStyles.dateRow, { backgroundColor: colors.muted, borderColor: colors.woodBorder }]}>
+                <Ionicons name="calendar-outline" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+                <Text style={[intakeStyles.dateText, { color: colors.foreground, fontFamily: "DMSans_500Medium" }]}>
+                  {new Date(createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Risk Profile */}
           {riskProfile != null && (
             <View style={intakeStyles.section}>
@@ -870,4 +892,13 @@ const intakeStyles = StyleSheet.create({
   rationaleText: { fontSize: 15, lineHeight: 23 },
   rationaleAttrib: { fontSize: 13, textAlign: "right" },
   rationaleEmpty: { fontSize: 14, lineHeight: 20 },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dateText: { fontSize: 15 },
 });
