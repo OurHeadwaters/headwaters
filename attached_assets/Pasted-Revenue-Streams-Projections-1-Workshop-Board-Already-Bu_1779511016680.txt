@@ -1,0 +1,44 @@
+Revenue Streams & Projections
+1. Workshop Board (Already Built)
+The surplus-share model is smart. Hosts break even first, then the platform takes ~10% of proceeds beyond that.
+
+Scale	Monthly Workshops	Avg Tickets	Avg Price	Platform Take
+Early	20	15	$47	~$1,400/mo
+Growth	75	25	$67	~$12,600/mo
+Mature	200	35	$97	~$68,000/mo
+The model self-selects quality hosts — they only pay when they're profitable.
+
+2. Transformation Path Cohorts
+Each of the 6 paths is a natural 8–12 week structured program with expert council involvement. This is the highest-leverage play.
+
+Price: $297–$997/cohort
+Target: 50–200 students per cohort launch
+Revenue per launch: $15k–$200k
+Cadence: 2–3 cohorts/year per path = potentially 12–18 launches/year across all paths
+This is the flagship monetization — the paths are the curriculum.
+
+3. Community Membership ("Brigade")
+Gate progress syncing, cross-device history, the Stomping Grounds community features, and expert access behind a membership tier.
+
+Price: $9–$19/month or $97/year
+Target: 1–5% of TSP's existing audience
+TSP has ~100k+ listeners → 1,000–5,000 members = $97k–$485k ARR
+4. Value for Value (Already Built)
+Voluntary Lightning tips. Hard to project, but TSP's audience skews toward people who believe in it ideologically. A passionate 1,000-listener V4V base at $5/month average = $5k/month.
+
+5. Expert Council Directory / Consulting Access
+Expert Council members pay for placement and inbound leads from path-aligned users.
+
+Price: $99–$299/month per expert listing
+20–50 experts = $2k–$15k/month recurring
+6. Wishing Well Fulfillment
+Users pay to request content or community help. Crowdfunded content requests, essentially. Small per-transaction take (5–10%). More brand-building than revenue early on.
+
+Priority Stack
+Priority	Stream	Time to Revenue	Ceiling
+1	Cohort programs	3–6 months	$2M+/yr
+2	Membership (Brigade)	2–4 months	$500k ARR
+3	Workshop Board	Now (built)	$800k+/yr
+4	Expert Council listings	4–6 months	$180k/yr
+5	V4V / Lightning	Now (built)	$60k/yr
+The cohort model is where I'd focus first — the paths are already mapped, the episodes are already tagged, and the expert council is the credibility layer. Want me to plan out what a cohort product flow would look like on the platform?
