@@ -239,6 +239,7 @@ export default function ForgeEditor() {
   const [gordPerching, setGordPerching] = useState(false);
   const [showToolWallMobile, setShowToolWallMobile] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const [showMobileEditor, setShowMobileEditor] = useState(false);
   const editorRef = useRef<any>(null);
 
   useEffect(() => {
@@ -294,48 +295,52 @@ export default function ForgeEditor() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Mobile-only controls — always visible */}
+              {/* Mobile-only controls */}
               <button
                 className="md:hidden text-[#8A9E8A] hover:text-[#D9A066] text-xs border border-[#2A4A2A] px-3 py-1.5 rounded transition-colors"
                 onClick={() => setShowToolWallMobile(v => !v)}
               >
                 Templates
               </button>
-              <button
-                onClick={handleReset}
-                className="md:hidden forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
-              >
-                Reset
-              </button>
-              <motion.button
-                onClick={handleRun}
-                className="md:hidden forge-btn-run text-sm px-4 py-1.5 rounded font-medium relative overflow-hidden"
-                whileTap={{ scale: 0.95 }}
-                animate={isRunning ? { scale: [1, 0.97, 1] } : {}}
-                transition={{ duration: 0.3 }}
-              >
-                {isRunning ? (
-                  <span className="flex items-center gap-1.5">
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 0.6, repeat: Infinity, ease: "linear" }}
-                      className="inline-block"
-                    >⚙</motion.span>
-                    Running…
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z" /></svg>
-                    Run
-                  </span>
-                )}
-                <motion.div
-                  className="absolute inset-0 rounded bg-[#F0C07A]/20"
-                  initial={{ scale: 0, opacity: 0.8 }}
-                  animate={isRunning ? { scale: 1.5, opacity: 0 } : { scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                />
-              </motion.button>
+              {showMobileEditor && (
+                <button
+                  onClick={handleReset}
+                  className="md:hidden forge-btn-secondary text-xs px-3 py-1.5 rounded transition-all"
+                >
+                  Reset
+                </button>
+              )}
+              {showMobileEditor && (
+                <motion.button
+                  onClick={handleRun}
+                  className="md:hidden forge-btn-run text-sm px-4 py-1.5 rounded font-medium relative overflow-hidden"
+                  whileTap={{ scale: 0.95 }}
+                  animate={isRunning ? { scale: [1, 0.97, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                >
+                  {isRunning ? (
+                    <span className="flex items-center gap-1.5">
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.6, repeat: Infinity, ease: "linear" }}
+                        className="inline-block"
+                      >⚙</motion.span>
+                      Running…
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z" /></svg>
+                      Run
+                    </span>
+                  )}
+                  <motion.div
+                    className="absolute inset-0 rounded bg-[#F0C07A]/20"
+                    initial={{ scale: 0, opacity: 0.8 }}
+                    animate={isRunning ? { scale: 1.5, opacity: 0 } : { scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  />
+                </motion.button>
+              )}
 
               {/* Desktop-only controls */}
               <button
@@ -535,7 +540,7 @@ export default function ForgeEditor() {
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
                         </svg>
-                        Edit code to customise
+                        Peek behind the curtain
                       </div>
                     </div>
                     <AnimatePresence>
@@ -556,28 +561,40 @@ export default function ForgeEditor() {
                 )}
               </div>
 
-              {/* Mobile: always show editor + preview stacked */}
+              {/* Mobile: preview-first by default, editor revealed on toggle */}
               <div className="md:hidden flex flex-col">
-                <div className="forge-editor-pane">
-                  <div className="forge-pane-label">editor</div>
-                  <Editor
-                    height="280px"
-                    language="html"
-                    value={code}
-                    onChange={(v) => setCode(v ?? "")}
-                    onMount={handleEditorMount}
-                    theme="forge-dark"
-                    options={{
-                      fontSize: 12,
-                      fontFamily: "ui-monospace, monospace",
-                      lineNumbers: "off",
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      wordWrap: "on",
-                      padding: { top: 8, bottom: 8 },
-                    }}
-                  />
-                </div>
+                <AnimatePresence>
+                  {showMobileEditor && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="forge-editor-pane">
+                        <div className="forge-pane-label">craft</div>
+                        <Editor
+                          height="260px"
+                          language="html"
+                          value={code}
+                          onChange={(v) => setCode(v ?? "")}
+                          onMount={handleEditorMount}
+                          theme="forge-dark"
+                          options={{
+                            fontSize: 12,
+                            fontFamily: "ui-monospace, monospace",
+                            lineNumbers: "off",
+                            minimap: { enabled: false },
+                            scrollBeyondLastLine: false,
+                            wordWrap: "on",
+                            padding: { top: 8, bottom: 8 },
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <div className="forge-preview-pane relative">
                   <div className="forge-pane-label">preview</div>
                   <SparkBurst trigger={sparkTrigger} />
@@ -585,20 +602,31 @@ export default function ForgeEditor() {
                     key={previewSrc}
                     srcDoc={previewSrc}
                     sandbox="allow-scripts"
-                    className="w-full h-[260px] border-0 bg-white"
+                    className="w-full h-[300px] border-0 bg-white"
                     title="Live preview"
                   />
                 </div>
+                {/* Peek behind the curtain toggle */}
+                <button
+                  onClick={() => setShowMobileEditor(v => !v)}
+                  className="flex items-center justify-center gap-2 py-2.5 text-[11px] transition-colors border-t border-[#1E3820]"
+                  style={{ color: showMobileEditor ? "#D9A066" : "#4A6A4A" }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+                  </svg>
+                  {showMobileEditor ? "Hide the craft" : "Peek behind the curtain"}
+                </button>
               </div>
             </div>
           </div>
 
           <div className="forge-workbench-footer px-5 py-2 flex items-center gap-3 text-[10px] text-[#5A7A5A]">
-            <span>HTML · CSS · JS sandbox</span>
+            <span>Your words. Your craft.</span>
             <span className="w-1 h-1 rounded-full bg-[#3A5A3A]" />
-            <span>Client-side execution only</span>
+            <span>Everything runs in your browser</span>
             <span className="w-1 h-1 rounded-full bg-[#3A5A3A]" />
-            <span>Your code never leaves your browser</span>
+            <span>Nothing leaves your hands</span>
           </div>
         </div>
       </div>

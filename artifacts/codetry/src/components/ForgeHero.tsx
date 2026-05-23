@@ -44,7 +44,7 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
       >
         <motion.div variants={fadeInUp} className="flex justify-center mb-2">
           <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase bg-[#D9A066]/10 border border-[#D9A066]/20 px-3 py-1 rounded-full">
-            The Forge — Code Playground
+            The Forge — See It Come Alive
           </span>
         </motion.div>
 
@@ -128,15 +128,15 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
         <motion.div variants={fadeInUp} className="flex items-center justify-center gap-6 pt-4 text-[#8A7A66] text-sm">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#4A8C5C]" />
-            HTML · CSS · JS
+            Instant results
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#D9A066]" />
-            Live preview
+            No experience needed
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#8B6F47]" />
-            No account needed
+            Nothing to install
           </span>
         </motion.div>
       </motion.div>
