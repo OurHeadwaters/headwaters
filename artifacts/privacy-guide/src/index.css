@@ -210,9 +210,9 @@ html, body {
 /* Gord perched on hero lantern */
 .gord-hero {
   position: absolute;
-  /* Position on lantern post - lantern is at ~50% x, ~48% y in the SVG */
-  left: calc(50% + 38px);
-  top: 38%;
+  /* Centred over lantern post (50% x in SVG) – clear of the subtitle text */
+  left: calc(50% - 36px);
+  top: 36%;
   transform: translateY(-100%);
   z-index: 10;
 }
