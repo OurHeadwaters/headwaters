@@ -81,6 +81,47 @@ const COMMUNITY_MEMBERS = [
   { initials: "AL", name: "Anna L.", note: "P2P credit ledger for neighbourhood", color: "#3A1A10" },
 ];
 
+export function AmbientListeningStrip() {
+  return (
+    <motion.section
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      variants={fadeInUp}
+      className="bg-[#0D1F0D] border-y border-[#1E3820] px-6 py-10"
+    >
+      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+        <div className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-[#1A3020] text-[#D9A066]">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+            <path d="M19 10v2a7 7 0 01-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+        </div>
+        <div className="text-center sm:text-left space-y-2 flex-1">
+          <div className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Signal → Extinguisher</div>
+          <p className="text-[#C4B49A] text-base leading-relaxed font-serif">
+            No new meetings. No pitch deck. Bobbie observes through the channels your community already uses — listening for friction before it becomes a crisis.
+          </p>
+          <p className="text-sm text-[#5A7A5A]">
+            Zero disruption. Problems surface the moment they happen, not when someone finally calls a meeting about it.
+          </p>
+        </div>
+        <a
+          href="/codetry/services"
+          className="shrink-0 inline-flex items-center gap-2 text-sm text-[#D9A066] hover:text-[#F0C07A] transition-colors border border-[#D9A066]/30 hover:border-[#D9A066]/60 px-5 py-2.5 rounded-md whitespace-nowrap"
+        >
+          See the full model
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </motion.section>
+  );
+}
+
 export function WhyCodeTry() {
   return (
     <section id="why-codetry" className="py-20 px-6 md:px-12 bg-[#0A180A]">
