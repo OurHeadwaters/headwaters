@@ -3,8 +3,11 @@ import { useGetHeadwatersBusinessSection, usePatchHeadwatersBusinessSection } fr
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Plus, Trash2, Clock, Zap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign, Plus, Trash2, Clock, Zap, Users, Settings, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type BottleneckType = "client-facing" | "admin" | "one-time" | "none";
 
 interface FinancialRow {
   id: string;
@@ -13,6 +16,7 @@ interface FinancialRow {
   monthlyHigh: number;
   timeline: string;
   requiresTime: boolean;
+  bottleneckType: BottleneckType;
 }
 
 function genId() {
@@ -22,6 +26,37 @@ function genId() {
 function fmt(n: number) {
   if (!n) return "—";
   return "$" + Math.round(n).toLocaleString();
+}
+
+const BOTTLENECK_OPTIONS: { value: BottleneckType; label: string; icon: React.ReactNode; color: string }[] = [
+  {
+    value: "client-facing",
+    label: "Client-facing",
+    icon: <Users size={11} />,
+    color: "text-violet-600 dark:text-violet-400",
+  },
+  {
+    value: "admin",
+    label: "Admin / Ops",
+    icon: <Settings size={11} />,
+    color: "text-sky-600 dark:text-sky-400",
+  },
+  {
+    value: "one-time",
+    label: "One-time setup",
+    icon: <Wrench size={11} />,
+    color: "text-orange-600 dark:text-orange-400",
+  },
+  {
+    value: "none",
+    label: "None",
+    icon: null,
+    color: "text-muted-foreground",
+  },
+];
+
+function bottleneckMeta(type: BottleneckType) {
+  return BOTTLENECK_OPTIONS.find((o) => o.value === type) ?? BOTTLENECK_OPTIONS[3];
 }
 
 export default function BusinessFinancials() {
@@ -36,7 +71,7 @@ export default function BusinessFinancials() {
   useEffect(() => {
     if (data && !initialized.current) {
       const loaded = Array.isArray(data.value) ? (data.value as FinancialRow[]) : [];
-      setRows(loaded.map((r) => ({ requiresTime: true, ...r })));
+      setRows(loaded.map((r) => ({ requiresTime: true, bottleneckType: "none" as BottleneckType, ...r })));
       initialized.current = true;
     }
   }, [data]);
@@ -57,7 +92,7 @@ export default function BusinessFinancials() {
   };
 
   const addRow = () =>
-    updateAndSave([...rows, { id: genId(), name: "", monthlyLow: 0, monthlyHigh: 0, timeline: "", requiresTime: true }]);
+    updateAndSave([...rows, { id: genId(), name: "", monthlyLow: 0, monthlyHigh: 0, timeline: "", requiresTime: true, bottleneckType: "none" }]);
 
   const removeRow = (id: string) =>
     updateAndSave(rows.filter((r) => r.id !== id));
@@ -76,6 +111,11 @@ export default function BusinessFinancials() {
     updateAndSave(next);
   };
 
+  const updateBottleneckType = (id: string, value: BottleneckType) => {
+    const next = rows.map((r) => (r.id === id ? { ...r, bottleneckType: value } : r));
+    updateAndSave(next);
+  };
+
   const saveOnBlur = () => {
     persist(rows);
   };
@@ -91,6 +131,14 @@ export default function BusinessFinancials() {
   const hasRows = rows.length > 0;
   const passivePct = totalHigh > 0 ? Math.round((passiveHigh / totalHigh) * 100) : 0;
 
+  const timeRows = rows.filter((r) => r.requiresTime);
+  const bottleneckBreakdown = (["client-facing", "admin", "one-time"] as BottleneckType[]).map((type) => {
+    const matched = timeRows.filter((r) => r.bottleneckType === type);
+    const low = matched.reduce((s, r) => s + (r.monthlyLow || 0), 0);
+    const high = matched.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+    return { type, low, high, count: matched.length };
+  }).filter((b) => b.count > 0);
+
   if (isLoading)
     return <div className="p-8 text-center text-muted-foreground">Loading financials...</div>;
   if (error)
@@ -105,7 +153,7 @@ export default function BusinessFinancials() {
             Financial Model
           </h1>
           <p className="text-muted-foreground mt-2">
-            Monthly revenue estimates per stream. Toggle whether each stream requires your active time.
+            Monthly revenue estimates per stream. Track whether each stream requires your time and what kind of bottleneck it is.
           </p>
         </div>
         <Button onClick={addRow} className="gap-2 shrink-0">
@@ -116,43 +164,75 @@ export default function BusinessFinancials() {
 
       {/* Time Leverage Summary */}
       {hasRows && (
-        <div className="grid sm:grid-cols-3 gap-4">
-          <Card className="border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/40">
-            <CardContent className="p-5 flex items-start gap-3">
-              <Clock size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1">Requires your time</p>
-                <p className="text-lg font-bold text-foreground tabular-nums">
-                  {fmt(activeLow)}{activeHigh !== activeLow && <> – {fmt(activeHigh)}</>}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">per month</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-3">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Card className="border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/40">
+              <CardContent className="p-5 flex items-start gap-3">
+                <Clock size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1">Requires your time</p>
+                  <p className="text-lg font-bold text-foreground tabular-nums">
+                    {fmt(activeLow)}{activeHigh !== activeLow && <> – {fmt(activeHigh)}</>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">per month</p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="border-emerald-200/60 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800/40">
-            <CardContent className="p-5 flex items-start gap-3">
-              <Zap size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Passive / runs itself</p>
-                <p className="text-lg font-bold text-foreground tabular-nums">
-                  {fmt(passiveLow)}{passiveHigh !== passiveLow && <> – {fmt(passiveHigh)}</>}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">per month</p>
-              </div>
-            </CardContent>
-          </Card>
+            <Card className="border-emerald-200/60 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800/40">
+              <CardContent className="p-5 flex items-start gap-3">
+                <Zap size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Passive / runs itself</p>
+                  <p className="text-lg font-bold text-foreground tabular-nums">
+                    {fmt(passiveLow)}{passiveHigh !== passiveLow && <> – {fmt(passiveHigh)}</>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">per month</p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="border-border/60">
-            <CardContent className="p-5 flex items-start gap-3">
-              <DollarSign size={20} className="text-primary shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Passive share</p>
-                <p className="text-lg font-bold text-foreground tabular-nums">{passivePct}%</p>
-                <p className="text-xs text-muted-foreground mt-0.5">of total high estimate</p>
-              </div>
-            </CardContent>
-          </Card>
+            <Card className="border-border/60">
+              <CardContent className="p-5 flex items-start gap-3">
+                <DollarSign size={20} className="text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Passive share</p>
+                  <p className="text-lg font-bold text-foreground tabular-nums">{passivePct}%</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">of total high estimate</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Bottleneck breakdown */}
+          {bottleneckBreakdown.length > 0 && (
+            <Card className="border-amber-200/40 bg-amber-50/30 dark:bg-amber-950/10 dark:border-amber-800/30">
+              <CardContent className="p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-1.5">
+                  <Clock size={12} />
+                  Time-dependent breakdown by bottleneck type
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {bottleneckBreakdown.map(({ type, low, high }) => {
+                    const meta = bottleneckMeta(type);
+                    return (
+                      <div key={type} className="flex items-center gap-2 bg-background/70 rounded-lg border border-border/60 px-3 py-2">
+                        <span className={`flex items-center gap-1 text-xs font-semibold ${meta.color}`}>
+                          {meta.icon}
+                          {meta.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-sm font-bold text-foreground tabular-nums">
+                          {fmt(low)}{high !== low && <> – {fmt(high)}</>}
+                        </span>
+                        <span className="text-xs text-muted-foreground">/ mo</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -171,13 +251,14 @@ export default function BusinessFinancials() {
                     My time?
                   </span>
                 </th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Bottleneck type</th>
                 <th className="px-4 py-3 w-10" />
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground italic">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground italic">
                     No revenue streams yet. Hit "Add Row" to start.
                   </td>
                 </tr>
@@ -242,6 +323,30 @@ export default function BusinessFinancials() {
                     </button>
                   </td>
                   <td className="px-3 py-2">
+                    {r.requiresTime ? (
+                      <Select
+                        value={r.bottleneckType ?? "none"}
+                        onValueChange={(v) => updateBottleneckType(r.id, v as BottleneckType)}
+                      >
+                        <SelectTrigger className="h-8 text-xs border-border/60 bg-transparent w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BOTTLENECK_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                              <span className={`flex items-center gap-1.5 ${opt.color}`}>
+                                {opt.icon}
+                                {opt.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50 px-1">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
                     <button
                       onClick={() => removeRow(r.id)}
                       className="text-muted-foreground hover:text-destructive transition-colors"
@@ -262,12 +367,14 @@ export default function BusinessFinancials() {
                   <td className="px-4 py-3 text-muted-foreground text-sm">per month</td>
                   <td />
                   <td />
+                  <td />
                 </tr>
                 <tr className="bg-secondary/20 font-semibold text-muted-foreground">
                   <td className="px-4 py-3">Annual Total</td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(totalLow * 12)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(totalHigh * 12)}</td>
                   <td className="px-4 py-3 text-sm">per year</td>
+                  <td />
                   <td />
                   <td />
                 </tr>
