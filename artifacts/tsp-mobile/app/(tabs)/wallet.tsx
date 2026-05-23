@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -31,6 +32,17 @@ export default function WalletScreen() {
 
   const isHeadwatersMember =
     mapState.status === "ready" && mapState.map.entryMode === "practitioner";
+
+  const intakeRationale =
+    mapState.status === "ready" && mapState.map.entryMode === "practitioner"
+      ? mapState.map.rationale
+      : null;
+  const intakeRiskProfile =
+    mapState.status === "ready" && mapState.map.entryMode === "practitioner"
+      ? mapState.map.riskProfile
+      : null;
+
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
 
   const [tab, setTab] = useState<"lightning" | "xrpl">("lightning");
   const [lightningInput, setLightningInput] = useState("");
@@ -334,6 +346,21 @@ export default function WalletScreen() {
                     </Text>
                   </View>
                 ))}
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowIntakeModal(true);
+                  }}
+                  style={({ pressed }) => [
+                    hwStyles.intakeBtn,
+                    { backgroundColor: pressed ? colors.primary + "cc" : colors.primary },
+                  ]}
+                >
+                  <Text style={[hwStyles.intakeBtnText, { color: colors.primaryForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                    View My Intake
+                  </Text>
+                  <Ionicons name="chevron-forward" size={15} color={colors.primaryForeground} />
+                </Pressable>
               </WoodCard>
             ) : (
               <WoodCard>
@@ -450,7 +477,157 @@ export default function WalletScreen() {
           </WoodCard>
         </View>
       </View>
+      {/* My Intake Modal */}
+      <IntakeModal
+        visible={showIntakeModal}
+        onClose={() => setShowIntakeModal(false)}
+        rationale={intakeRationale}
+        riskProfile={intakeRiskProfile}
+      />
     </ScrollView>
+  );
+}
+
+function riskProfileLabel(level: number): string {
+  if (level <= 2) return "Focused Start";
+  if (level === 3) return "Building Momentum";
+  return "Full Landscape";
+}
+
+function riskProfileExplanation(level: number): string {
+  if (level === 1)
+    return "Your zone map is centered on your single most important zone. Starting focused keeps things clear and prevents overwhelm while you build foundational skills.";
+  if (level === 2)
+    return "Your curated view keeps the focus tight on your primary zone. As you grow more confident there, your map can expand to neighboring zones.";
+  if (level === 3)
+    return "Your map shows your primary zone and a next-step zone — a balanced view that lets you deepen where you are while staying aware of what comes next.";
+  if (level === 4)
+    return "Your map opens up to a wider range of zones. You're ready to explore beyond the core, and your curation reflects that readiness.";
+  return "Your map shows all zones across the full self-reliance path. You have the capacity and context to work across the complete range at once.";
+}
+
+function IntakeModal({
+  visible,
+  onClose,
+  rationale,
+  riskProfile,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  rationale: string | null;
+  riskProfile: number | null;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={[intakeStyles.root, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            intakeStyles.header,
+            {
+              paddingTop: insets.top + 16,
+              backgroundColor: colors.forestDeep,
+              borderBottomColor: colors.woodBorder,
+            },
+          ]}
+        >
+          <View style={intakeStyles.headerRow}>
+            <View>
+              <Text style={[intakeStyles.headerTitle, { color: colors.lanternWarm, fontFamily: "Fraunces_700Bold" }]}>
+                💧 My Intake
+              </Text>
+              <Text style={[intakeStyles.headerSub, { color: "rgba(255,255,255,0.65)", fontFamily: "DMSans_400Regular" }]}>
+                Your Headwaters session with Tasha Parr
+              </Text>
+            </View>
+            <Pressable
+              onPress={onClose}
+              style={[intakeStyles.closeBtn, { backgroundColor: "rgba(255,255,255,0.1)" }]}
+            >
+              <Ionicons name="close" size={20} color="rgba(255,255,255,0.8)" />
+            </Pressable>
+          </View>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={[intakeStyles.body, { paddingBottom: insets.bottom + 40 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Risk Profile */}
+          {riskProfile != null && (
+            <View style={intakeStyles.section}>
+              <Text style={[intakeStyles.sectionLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+                RISK PROFILE
+              </Text>
+              <View style={[intakeStyles.riskCard, { backgroundColor: colors.amberGold + "14", borderColor: colors.amberGold + "44" }]}>
+                <View style={intakeStyles.riskRow}>
+                  <View style={intakeStyles.riskLevelBlock}>
+                    <Text style={[intakeStyles.riskNumber, { color: colors.amberGold, fontFamily: "Fraunces_700Bold" }]}>
+                      {riskProfile}
+                    </Text>
+                    <Text style={[intakeStyles.riskScale, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                      / 5
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[intakeStyles.riskLabel, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+                      {riskProfileLabel(riskProfile)}
+                    </Text>
+                    <View style={[intakeStyles.riskDots, { gap: 5 }]}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <View
+                          key={n}
+                          style={[
+                            intakeStyles.riskDot,
+                            {
+                              backgroundColor:
+                                n <= riskProfile ? colors.amberGold : colors.woodBorder,
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                </View>
+                <Text style={[intakeStyles.riskExplain, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+                  {riskProfileExplanation(riskProfile)}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Rationale */}
+          <View style={intakeStyles.section}>
+            <Text style={[intakeStyles.sectionLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+              PRACTITIONER NOTES
+            </Text>
+            {rationale ? (
+              <View style={[intakeStyles.rationaleCard, { backgroundColor: colors.fieldNote ?? colors.muted, borderColor: colors.fieldNoteBorder ?? colors.woodBorder }]}>
+                <Text style={[intakeStyles.rationaleText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+                  {rationale}
+                </Text>
+                <Text style={[intakeStyles.rationaleAttrib, { color: colors.mutedForeground, fontFamily: "DMSans_500Medium" }]}>
+                  — Tasha Parr, Headwaters Practitioner
+                </Text>
+              </View>
+            ) : (
+              <View style={[intakeStyles.rationaleCard, { backgroundColor: colors.muted, borderColor: colors.woodBorder }]}>
+                <Text style={[intakeStyles.rationaleEmpty, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                  No notes have been added to your intake yet.
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 
@@ -614,4 +791,83 @@ const hwStyles = StyleSheet.create({
     alignItems: "center",
   },
   learnBtnText: { fontSize: 15 },
+  intakeBtn: {
+    borderRadius: 12,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  intakeBtnText: { fontSize: 15 },
+});
+
+const intakeStyles = StyleSheet.create({
+  root: { flex: 1 },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  headerTitle: { fontSize: 24, marginBottom: 3 },
+  headerSub: { fontSize: 13 },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  body: { padding: 20, gap: 24 },
+  section: { gap: 10 },
+  sectionLabel: {
+    fontSize: 10,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  riskCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
+  riskRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  riskLevelBlock: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 2,
+  },
+  riskNumber: { fontSize: 44, lineHeight: 48 },
+  riskScale: { fontSize: 18 },
+  riskLabel: { fontSize: 16, marginBottom: 8 },
+  riskDots: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  riskDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  riskExplain: { fontSize: 14, lineHeight: 21 },
+  rationaleCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
+  rationaleText: { fontSize: 15, lineHeight: 23 },
+  rationaleAttrib: { fontSize: 13, textAlign: "right" },
+  rationaleEmpty: { fontSize: 14, lineHeight: 20 },
 });
