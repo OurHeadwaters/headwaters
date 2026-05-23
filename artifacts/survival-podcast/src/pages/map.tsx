@@ -472,7 +472,163 @@ function ZoneCard({
   );
 }
 
-function HeadwatersMemberPerksCard() {
+function riskProfileLabel(level: number): string {
+  if (level <= 2) return "Focused Start";
+  if (level === 3) return "Building Momentum";
+  return "Full Landscape";
+}
+
+function riskProfileExplanation(level: number): string {
+  if (level === 1)
+    return "Your zone map is centered on your single most important zone. Starting focused keeps things clear and prevents overwhelm while you build foundational skills.";
+  if (level === 2)
+    return "Your curated view keeps the focus tight on your primary zone. As you grow more confident there, your map can expand to neighboring zones.";
+  if (level === 3)
+    return "Your map shows your primary zone and a next-step zone — a balanced view that lets you deepen where you are while staying aware of what comes next.";
+  if (level === 4)
+    return "Your map opens up to a wider range of zones. You're ready to explore beyond the core, and your curation reflects that readiness.";
+  return "Your map shows all zones across the full self-reliance path. You have the capacity and context to work across the complete range at once.";
+}
+
+function IntakeModal({
+  open,
+  onClose,
+  rationale,
+  riskProfile,
+}: {
+  open: boolean;
+  onClose: () => void;
+  rationale: string | null;
+  riskProfile: number | null;
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col"
+        style={{ background: "#0F1F0F", border: "1px solid #4A7A3A33", maxHeight: "90vh" }}
+      >
+        {/* Header */}
+        <div
+          className="px-6 pt-6 pb-5 flex items-start justify-between shrink-0"
+          style={{
+            background: "linear-gradient(160deg, #0A180A 0%, #12241A 100%)",
+            borderBottom: "1px solid #4A7A3A33",
+          }}
+        >
+          <div>
+            <h2 className="font-serif text-xl font-bold mb-1" style={{ color: "#FDFBF7" }}>
+              💧 My Intake
+            </h2>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
+              Your Headwaters session with Tasha Parr
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+            style={{ color: "rgba(255,255,255,0.7)", marginTop: "2px" }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto p-6 space-y-6">
+          {/* Risk Profile */}
+          {riskProfile != null && (
+            <div>
+              <p
+                className="text-[10px] font-bold uppercase tracking-widest mb-3"
+                style={{ color: "#7A9A6A" }}
+              >
+                Risk Profile
+              </p>
+              <div
+                className="rounded-xl border p-4"
+                style={{ background: "#B5853A14", borderColor: "#B5853A44" }}
+              >
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="flex items-baseline gap-1 shrink-0">
+                    <span className="font-serif text-4xl font-bold leading-none" style={{ color: "#B5853A" }}>
+                      {riskProfile}
+                    </span>
+                    <span className="text-base" style={{ color: "#7A9A6A" }}>/ 5</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm mb-2" style={{ color: "#FDFBF7" }}>
+                      {riskProfileLabel(riskProfile)}
+                    </p>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <div
+                          key={n}
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ background: n <= riskProfile ? "#B5853A" : "#4A7A3A33" }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
+                  {riskProfileExplanation(riskProfile)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Practitioner Notes */}
+          <div>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-3"
+              style={{ color: "#7A9A6A" }}
+            >
+              Practitioner Notes
+            </p>
+            {rationale ? (
+              <div
+                className="rounded-xl border p-4 space-y-3"
+                style={{ background: "#4A7A3A0D", borderColor: "#4A7A3A33" }}
+              >
+                <p className="text-sm leading-relaxed" style={{ color: "#FDFBF7" }}>
+                  {rationale}
+                </p>
+                <p className="text-xs text-right" style={{ color: "#7A9A6A" }}>
+                  — Tasha Parr, Headwaters Practitioner
+                </p>
+              </div>
+            ) : (
+              <div
+                className="rounded-xl border p-4"
+                style={{ background: "#4A7A3A0D", borderColor: "#4A7A3A33" }}
+              >
+                <p className="text-sm" style={{ color: "#7A9A6A" }}>
+                  No notes have been added to your intake yet.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeadwatersMemberPerksCard({
+  rationale,
+  riskProfile,
+}: {
+  rationale: string | null;
+  riskProfile: number | null;
+}) {
+  const [showIntake, setShowIntake] = useState(false);
+
   const perks = [
     { icon: "🗺️", text: "Personalized zone placement tailored to where you are right now" },
     { icon: "🎯", text: "Curated zone map filtered to your risk profile — no overwhelm" },
@@ -480,41 +636,61 @@ function HeadwatersMemberPerksCard() {
   ];
 
   return (
-    <div
-      className="rounded-2xl border p-6"
-      style={{ background: "#4A7A3A12", borderColor: "#4A7A3A44" }}
-    >
-      <div className="flex items-center gap-3 mb-5">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: "#4A7A3A22", border: "1px solid #4A7A3A44" }}
-        >
-          <span className="text-base leading-none">💧</span>
-        </div>
-        <div>
-          <p
-            className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
-            style={{ color: "#4A7A3A" }}
+    <>
+      <div
+        className="rounded-2xl border p-6"
+        style={{ background: "#4A7A3A12", borderColor: "#4A7A3A44" }}
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "#4A7A3A22", border: "1px solid #4A7A3A44" }}
           >
-            Headwaters Membership
-          </p>
-          <h3 className="font-serif text-base font-bold" style={{ color: "#FDFBF7" }}>
-            Your member perks
-          </h3>
+            <span className="text-base leading-none">💧</span>
+          </div>
+          <div>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
+              style={{ color: "#4A7A3A" }}
+            >
+              Headwaters Membership
+            </p>
+            <h3 className="font-serif text-base font-bold" style={{ color: "#FDFBF7" }}>
+              Your member perks
+            </h3>
+          </div>
         </div>
+
+        <div className="space-y-3 mb-5">
+          {perks.map((perk, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="text-base leading-none mt-0.5 shrink-0">{perk.icon}</span>
+              <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
+                {perk.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {rationale && (
+          <button
+            onClick={() => setShowIntake(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all w-full justify-center"
+            style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+          >
+            View My Intake
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      <div className="space-y-3">
-        {perks.map((perk, i) => (
-          <div key={i} className="flex items-start gap-3">
-            <span className="text-base leading-none mt-0.5 shrink-0">{perk.icon}</span>
-            <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
-              {perk.text}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
+      <IntakeModal
+        open={showIntake}
+        onClose={() => setShowIntake(false)}
+        rationale={rationale}
+        riskProfile={riskProfile}
+      />
+    </>
   );
 }
 
@@ -757,7 +933,12 @@ function MapView({
 
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         {/* Headwaters member perks card */}
-        {isPractitioner && <HeadwatersMemberPerksCard />}
+        {isPractitioner && (
+          <HeadwatersMemberPerksCard
+            rationale={map.rationale ?? null}
+            riskProfile={map.riskProfile ?? null}
+          />
+        )}
 
         {/* Surrender mode card */}
         {map.surrenderMode && isGuided && map.primaryZone && (
