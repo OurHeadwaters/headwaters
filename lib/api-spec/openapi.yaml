@@ -1402,6 +1402,7 @@ components:
         riskProfile: { type: integer }
         clientRationale: { type: string }
         practitionerNotes: { type: string }
+        practitionerName: { type: string }
         dump: { type: string }
     HeadwatersPushResult:
       type: object

@@ -27,6 +27,7 @@ export default function IntakeReview() {
   const [riskProfile, setRiskProfile] = useState<number>(3);
   const [clientRationale, setClientRationale] = useState("");
   const [practitionerNotes, setPractitionerNotes] = useState("");
+  const [practitionerName, setPractitionerName] = useState("Tasha Parr");
   const [summaryOpen, setSummaryOpen] = useState(true);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function IntakeReview() {
           riskProfile,
           clientRationale,
           practitionerNotes,
+          practitionerName: practitionerName || undefined,
           dump,
         },
       },

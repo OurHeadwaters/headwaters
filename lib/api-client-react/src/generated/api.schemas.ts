@@ -439,6 +439,7 @@ export interface HeadwatersPushRequest {
   riskProfile: number;
   clientRationale: string;
   practitionerNotes: string;
+  practitionerName?: string;
   dump?: string;
 }
 

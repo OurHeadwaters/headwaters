@@ -9,6 +9,7 @@ export type LifestyleMap = {
   secondaryZone: string | null;
   rationale: string | null;
   riskProfile: number | null;
+  practitionerName: string | null;
   visitedZones: string[];
   surrenderMode: boolean;
   createdAt: string;

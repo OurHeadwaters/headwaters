@@ -495,13 +495,17 @@ function IntakeModal({
   onClose,
   rationale,
   riskProfile,
+  practitionerName,
 }: {
   open: boolean;
   onClose: () => void;
   rationale: string | null;
   riskProfile: number | null;
+  practitionerName?: string | null;
 }) {
   if (!open) return null;
+
+  const name = practitionerName || "your practitioner";
 
   return (
     <div
@@ -526,7 +530,7 @@ function IntakeModal({
               💧 My Intake
             </h2>
             <p className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
-              Your Headwaters session with Tasha Parr
+              Your Headwaters session with {name}
             </p>
           </div>
           <button
@@ -600,7 +604,7 @@ function IntakeModal({
                   {rationale}
                 </p>
                 <p className="text-xs text-right" style={{ color: "#7A9A6A" }}>
-                  — Tasha Parr, Headwaters Practitioner
+                  — {name}, Headwaters Practitioner
                 </p>
               </div>
             ) : (
@@ -623,16 +627,18 @@ function IntakeModal({
 function HeadwatersMemberPerksCard({
   rationale,
   riskProfile,
+  practitionerName,
 }: {
   rationale: string | null;
   riskProfile: number | null;
+  practitionerName?: string | null;
 }) {
   const [showIntake, setShowIntake] = useState(false);
-
+  const name = practitionerName || "your practitioner";
   const perks = [
     { icon: "🗺️", text: "Personalized zone placement tailored to where you are right now" },
     { icon: "🎯", text: "Curated zone map filtered to your risk profile — no overwhelm" },
-    { icon: "📋", text: "Practitioner rationale written just for you on your Lifestyle Map" },
+    { icon: "📋", text: `Practitioner rationale written just for you by ${name}` },
   ];
 
   return (
@@ -870,7 +876,7 @@ function MapView({
                   </span>
                 </div>
                 <p className="text-xs" style={{ color: "#C8D4C0" }}>
-                  Placed by Tasha Parr · Practitioner intake
+                  Placed by {map.practitionerName || "your practitioner"} · Practitioner intake
                 </p>
               </div>
             )}
@@ -937,6 +943,7 @@ function MapView({
           <HeadwatersMemberPerksCard
             rationale={map.rationale ?? null}
             riskProfile={map.riskProfile ?? null}
+            practitionerName={map.practitionerName}
           />
         )}
 

@@ -363,6 +363,7 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
     riskProfile,
     clientRationale,
     practitionerNotes,
+    practitionerName,
     dump,
   } = req.body as {
     clientId: string;
@@ -371,6 +372,7 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
     riskProfile: number;
     clientRationale: string;
     practitionerNotes: string;
+    practitionerName?: string;
     dump?: string;
   };
 
@@ -429,6 +431,7 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
           secondaryZone: resolvedSecondaryZone,
           rationale: clientRationale,
           riskProfile,
+          practitionerName: practitionerName || null,
           practitionerNotes: practitionerNotes || null,
           answers: {},
           surrenderMode: false,
@@ -441,6 +444,7 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
             secondaryZone: resolvedSecondaryZone,
             rationale: clientRationale,
             riskProfile,
+            practitionerName: practitionerName || null,
             practitionerNotes: practitionerNotes || null,
             updatedAt: new Date(),
           },
