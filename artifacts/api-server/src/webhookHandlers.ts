@@ -1,5 +1,13 @@
 import { getStripeSync } from "./stripeClient";
-import { db, groundEventsTable, groundEventRsvpsTable, membershipsTable, expertCouncilTable } from "@workspace/db";
+import {
+  db,
+  groundEventsTable,
+  groundEventRsvpsTable,
+  membershipsTable,
+  expertCouncilTable,
+  cohortsTable,
+  cohortEnrollmentsTable,
+} from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
 import type Stripe from "stripe";
@@ -129,6 +137,14 @@ export class WebhookHandlers {
       return;
     }
 
+    // ── Cohort enrollment checkout ───────────────────────────────────────────
+    const cohortIdStr = session.metadata?.cohort_id;
+    const cohortUserId = session.metadata?.user_id;
+    if (cohortIdStr && cohortUserId) {
+      await WebhookHandlers.handleCohortCheckoutComplete(session, cohortIdStr, cohortUserId);
+      return;
+    }
+
     // ── Brigade subscription checkout ────────────────────────────────────────
     const brigadeUserId = session.metadata?.brigade_user_id;
     const brigadePlan = session.metadata?.brigade_plan;
@@ -168,6 +184,50 @@ export class WebhookHandlers {
         "webhookHandlers: expert listing checkout complete — customer + subscription linked",
       );
     }
+  }
+
+  /**
+   * Records a cohort enrollment after a successful Checkout session.
+   * Idempotent via stripe_checkout_session_id unique constraint.
+   */
+  static async handleCohortCheckoutComplete(
+    session: Stripe.Checkout.Session,
+    cohortIdStr: string,
+    userId: string,
+  ): Promise<void> {
+    const cohortId = parseInt(cohortIdStr, 10);
+    if (!Number.isFinite(cohortId)) {
+      logger.warn({ cohortIdStr }, "webhookHandlers: invalid cohort_id in metadata — skipping");
+      return;
+    }
+
+    const existing = await db
+      .select({ id: cohortEnrollmentsTable.id })
+      .from(cohortEnrollmentsTable)
+      .where(eq(cohortEnrollmentsTable.stripeCheckoutSessionId, session.id))
+      .limit(1);
+
+    if (existing.length > 0) {
+      logger.info(
+        { sessionId: session.id },
+        "webhookHandlers: cohort enrollment already recorded (idempotent skip)",
+      );
+      return;
+    }
+
+    const amountPaid = session.amount_total ?? 0;
+
+    await db.insert(cohortEnrollmentsTable).values({
+      cohortId,
+      userId,
+      stripeCheckoutSessionId: session.id,
+      amountPaidCents: amountPaid,
+    });
+
+    logger.info(
+      { cohortId, userId, amountPaid },
+      "webhookHandlers: cohort enrollment recorded via Stripe",
+    );
   }
 
   /**

@@ -46,6 +46,9 @@ import MapPage from "@/pages/map";
 import NotFound from "@/pages/not-found";
 import BrigadePage from "@/pages/brigade";
 import AdminBrigade from "@/pages/admin-brigade";
+import { CohortsPage } from "@/pages/cohorts";
+import { CohortDetailPage } from "@/pages/cohort-detail";
+import { AdminCohorts } from "@/pages/admin-cohorts";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +111,9 @@ function Router() {
         <Route path="/map" component={MapPage} />
         <Route path="/brigade" component={BrigadePage} />
         <Route path="/admin/brigade" component={AdminBrigade} />
+        <Route path="/cohorts" component={CohortsPage} />
+        <Route path="/cohorts/:id" component={CohortDetailPage} />
+        <Route path="/admin/cohorts" component={AdminCohorts} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

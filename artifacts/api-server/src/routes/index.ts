@@ -34,6 +34,8 @@ import firesideChatsRouter from "./fireside-chats";
 import brigadeRouter from "./brigade";
 import expertListingsRouter from "./expert-listings";
 import adminExpertListingsRouter from "./admin-expert-listings";
+import cohortsRouter from "./cohorts";
+import adminCohortsRouter from "./admin-cohorts";
 
 const router: IRouter = Router();
 
@@ -72,5 +74,7 @@ router.use(headwatersRouter);
 router.use(firesideChatsRouter);
 router.use(expertListingsRouter);
 router.use(adminExpertListingsRouter);
+router.use(cohortsRouter);
+router.use(adminCohortsRouter);
 
 export default router;

@@ -17,3 +17,4 @@ export * from "./lifestyle-map";
 export * from "./headwaters";
 export * from "./fireside-chats";
 export * from "./memberships";
+export * from "./cohorts";
