@@ -3,6 +3,7 @@ import { db, groundEventsTable, groundEventRsvpsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
+import { sendHostConfirmationEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -269,6 +270,69 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
   } catch (err) {
     logger.error({ err }, "admin-ground-events: PATCH failed");
     res.status(500).json({ error: "Failed to update event" });
+  }
+});
+
+/**
+ * POST /api/admin/ground-events/:id/resend-confirmation
+ * Resends the host confirmation email and marks confirmationEmailSent = true.
+ */
+router.post("/admin/ground-events/:id/resend-confirmation", requireEditor, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid event id" });
+      return;
+    }
+
+    const [event] = await db
+      .select()
+      .from(groundEventsTable)
+      .where(eq(groundEventsTable.id, id))
+      .limit(1);
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    if (!event.contactEmail) {
+      res.status(422).json({ error: "Event has no contact email — cannot send confirmation" });
+      return;
+    }
+
+    if (!event.hostToken) {
+      res.status(422).json({ error: "Event has no host token — dashboard link unavailable" });
+      return;
+    }
+
+    const appBaseUrl = process.env.APP_BASE_URL ?? "https://www.thesurvivalpodcast.com";
+    const dashboardUrl = `${appBaseUrl}/workshops/dashboard?token=${event.hostToken}`;
+
+    const sent = await sendHostConfirmationEmail({
+      hostEmail: event.contactEmail,
+      hostName: event.hostName,
+      eventTitle: event.title,
+      eventDate: event.eventDate,
+      dashboardUrl,
+    });
+
+    if (!sent) {
+      res.status(502).json({ error: "Email send failed — check RESEND_API_KEY configuration" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(groundEventsTable)
+      .set({ confirmationEmailSent: true, updatedAt: new Date() })
+      .where(eq(groundEventsTable.id, id))
+      .returning();
+
+    logger.info({ id, hostEmail: event.contactEmail }, "admin-ground-events: confirmation email resent");
+    res.json(updated);
+  } catch (err) {
+    logger.error({ err }, "admin-ground-events: POST /resend-confirmation failed");
+    res.status(500).json({ error: "Failed to resend confirmation email" });
   }
 });
 

@@ -112,6 +112,16 @@ async function patchEvent(data: { id: number; action: string }): Promise<GroundE
   return j as GroundEvent;
 }
 
+async function resendConfirmation(id: number): Promise<GroundEvent> {
+  const res = await fetch(apiUrl(`/admin/ground-events/${id}/resend-confirmation`), {
+    method: "POST",
+    credentials: "include",
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed to resend confirmation");
+  return j as GroundEvent;
+}
+
 async function deleteEvent(id: number): Promise<void> {
   const res = await fetch(apiUrl(`/admin/ground-events/${id}`), {
     method: "DELETE",
@@ -164,6 +174,7 @@ function StatusBadge({ event }: { event: GroundEvent }) {
 function EventRow({ event }: { event: GroundEvent }) {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const mutation = useMutation({
     mutationFn: patchEvent,
@@ -173,6 +184,14 @@ function EventRow({ event }: { event: GroundEvent }) {
   const deleteMutation = useMutation({
     mutationFn: deleteEvent,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-ground-events"] }),
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: () => resendConfirmation(event.id),
+    onSuccess: () => {
+      setResendSuccess(true);
+      qc.invalidateQueries({ queryKey: ["admin-ground-events"] });
+    },
   });
 
   const act = (action: string) => mutation.mutate({ id: event.id, action });
@@ -295,6 +314,29 @@ function EventRow({ event }: { event: GroundEvent }) {
               <Download className="w-3.5 h-3.5" />
               RSVPs
             </button>
+          )}
+
+          {event.contactEmail && (
+            resendSuccess || (resendMutation.isSuccess && event.confirmationEmailSent) ? (
+              <span className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border bg-emerald-50 text-emerald-700 border-emerald-200">
+                <Mail className="w-3.5 h-3.5" />
+                Sent
+              </span>
+            ) : (
+              <button
+                onClick={() => resendMutation.mutate()}
+                disabled={resendMutation.isPending}
+                title={event.confirmationEmailSent ? "Resend confirmation email" : "Send confirmation email"}
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {resendMutation.isPending
+                  ? "Sending…"
+                  : event.confirmationEmailSent
+                  ? "Resend confirmation"
+                  : "Send confirmation"}
+              </button>
+            )
           )}
 
           {!event.isApproved && !event.isRejected && (
