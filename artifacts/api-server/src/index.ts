@@ -1,4 +1,4 @@
-import app from "./app";
+import app, { castleDevProxy } from "./app";
 import { logger } from "./lib/logger";
 import { startBackgroundRefresh } from "./lib/library";
 import { startGearSchedule } from "./routes/gear";
@@ -54,10 +54,16 @@ async function initStripe(): Promise<void> {
   }
 }
 
-app.listen(port, (err) => {
+const server = app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
+  }
+
+  // Wire up WebSocket proxy for Crypto Castle HMR in dev mode
+  if (castleDevProxy) {
+    server.on("upgrade", castleDevProxy.upgrade);
+    logger.info("crypto-castle: WebSocket HMR proxy attached");
   }
 
   logger.info({ port }, "Server listening");
