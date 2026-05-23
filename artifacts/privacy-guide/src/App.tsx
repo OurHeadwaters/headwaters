@@ -178,11 +178,13 @@ function GordPerched() {
   const [isPatrolling, setIsPatrolling] = useState(false);
   const [isStartled, setIsStartled] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
+  const [scrollDir, setScrollDir] = useState<"down" | "up" | null>(null);
   // Ref mirrors isPatrolling so the idle interval callback always sees the current value
   const isPatrollingRef = useRef(false);
   const isStartledRef = useRef(false);
   const isSettlingRef = useRef(false);
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollYRef = useRef(typeof window !== "undefined" ? window.scrollY : 0);
 
   useEffect(() => {
     // Only twitch head when idle — patrol controls head direction during movement
@@ -240,19 +242,25 @@ function GordPerched() {
   // Scroll → startled reaction (debounced, once per scroll burst)
   useEffect(() => {
     function handleScroll() {
+      const currentY = window.scrollY;
+      const dir: "down" | "up" = currentY >= lastScrollYRef.current ? "down" : "up";
+      lastScrollYRef.current = currentY;
+
       // Clear any pending debounce so we fire once at the end of a burst
       if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
       scrollDebounceRef.current = setTimeout(() => {
         if (isStartledRef.current) return; // already reacting
         isStartledRef.current = true;
+        setScrollDir(dir);
         setIsStartled(true);
-        // Flick head to a random side then snap back
-        setHeadTurn(Math.random() > 0.5 ? 20 : -20);
-        // After the hop lands, run a brief settling ruffle then return to idle
+        // Directional head flick: crane forward (positive) on down, pull back (negative) on up
+        setHeadTurn(dir === "down" ? 18 : -18);
+        // After the hop lands, relax head, then run a brief settling ruffle before resuming patrol
         setTimeout(() => {
           setHeadTurn(0);
           isStartledRef.current = false;
           setIsStartled(false);
+          setScrollDir(null);
           // Settling phase: brief body ruffle before resuming patrol
           isSettlingRef.current = true;
           setIsSettling(true);
@@ -279,14 +287,16 @@ function GordPerched() {
       <motion.div
         animate={
           isStartled
-            ? { y: [0, -18, 4, -10, 2, 0], rotate: [0, -4, 4, -2, 0] }
+            ? scrollDir === "down"
+              ? { y: [0, -14, 4, -8, 1, 0], rotate: [0, 8, -3, 5, 0] }   // lean forward, tip ahead
+              : { y: [0, -10, 6, -5, 1, 0], rotate: [0, -10, 4, -5, 0] }  // pull back, recoil
             : isSettling
             ? { scaleX: [1, 1.08, 0.96, 1.04, 1], scaleY: [1, 0.94, 1.06, 0.98, 1], rotate: [0, -2, 2, -1, 0] }
             : { y: [0, -5, 0] }
         }
         transition={
           isStartled
-            ? { duration: 0.7, ease: "easeOut" }
+            ? { duration: 0.75, ease: "easeOut" }
             : isSettling
             ? { duration: 0.42, ease: "easeOut" }
             : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
