@@ -15,6 +15,10 @@ export const userLifestyleMapsTable = pgTable("user_lifestyle_maps", {
   riskProfile: integer("risk_profile"),
   practitionerName: varchar("practitioner_name"),
   practitionerNotes: text("practitioner_notes"),
+  landZone: varchar("land_zone"),
+  landSecondaryZone: varchar("land_secondary_zone"),
+  landRationale: text("land_rationale"),
+  harmonyNote: text("harmony_note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

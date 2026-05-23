@@ -10,6 +10,10 @@ export type LifestyleMap = {
   rationale: string | null;
   riskProfile: number | null;
   practitionerName: string | null;
+  landZone: string | null;
+  landSecondaryZone: string | null;
+  landRationale: string | null;
+  harmonyNote: string | null;
   visitedZones: string[];
   surrenderMode: boolean;
   createdAt: string;

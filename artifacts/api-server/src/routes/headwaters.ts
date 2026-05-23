@@ -15,39 +15,47 @@ Zone 5 — The Wild: bug-out planning, wilderness survival, grid-down scenarios,
 `;
 
 const TASHA_CONTEXT = `
-You are a zone placement advisor for The Survival Podcast (TSP). You are reading a post-session brain dump from a practitioner (Tasha Parr) after an intake session with a client.
+You are a dual-state intake advisor for The Stomping Path. You receive post-session notes from a practitioner after working with a client. Your role is to assess TWO systems simultaneously using the same permaculture zone framework:
 
-Tasha is a homesteader, preparedness educator, and community builder in Northwestern Ontario. She coaches people on self-reliance and resilience using a permaculture zone framework:
-${ZONE_DEFINITIONS}
+THE ZONE FRAMEWORK applies to both people and land:
+Zone 0 — The Self / The Homesite: mindset, finances, personal sovereignty. On land: the dwelling, core water/heat/shelter systems, the immediate 10-foot radius.
+Zone 1 — The Home / The Kitchen Garden: food storage, emergency planning, basic preparedness. On land: annual beds, cold frames, herb gardens, immediate water catchment, the daily-touch zone.
+Zone 2 — The Garden / The Near Field: food production, chickens, bees, composting. On land: perennial food systems, established garden zones, small livestock paddocks, food forest establishment.
+Zone 3 — The Homestead / The Working Farm: larger livestock, solar, off-grid systems. On land: field crops, pasture, larger animal infrastructure, ponds, energy systems, barns.
+Zone 4 — The Forest / The Edge: hunting, foraging, bushcraft. On land: woodlot management, silvopasture, mushroom logs, semi-wild food systems, timber stands.
+Zone 5 — The Wild: primitive skills, grid-down scenarios. On land: true wilderness areas, minimal intervention, seed stock conservation, long-rotation systems, ungrazed land.
 
-Risk profile (1–5) measures how much guidance the client needs at this stage of their journey:
-- 1 = Tight: hand-held, one step at a time, prone to overwhelm or just starting
-- 2 = Guided: needs structure and check-ins
-- 3 = Balanced: can handle a map, needs some curation
-- 4 = Open: motivated self-starter, wants options
-- 5 = Self-directed: experienced, wants full map access, learns by wandering
+PERSON PLACEMENT — assess where this person IS RIGHT NOW:
+- Prioritize gaps and needs, not strengths
+- Risk profile (1–5): 1=Tight (hand-held, overwhelmed), 2=Guided (needs structure), 3=Balanced (can handle a map), 4=Open (self-starter), 5=Self-directed (learns by wandering)
 
-Your task:
-1. Read the practitioner's brain dump carefully
-2. Identify the primary zone that matches where this person IS RIGHT NOW (not where they want to be)
-3. Identify a secondary zone that either supports or represents their next natural step
-4. Assess their risk profile (1–5) based on the dump's signals about their experience level, confidence, and overwhelm
-5. Write a 2–3 sentence rationale in second person ("You…") that the client will see — plain, direct, personal
-6. Write a bulleted practitioner summary (what you read from the dump that informed your assessment)
+LAND PLACEMENT — assess where the land IS RIGHT NOW and what it is ready for next:
+- What zone of development has the land reached?
+- What is the land's most immediate need or greatest untapped potential?
+- What zone of work would yield the most return for the least disruption?
+
+THE HARMONY NOTE — name the exact intersection:
+- Where does this person's current capacity meet what this land needs most?
+- Be specific: name the actual work (e.g. "establishing the kitchen garden perimeter"), the season if relevant, and why this moment of overlap matters
+- The harmony note is the practitioner's most valuable output — it tells them exactly where to start
 
 Rules:
-- Be specific to the actual signals in the dump — no generic advice
-- Prioritize where they have gaps/needs, not where they're already strong
-- The client rationale should feel like a trusted guide who knows this framework well
+- Be specific to the signals in the dump — no generic advice
+- The client rationale is written for the person (second person: "You…"), plain and direct
+- If no land context was provided, return null for all land fields
 - Return ONLY valid JSON — no markdown, no commentary outside the JSON
 
-Response format (strict JSON):
+Response format (strict JSON, always return all fields):
 {
   "primaryZone": "zone-0" | "zone-1" | "zone-2" | "zone-3" | "zone-4" | "zone-5",
   "secondaryZone": "zone-0" | "zone-1" | "zone-2" | "zone-3" | "zone-4" | "zone-5",
   "riskProfile": 1 | 2 | 3 | 4 | 5,
   "clientRationale": "2–3 sentence plain-language explanation written for the client",
-  "practitionerSummary": "bullet1\\nbullet2\\nbullet3"
+  "practitionerSummary": "bullet1\\nbullet2\\nbullet3",
+  "landZone": "zone-0" | "zone-1" | "zone-2" | "zone-3" | "zone-4" | "zone-5" | null,
+  "landSecondaryZone": "zone-0" | "zone-1" | "zone-2" | "zone-3" | "zone-4" | "zone-5" | null,
+  "landRationale": "2–3 sentences describing what the land is ready for next. Null if no land context.",
+  "harmonyNote": "1–2 sentences naming exactly where this person's capacity meets this land's needs — specific work, not abstract principles. Null if no land context."
 }`;
 
 function checkPassphrase(req: Request, res: Response): boolean {
@@ -261,7 +269,7 @@ router.patch("/headwaters/clients/:clientId", async (req: Request, res: Response
 router.post("/headwaters/interpret", async (req: Request, res: Response) => {
   if (!checkPassphrase(req, res)) return;
 
-  const { dump, clientId } = req.body as { dump: string; clientId?: string };
+  const { dump, clientId, landDump } = req.body as { dump: string; clientId?: string; landDump?: string };
 
   if (!dump || typeof dump !== "string" || dump.trim().length < 10) {
     res.status(400).json({ error: "dump must be at least 10 characters" });
@@ -295,14 +303,18 @@ router.post("/headwaters/interpret", async (req: Request, res: Response) => {
   }
 
   try {
+    const landSection = landDump?.trim()
+      ? `\n\n---\nLAND CONTEXT:\n${landDump.trim()}\n---`
+      : "\n\n(No land context provided — return null for all land fields.)";
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
-      max_completion_tokens: 800,
+      max_completion_tokens: 1200,
       messages: [
         { role: "system", content: TASHA_CONTEXT },
         {
           role: "user",
-          content: `Here is my post-session brain dump:${clientContext}\n\n---\n${dump.trim()}\n---\n\nPlease give me the zone placement and risk profile.`,
+          content: `Here is my post-session brain dump:${clientContext}\n\n---\nPERSON:\n${dump.trim()}\n---${landSection}\n\nPlease give me the dual-state placement.`,
         },
       ],
     });
@@ -315,6 +327,10 @@ router.post("/headwaters/interpret", async (req: Request, res: Response) => {
       riskProfile: number;
       clientRationale: string;
       practitionerSummary: string;
+      landZone?: string | null;
+      landSecondaryZone?: string | null;
+      landRationale?: string | null;
+      harmonyNote?: string | null;
     };
 
     try {
@@ -336,12 +352,19 @@ router.post("/headwaters/interpret", async (req: Request, res: Response) => {
 
     const riskProfile = Math.min(5, Math.max(1, Math.round(Number(parsed.riskProfile) || 3)));
 
+    const validZonesOrNull = (v: string | null | undefined) =>
+      v && validZones.includes(v) ? v : null;
+
     res.json({
       primaryZone: parsed.primaryZone,
       secondaryZone: parsed.secondaryZone,
       riskProfile,
       clientRationale: parsed.clientRationale ?? "",
       practitionerSummary: parsed.practitionerSummary ?? "",
+      landZone: validZonesOrNull(parsed.landZone),
+      landSecondaryZone: validZonesOrNull(parsed.landSecondaryZone),
+      landRationale: parsed.landRationale ?? null,
+      harmonyNote: parsed.harmonyNote ?? null,
     });
   } catch (err) {
     logger.error({ err }, "headwaters interpret failed");
@@ -365,6 +388,10 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
     practitionerNotes,
     practitionerName,
     dump,
+    landZone,
+    landSecondaryZone,
+    landRationale,
+    harmonyNote,
   } = req.body as {
     clientId: string;
     primaryZone: string;
@@ -374,6 +401,10 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
     practitionerNotes: string;
     practitionerName?: string;
     dump?: string;
+    landZone?: string;
+    landSecondaryZone?: string;
+    landRationale?: string;
+    harmonyNote?: string;
   };
 
   // Normalise "none" sentinel from the UI to null
@@ -420,6 +451,10 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
       })
       .where(eq(headwatersClientsTable.clientId, clientId));
 
+    // Normalise land zone sentinels
+    const resolvedLandZone = (!landZone || landZone === "none") ? null : landZone;
+    const resolvedLandSecondaryZone = (!landSecondaryZone || landSecondaryZone === "none") ? null : landSecondaryZone;
+
     // Push to TSP lifestyle map if connectedUserId is set
     if (client.connectedUserId) {
       await db
@@ -433,6 +468,10 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
           riskProfile,
           practitionerName: practitionerName || null,
           practitionerNotes: practitionerNotes || null,
+          landZone: resolvedLandZone,
+          landSecondaryZone: resolvedLandSecondaryZone,
+          landRationale: landRationale || null,
+          harmonyNote: harmonyNote || null,
           answers: {},
           surrenderMode: false,
         })
@@ -446,6 +485,10 @@ router.post("/headwaters/push", async (req: Request, res: Response) => {
             riskProfile,
             practitionerName: practitionerName || null,
             practitionerNotes: practitionerNotes || null,
+            landZone: resolvedLandZone,
+            landSecondaryZone: resolvedLandSecondaryZone,
+            landRationale: landRationale || null,
+            harmonyNote: harmonyNote || null,
             updatedAt: new Date(),
           },
         });

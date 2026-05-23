@@ -422,6 +422,7 @@ export interface HeadwatersInterpretRequest {
   /** @minLength 10 */
   dump: string;
   clientId?: string;
+  landDump?: string;
 }
 
 export interface HeadwatersInterpretResult {
@@ -430,6 +431,14 @@ export interface HeadwatersInterpretResult {
   riskProfile: number;
   clientRationale: string;
   practitionerSummary: string;
+  /** @nullable */
+  landZone?: string | null;
+  /** @nullable */
+  landSecondaryZone?: string | null;
+  /** @nullable */
+  landRationale?: string | null;
+  /** @nullable */
+  harmonyNote?: string | null;
 }
 
 export interface HeadwatersPushRequest {
@@ -441,6 +450,10 @@ export interface HeadwatersPushRequest {
   practitionerNotes: string;
   practitionerName?: string;
   dump?: string;
+  landZone?: string;
+  landSecondaryZone?: string;
+  landRationale?: string;
+  harmonyNote?: string;
 }
 
 export interface HeadwatersPushResult {

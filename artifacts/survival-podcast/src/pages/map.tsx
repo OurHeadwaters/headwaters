@@ -17,6 +17,8 @@ import {
   Navigation,
   X,
   MapPin,
+  TreePine,
+  Sparkles,
 } from "lucide-react";
 
 const ZONE_COLORS: Record<string, string> = {
@@ -700,6 +702,103 @@ function HeadwatersMemberPerksCard({
   );
 }
 
+function LandZoneCard({
+  landZone,
+  landSecondaryZone,
+  landRationale,
+  harmonyNote,
+}: {
+  landZone: string | null | undefined;
+  landSecondaryZone: string | null | undefined;
+  landRationale: string | null | undefined;
+  harmonyNote: string | null | undefined;
+}) {
+  if (!landZone) return null;
+  const primary = ZONES.find((z) => z.slug === landZone);
+  const secondary = landSecondaryZone ? ZONES.find((z) => z.slug === landSecondaryZone) : null;
+  return (
+    <div
+      className="rounded-2xl border p-6 space-y-5"
+      style={{ background: "#0A1A0E", borderColor: "#2A5C3A44" }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: "#1A3A2222", border: "1px solid #2A5C3A44" }}
+        >
+          <TreePine className="w-4 h-4" style={{ color: "#5A9A6A" }} />
+        </div>
+        <div>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
+            style={{ color: "#5A9A6A" }}
+          >
+            Land Assessment
+          </p>
+          <h3 className="font-serif text-base font-bold" style={{ color: "#FDFBF7" }}>
+            Where your land is right now
+          </h3>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        {primary && (
+          <div
+            className="rounded-lg px-3 py-2"
+            style={{ background: "#2A5C3A22", border: "1px solid #2A5C3A55" }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "#5A9A6A" }}>
+              Primary
+            </p>
+            <p className="font-serif font-bold text-sm" style={{ color: "#FDFBF7" }}>
+              {primary.name}
+            </p>
+          </div>
+        )}
+        {secondary && (
+          <div
+            className="rounded-lg px-3 py-2"
+            style={{ background: "#2A5C3A11", border: "1px solid #2A5C3A33" }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "#5A9A6A" }}>
+              Next step
+            </p>
+            <p className="font-serif font-bold text-sm" style={{ color: "#C8D4C0" }}>
+              {secondary.name}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {landRationale && (
+        <p className="text-sm leading-relaxed" style={{ color: "#C8D4C0" }}>
+          {landRationale}
+        </p>
+      )}
+
+      {harmonyNote && (
+        <div
+          className="rounded-xl p-4 flex gap-3 items-start"
+          style={{ background: "#1A3A2233", border: "1px solid #2A5C3A33" }}
+        >
+          <Sparkles className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#5A9A6A" }} />
+          <div>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-1"
+              style={{ color: "#5A9A6A" }}
+            >
+              Harmony note
+            </p>
+            <p className="text-sm leading-relaxed italic" style={{ color: "#FDFBF7" }}>
+              {harmonyNote}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SurrenderModeCard({ map }: { map: LifestyleMap }) {
   const primaryZone = ZONES.find((z) => z.slug === map.primaryZone);
   if (!primaryZone) return null;
@@ -944,6 +1043,16 @@ function MapView({
             rationale={map.rationale ?? null}
             riskProfile={map.riskProfile ?? null}
             practitionerName={map.practitionerName}
+          />
+        )}
+
+        {/* Land zone card — practitioner members only */}
+        {isPractitioner && map.landZone && (
+          <LandZoneCard
+            landZone={map.landZone}
+            landSecondaryZone={map.landSecondaryZone}
+            landRationale={map.landRationale}
+            harmonyNote={map.harmonyNote}
           />
         )}
 

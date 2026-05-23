@@ -12,4 +12,8 @@ export interface HeadwatersInterpretResult {
   riskProfile: number;
   clientRationale: string;
   practitionerSummary: string;
+  landZone?: string | null;
+  landSecondaryZone?: string | null;
+  landRationale?: string | null;
+  harmonyNote?: string | null;
 }
