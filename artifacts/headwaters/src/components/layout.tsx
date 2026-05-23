@@ -1,11 +1,13 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { LogOut, Home, Users, PlusCircle, Briefcase, ChevronDown, ChevronRight, DollarSign, NotebookPen, ListOrdered, Settings, ClipboardList } from "lucide-react";
+import { useProfile } from "../hooks/use-profile";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const isBusinessActive = location.startsWith("/business");
   const [businessOpen, setBusinessOpen] = useState(isBusinessActive);
+  const { name } = useProfile();
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -26,6 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="p-6 border-b border-border">
           <h1 className="font-serif text-2xl font-bold tracking-tight text-primary">Headwaters</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-wider">Field Journal</p>
+          <p className="text-xs text-muted-foreground mt-2 truncate">Logged in as <span className="font-medium text-foreground">{name}</span></p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
