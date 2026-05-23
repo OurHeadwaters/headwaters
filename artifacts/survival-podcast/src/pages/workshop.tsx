@@ -1072,6 +1072,7 @@ export function WorkshopBoard() {
   const qc = useQueryClient();
   const [rsvped, setRsvped] = useState<Set<number>>(new Set());
   const [showForm, setShowForm] = useState(false);
+  const [filterTransformation, setFilterTransformation] = useState("");
 
   // When returning from Stripe Connect onboarding, poll the status endpoint to
   // persist charges_enabled → stripe_charges_enabled in the DB, then refresh
@@ -1111,8 +1112,11 @@ export function WorkshopBoard() {
     [rsvpMutation],
   );
 
-  const events = data?.events ?? [];
-  const hasEvents = events.length > 0;
+  const allEvents = data?.events ?? [];
+  const events = filterTransformation
+    ? allEvents.filter((e) => e.transformationSlug === filterTransformation)
+    : allEvents;
+  const hasEvents = allEvents.length > 0;
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 max-w-5xl">
@@ -1159,6 +1163,36 @@ export function WorkshopBoard() {
         </div>
       )}
 
+      {hasEvents && !isLoading && !isError && (
+        <div className="flex flex-wrap gap-2 items-center mb-6">
+          <button
+            onClick={() => setFilterTransformation("")}
+            className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
+            style={
+              !filterTransformation
+                ? { background: "rgba(217,160,102,0.25)", color: "#D9A066", border: "1px solid rgba(217,160,102,0.5)" }
+                : { background: "transparent", color: "#6A8870", border: "1px solid rgba(58,80,64,0.4)" }
+            }
+          >
+            All paths
+          </button>
+          {TRANSFORMATIONS.map((t) => (
+            <button
+              key={t.slug}
+              onClick={() => setFilterTransformation(filterTransformation === t.slug ? "" : t.slug)}
+              className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
+              style={
+                filterTransformation === t.slug
+                  ? { background: `${t.color}30`, color: t.color, border: `1px solid ${t.color}60` }
+                  : { background: "transparent", color: "#6A8870", border: "1px solid rgba(58,80,64,0.4)" }
+              }
+            >
+              {t.icon} {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -1175,6 +1209,25 @@ export function WorkshopBoard() {
         </div>
       ) : !hasEvents ? (
         <ChalkboardEmpty onHostClick={() => setShowForm(true)} />
+      ) : events.length === 0 ? (
+        <div
+          className="rounded-2xl flex flex-col items-center justify-center py-16 px-8 text-center"
+          style={{
+            background: "linear-gradient(160deg, #1C2A1E 0%, #243028 60%, #1A2820 100%)",
+            border: "1.5px solid #3A5040",
+          }}
+        >
+          <div className="text-4xl mb-4">🔨</div>
+          <p className="text-base font-semibold mb-1" style={{ fontFamily: "Georgia, serif", color: "#E8E0C8" }}>
+            No workshops on this path yet
+          </p>
+          <p className="text-sm" style={{ color: "#7A9880" }}>
+            Be the first to host one.{" "}
+            <button onClick={() => setShowForm(true)} className="underline" style={{ color: "#D9A066" }}>
+              Submit a workshop →
+            </button>
+          </p>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
