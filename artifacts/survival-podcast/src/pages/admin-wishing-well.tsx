@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trophy, Coins, RefreshCw, CheckCircle, Clock, CreditCard, Wallet } from "lucide-react";
+import { Trophy, Coins, RefreshCw, CheckCircle, Clock, CreditCard, Wallet, AlertTriangle, TrendingUp } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -43,6 +43,8 @@ interface AdminData {
     cryptoCount: number;
     cryptoUnits: number;
     xrpUsdRate: number;
+    xrpRateSource?: string;
+    xrpRateFetchedAt?: string;
   };
 }
 
@@ -128,6 +130,77 @@ function PayoutStatusBadge({ status, method }: { status: string; method: string 
       <Clock className="w-3.5 h-3.5" />
       {method === "stripe" ? "Credit pending" : "XRP pending"}
     </span>
+  );
+}
+
+function formatFetchedAt(fetchedAt: string | undefined): string {
+  if (!fetchedAt) return "unknown";
+  try {
+    const d = new Date(fetchedAt);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return fetchedAt;
+  }
+}
+
+function isStale(fetchedAt: string | undefined): boolean {
+  if (!fetchedAt) return true;
+  try {
+    const age = Date.now() - new Date(fetchedAt).getTime();
+    return age > 60 * 60 * 1000;
+  } catch {
+    return true;
+  }
+}
+
+function XrpRateInfo({
+  rate,
+  source,
+  fetchedAt,
+}: {
+  rate: number;
+  source?: string;
+  fetchedAt?: string;
+}) {
+  const isFallback = source === "fallback" || source === "env";
+  const stale = isStale(fetchedAt);
+  const warn = isFallback || stale;
+
+  return (
+    <div
+      className={`mt-3 inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${
+        warn
+          ? "bg-amber-50 border-amber-200 text-amber-800"
+          : "bg-emerald-50 border-emerald-200 text-emerald-800"
+      }`}
+    >
+      {warn ? (
+        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+      ) : (
+        <TrendingUp className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+      )}
+      <span>
+        <span className="font-semibold">1 XRP = ${rate.toFixed(4)}</span>
+        {source && (
+          <span className="ml-1.5 opacity-75">
+            ·{" "}
+            <span className={isFallback ? "font-medium text-amber-700" : ""}>
+              {isFallback ? "fallback rate" : "live"}
+            </span>
+          </span>
+        )}
+        <span className="ml-1.5 opacity-75">
+          · updated {formatFetchedAt(fetchedAt)}
+          {stale && <span className="ml-1 font-medium text-amber-700">(stale)</span>}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -225,6 +298,13 @@ export function AdminWishingWell() {
                   </div>
                 </div>
               )}
+
+              {/* XRP Rate Info */}
+              <XrpRateInfo
+                rate={data.todayPot.xrpUsdRate}
+                source={data.todayPot.xrpRateSource}
+                fetchedAt={data.todayPot.xrpRateFetchedAt}
+              />
             </div>
 
             <button
