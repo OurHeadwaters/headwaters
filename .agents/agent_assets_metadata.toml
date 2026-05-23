@@ -77,3 +77,9 @@ id = "gxQ7BnqnzEPzxVS74XLN6"
 uri = "file://.local/tasks/807-garden-visual-alignment.md"
 type = "text"
 title = "807 Garden — Visual Alignment Plan"
+
+[[outputs]]
+id = "DXz9Rhvi1ocVUJxlLZgTf"
+uri = "file://.local/context-packages/headwaters-ecosystem-bundle.md"
+type = "text"
+title = "Headwaters Ecosystem Bundle — Context Package"
