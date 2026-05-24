@@ -1,5 +1,5 @@
 /**
- * Kit Registry — static definitions for all 7 Headwaters kits.
+ * Kit Registry — static definitions for all 8 Headwaters kits.
  * Each kit maps to a slug, name, tagline, description, and its content
  * bundle: transformation slugs, track slugs, gear category tags, and
  * any external resource URLs.
@@ -79,6 +79,19 @@ export const KITS: KitDef[] = [
     trackSlugs: [],
     gearCategoryTags: [],
     externalLinks: [],
+  },
+  {
+    slug: "budget-kit",
+    name: "Budget Kit",
+    tagline: "Envelope budgeting with crypto buckets — personal and business",
+    description:
+      "The operational money layer for sovereign households and small businesses. Covers envelope budgeting principles, splitting Grindstone and Online Engine income into buckets, allocating for overhead and admin, and holding reserves in hard assets. Links to the X-Buckets tool for non-custodial stablecoin envelope budgeting.",
+    transformationSlugs: ["tradfi-to-hard-assets"],
+    trackSlugs: ["mind-and-money"],
+    gearCategoryTags: ["finance", "bitcoin", "hard-assets"],
+    externalLinks: [
+      { label: "X-Buckets — Envelope Budgeting", url: "https://x-buckets-vision.replit.app/" },
+    ],
   },
   {
     slug: "digital-kit",
