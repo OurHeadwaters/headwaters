@@ -1,4 +1,4 @@
-import app, { castleDevProxy } from "./app";
+import app, { castleDevProxy, hwDevProxy } from "./app";
 import { logger } from "./lib/logger";
 import { startBackgroundRefresh } from "./lib/library";
 import { startGearSchedule } from "./routes/gear";
@@ -60,10 +60,20 @@ const server = app.listen(port, (err) => {
     process.exit(1);
   }
 
-  // Wire up WebSocket proxy for Crypto Castle HMR in dev mode
-  if (castleDevProxy) {
-    server.on("upgrade", castleDevProxy.upgrade);
-    logger.info("crypto-castle: WebSocket HMR proxy attached");
+  // Wire up path-filtered WebSocket proxies for HMR in dev mode.
+  // Both handlers must be behind a single "upgrade" listener with URL routing —
+  // stacking two independent .upgrade handlers causes the first to intercept
+  // all upgrades, breaking HMR for the second app.
+  if (castleDevProxy || hwDevProxy) {
+    server.on("upgrade", (req, socket, head) => {
+      if (req.url?.startsWith("/headwaters") && hwDevProxy) {
+        hwDevProxy.upgrade(req, socket, head);
+      } else if (req.url?.startsWith("/crypto-castle") && castleDevProxy) {
+        castleDevProxy.upgrade(req, socket, head);
+      }
+    });
+    if (castleDevProxy) logger.info("crypto-castle: WebSocket HMR proxy attached");
+    if (hwDevProxy) logger.info("headwaters: WebSocket HMR proxy attached");
   }
 
   logger.info({ port }, "Server listening");

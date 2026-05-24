@@ -69,15 +69,38 @@ app.use(authMiddleware);
 
 app.use("/api", router);
 
-// ─── Headwaters static SPA ────────────────────────────────────────────────────
-// Serves the pre-built Headwaters React app at /headwaters/.
-// Run `pnpm --filter @workspace/headwaters run build` to update the assets.
+// ─── Headwaters — dev proxy or static SPA ────────────────────────────────────
+// In development: proxy to the Vite dev server (hot reload, instant edits).
+// In production: serve the pre-built static files.
+// Run `pnpm --filter @workspace/headwaters run build` to update prod assets.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const hwDist = path.resolve(__dirname, "../../../artifacts/headwaters/dist/public");
-app.use("/headwaters", express.static(hwDist));
-app.get("/headwaters/*splat", (_req, res) => {
-  res.sendFile(path.join(hwDist, "index.html"));
-});
+
+let hwDevProxy: RequestHandler | undefined;
+
+if (process.env.NODE_ENV !== "production") {
+  const hwDevPort = process.env.HEADWATERS_DEV_PORT ?? "21502";
+  hwDevProxy = createProxyMiddleware({
+    target: `http://127.0.0.1:${hwDevPort}`,
+    changeOrigin: true,
+    ws: true,
+    logger: console,
+  });
+  // Mount at root WITHOUT a path prefix so Express does NOT strip /headwaters
+  // before forwarding — Vite's base is /headwaters/ and needs the full path.
+  app.use((req, res, next) => {
+    if (req.url?.startsWith("/headwaters")) {
+      return (hwDevProxy as express.RequestHandler)(req, res, next);
+    }
+    next();
+  });
+  logger.info({ hwDevPort }, "headwaters: proxying to Vite dev server");
+} else {
+  app.use("/headwaters", express.static(hwDist));
+  app.get("/headwaters/*splat", (_req, res) => {
+    res.sendFile(path.join(hwDist, "index.html"));
+  });
+}
 
 // ─── Crypto Castle — dev proxy or static SPA ──────────────────────────────────
 // In development: proxy to the Vite dev server (hot reload, instant edits).
@@ -111,5 +134,5 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-export { castleDevProxy };
+export { castleDevProxy, hwDevProxy };
 export default app;
