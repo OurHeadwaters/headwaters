@@ -18,6 +18,12 @@
  * going live — update priceCents here and re-run ensureKitProducts().
  */
 
+export type KitUserManual = {
+  what: string;
+  first: string;
+  next: string;
+};
+
 export type KitDef = {
   slug: string;
   name: string;
@@ -31,6 +37,7 @@ export type KitDef = {
   priceCents?: number;
   ctaLabel: string;
   stripePriceId?: string;
+  userManual?: KitUserManual;
 };
 
 export const KITS: KitDef[] = [
@@ -49,6 +56,11 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Family Kit",
+    userManual: {
+      what: "Build 30-day food and water baseline this month. Then move to the 90-day pantry rotation and home security audit.",
+      first: "Start the Prepared at Home track. The earliest episodes lay the foundation — start there before buying any gear.",
+      next: "After you've completed the core preparedness episodes, check the gear shelf for Jack's reviewed supplies that match this kit.",
+    },
   },
   {
     slug: "producer-kit",
@@ -63,6 +75,11 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Producer Kit",
+    userManual: {
+      what: "Start the Mind & Money track — specifically the early episodes on financial philosophy and the debt payoff framework.",
+      first: "Get your money working for you before you try to build income from scratch. The debt-reduction framework comes first.",
+      next: "Once you have a debt-reduction plan in motion, move to the Employee → Owner transformation episodes. Identify one income stream you can build alongside your current work.",
+    },
   },
   {
     slug: "practitioner-kit",
@@ -107,6 +124,11 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Care Kit",
+    userManual: {
+      what: "Filter the Outsourced Health → Health Sovereign episodes by earliest publish date. The philosophical foundation matters most.",
+      first: "Build one concrete home-health practice at a time. Most people start with food quality and sleep before adding herbalism or supplements.",
+      next: "Master the basics before advanced skills. Return to this kit as your situation changes and your knowledge grows.",
+    },
   },
   {
     slug: "budget-kit",
@@ -123,6 +145,11 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Budget Kit",
+    userManual: {
+      what: "The envelope budgeting framework applies immediately to your current income. Start splitting your income into buckets this month.",
+      first: "Listen to the Mind & Money track's early episodes on financial philosophy, then set up your first budget buckets.",
+      next: "Once you have your budget structure, explore the X-Buckets tool for non-custodial stablecoin budgeting.",
+    },
   },
   {
     slug: "digital-kit",
@@ -137,6 +164,11 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Digital Kit",
+    userManual: {
+      what: "Start with the TradFi → Hard Assets transformation episodes. Understand the 'why' before touching a hardware wallet.",
+      first: "Set up a hardware wallet with a small amount before you hold anything significant. The gear shelf has Jack's reviewed hardware wallets.",
+      next: "Layer in the privacy tools after you've secured your digital assets. Digital security compounds over time.",
+    },
   },
   {
     slug: "physical-kit",
@@ -151,6 +183,11 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Physical Kit",
+    userManual: {
+      what: "Start the When Things Get Hard track. It's short and covers the high-probability scenarios most families should prepare for.",
+      first: "Work through the Grid → Off-Grid transformation for energy independence concepts, then use the gear shelf to identify the right hardware.",
+      next: "Physical resilience is built in layers — grid independence first, then energy production, then energy storage.",
+    },
   },
 ];
 

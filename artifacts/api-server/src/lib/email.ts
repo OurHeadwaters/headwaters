@@ -433,6 +433,145 @@ export async function sendKitInquiryNotification(opts: KitInquiryNotificationOpt
   }
 }
 
+export interface KitWelcomeEmailOptions {
+  buyerEmail: string;
+  buyerName: string | null;
+  kitName: string;
+  kitSlug: string;
+  userManual?: {
+    what: string;
+    first: string;
+    next: string;
+  };
+}
+
+function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
+  const displayName = opts.buyerName ?? "there";
+  const welcomeUrl = `https://www.thesurvivalpodcast.com/kits/${opts.kitSlug}/welcome`;
+
+  const manualSection = opts.userManual
+    ? `
+              <!-- User Manual -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;border-left:4px solid #D9A066;border-radius:4px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 16px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8a6a20;font-family:'Arial',sans-serif;">📖 Your User Manual</p>
+
+                    <p style="margin:0 0 4px;font-size:13px;font-weight:bold;color:#1a2e1a;font-family:'Arial',sans-serif;">◆ What this kit is for</p>
+                    <p style="margin:0 0 16px;font-size:14px;color:#444444;line-height:1.6;padding-left:14px;">${opts.userManual.what}</p>
+
+                    <p style="margin:0 0 4px;font-size:13px;font-weight:bold;color:#1a2e1a;font-family:'Arial',sans-serif;">→ What to do first</p>
+                    <p style="margin:0 0 16px;font-size:14px;color:#444444;line-height:1.6;padding-left:14px;">${opts.userManual.first}</p>
+
+                    <p style="margin:0 0 4px;font-size:13px;font-weight:bold;color:#1a2e1a;font-family:'Arial',sans-serif;">→→ What to do next</p>
+                    <p style="margin:0;font-size:14px;color:#444444;line-height:1.6;padding-left:14px;">${opts.userManual.next}</p>
+                  </td>
+                </tr>
+              </table>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to your ${opts.kitName}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f0eb;font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#1A2A20;padding:28px 40px;">
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <h1 style="margin:8px 0 0;font-size:24px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">Welcome to your ${opts.kitName}</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 20px;font-size:16px;color:#333333;line-height:1.6;">
+                Hi ${displayName},
+              </p>
+              <p style="margin:0 0 24px;font-size:16px;color:#333333;line-height:1.6;">
+                Your purchase is confirmed. Your kit is ready — here's everything you need to get started.
+              </p>
+
+              <!-- CTA button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${welcomeUrl}"
+                       style="display:inline-block;padding:14px 32px;background-color:#2d4a2d;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-family:'Arial',sans-serif;font-weight:bold;">
+                      Open Your Kit →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 8px;font-size:13px;color:#888888;line-height:1.5;text-align:center;">
+                Bookmark this page — it's your persistent starting point for the ${opts.kitName}.
+              </p>
+              <p style="margin:0 0 28px;font-size:12px;color:#aaaaaa;word-break:break-all;text-align:center;">
+                <a href="${welcomeUrl}" style="color:#6b7c6b;">${welcomeUrl}</a>
+              </p>
+
+              ${manualSection}
+
+              <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
+                Questions? Visit <a href="https://www.thesurvivalpodcast.com" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a> or reply to this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
+              <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
+                Sent by The Survival Podcast Kits &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise<void> {
+  const client = getResendClient();
+  if (!client) {
+    logger.warn({ kitSlug: opts.kitSlug }, "email: RESEND_API_KEY not set — skipping kit welcome email");
+    return;
+  }
+
+  const displayName = opts.buyerName ?? opts.buyerEmail;
+
+  try {
+    const { error } = await client.emails.send({
+      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      to: [opts.buyerEmail],
+      subject: `Welcome to your ${opts.kitName} — here's how to get started`,
+      html: buildKitWelcomeHtml(opts),
+    });
+
+    if (error) {
+      logger.error({ error, buyerEmail: opts.buyerEmail, kitSlug: opts.kitSlug }, "email: kit welcome email failed");
+    } else {
+      logger.info({ kitSlug: opts.kitSlug, buyerEmail: displayName }, "email: kit welcome email sent");
+    }
+  } catch (err) {
+    logger.error({ err, kitSlug: opts.kitSlug }, "email: kit welcome email threw unexpectedly");
+  }
+}
+
 export async function sendRsvpNotification(opts: RsvpNotificationOptions): Promise<void> {
   const client = getResendClient();
   if (!client) {

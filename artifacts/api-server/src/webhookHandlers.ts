@@ -12,6 +12,8 @@ import {
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
+import { sendKitWelcomeEmail } from "./lib/email";
+import { kitBySlug } from "./lib/kits";
 import type Stripe from "stripe";
 
 export class WebhookHandlers {
@@ -241,6 +243,15 @@ export class WebhookHandlers {
         { kitSlug, buyerEmail, amountPaid, sessionId: session.id },
         "webhookHandlers: kit purchase recorded",
       );
+
+      const kit = kitBySlug(kitSlug);
+      await sendKitWelcomeEmail({
+        buyerEmail,
+        buyerName: buyerName,
+        kitName: kit?.name ?? kitSlug,
+        kitSlug,
+        userManual: kit?.userManual,
+      });
     } else {
       logger.info(
         { sessionId: session.id, kitSlug },
