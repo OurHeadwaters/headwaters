@@ -1,5 +1,6 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useCallback } from "react";
 import {
   ActivityIndicator,
@@ -529,6 +530,33 @@ export default function MapScreen() {
           ))}
 
           <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/kits" as never);
+            }}
+            style={({ pressed }) => [
+              screenStyles.kitsCard,
+              {
+                backgroundColor: pressed ? colors.amberGold + "22" : colors.amberGold + "14",
+                borderColor: colors.amberGold + "55",
+              },
+            ]}
+          >
+            <View style={screenStyles.kitsCardRow}>
+              <Text style={screenStyles.kitsEmoji}>📦</Text>
+              <View style={screenStyles.kitsTextBlock}>
+                <Text style={[screenStyles.kitsTitle, { color: colors.amberGold, fontFamily: "Fraunces_700Bold" }]}>
+                  Explore Kits
+                </Text>
+                <Text style={[screenStyles.kitsSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                  Curated bundles for every path to self-reliance
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.amberGold + "99"} />
+            </View>
+          </Pressable>
+
+          <Pressable
             onPress={() => Linking.openURL(WEB_MAP_URL)}
             style={({ pressed }) => [
               screenStyles.webLink,
@@ -624,4 +652,21 @@ const screenStyles = StyleSheet.create({
     marginTop: 16,
   },
   webLinkText: { fontSize: 13 },
+  kitsCard: {
+    borderRadius: 10,
+    borderWidth: 1.5,
+    marginTop: 16,
+    overflow: "hidden",
+  },
+  kitsCardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+  },
+  kitsEmoji: { fontSize: 22 },
+  kitsTextBlock: { flex: 1, gap: 2 },
+  kitsTitle: { fontSize: 15 },
+  kitsSub: { fontSize: 12 },
 });
