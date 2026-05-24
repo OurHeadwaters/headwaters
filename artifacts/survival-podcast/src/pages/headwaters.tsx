@@ -50,7 +50,7 @@ const MEMBER_FEATURES = [
   {
     icon: MapPin,
     title: "Practitioner-placed zone",
-    body: "Tasha reviews your situation and places you on the Lifestyle Map based on where you actually are — your land, your resources, your constraints — not just a quiz.",
+    body: "Bobbie reviews your intake and places you on the Lifestyle Map based on where you actually are — your land, your resources, your constraints — not just a quiz.",
   },
   {
     icon: Compass,
@@ -60,7 +60,7 @@ const MEMBER_FEATURES = [
   {
     icon: User,
     title: "Personalized intake rationale",
-    body: "After your session you receive a written rationale explaining your placement — a reference point you can return to as your situation evolves.",
+    body: "After your intake you receive a written rationale explaining your placement — a reference point you can return to as your situation evolves.",
   },
 ];
 
@@ -68,12 +68,12 @@ const PROCESS_STEPS = [
   {
     number: "01",
     title: "Submit your intake form",
-    body: "Answer questions about your land situation, existing skills, goals, and constraints. This gives Tasha what she needs before your session.",
+    body: "Answer questions about your land situation, existing skills, goals, and constraints. This gives Bobbie what she needs to make your placement.",
   },
   {
     number: "02",
-    title: "Session with Tasha Parr",
-    body: "A one-on-one conversation to go deeper on your answers, clarify tradeoffs, and work through where you sit on the zone map today.",
+    title: "Bobbie reviews your intake",
+    body: "Using our intake tool, Bobbie works through your answers, clarifies tradeoffs, and determines where you sit on the zone map. No live call required.",
   },
   {
     number: "03",
@@ -341,7 +341,7 @@ function IntakeForm() {
           You're in the queue
         </h3>
         <p className="text-base leading-relaxed max-w-md mx-auto" style={{ color: "#C8D4C0" }}>
-          Tasha will review your intake and reach out to schedule your session. Keep an eye on{" "}
+          Bobbie will review your intake and follow up with your placement. Keep an eye on{" "}
           <span style={{ color: "#FDFBF7" }}>{form.email}</span> — she typically follows up within
           a few business days.
         </p>
@@ -366,7 +366,7 @@ function IntakeForm() {
               About you
             </h3>
             <p className="text-sm mb-6" style={HINT_STYLE}>
-              Your contact info so Tasha can reach you to schedule the session.
+              Your contact info so Bobbie can follow up with your placement.
             </p>
           </div>
 
@@ -470,7 +470,7 @@ function IntakeForm() {
               Skills &amp; goals
             </h3>
             <p className="text-sm mb-6" style={HINT_STYLE}>
-              Be honest about where you actually are — not where you want to be. That's how Tasha
+              Be honest about where you actually are — not where you want to be. That's how Bobbie
               gets the placement right.
             </p>
           </div>
@@ -544,7 +544,7 @@ function IntakeForm() {
 
           <div className="space-y-1 pt-2">
             <label className="block text-sm font-medium" style={LABEL_STYLE}>
-              Anything else Tasha should know?
+              Anything else Bobbie should know?
             </label>
             <textarea
               rows={3}
@@ -660,10 +660,10 @@ export default function HeadwatersPage() {
               Know where you stand
             </h1>
             <p className="text-lg md:text-xl leading-relaxed mb-8 max-w-2xl" style={{ color: "#C8D4C0" }}>
-              Headwaters is a practitioner intake program for The Stomping Path community. A personal
-              session with Tasha Parr places you on the Lifestyle Map based on your actual situation —
-              your land, your resources, your risk profile — and unlocks a filtered view of the site
-              built around where you are today.
+              Headwaters is a practitioner intake program for The Stomping Path community. Bobbie
+              reviews your intake using our placement tool and places you on the Lifestyle Map based
+              on your actual situation — your land, your resources, your risk profile — and unlocks
+              a filtered view of the site built around where you are today.
             </p>
             {!isPlaced && (
               <a
@@ -693,7 +693,7 @@ export default function HeadwatersPage() {
           </section>
         )}
 
-        {/* Who is Tasha Parr */}
+        {/* Who is Bobbie */}
         <section>
           <div
             className="rounded-2xl border p-8 md:p-10"
@@ -717,19 +717,19 @@ export default function HeadwatersPage() {
                   className="font-serif text-2xl md:text-3xl font-bold mb-4"
                   style={{ color: "#FDFBF7" }}
                 >
-                  Tasha Parr
+                  Bobbie
                 </h2>
                 <p className="text-base leading-relaxed mb-4" style={{ color: "#C8D4C0" }}>
-                  Tasha is a permaculture practitioner and long-time Stomping Path community member
+                  Bobbie is a permaculture practitioner and long-time Stomping Path community member
                   who has worked through the zone framework with dozens of families and homesteaders.
-                  She brings a practical, no-quiz-required approach to zone placement: she asks about
-                  your land, your household, your goals, and your constraints, and she uses that
-                  picture to put you in the right place on the map.
+                  She brings a practical, tool-driven approach to zone placement: she works through
+                  your land, your household, your goals, and your constraints using the intake tool,
+                  and uses that picture to put you in the right place on the map.
                 </p>
                 <p className="text-base leading-relaxed" style={{ color: "#C8D4C0" }}>
-                  Her intake sessions typically run 45–60 minutes. There is no upsell, no follow-on
-                  program, and no pressure. The deliverable is a placement, a written rationale, and
-                  a risk profile that shapes what the site shows you.
+                  There is no live call, no upsell, no follow-on program, and no pressure. The
+                  deliverable is a placement, a written rationale, and a risk profile that shapes
+                  what the site shows you.
                 </p>
               </div>
             </div>
@@ -854,8 +854,8 @@ export default function HeadwatersPage() {
               Submit your intake
             </h2>
             <p className="text-base leading-relaxed mb-8 max-w-2xl" style={{ color: "#C8D4C0" }}>
-              Fill out the form below. Tasha reviews every submission personally and will reach out
-              to schedule your session.
+              Fill out the form below. Bobbie reviews every submission personally using the intake
+              tool and will follow up with your placement.
             </p>
             <IntakeForm />
           </section>
@@ -877,7 +877,7 @@ export default function HeadwatersPage() {
             <p className="text-base leading-relaxed mb-6 max-w-xl mx-auto" style={{ color: "#C8D4C0" }}>
               {isPlaced
                 ? "Your zone and risk profile are shaping what the site shows you. Visit your Lifestyle Map to see your filtered view."
-                : "You can explore the Lifestyle Map before your session. Your zone placement will activate once Tasha completes your intake."}
+                : "You can explore the Lifestyle Map now. Your zone placement will activate once Bobbie completes your intake."}
             </p>
             <Link
               href="/map"

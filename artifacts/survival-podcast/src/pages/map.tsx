@@ -1111,7 +1111,7 @@ function MapView({
                   Not a Headwaters member yet
                 </h3>
                 <p className="text-sm leading-relaxed mb-4" style={{ color: "#C8D4C0" }}>
-                  Headwaters members get a personal intake session with Tasha Parr — a practitioner who places you on the zone map based on where you actually are, not just a quiz score.
+                  Headwaters members get a practitioner intake with Bobbie — who places you on the zone map based on where you actually are, using our intake tool, not just a quiz score.
                 </p>
                 <div
                   className="rounded-lg p-4 mb-4"

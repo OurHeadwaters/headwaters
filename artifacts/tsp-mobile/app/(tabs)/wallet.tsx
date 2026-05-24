@@ -331,7 +331,7 @@ export default function WalletScreen() {
                       Headwaters Member
                     </Text>
                     <Text style={[hwStyles.memberSub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-                      Placed by Tasha Parr · Practitioner intake
+                      Placed by Bobbie · Practitioner intake
                     </Text>
                   </View>
                 </View>
@@ -376,7 +376,7 @@ export default function WalletScreen() {
                       Not a Headwaters member yet
                     </Text>
                     <Text style={[hwStyles.discoverBody, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-                      Headwaters members get a personal intake session with Tasha Parr — a practitioner who places you on the zone map based on where you actually are, not just a quiz score.
+                      Headwaters members get a practitioner intake with Bobbie — who places you on the zone map based on where you actually are using our intake tool, not just a quiz score.
                     </Text>
                   </View>
                 </View>

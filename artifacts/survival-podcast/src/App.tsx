@@ -57,6 +57,7 @@ import KitDetailPage from "@/pages/kit-detail";
 import KitFinderPage from "@/pages/kit-finder";
 import KitWelcomePage from "@/pages/kit-welcome";
 import { AdminKitPurchases } from "@/pages/admin-kit-purchases";
+import PractitionersPage from "@/pages/practitioners";
 
 const queryClient = new QueryClient();
 
@@ -130,6 +131,7 @@ function Router() {
         <Route path="/kits/find" component={KitFinderPage} />
         <Route path="/kits/:slug/welcome" component={KitWelcomePage} />
         <Route path="/kits/:slug" component={KitDetailPage} />
+        <Route path="/practitioners" component={PractitionersPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

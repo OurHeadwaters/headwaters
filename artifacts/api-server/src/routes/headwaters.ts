@@ -561,7 +561,7 @@ router.post("/headwaters/intake", async (req: Request, res: Response) => {
 
     res.status(201).json({
       submissionId: row.submissionId,
-      message: "Intake submitted. Tasha will be in touch to schedule your session.",
+      message: "Intake submitted. Bobbie will review your submission and follow up with your placement.",
     });
   } catch (err) {
     logger.error({ err }, "headwaters intake submit failed");
@@ -571,7 +571,7 @@ router.post("/headwaters/intake", async (req: Request, res: Response) => {
 
 /**
  * GET /api/headwaters/intake
- * Passphrase-protected. Returns all intake submissions for Tasha to review.
+ * Passphrase-protected. Returns all intake submissions for Bobbie to review.
  */
 router.get("/headwaters/intake", async (req: Request, res: Response) => {
   if (!checkPassphrase(req, res)) return;
