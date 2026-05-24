@@ -299,6 +299,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Grounds
             </Link>
 
+            {/* Family Kit */}
+            <a
+              href="/privacy-guide/"
+              className="relative text-sm font-medium transition-colors pb-0.5 text-white/65 hover:text-white"
+            >
+              Family Kit
+            </a>
+
             {/* The Headwaters */}
             <Link
               href="/headwaters"
@@ -500,6 +508,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               Grounds
             </Link>
+
+            {/* Family Kit */}
+            <a
+              href="/privacy-guide/"
+              className="text-base font-medium px-3 py-2.5 rounded-md text-white/70 hover:text-white hover:bg-white/5"
+              onClick={() => setMenuOpen(false)}
+            >
+              Family Kit
+            </a>
 
             {/* The Headwaters */}
             <Link
