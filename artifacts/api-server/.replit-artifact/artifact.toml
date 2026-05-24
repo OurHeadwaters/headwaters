@@ -15,7 +15,9 @@ run = "pnpm --filter @workspace/api-server run dev"
 [services.production]
 
 [services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+# Runs crypto-castle frontend build first so its dist/ is present and fresh
+# before the api-server TypeScript build. See artifacts/api-server/scripts/build-production.sh.
+args = ["bash", "artifacts/api-server/scripts/build-production.sh"]
 
 [services.production.build.env]
 NODE_ENV = "production"
