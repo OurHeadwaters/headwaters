@@ -136,4 +136,60 @@ async function gordHandler(req: import("express").Request, res: import("express"
 router.post("/gord", gordHandler);
 router.post("/gord/chat", gordHandler);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/gord/tip
+//
+// Creates a Stripe Checkout session for a one-time Gord tip.
+// Body: { amountCents: 200 | 500, successUrl: string, cancelUrl: string }
+// Returns: { url: string }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/gord/tip", async (req, res) => {
+  try {
+    const { amountCents, successUrl, cancelUrl } = req.body as {
+      amountCents?: number;
+      successUrl?: string;
+      cancelUrl?: string;
+    };
+
+    const ALLOWED_AMOUNTS = [200, 500];
+    if (!amountCents || !ALLOWED_AMOUNTS.includes(amountCents)) {
+      res.status(400).json({ error: "amountCents must be 200 or 500" });
+      return;
+    }
+    if (!successUrl || !cancelUrl) {
+      res.status(400).json({ error: "successUrl and cancelUrl are required" });
+      return;
+    }
+
+    const { getUncachableStripeClient } = await import("../stripeClient");
+    const stripe = await getUncachableStripeClient();
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: amountCents,
+            product_data: {
+              name: "Tip for Gord",
+              description: "Buy Gord a seed or two. He'll act like he doesn't care. He cares.",
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: { source: "gord-tip" },
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("Gord tip error:", err);
+    res.status(500).json({ error: "Failed to create tip session" });
+  }
+});
+
 export default router;

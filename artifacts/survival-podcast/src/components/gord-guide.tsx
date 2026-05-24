@@ -19,9 +19,9 @@ const OPENING_LINE: Message = {
   content: "Gord's on board. You look like someone who's either got a great plan or no plan whatsoever. Either way, I'm here. What's on your mind?",
 };
 
-const TIP_RESPONSE: Message = {
+const TIP_THANK_YOU: Message = {
   role: "assistant",
-  content: "Ha. Tip Gord. I appreciate the thought, but I'm a bird — what am I going to do with your money? Buy sunflower seeds? Put it toward your own self-reliance stack instead. That's the tip.",
+  content: "Well. I don't have pockets, but I appreciate the gesture. Sunflower seeds incoming. Gord's on board — and now slightly better funded.",
 };
 
 const ACCENT = "#D9A066";
@@ -32,6 +32,8 @@ const MUTED = "#C8D4C0";
 
 const HEAD_ANIMS: IdleAnim[] = ["head-tilt", "head-bob"];
 const ANIM_DURATION_MS = 1400;
+
+type TipState = "idle" | "picking" | "loading" | "error";
 
 function useIdleAnimation(paused: boolean): IdleAnim {
   const [anim, setAnim] = useState<IdleAnim>(null);
@@ -132,6 +134,8 @@ export function GordGuide(_props: GordGuideProps) {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hovered, setHovered] = useState(false);
+  const [tipState, setTipState] = useState<TipState>("idle");
+  const [tipError, setTipError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -151,6 +155,18 @@ export function GordGuide(_props: GordGuideProps) {
     }
   }, [open]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tip") === "success") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tip");
+      window.history.replaceState({}, "", url.toString());
+      setMessages([OPENING_LINE, TIP_THANK_YOU]);
+      setHasOpened(true);
+      setOpen(true);
+    }
+  }, []);
+
   function handleOpen() {
     if (!hasOpened) {
       setMessages([OPENING_LINE]);
@@ -162,10 +178,40 @@ export function GordGuide(_props: GordGuideProps) {
   function handleClose() {
     abortRef.current?.abort();
     setOpen(false);
+    setTipState("idle");
+    setTipError(null);
   }
 
   function handleTip() {
-    setMessages((prev) => [...prev, TIP_RESPONSE]);
+    if (!hasOpened) {
+      setMessages([OPENING_LINE]);
+      setHasOpened(true);
+    }
+    setOpen(true);
+    setTipState("picking");
+    setTipError(null);
+  }
+
+  async function handleTipAmount(amountCents: number) {
+    setTipState("loading");
+    setTipError(null);
+    try {
+      const successUrl = `${window.location.origin}${window.location.pathname}?tip=success`;
+      const cancelUrl = `${window.location.origin}${window.location.pathname}?tip=cancelled`;
+      const res = await fetch(apiUrl("/gord/tip"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountCents, successUrl, cancelUrl }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "Failed to start tip session");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setTipError(err instanceof Error ? err.message : "Something went wrong");
+      setTipState("error");
+    }
   }
 
   const sendMessage = useCallback(async () => {
@@ -291,7 +337,8 @@ export function GordGuide(_props: GordGuideProps) {
               </div>
               <button
                 onClick={handleTip}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity hover:opacity-80 mr-1"
+                disabled={tipState === "loading"}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity hover:opacity-80 mr-1 disabled:opacity-50"
                 style={{ background: ACCENT + "22", color: ACCENT, border: `1px solid ${ACCENT}44` }}
               >
                 <Heart className="w-3 h-3" />
@@ -340,40 +387,98 @@ export function GordGuide(_props: GordGuideProps) {
               <div ref={bottomRef} />
             </div>
 
-            <div
-              className="flex-shrink-0 px-4 py-3 flex items-end gap-2"
-              style={{ borderTop: `1px solid ${BORDER}` }}
-            >
-              <textarea
-                ref={inputRef}
-                rows={1}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKey}
-                placeholder="Ask Gord anything..."
-                disabled={streaming}
-                className="flex-1 rounded-xl px-3 py-2 text-sm resize-none outline-none"
-                style={{
-                  background: "#253525",
-                  border: `1px solid #4A7A3A44`,
-                  color: TEXT,
-                  maxHeight: 100,
-                  lineHeight: "1.5",
-                }}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || streaming}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90 disabled:opacity-30"
-                style={{ background: ACCENT }}
+            {tipState !== "idle" && (
+              <div
+                className="flex-shrink-0 px-4 py-3 flex flex-col gap-2"
+                style={{ borderTop: `1px solid ${BORDER}`, background: "#1e341e" }}
               >
-                {streaming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#1a2e1a" }} />
-                ) : (
-                  <Send className="w-4 h-4" style={{ color: "#1a2e1a" }} />
+                {tipState === "picking" && (
+                  <>
+                    <p className="text-[11px] font-semibold" style={{ color: ACCENT }}>
+                      Buy Gord a seed. Pick an amount:
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleTipAmount(200)}
+                        className="flex-1 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
+                        style={{ background: ACCENT + "22", color: ACCENT, border: `1px solid ${ACCENT}55` }}
+                      >
+                        $2 Tip
+                      </button>
+                      <button
+                        onClick={() => handleTipAmount(500)}
+                        className="flex-1 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
+                        style={{ background: ACCENT + "22", color: ACCENT, border: `1px solid ${ACCENT}55` }}
+                      >
+                        $5 Tip
+                      </button>
+                      <button
+                        onClick={() => setTipState("idle")}
+                        className="px-3 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-70"
+                        style={{ color: MUTED }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
                 )}
-              </button>
-            </div>
+                {tipState === "loading" && (
+                  <div className="flex items-center gap-2 py-1">
+                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: ACCENT }} />
+                    <p className="text-[11px]" style={{ color: MUTED }}>Opening Stripe Checkout…</p>
+                  </div>
+                )}
+                {tipState === "error" && (
+                  <>
+                    <p className="text-[11px]" style={{ color: "#F5A0A0" }}>{tipError ?? "Something went wrong."}</p>
+                    <button
+                      onClick={() => setTipState("picking")}
+                      className="text-[11px] font-bold underline self-start"
+                      style={{ color: ACCENT }}
+                    >
+                      Try again
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {tipState === "idle" && (
+              <div
+                className="flex-shrink-0 px-4 py-3 flex items-end gap-2"
+                style={{ borderTop: `1px solid ${BORDER}` }}
+              >
+                <textarea
+                  ref={inputRef}
+                  rows={1}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKey}
+                  placeholder="Ask Gord anything..."
+                  disabled={streaming}
+                  className="flex-1 rounded-xl px-3 py-2 text-sm resize-none outline-none"
+                  style={{
+                    background: "#253525",
+                    border: `1px solid #4A7A3A44`,
+                    color: TEXT,
+                    maxHeight: 100,
+                    lineHeight: "1.5",
+                  }}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || streaming}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90 disabled:opacity-30"
+                  style={{ background: ACCENT }}
+                >
+                  {streaming ? (
+                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#1a2e1a" }} />
+                  ) : (
+                    <Send className="w-4 h-4" style={{ color: "#1a2e1a" }} />
+                  )}
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
