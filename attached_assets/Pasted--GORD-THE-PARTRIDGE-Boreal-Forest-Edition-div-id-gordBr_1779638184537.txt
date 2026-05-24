@@ -1,0 +1,50 @@
+<!-- GORD THE PARTRIDGE – Boreal Forest Edition -->
+<div id="gordBranch" class="fixed bottom-8 right-8 z-50 cursor-pointer group">
+  <div class="relative w-24 h-24">
+    <!-- Birch Branch -->
+    <div class="absolute bottom-4 left-4 w-28 h-4 bg-gradient-to-r from-amber-900 via-white to-amber-800 rounded-full rotate-12 shadow-md border border-amber-950"></div>
+    
+    <!-- Gord -->
+    <div id="gordBird" class="absolute -bottom-2 right-1 text-7xl transition-all duration-700 group-hover:-translate-y-6 group-hover:rotate-[25deg] cursor-pointer">
+      🐦
+    </div>
+  </div>
+</div>
+
+<!-- Chat Window -->
+<div id="gordChat" class="hidden fixed bottom-36 right-8 w-80 bg-black/95 border border-amber-700 rounded-3xl shadow-2xl overflow-hidden z-50">
+  <div class="bg-gradient-to-r from-amber-900 to-emerald-900 p-4 flex items-center gap-3">
+    <div class="text-4xl">🐦</div>
+    <div>
+      <p class="font-bold text-amber-100">Gord the Partridge</p>
+      <p class="text-xs text-amber-300">"Gord's on board... barely"</p>
+    </div>
+  </div>
+  
+  <div id="gordMessages" class="h-72 p-4 overflow-y-auto text-sm space-y-3"></div>
+  
+  <div class="p-4 border-t border-amber-800 bg-black">
+    <div class="flex items-center gap-2 mb-3">
+      <input type="checkbox" id="bottleMode" class="w-5 h-5 accent-amber-500">
+      <label for="bottleMode" class="text-amber-300 text-sm">🌊 Cast as Message in a Bottle</label>
+    </div>
+    <input id="gordInput" placeholder="Chat with the silly bird..." 
+           class="w-full bg-black border border-amber-700 rounded-2xl px-5 py-3 text-sm focus:border-amber-400">
+  </div>
+</div>
+
+<script>
+  function toggleGord() {
+    const chat = document.getElementById('gordChat');
+    chat.classList.toggle('hidden');
+    
+    // Flutter animation
+    const bird = document.getElementById('gordBird');
+    bird.style.transform = 'translateY(-40px) rotate(-30deg)';
+    setTimeout(() => bird.style.transform = '', 900);
+  }
+
+  // Add the rest of the chat logic (sendGordMessage, bottle saving, etc.) from previous versions
+
+  document.getElementById('gordBranch').addEventListener('click', toggleGord);
+</script>

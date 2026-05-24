@@ -349,44 +349,60 @@ export function GordGuide(_props: GordGuideProps) {
         {!open && (
           <motion.button
             key="gord-button"
-            initial={{ x: 80, opacity: 0 }}
+            initial={{ x: 120, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 80, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 280, damping: 24 }}
+            exit={{ x: 120, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24 }}
             onClick={handleOpen}
             aria-label="Chat with Gord"
-            className="fixed bottom-20 right-4 z-[60] cursor-pointer group"
+            className="fixed bottom-16 right-0 z-[60] cursor-pointer group"
           >
             <motion.div
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ x: -6 }}
               transition={{ type: "spring", stiffness: 320, damping: 20 }}
-              className="relative"
+              className="relative flex items-end"
             >
-              <div
-                className="w-14 h-14 rounded-3xl shadow-2xl flex items-center justify-center text-3xl border-2 border-[#8B6F47]"
-                style={{ background: "linear-gradient(135deg, #7B4F2B, #2C4A36)" }}
-              >
-                🌿
-              </div>
-              <motion.div
-                ref={buttonRef}
-                className="absolute -top-2 -right-2 text-3xl leading-none"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}
-              >
-                <GordBird
-                  size={32}
-                  variant="head"
-                  eyeTarget={eyeTarget}
-                  idleAnim={idleAnim}
-                  hovered={hovered}
-                />
-              </motion.div>
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#FDF6EC] border border-[#D9A066]/60 rounded-lg px-2 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+              {/* Tooltip label that slides in on hover */}
+              <div className="absolute right-full mr-2 bottom-5 bg-[#FDF6EC] border border-[#D9A066]/60 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md">
                 <span className="text-[10px] font-bold text-[#D9A066]">Gord&rsquo;s on Board</span>
+              </div>
+
+              {/* Branch + bird stack */}
+              <div className="relative w-28 h-16 flex items-end justify-center">
+                {/* Birch branch */}
+                <div
+                  className="absolute bottom-3 left-0 w-28 h-4 rounded-full shadow-lg"
+                  style={{
+                    background: "linear-gradient(90deg, #7B4A1E 0%, #F5F0E8 30%, #E8DCC8 55%, #A0692A 80%, #7B4A1E 100%)",
+                    border: "1px solid #5C3410",
+                    transform: "rotate(-8deg)",
+                    boxShadow: "0 3px 8px rgba(0,0,0,0.35)",
+                  }}
+                >
+                  {/* Birch bark marks */}
+                  <div className="absolute top-1 left-8 w-3 h-0.5 rounded-full bg-[#8B5E2A]/40" />
+                  <div className="absolute top-2.5 left-14 w-2 h-0.5 rounded-full bg-[#7B4A1E]/30" />
+                  <div className="absolute top-1 left-20 w-2 h-0.5 rounded-full bg-[#8B5E2A]/35" />
+                </div>
+
+                {/* Gord perched on the branch */}
+                <motion.div
+                  ref={buttonRef}
+                  className="absolute bottom-5 left-8"
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 3.0, repeat: Infinity, ease: "easeInOut" }}
+                  onMouseEnter={() => setHovered(true)}
+                  onMouseLeave={() => setHovered(false)}
+                  style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.5))" }}
+                >
+                  <GordBird
+                    size={44}
+                    variant="head"
+                    eyeTarget={eyeTarget}
+                    idleAnim={idleAnim}
+                    hovered={hovered}
+                  />
+                </motion.div>
               </div>
             </motion.div>
           </motion.button>
