@@ -9,6 +9,7 @@ import {
   cohortEnrollmentsTable,
   wishingWellTipsTable,
   kitPurchasesTable,
+  gordTipsTable,
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
@@ -152,6 +153,12 @@ export class WebhookHandlers {
     // ── Wishing Well fiat checkout ───────────────────────────────────────────
     if (session.metadata?.wishing_well === "true") {
       await WebhookHandlers.handleWishingWellCheckoutComplete(session);
+      return;
+    }
+
+    // ── Gord tip checkout ─────────────────────────────────────────────────────
+    if (session.metadata?.source === "gord-tip") {
+      await WebhookHandlers.handleGordTipCheckoutComplete(session);
       return;
     }
 
@@ -302,6 +309,42 @@ export class WebhookHandlers {
       { cohortId, userId, amountPaid },
       "webhookHandlers: cohort enrollment recorded via Stripe",
     );
+  }
+
+  /**
+   * Records a Gord tip after a successful Checkout session.
+   * Idempotent via unique constraint on stripe_checkout_session_id.
+   */
+  static async handleGordTipCheckoutComplete(
+    session: Stripe.Checkout.Session,
+  ): Promise<void> {
+    const amountPaid = session.amount_total ?? 0;
+    const tipperEmail =
+      session.customer_details?.email ?? session.customer_email ?? null;
+    const tipperName = session.customer_details?.name ?? null;
+
+    const [inserted] = await db
+      .insert(gordTipsTable)
+      .values({
+        stripeCheckoutSessionId: session.id,
+        amountPaidCents: amountPaid,
+        tipperEmail: tipperEmail ?? null,
+        tipperName: tipperName ?? null,
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (inserted) {
+      logger.info(
+        { sessionId: session.id, amountPaid, tipperEmail },
+        "webhookHandlers: Gord tip recorded",
+      );
+    } else {
+      logger.info(
+        { sessionId: session.id },
+        "webhookHandlers: Gord tip already recorded (idempotent skip)",
+      );
+    }
   }
 
   /**

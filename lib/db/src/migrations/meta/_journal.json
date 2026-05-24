@@ -218,6 +218,13 @@
       "when": 1748960000001,
       "tag": "0029_castle_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1748970000000,
+      "tag": "0031_gord_tips",
+      "breakpoints": true
     }
   ]
 }

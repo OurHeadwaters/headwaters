@@ -21,3 +21,4 @@ export * from "./cohorts";
 export * from "./castle";
 export * from "./kit-purchases";
 export * from "./practitioners";
+export * from "./gord-tips";
