@@ -1,0 +1,82 @@
+ Full Brief for All Agents
+Headwaters System — Living Watershed Overview
+Prepared by Bobbie Parr | May 24, 2026
+Version: Canonical 0–5 + Mill Substrate1. What Headwaters IsHeadwaters is a northern Ontario self-reliance project network — a living watershed, not a product company. It connects people, tools, knowledge, and local economy through the water-cycle metaphor: stars seed the clouds, moon pulls the waters, rivers carry the stories home. Every participant is inside the cycle.Two front doors:The Clearing (/headwaters/) — Public origin story (Doom Crowd → Ron Paul Pivot → Kitchen Table).
+The Arc / Tester Portal (/) — Private living map with zone cards.
+
+Guiding principles:Permaculture-inspired (Zone 0 = home/hearth first).
+Self-sovereignty, preservation, local economy, quiet competence.
+Northern realities (807 territory, Dryden, remote constraints).
+
+2. Canonical Zone Chain (0–5)This is now locked in across all context files (replit.md, .local/headwaters-context-package.md, etc.).Zone
+Canonical Name
+Terrain Tagline
+Core Focus
+Example Domains / Artifacts
+0
+Salt Box
+The Hearth · Home Center
+Kitchen, preservation, Eave (mama), Forge (Pique), root cellar
+salt-box.replit.app
+1
+Lodge / Headwaters Core
+The Spring · Daily Tools
+Learning, handbook, library
+northern-store-plan.replit.app
+2
+Bench / Trail
+The Worn Path · Transition
+Stomping Path, privacy, Codetry tools
+xrpl-design-hub.replit.app (migrate)
+3
+Standby / Gather Round
+The Clearing · Circle
+Creative, storytelling, making
+creative-hub-xbucketsapp.replit.app
+4
+Community Hall
+The Market Square · Exchange
+Knowledge hub, grants, market, studio, Deadfall
+community-knowledge-hub.replit.app
+5
+The Wild
+The Ridge · Long View
+X-Buckets vision, horizon planning
+x-buckets-vision.replit.app
+
+The Mill = Cross-zone substrate (un-numbered water table / infrastructure layer). Not a zone — the hidden work that sustains all zones.Circuit framing (use everywhere):"From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Clearing (3), flows to the Market Square (4), and is held on the Ridge (5). The Mill keeps the entire watershed cycling."
+3. The Mill — Cross-Zone Substrate RoleThe Mill is the reliable, hidden backbone:Water table / aquifer metaphor
+Old northern mill (grinds raw into usable)
+Front & Back of House operational layer
+
+It serves every zone by handling hosting, logistics, local economy plumbing, backups, 807-specific infrastructure, grant pipelines, archiving (Deadfall), and physical-digital bridging.Current pieces:807 Shop
+Dryden Web
+Hinterland (deeper north)
+General operational reliability across Replit instances
+
+Important boundary: We are not layering or branding The Mill after Dryden Fibre Canada (the large industrial pulp mill). Tactical partnerships may be explored later, but The Mill remains sovereign, human-scale, and aligned with self-reliance values.4. Recent Updates (as of tonight)Zone chain is now canonical in both context files.
+replit.md retitled and orients agents with zone mapping at top.
+.local/headwaters-context-package.md has full zone table + artifact mapping + Mill definition.
+Promo language cleaned (“Local Hour, tied to the 807 Thursday drop”).
+Zones 1 & 2 noted as “not yet in this repo” — expected.
+Deadhead → Deadfall recommended.
+XRPL domain flagged for future migration.
+Codetry explainer needed wherever it appears.
+
+5. Key Language & Framing Rules for All AgentsAlways lead with the watershed / water-cycle + permaculture lens.
+Salt Box = Zone 0 is the unambiguous center.
+The Mill = infrastructure substrate, never a numbered zone.
+Tone: Practitioner, warm northern, quiet competence, grounded poetry. No hype, no corporate gloss.
+Avoid: Crypto signaling (on Zone 2), vague “feels” tester prompts, disconnected sub-sites.
+Priority copy elements: Terrain taglines, circuit paragraph, “hidden work that keeps the water moving.”
+
+6. Open Items / Next MovesBuild public /mill framing page (cross-zone substrate explanation).
+Consistent wayfinding (“Zone X of 5”) across all apps.
+Domain hygiene (especially Zone 2).
+Populate thin zones (especially Zone 5).
+Gord the owl access + cross-door links (Clearing  Portal).
+Full visual language alignment (celestial sky + earth terrain).
+
+One-sentence mission reminder for every agent:“Help make Headwaters feel like one coherent, living watershed where Zone 0 stays warm, the water flows visibly between zones, and the Mill keeps everything reliable — all rooted in northern Ontario self-reliance.”
+You can copy-paste this entire brief to any new agent.  Rest well, Bobbie. The system is much tighter tonight than it was this morning.  See you when you’re back — ready for the next layer whenever you are. 
+

@@ -1,72 +1,169 @@
-# The Survival Podcast — Fan Redesign
+# Headwaters — Living Watershed System
+*Agent orientation file. Read this first before any work in this repo.*
 
-A modern, rugged fan redesign of thesurvivalpodcast.com built around a unified
-"library" that indexes Jack Spirko's full public archive: podcast episodes,
-written blog posts/Amazon reviews, and (when available) YouTube videos.
+---
+
+## One-Sentence Mission
+
+Help make Headwaters feel like one coherent, living watershed where Zone 0 stays warm, the water flows visibly between zones, and the Mill keeps everything reliable — all rooted in northern Ontario self-reliance.
+
+---
+
+## Canonical Zone Chain (0–5)
+
+| Zone | Canonical Name | Terrain Tagline | Core Focus | Artifact / Domain |
+|---|---|---|---|---|
+| 0 | Salt Box | The Hearth · Home Center | Kitchen, preservation, Eave, Forge, root cellar | salt-box.replit.app |
+| 1 | Lodge / Headwaters Core | The Spring · Daily Tools | Learning, handbook, library, practitioner intake | northern-store-plan.replit.app |
+| 2 | Bench / Trail | The Worn Path · Transition | Stomping Path, privacy, Codetry tools | xrpl-design-hub.replit.app *(migrate pending)* |
+| 3 | Standby / Gather Round | The Clearing · Circle | Creative, storytelling, making | creative-hub-xbucketsapp.replit.app |
+| 4 | Community Hall | The Market Square · Exchange | Knowledge hub, grants, market, studio, Deadfall | community-knowledge-hub.replit.app |
+| 5 | The Wild | The Ridge · Long View | X-Buckets vision, horizon planning | x-buckets-vision.replit.app |
+
+**The Mill** = Cross-zone substrate (un-numbered). Water table / aquifer metaphor. Handles hosting, logistics, local economy plumbing, backups, 807-specific infrastructure, grant pipelines, archiving, physical–digital bridging. Not a zone — the hidden work that sustains all zones.
+
+**Circuit paragraph (use everywhere):**
+> "From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Clearing (3), flows to the Market Square (4), and is held on the Ridge (5). The Mill keeps the entire watershed cycling."
+
+---
+
+## Artifacts in This Repo
+
+| Artifact | Zone | Role |
+|---|---|---|
+| `artifacts/survival-podcast` | Zone 2 | The Stomping Path — fan redesign / transition platform |
+| `artifacts/codetry` | Zone 2 | Codetry — digital sovereignty workbench |
+| `artifacts/privacy-guide` | Zone 2 | Privacy Kit — Clearing & Lodge family guide |
+| `artifacts/headwaters` | Zone 1 | Practitioner Intake Tool (Headwaters Core) |
+| `artifacts/tsp-mobile` | Zone 2 | TSP Mobile (Expo) |
+| `artifacts/api-server` | The Mill | Shared Express API — backbone for all artifacts |
+
+---
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — API server (RSS + library)
-- `pnpm --filter @workspace/survival-podcast run dev` — web frontend
+- `pnpm --filter @workspace/api-server run dev` — API server (port 8080)
+- `pnpm --filter @workspace/survival-podcast run dev` — The Stomping Path web frontend
+- `pnpm --filter @workspace/codetry run dev` — Codetry web frontend
+- `pnpm --filter @workspace/privacy-guide run dev` — Privacy Guide
+- `pnpm --filter @workspace/headwaters run dev` — Headwaters Intake Tool
+- `pnpm --filter @workspace/tsp-mobile run dev` — Expo mobile app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run db:push` — apply schema changes to Postgres (drizzle-kit push)
+
+---
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - Frontend: React + Vite, wouter, TanStack Query, Tailwind v4, shadcn/radix
+- Mobile: Expo (React Native)
 - API: Express 5, fast-xml-parser
 - DB: Postgres + Drizzle (`lib/db/`), JSONB for tags/categories, GIN + tsvector for FTS
 - Validation: Zod (`zod/v4`)
 - API codegen: Orval (from OpenAPI spec)
+- AI: OpenAI gpt-4.1 (streaming SSE for Gord and Trailblazer chat)
+- Payments: Stripe (test mode only — Jack is Bitcoin-only for real payments)
 
-## Where things live
+---
+
+## Where Things Live
 
 - `lib/api-spec/openapi.yaml` — single source of truth for API contracts
-- `lib/db/src/schema/content.ts` — unified `content_items` (audio | article | video) + `sync_runs`
-- `artifacts/api-server/src/lib/rss.ts` — RSS fetch + 5-min in-memory cache
-- `artifacts/api-server/src/lib/sources/wordpress.ts` — WP REST paginator, per-page upsert with retry, skips 5xx pages
-- `artifacts/api-server/src/lib/sources/youtube.ts` — YouTube Atom feed parser; degrades gracefully if RSS 404s
-- `artifacts/api-server/src/lib/library.ts` — refresh orchestrator (6h throttle, runs on boot)
-- `artifacts/api-server/src/routes/library.ts` — /library/search /stats /tags /items/:slug /refresh
-- `artifacts/api-server/src/routes/episodes.ts` — feed / episodes / categories / stats endpoints
-- `artifacts/survival-podcast/src/pages/library.tsx` + `library-item.tsx` — Library UI
-- `attached_assets/tsp/` — downloaded TSP brand assets
+- `lib/db/src/schema/` — Drizzle schemas (content, gatekeeper, gord_tips, etc.)
+- `artifacts/api-server/src/routes/` — all API routes (gord, trailblazer, library, episodes, etc.)
+- `artifacts/api-server/src/lib/` — RSS, WordPress, YouTube sources, library orchestrator
+- `artifacts/survival-podcast/src/pages/` — TSP pages (home, episodes, library, etc.)
+- `artifacts/survival-podcast/src/components/gord-guide.tsx` — Gord AI chat widget
+- `artifacts/survival-podcast/src/components/trailblazer-chat.tsx` — Trailblazer AI chat
+- `artifacts/codetry/src/components/ForgeHero.tsx` — Codetry hero
+- `artifacts/codetry/src/components/GordWidget.tsx` — Gord on Codetry
+- `artifacts/privacy-guide/src/App.tsx` — Privacy Guide single-page app
+- `shared/stomping-path.md` — Canonical three-stage trail doc (Doom Crowd → Ron Paul → Kitchen Table)
+- `shared/stomping-path-system-prompt.txt` — ≤200-word agent prompt for Gord/Trailblazer
+- `shared/watershed-compact.md` — Full watershed compact with On-Ramp section
 
-## Architecture decisions
+---
 
-- **Two sources of truth**: the RSS feed (real-time, ~400 most recent episodes, used by /, /episodes, /episode/:slug) and the Postgres library (full archive: 6,018 items back to 2006, used by /library and /library/:slug). They coexist — the library is additive.
-- **Per-page upsert** for WordPress sync: Jack's WP server intermittently 500s on deep pages (e.g. 113, 116). The fetcher upserts every page as it goes, retries 5xx with backoff, and skips pages it can't recover so partial progress is preserved. Up to 10 page failures tolerated per run.
-- **YouTube graceful degradation**: per-channel RSS currently 404s for `UCFiM16ypErkTj6SNzhkmyxw`. The sync logs and records zero items rather than failing the whole refresh.
-- **Full-text search** uses Postgres `to_tsvector('english', title || summary || body_text)` + `websearch_to_tsquery` with ts_rank for relevance sort.
-- All hooks are codegen'd from the OpenAPI spec via Orval — never hand-write API types or hooks.
+## Key Language & Framing Rules
 
-## Product
+- **Always lead** with the watershed / water-cycle + permaculture lens.
+- **Salt Box = Zone 0** is the unambiguous centre of the whole system.
+- **The Mill** = infrastructure substrate, never a numbered zone. Never brand it after any external company.
+- **Tone:** Practitioner, warm northern, quiet competence, grounded poetry. No hype, no corporate gloss.
+- **Avoid:** Crypto signaling on Zone 2 pages, vague "feels" tester prompts, disconnected sub-sites that don't name their zone.
+- **Wayfinding:** Every artifact should carry "Zone X of 5" somewhere visible.
+- **Codetry explainer:** Needs to appear wherever Codetry is mentioned: *"the digital sovereignty workbench for Stomping Path practitioners — XRPL tools, key custody, community payment rails, and the code skills to run them yourself."*
 
-7 pages:
-1. `/` — hero, stats, featured episodes, **Library CTA strip**, categories
-2. `/episodes` — paginated archive of the last ~400 RSS episodes
-3. `/episode/:slug` — RSS episode detail + custom audio player
-4. `/categories` — all categories from RSS with counts
-5. `/about` — about page with Jack's tip URL
-6. `/library` — **the flagship**: search + filter (kind, tag, category) + sort across 6,000+ items
-7. `/library/:slug` — unified detail for audio (custom player) / video (YouTube iframe) / article (prose body)
+---
 
-## User preferences
+## Constitutional Framework (load-bearing)
 
-- Jack is all-in on Bitcoin and calls XRP a "shit coin" — keep XRPL out unless explicitly asked.
+**The Eave Rule (poured concrete, non-negotiable):**
+No table, no foreign key, no join, no query path, and no stored reference may ever connect a Zone 3 wallet address to a Zone 1 household record. Any feature that would create such a path must be refused or redesigned.
+
+**Three-Table Model:**
+| Table | Zone | Register |
+|---|---|---|
+| Kitchen table | Z0–Z1 | Inside. Curtains. Deciding, curing, posture. |
+| The Deck | Z2 | Your property, facing outward. Working in the open air. |
+| Picnic table | Z3+ | Community land. No roof. You carried it out here. |
+
+**The Eave** is the structural seam between Zone 1 (Circle — private household identity) and Zone 3 (Community — above-board organizational identity). The gate sits at the edge of the Deck.
+
+---
+
+## Architecture Decisions
+
+- **Two sources of truth for TSP content**: RSS feed (real-time, ~400 most recent episodes) and Postgres library (full archive: 6,000+ items back to 2006). They coexist — the library is additive.
+- **Per-page upsert** for WordPress sync: Jack's WP server intermittently 500s on deep pages. Retries with backoff, skips unrecoverable pages.
+- **YouTube graceful degradation**: per-channel RSS currently 404s. Logs and records zero items rather than failing the whole refresh.
+- **Full-text search**: Postgres `to_tsvector('english', ...)` + `websearch_to_tsquery` with ts_rank.
+- All API hooks are codegen'd from the OpenAPI spec via Orval — never hand-write API types or hooks.
+
+---
+
+## User Preferences
+
+- Jack Spirko is all-in on Bitcoin. XRP is his "shit coin" — keep XRPL out of TSP-facing content unless explicitly asked.
+- Bobbie Parr is the practitioner name for Headwaters / Intake work.
+- Stripe is test mode only. Real payments = Bitcoin.
+- Tone is always: warm northern, practitioner, grounded. Not corporate, not hype.
+- Domain note: `xrpl-design-hub.replit.app` is Zone 2's current address — rename/migration is a noted goal.
+
+---
+
+## Open Items (as of May 24, 2026)
+
+1. Build public `/mill` framing page — cross-zone substrate explanation.
+2. Consistent wayfinding ("Zone X of 5") across all apps.
+3. Domain hygiene — especially Zone 2 (`xrpl-design-hub.replit.app` → `stomping-path.replit.app` or custom domain).
+4. Populate thin zones — especially Zone 5 (The Wild / Ridge).
+5. Gord the owl access + cross-door links (The Clearing ↔ Portal).
+6. Full visual language alignment — celestial sky + earth terrain throughout.
+7. Public `/mill` page for the cross-zone substrate role.
+8. Deadfall archiving (was "Deadhead" — renamed to Deadfall).
+
+---
 
 ## Gotchas
 
 - RSS has duplicate-cased categories ("friday flashbacks" vs "Friday Flashbacks"). Upstream data; surfaced as-is.
 - WP REST taxonomy endpoints can also 500; the term-loader logs and skips bad pages.
-- Library backfill runs on server boot in the background — fresh DBs show ~30s of partial state. The UI surfaces "Indexing the archive…" while < 100 items.
+- Library backfill runs on server boot in the background — fresh DBs show ~30s of partial state.
 - After any OpenAPI change, re-run codegen before using updated types.
-- Drizzle: use `inArray(col, arr)` not `sql\`${col} = ANY(${arr}::text[])\`` — the latter serializes the array as a comma-joined string.
+- Drizzle: use `inArray(col, arr)` not `sql\`${col} = ANY(${arr}::text[])\`` — the latter serializes incorrectly.
+- API server must be on port 8080; a previous port collision was fixed by killing an orphan process.
+
+---
 
 ## Pointers
 
+- See `.local/headwaters-context-package.md` for the full canonical zone + watershed brief
+- See `.local/context/kitchen-table-brief.md` for the constitutional framework + table model detail
+- See `.local/notes/the-deck-z2-workbench-metaphor.md` for Deck / Z2 metaphor detail
+- See `shared/stomping-path.md` for the three-stage trail doc
 - See the `pnpm-workspace` skill for workspace structure
 - See the `database` skill for Postgres operations
