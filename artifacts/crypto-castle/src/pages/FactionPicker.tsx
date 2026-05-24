@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { FACTION_LIST, FACTIONS, type FactionId } from "@/data/factions";
 import { useFaction } from "@/context/FactionContext";
+import { getSessionId } from "@/lib/sessionId";
 
 export default function FactionPicker() {
   const { faction: currentFaction, setFaction } = useFaction();
@@ -19,10 +20,11 @@ export default function FactionPicker() {
 
     if (isNewFaction) {
       try {
+        const sid = await getSessionId();
         await fetch("/api/castle/faction-join", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ faction: id }),
+          body: JSON.stringify({ faction: id, sessionId: sid }),
         });
       } catch {
       }

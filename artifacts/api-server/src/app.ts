@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import { createProxyMiddleware, type RequestHandler } from "http-proxy-middleware";
 
 const app: Express = express();
+app.set("trust proxy", 1);
 
 // ─── Stripe webhook — MUST be registered BEFORE express.json() ────────────────
 // Stripe requires the raw Buffer body to verify the webhook signature.

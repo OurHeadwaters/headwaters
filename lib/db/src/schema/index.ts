@@ -18,3 +18,4 @@ export * from "./headwaters";
 export * from "./fireside-chats";
 export * from "./memberships";
 export * from "./cohorts";
+export * from "./castle";

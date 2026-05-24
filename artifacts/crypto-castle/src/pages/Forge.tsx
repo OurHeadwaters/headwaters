@@ -198,9 +198,20 @@ function LessonView({
 
 export default function Forge() {
   const { faction } = useFaction();
-  const { markComplete, isLessonComplete, getModuleProgress, getTotalProgress, resetProgress } = useProgress();
+  const {
+    markComplete,
+    isLessonComplete,
+    getModuleProgress,
+    getTotalProgress,
+    resetProgress,
+    restoreFromCode,
+    sessionId,
+  } = useProgress();
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [lessonIndex, setLessonIndex] = useState(0);
+  const [showSyncPanel, setShowSyncPanel] = useState(false);
+  const [restoreInput, setRestoreInput] = useState("");
+  const [copied, setCopied] = useState(false);
   const dynamicModules = useDynamicModules();
 
   const allModules = [...MODULES, ...dynamicModules];
@@ -286,6 +297,13 @@ export default function Forge() {
                       reset
                     </button>
                   )}
+                  <button
+                    onClick={() => setShowSyncPanel((v) => !v)}
+                    className="text-xs opacity-30 hover:opacity-60 transition-opacity"
+                    title="Sync progress across devices"
+                  >
+                    sync
+                  </button>
                 </div>
               </div>
               <div className="h-3 rounded-full bg-white/5 overflow-hidden">
@@ -298,6 +316,64 @@ export default function Forge() {
                   }}
                 />
               </div>
+
+              <AnimatePresence>
+                {showSyncPanel && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-4 pt-4 border-t border-white/5 flex flex-col gap-3">
+                      {sessionId && (
+                        <div>
+                          <p className="text-xs opacity-40 mb-1 uppercase tracking-wider">Your progress code</p>
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 text-xs bg-white/5 rounded-lg px-3 py-2 font-mono truncate"
+                              style={{ color: factionData?.colors.primary ?? "#e2e8f0" }}>
+                              {sessionId}
+                            </code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(sessionId).catch(() => {});
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 2000);
+                              }}
+                              className="text-xs px-3 py-2 rounded-lg border border-white/10 hover:border-white/20 transition-all shrink-0"
+                            >
+                              {copied ? "✓" : "Copy"}
+                            </button>
+                          </div>
+                          <p className="text-xs opacity-30 mt-1">Save this code to restore your progress on another device.</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs opacity-40 mb-1 uppercase tracking-wider">Restore from code</p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={restoreInput}
+                            onChange={(e) => setRestoreInput(e.target.value)}
+                            placeholder="Paste your progress code…"
+                            className="flex-1 text-xs bg-white/5 rounded-lg px-3 py-2 font-mono border border-white/10 focus:border-white/20 outline-none"
+                          />
+                          <button
+                            onClick={async () => {
+                              await restoreFromCode(restoreInput);
+                              setRestoreInput("");
+                              setShowSyncPanel(false);
+                            }}
+                            className="text-xs px-3 py-2 rounded-lg border border-white/10 hover:border-white/20 transition-all shrink-0"
+                          >
+                            Restore
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="flex flex-col gap-4">

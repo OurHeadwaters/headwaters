@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MODULES, type Module } from "@/data/courses";
+import { getSessionId, restoreSession } from "@/lib/sessionId";
 
 const STORAGE_KEY = "castle:progress";
 
@@ -7,7 +8,7 @@ export interface Progress {
   completedLessons: Record<string, boolean>;
 }
 
-function loadProgress(): Progress {
+function loadLocalProgress(): Progress {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
@@ -15,14 +16,36 @@ function loadProgress(): Progress {
   return { completedLessons: {} };
 }
 
-function saveProgress(p: Progress) {
+function saveLocalProgress(p: Progress) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
   } catch {}
 }
 
 export function useProgress() {
-  const [progress, setProgress] = useState<Progress>(loadProgress);
+  const [progress, setProgress] = useState<Progress>(loadLocalProgress);
+  const [synced, setSynced] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSessionId().then((id) => {
+      setSessionId(id);
+      return fetch(`/api/castle/progress/${encodeURIComponent(id)}`);
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { completedLessons: Record<string, boolean> } | null) => {
+        if (!data) return;
+        setProgress((prev) => {
+          const merged: Progress = {
+            completedLessons: { ...prev.completedLessons, ...data.completedLessons },
+          };
+          saveLocalProgress(merged);
+          return merged;
+        });
+        setSynced(true);
+      })
+      .catch(() => setSynced(true));
+  }, []);
 
   const markComplete = useCallback((lessonId: string) => {
     setProgress((prev) => {
@@ -30,14 +53,39 @@ export function useProgress() {
         ...prev,
         completedLessons: { ...prev.completedLessons, [lessonId]: true },
       };
-      saveProgress(next);
+      saveLocalProgress(next);
       return next;
     });
+    getSessionId().then((id) =>
+      fetch(`/api/castle/progress/${encodeURIComponent(id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonId, done: true }),
+      })
+    ).catch(() => {});
   }, []);
 
   const resetProgress = useCallback(() => {
     const fresh: Progress = { completedLessons: {} };
-    saveProgress(fresh);
+    saveLocalProgress(fresh);
+    setProgress(fresh);
+    getSessionId().then((id) =>
+      fetch(`/api/castle/progress/${encodeURIComponent(id)}/reset`, {
+        method: "POST",
+      })
+    ).catch(() => {});
+  }, []);
+
+  const restoreFromCode = useCallback(async (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    restoreSession(trimmed);
+    setSessionId(trimmed);
+    const r = await fetch(`/api/castle/progress/${encodeURIComponent(trimmed)}`);
+    if (!r.ok) return;
+    const data = await r.json() as { completedLessons: Record<string, boolean> };
+    const fresh: Progress = { completedLessons: data.completedLessons ?? {} };
+    saveLocalProgress(fresh);
     setProgress(fresh);
   }, []);
 
@@ -69,5 +117,15 @@ export function useProgress() {
     [progress]
   );
 
-  return { progress, markComplete, resetProgress, getModuleProgress, getTotalProgress, isLessonComplete };
+  return {
+    progress,
+    synced,
+    sessionId,
+    markComplete,
+    resetProgress,
+    restoreFromCode,
+    getModuleProgress,
+    getTotalProgress,
+    isLessonComplete,
+  };
 }

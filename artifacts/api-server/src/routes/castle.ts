@@ -3,6 +3,9 @@ import type { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
+import { db, castleMembersTable, castleLessonProgressTable, castleSessionsTable } from "@workspace/db";
+import { eq, count, and } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const LESSONS_FILE = path.join(DATA_DIR, "castle-lessons.json");
@@ -12,12 +15,8 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 const ADMIN_PASSPHRASE = process.env.CASTLE_ADMIN_PASSPHRASE ?? "";
 
-interface FactionCounts {
-  btc: number;
-  xrp: number;
-  eth: number;
-  wild: number;
-}
+const FACTION_IDS = new Set(["btc", "xrp", "eth", "wild"]);
+const FACTION_DEFAULTS: Record<string, number> = { btc: 1247, xrp: 892, eth: 1103, wild: 634 };
 
 interface AddedLesson {
   id: string;
@@ -51,7 +50,6 @@ function saveLessons(lessons: AddedLesson[]): void {
   }
 }
 
-const factionCounts: FactionCounts = { btc: 1247, xrp: 892, eth: 1103, wild: 634 };
 const addedLessons: AddedLesson[] = loadLessons();
 
 function requirePassphrase(req: Request, res: Response, next: NextFunction): void {
@@ -67,18 +65,162 @@ function requirePassphrase(req: Request, res: Response, next: NextFunction): voi
   next();
 }
 
-router.get("/faction-counts", (_req, res) => {
-  res.json({ ...factionCounts });
+function getIp(req: Request): string {
+  return req.ip ?? req.socket.remoteAddress ?? "unknown";
+}
+
+router.post("/session", async (_req, res) => {
+  try {
+    const sessionId = randomUUID();
+    await db.insert(castleSessionsTable).values({ sessionId });
+    res.json({ sessionId });
+  } catch (e) {
+    console.error("castle: session create error:", e);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
-router.post("/faction-join", (req, res) => {
-  const { faction } = req.body as { faction?: string };
-  if (!faction || !(faction in factionCounts)) {
+router.get("/faction-counts", async (_req, res) => {
+  try {
+    const rows = await db
+      .select({ factionId: castleMembersTable.factionId, cnt: count() })
+      .from(castleMembersTable)
+      .groupBy(castleMembersTable.factionId);
+
+    const counts: Record<string, number> = { ...FACTION_DEFAULTS };
+    for (const row of rows) {
+      counts[row.factionId] = FACTION_DEFAULTS[row.factionId] + Number(row.cnt);
+    }
+    res.json(counts);
+  } catch (e) {
+    console.error("castle: faction-counts error:", e);
+    res.json({ ...FACTION_DEFAULTS });
+  }
+});
+
+router.post("/faction-join", async (req, res) => {
+  const { faction, sessionId } = req.body as { faction?: string; sessionId?: string };
+  if (!faction || !FACTION_IDS.has(faction)) {
     res.status(400).json({ error: "Invalid faction" });
     return;
   }
-  factionCounts[faction as keyof FactionCounts] += 1;
-  res.json({ counts: { ...factionCounts } });
+  if (!sessionId) {
+    res.status(400).json({ error: "sessionId required" });
+    return;
+  }
+
+  const ip = getIp(req);
+
+  try {
+    const existingByIp = ip !== "unknown"
+      ? await db
+          .select({ sessionId: castleMembersTable.sessionId })
+          .from(castleMembersTable)
+          .where(eq(castleMembersTable.ipAddress, ip))
+          .limit(1)
+      : [];
+
+    if (existingByIp.length > 0) {
+      await db
+        .update(castleMembersTable)
+        .set({ factionId: faction, sessionId, joinedAt: new Date() })
+        .where(eq(castleMembersTable.ipAddress, ip));
+    } else {
+      await db
+        .insert(castleMembersTable)
+        .values({ sessionId, factionId: faction, ipAddress: ip })
+        .onConflictDoUpdate({
+          target: castleMembersTable.sessionId,
+          set: { factionId: faction, ipAddress: ip, joinedAt: new Date() },
+        });
+    }
+
+    const rows = await db
+      .select({ factionId: castleMembersTable.factionId, cnt: count() })
+      .from(castleMembersTable)
+      .groupBy(castleMembersTable.factionId);
+
+    const counts: Record<string, number> = { ...FACTION_DEFAULTS };
+    for (const row of rows) {
+      counts[row.factionId] = FACTION_DEFAULTS[row.factionId] + Number(row.cnt);
+    }
+    res.json({ counts });
+  } catch (e) {
+    console.error("castle: faction-join error:", e);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+router.get("/progress/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+  if (!sessionId) {
+    res.status(400).json({ error: "sessionId required" });
+    return;
+  }
+  try {
+    const rows = await db
+      .select({ lessonId: castleLessonProgressTable.lessonId })
+      .from(castleLessonProgressTable)
+      .where(eq(castleLessonProgressTable.sessionId, sessionId));
+
+    const completedLessons: Record<string, boolean> = {};
+    for (const row of rows) {
+      completedLessons[row.lessonId] = true;
+    }
+    res.json({ completedLessons });
+  } catch (e) {
+    console.error("castle: progress GET error:", e);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+router.post("/progress/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+  const { lessonId, done } = req.body as { lessonId?: string; done?: boolean };
+
+  if (!sessionId || !lessonId || typeof done !== "boolean") {
+    res.status(400).json({ error: "lessonId and done (boolean) are required" });
+    return;
+  }
+
+  try {
+    if (done) {
+      await db
+        .insert(castleLessonProgressTable)
+        .values({ sessionId, lessonId })
+        .onConflictDoNothing();
+    } else {
+      await db
+        .delete(castleLessonProgressTable)
+        .where(
+          and(
+            eq(castleLessonProgressTable.sessionId, sessionId),
+            eq(castleLessonProgressTable.lessonId, lessonId),
+          ),
+        );
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("castle: progress POST error:", e);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+router.post("/progress/:sessionId/reset", async (req, res) => {
+  const { sessionId } = req.params;
+  if (!sessionId) {
+    res.status(400).json({ error: "sessionId required" });
+    return;
+  }
+  try {
+    await db
+      .delete(castleLessonProgressTable)
+      .where(eq(castleLessonProgressTable.sessionId, sessionId));
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("castle: progress reset error:", e);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 router.post("/admin/verify", (req, res) => {
@@ -170,12 +312,14 @@ router.get("/dynamic-lessons", (_req, res) => {
   res.json({ lessons: addedLessons });
 });
 
-router.post("/admin/reset-counts", requirePassphrase, (_req, res) => {
-  factionCounts.btc = 0;
-  factionCounts.xrp = 0;
-  factionCounts.eth = 0;
-  factionCounts.wild = 0;
-  res.json({ ok: true });
+router.post("/admin/reset-counts", requirePassphrase, async (_req, res) => {
+  try {
+    await db.delete(castleMembersTable);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("castle: reset-counts error:", e);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 export default router;
