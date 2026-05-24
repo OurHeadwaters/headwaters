@@ -30,6 +30,8 @@ const BORDER = "#D9A06633";
 const TEXT = "#FDFBF7";
 const MUTED = "#C8D4C0";
 
+const STORAGE_KEY = "gord-history-tsp";
+
 const HEAD_ANIMS: IdleAnim[] = ["head-tilt", "head-bob"];
 const ANIM_DURATION_MS = 1400;
 
@@ -146,6 +148,31 @@ export function GordGuide(_props: GordGuideProps) {
   const eyeTarget = useEyeTarget(buttonRef);
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Message[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          setHasOpened(true);
+        }
+      }
+    } catch {
+      /* ignore parse errors */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const toSave = messages.filter((m) => m.content !== "");
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [messages]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -173,6 +200,19 @@ export function GordGuide(_props: GordGuideProps) {
       setHasOpened(true);
     }
     setOpen(true);
+  }
+
+  function handleStartFresh() {
+    abortRef.current?.abort();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setMessages([OPENING_LINE]);
+    setHasOpened(true);
+    setInput("");
+    setError(null);
   }
 
   function handleClose() {
@@ -338,11 +378,19 @@ export function GordGuide(_props: GordGuideProps) {
               <button
                 onClick={handleTip}
                 disabled={tipState === "loading"}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity hover:opacity-80 mr-1 disabled:opacity-50"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity hover:opacity-80 disabled:opacity-50"
                 style={{ background: ACCENT + "22", color: ACCENT, border: `1px solid ${ACCENT}44` }}
               >
                 <Heart className="w-3 h-3" />
                 Tip Gord
+              </button>
+              <button
+                onClick={handleStartFresh}
+                title="Start fresh"
+                className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity hover:opacity-80"
+                style={{ background: "#ffffff11", color: MUTED, border: `1px solid #ffffff22` }}
+              >
+                Fresh
               </button>
               <button
                 onClick={handleClose}

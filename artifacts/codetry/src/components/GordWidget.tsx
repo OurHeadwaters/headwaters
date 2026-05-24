@@ -42,6 +42,7 @@ const TEXT = "#F5F0E8";
 const MUTED = "#A8B8A0";
 
 type TipState = "idle" | "picking" | "loading" | "error";
+const STORAGE_KEY = "gord-history-codetry";
 
 export function GordWidget() {
   const [location] = useLocation();
@@ -58,6 +59,31 @@ export function GordWidget() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Message[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          setHasOpened(true);
+        }
+      }
+    } catch {
+      /* ignore parse errors */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const toSave = messages.filter((m) => m.content !== "");
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -94,6 +120,19 @@ export function GordWidget() {
     setOpen(false);
     setTipState("idle");
     setTipError(null);
+  }
+
+  function handleStartFresh() {
+    abortRef.current?.abort();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setMessages([OPENING_LINE]);
+    setHasOpened(true);
+    setInput("");
+    setError(null);
   }
 
   function handleTip() {
@@ -257,6 +296,14 @@ export function GordWidget() {
               >
                 <Heart className="w-3 h-3" />
                 Tip Gord
+              </button>
+              <button
+                onClick={handleStartFresh}
+                title="Start fresh"
+                className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity hover:opacity-80"
+                style={{ background: "#ffffff11", color: MUTED, border: `1px solid #ffffff22` }}
+              >
+                Fresh
               </button>
               <button
                 onClick={handleClose}
