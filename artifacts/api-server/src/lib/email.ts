@@ -376,6 +376,63 @@ export async function sendHostConfirmationEmail(opts: HostConfirmationOptions): 
   }
 }
 
+export interface KitInquiryNotificationOptions {
+  kitName: string;
+  kitSlug: string;
+  name: string;
+  email: string;
+  notes: string;
+}
+
+export async function sendKitInquiryNotification(opts: KitInquiryNotificationOptions): Promise<void> {
+  const client = getResendClient();
+  if (!client) {
+    logger.warn("RESEND_API_KEY not set — skipping kit inquiry notification email");
+    return;
+  }
+
+  const to = process.env.KIT_INQUIRY_EMAIL ?? "jack@thesurvivalpodcast.com";
+
+  const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8" /><title>Kit Inquiry</title></head>
+<body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0eb;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr><td style="background:#1A2A20;padding:28px 32px;">
+          <h1 style="margin:0;color:#D9A066;font-size:22px;">New Kit Inquiry: ${opts.kitName}</h1>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 12px;color:#333;font-size:15px;"><strong>Name:</strong> ${opts.name}</p>
+          <p style="margin:0 0 12px;color:#333;font-size:15px;"><strong>Email:</strong> <a href="mailto:${opts.email}" style="color:#2d4a2d;">${opts.email}</a></p>
+          <p style="margin:0 0 12px;color:#333;font-size:15px;"><strong>Kit:</strong> ${opts.kitName} (<code>${opts.kitSlug}</code>)</p>
+          ${opts.notes ? `<p style="margin:16px 0 0;color:#333;font-size:15px;"><strong>Notes:</strong></p><p style="margin:8px 0 0;color:#555;font-size:14px;line-height:1.6;border-left:3px solid #D9A066;padding-left:12px;">${opts.notes}</p>` : ""}
+          <hr style="border:none;border-top:1px solid #e8e2d8;margin:24px 0;" />
+          <p style="margin:0;color:#888;font-size:12px;">Submitted via thesurvivalpodcast.com/kits/${opts.kitSlug}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  try {
+    const { error } = await client.emails.send({
+      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      to: [to],
+      replyTo: opts.email,
+      subject: `Kit Inquiry — ${opts.kitName} from ${opts.name}`,
+      html,
+    });
+    if (error) {
+      logger.error({ error, kitSlug: opts.kitSlug }, "email: kit inquiry notification failed");
+    } else {
+      logger.info({ kitSlug: opts.kitSlug, from: opts.email }, "email: kit inquiry notification sent");
+    }
+  } catch (err) {
+    logger.error({ err, kitSlug: opts.kitSlug }, "email: kit inquiry notification threw unexpectedly");
+  }
+}
+
 export async function sendRsvpNotification(opts: RsvpNotificationOptions): Promise<void> {
   const client = getResendClient();
   if (!client) {

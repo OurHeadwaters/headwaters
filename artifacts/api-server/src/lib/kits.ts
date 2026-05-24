@@ -4,7 +4,18 @@
  * bundle: transformation slugs, track slugs, gear category tags, and
  * any external resource URLs.
  *
+ * Commerce fields:
+ *   priceType   — "direct" kits go to Stripe checkout; "consultative" kits
+ *                 show an inquiry form instead.
+ *   priceCents  — one-time purchase price in USD cents (direct kits only).
+ *   ctaLabel    — primary button label shown on the kit detail page.
+ *   stripePriceId — set at runtime by ensureKitProducts(); populated from
+ *                   the KIT_STRIPE_PRICE_IDS env var or auto-created.
+ *
  * This is the single source of truth all kit surfaces pull from.
+ *
+ * NOTE: Prices below are defaults. Confirm final pricing with Bobbie before
+ * going live — update priceCents here and re-run ensureKitProducts().
  */
 
 export type KitDef = {
@@ -16,6 +27,10 @@ export type KitDef = {
   trackSlugs: string[];
   gearCategoryTags: string[];
   externalLinks: { label: string; url: string }[];
+  priceType: "direct" | "consultative";
+  priceCents?: number;
+  ctaLabel: string;
+  stripePriceId?: string;
 };
 
 export const KITS: KitDef[] = [
@@ -31,6 +46,9 @@ export const KITS: KitDef[] = [
     externalLinks: [
       { label: "Family Privacy Guide", url: "/privacy-guide/" },
     ],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Family Kit",
   },
   {
     slug: "producer-kit",
@@ -42,6 +60,9 @@ export const KITS: KitDef[] = [
     trackSlugs: ["mind-and-money"],
     gearCategoryTags: [],
     externalLinks: [],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Producer Kit",
   },
   {
     slug: "practitioner-kit",
@@ -55,6 +76,8 @@ export const KITS: KitDef[] = [
     externalLinks: [
       { label: "Headwaters Practitioner App", url: "/headwaters/" },
     ],
+    priceType: "consultative",
+    ctaLabel: "Apply for Practitioner Access",
   },
   {
     slug: "council-kit",
@@ -68,6 +91,8 @@ export const KITS: KitDef[] = [
     externalLinks: [
       { label: "Our Headwaters", url: "https://ourheadwaters.ca" },
     ],
+    priceType: "consultative",
+    ctaLabel: "Inquire About the Council Kit",
   },
   {
     slug: "care-kit",
@@ -79,6 +104,9 @@ export const KITS: KitDef[] = [
     trackSlugs: [],
     gearCategoryTags: [],
     externalLinks: [],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Care Kit",
   },
   {
     slug: "budget-kit",
@@ -92,6 +120,9 @@ export const KITS: KitDef[] = [
     externalLinks: [
       { label: "X-Buckets — Envelope Budgeting", url: "https://x-buckets-vision.replit.app/" },
     ],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Budget Kit",
   },
   {
     slug: "digital-kit",
@@ -103,6 +134,9 @@ export const KITS: KitDef[] = [
     trackSlugs: [],
     gearCategoryTags: ["privacy", "digital-security"],
     externalLinks: [],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Digital Kit",
   },
   {
     slug: "physical-kit",
@@ -114,6 +148,9 @@ export const KITS: KitDef[] = [
     trackSlugs: ["when-things-get-hard"],
     gearCategoryTags: ["energy", "hard-assets"],
     externalLinks: [],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Physical Kit",
   },
 ];
 

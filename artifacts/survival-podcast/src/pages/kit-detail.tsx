@@ -14,6 +14,9 @@ import {
   Package,
   ShoppingBag,
   Compass,
+  CreditCard,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
@@ -121,6 +124,229 @@ function KindIcon({ kind }: { kind: string }) {
   if (kind === "audio") return <Mic className="w-3.5 h-3.5" />;
   if (kind === "video") return <PlaySquare className="w-3.5 h-3.5" />;
   return <FileText className="w-3.5 h-3.5" />;
+}
+
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(0)}`;
+}
+
+function apiUrl(path: string): string {
+  const base = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+  return `${base}/api${path}`;
+}
+
+function KitPricingBlock({
+  kit,
+  displayName,
+  meta,
+}: {
+  kit: NonNullable<ReturnType<typeof useKitDetail>["data"]>;
+  displayName: string;
+  meta: { icon: string; color: string };
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [inquiryName, setInquiryName] = useState("");
+  const [inquiryEmail, setInquiryEmail] = useState("");
+  const [inquiryNotes, setInquiryNotes] = useState("");
+  const [inquirySent, setInquirySent] = useState(false);
+
+  async function handleCheckout() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/checkout`), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      if (data.url) window.location.href = data.url;
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  async function handleInquiry(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/inquire`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: inquiryName, email: inquiryEmail, notes: inquiryNotes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Submission failed");
+      setInquirySent(true);
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isDirect = kit.priceType === "direct";
+
+  return (
+    <section id="get-access">
+      <div
+        className="rounded-2xl border p-8"
+        style={{
+          borderColor: meta.color + "44",
+          background: `linear-gradient(135deg, ${meta.color}10 0%, ${meta.color}06 100%)`,
+        }}
+      >
+        <div
+          className="text-[10px] font-bold uppercase tracking-widest mb-3"
+          style={{ color: meta.color }}
+        >
+          {isDirect ? "Purchase" : "Apply for Access"}
+        </div>
+
+        {isDirect ? (
+          <>
+            <div className="flex items-baseline gap-3 mb-2">
+              <span
+                className="font-serif text-4xl font-bold"
+                style={{ color: "#FDFBF7" }}
+              >
+                {kit.priceCents ? formatPrice(kit.priceCents) : "—"}
+              </span>
+              <span className="text-sm text-muted-foreground">one-time</span>
+            </div>
+            <h2 className="font-serif text-xl font-bold text-foreground mb-2">
+              {kit.ctaLabel ?? `Get the ${displayName}`}
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-md mb-6">
+              Purchase includes episodes, gear recommendations, and resources — organized
+              for your transformation. Immediate access after checkout.
+            </p>
+
+            {error && (
+              <p className="text-sm text-red-500 mb-4">{error}</p>
+            )}
+
+            <button
+              onClick={handleCheckout}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              style={{
+                color: "#fff",
+                background: meta.color,
+                boxShadow: `0 4px 24px ${meta.color}50`,
+              }}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4" />
+              )}
+              {loading ? "Redirecting to checkout…" : (kit.ctaLabel ?? "Get This Kit")}
+            </button>
+            <p className="text-xs text-muted-foreground mt-4">
+              Secure checkout via Stripe. One-time payment, no subscription.
+            </p>
+          </>
+        ) : inquirySent ? (
+          <div className="flex flex-col items-center gap-4 py-4 text-center">
+            <CheckCircle2 className="w-10 h-10" style={{ color: meta.color }} />
+            <h2 className="font-serif text-xl font-bold text-foreground">
+              Inquiry received!
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+              Thank you for your interest in the {displayName}. You'll hear back within a few business days.
+            </p>
+          </div>
+        ) : (
+          <>
+            <h2 className="font-serif text-xl font-bold text-foreground mb-2">
+              {kit.ctaLabel ?? `Apply for the ${displayName}`}
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-md mb-6">
+              This kit works best with a conversation first. Fill out the form below and
+              you'll hear back within a few business days.
+            </p>
+
+            <form onSubmit={handleInquiry} className="space-y-4 max-w-md">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={inquiryName}
+                  onChange={(e) => setInquiryName(e.target.value)}
+                  placeholder="Jane Smith"
+                  className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 transition-all"
+                  style={{
+                    borderColor: meta.color + "44",
+                    boxShadow: undefined,
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = meta.color)}
+                  onBlur={(e) => (e.target.style.borderColor = meta.color + "44")}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={inquiryEmail}
+                  onChange={(e) => setInquiryEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 transition-all"
+                  style={{ borderColor: meta.color + "44" }}
+                  onFocus={(e) => (e.target.style.borderColor = meta.color)}
+                  onBlur={(e) => (e.target.style.borderColor = meta.color + "44")}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  Tell us about your situation (optional)
+                </label>
+                <textarea
+                  value={inquiryNotes}
+                  onChange={(e) => setInquiryNotes(e.target.value)}
+                  placeholder="What are you working on? Where are you in your journey?"
+                  rows={3}
+                  className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 transition-all resize-none"
+                  style={{ borderColor: meta.color + "44" }}
+                  onFocus={(e) => (e.target.style.borderColor = meta.color)}
+                  onBlur={(e) => (e.target.style.borderColor = meta.color + "44")}
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-500">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  color: "#fff",
+                  background: meta.color,
+                  boxShadow: `0 4px 20px ${meta.color}40`,
+                }}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {loading ? "Sending…" : "Send Inquiry"}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </section>
+  );
 }
 
 export default function KitDetailPage() {
@@ -679,44 +905,8 @@ export default function KitDetailPage() {
           </section>
         )}
 
-        {/* ── Get Access CTA ───────────────────────────────────────── */}
-        <section id="get-access">
-          <div
-            className="rounded-2xl border p-8 text-center"
-            style={{
-              borderColor: meta.color + "44",
-              background: `linear-gradient(135deg, ${meta.color}10 0%, ${meta.color}06 100%)`,
-            }}
-          >
-            <div
-              className="text-[10px] font-bold uppercase tracking-widest mb-3"
-              style={{ color: meta.color }}
-            >
-              Get Access
-            </div>
-            <h2 className="font-serif text-2xl font-bold text-foreground mb-3">
-              Ready to start the {displayName}?
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto mb-6">
-              Purchase includes everything in this kit — episodes, gear recommendations, and resources — organized for your transformation.
-            </p>
-            <a
-              href="#"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
-              style={{
-                color: "#fff",
-                background: meta.color,
-                boxShadow: `0 4px 24px ${meta.color}50`,
-              }}
-            >
-              Purchase / Get Access
-              <ChevronRight className="w-4 h-4" />
-            </a>
-            <p className="text-xs text-muted-foreground mt-4">
-              Commerce details coming soon. The kit content is available now.
-            </p>
-          </div>
-        </section>
+        {/* ── Pricing Block & CTA ──────────────────────────────────── */}
+        {kit && <KitPricingBlock kit={kit} displayName={displayName} meta={meta} />}
 
         {/* ── Back nav ─────────────────────────────────────────────── */}
         <div className="pb-4">

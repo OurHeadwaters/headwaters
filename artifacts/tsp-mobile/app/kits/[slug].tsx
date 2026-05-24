@@ -1,15 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   Linking,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -69,6 +71,9 @@ type KitDetail = {
   trackSlugs: string[];
   gearCategoryTags: string[];
   externalLinks: { label: string; url: string }[];
+  priceType: "direct" | "consultative";
+  priceCents?: number;
+  ctaLabel: string;
   transformations: { slug: string; from: string; to: string; description: string; color: string; icon: string }[];
   tracks: { slug: string; name: string; description: string }[];
   episodes: KitEpisode[];
@@ -295,6 +300,401 @@ const gearStyles = StyleSheet.create({
   linkText: { fontSize: 11 },
 });
 
+function KitWelcomeInline({
+  kit,
+  accent,
+  onDismiss,
+}: {
+  kit: KitDetail;
+  accent: string;
+  onDismiss?: () => void;
+}) {
+  const colors = useColors();
+  return (
+    <View
+      style={[
+        ctaStyles.section,
+        {
+          backgroundColor: accent + "0E",
+          borderColor: accent + "55",
+          borderWidth: 1,
+          borderRadius: 12,
+          marginHorizontal: 16,
+          marginBottom: 16,
+          padding: 16,
+        },
+      ]}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <Ionicons name="checkmark-circle" size={24} color={accent} />
+        <Text style={[ctaStyles.successTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold", marginTop: 0, marginBottom: 0, textAlign: "left" }]}>
+          Access confirmed!
+        </Text>
+      </View>
+      <Text style={[ctaStyles.ctaLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", marginBottom: 14 }]}>
+        You're in. Here's how to get the most from the {kit.name}:
+      </Text>
+      {kit.tracks.length > 0 && (
+        <View style={welcomeInlineStyles.step}>
+          <View style={[welcomeInlineStyles.dot, { backgroundColor: accent }]}>
+            <Text style={welcomeInlineStyles.dotNum}>1</Text>
+          </View>
+          <Text style={[welcomeInlineStyles.stepText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+            Start the <Text style={{ fontFamily: "DMSans_600SemiBold" }}>{kit.tracks[0].name}</Text> track — {kit.tracks[0].description ?? "your first curated learning path."}
+          </Text>
+        </View>
+      )}
+      {kit.transformations.length > 0 && kit.tracks.length === 0 && (
+        <View style={welcomeInlineStyles.step}>
+          <View style={[welcomeInlineStyles.dot, { backgroundColor: accent }]}>
+            <Text style={welcomeInlineStyles.dotNum}>1</Text>
+          </View>
+          <Text style={[welcomeInlineStyles.stepText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+            Work through the <Text style={{ fontFamily: "DMSans_600SemiBold" }}>{kit.transformations[0].from} → {kit.transformations[0].to}</Text> transformation path.
+          </Text>
+        </View>
+      )}
+      <View style={welcomeInlineStyles.step}>
+        <View style={[welcomeInlineStyles.dot, { backgroundColor: accent }]}>
+          <Text style={welcomeInlineStyles.dotNum}>{kit.tracks.length > 0 || kit.transformations.length > 0 ? "2" : "1"}</Text>
+        </View>
+        <Text style={[welcomeInlineStyles.stepText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+          Explore the curated episodes and gear recommendations below.
+        </Text>
+      </View>
+      {onDismiss && (
+        <Pressable
+          onPress={onDismiss}
+          style={({ pressed }) => [welcomeInlineStyles.dismissBtn, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Text style={[welcomeInlineStyles.dismissText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            Got it, scroll down ↓
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const welcomeInlineStyles = StyleSheet.create({
+  step: { flexDirection: "row", gap: 10, marginBottom: 10, alignItems: "flex-start" },
+  dot: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 },
+  dotNum: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  stepText: { flex: 1, fontSize: 13, lineHeight: 20 },
+  dismissBtn: { marginTop: 8, alignSelf: "center" },
+  dismissText: { fontSize: 12 },
+});
+
+function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
+  const colors = useColors();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [inquiryName, setInquiryName] = useState("");
+  const [inquiryEmail, setInquiryEmail] = useState("");
+  const [inquiryNotes, setInquiryNotes] = useState("");
+  const [inquirySent, setInquirySent] = useState(false);
+
+  const [checkoutOpened, setCheckoutOpened] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
+  const appStateRef = useRef(AppState.currentState);
+
+  useEffect(() => {
+    if (!checkoutOpened) return;
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === "active") {
+        appStateRef.current = nextState;
+      }
+      appStateRef.current = nextState;
+    });
+    return () => sub.remove();
+  }, [checkoutOpened]);
+
+  async function handleCheckout() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/kits/${encodeURIComponent(kit.slug)}/checkout`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      if (data.url) {
+        await Linking.openURL(data.url);
+        setCheckoutOpened(true);
+      }
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyAccess() {
+    const email = verifyEmail.trim().toLowerCase();
+    if (!email) { setError("Enter the email you used at checkout."); return; }
+    setVerifying(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/kits/${encodeURIComponent(kit.slug)}/access?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.hasAccess) {
+        setHasAccess(true);
+      } else {
+        setError("No purchase found for that email. If you just paid, try again in a moment.");
+      }
+    } catch {
+      setError("Could not verify — check your connection and try again.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleInquiry() {
+    if (!inquiryName.trim() || !inquiryEmail.trim()) {
+      setError("Name and email are required.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/kits/${encodeURIComponent(kit.slug)}/inquire`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: inquiryName, email: inquiryEmail, notes: inquiryNotes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Submission failed");
+      setInquirySent(true);
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isDirect = kit.priceType === "direct";
+
+  if (isDirect && hasAccess && !welcomeDismissed) {
+    return <KitWelcomeInline kit={kit} accent={accent} onDismiss={() => setWelcomeDismissed(true)} />;
+  }
+
+  if (isDirect && hasAccess && welcomeDismissed) {
+    return null;
+  }
+
+  if (isDirect && checkoutOpened) {
+    return (
+      <View style={[ctaStyles.section, { backgroundColor: accent + "0E", borderColor: accent + "33", borderWidth: 1, borderRadius: 12, marginHorizontal: 16, marginBottom: 16, padding: 16 }]}>
+        <Text style={[ctaStyles.inquiryTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold", marginBottom: 6 }]}>
+          Back from checkout?
+        </Text>
+        <Text style={[ctaStyles.ctaLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", marginBottom: 14 }]}>
+          Enter the email you used to confirm your access.
+        </Text>
+        <Text style={[ctaStyles.fieldLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>Email used at checkout</Text>
+        <View style={[ctaStyles.inputRow, { borderColor: accent + "55", backgroundColor: colors.card }]}>
+          <Ionicons name="mail-outline" size={14} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+          <TextInput
+            value={verifyEmail}
+            onChangeText={setVerifyEmail}
+            placeholder="your@email.com"
+            placeholderTextColor={colors.mutedForeground + "88"}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={[ctaStyles.input, { color: colors.foreground, fontFamily: "DMSans_400Regular", flex: 1 }]}
+          />
+        </View>
+        {error ? (
+          <Text style={[ctaStyles.errorText, { color: "#ef4444", fontFamily: "DMSans_400Regular", marginTop: 6 }]}>
+            {error}
+          </Text>
+        ) : null}
+        <Pressable
+          onPress={handleVerifyAccess}
+          disabled={verifying}
+          style={({ pressed }) => [
+            ctaStyles.buyBtn,
+            { marginTop: 12, backgroundColor: verifying || pressed ? accent + "bb" : accent, opacity: verifying ? 0.7 : 1 },
+          ]}
+        >
+          <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+          <Text style={[ctaStyles.buyBtnText, { fontFamily: "DMSans_700Bold" }]}>
+            {verifying ? "Checking…" : "Confirm Access"}
+          </Text>
+        </Pressable>
+        <Pressable onPress={() => setCheckoutOpened(false)} style={{ marginTop: 10, alignSelf: "center" }}>
+          <Text style={[ctaStyles.hint, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            ← Back to purchase
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (isDirect) {
+    const priceLabel = kit.priceCents ? `$${Math.round(kit.priceCents / 100)}` : null;
+    return (
+      <View style={[ctaStyles.section, { backgroundColor: accent + "0E", borderColor: accent + "33", borderWidth: 1, borderRadius: 12, marginHorizontal: 16, marginBottom: 16, padding: 16 }]}>
+        {priceLabel && (
+          <View style={ctaStyles.priceRow}>
+            <Text style={[ctaStyles.price, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+              {priceLabel}
+            </Text>
+            <Text style={[ctaStyles.priceUnit, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              {" "}one-time
+            </Text>
+          </View>
+        )}
+        <Text style={[ctaStyles.ctaLabel, { color: colors.foreground, fontFamily: "DMSans_400Regular", marginBottom: 12 }]}>
+          Purchase includes episodes, gear, and resources — organized for your transformation.
+        </Text>
+        {error ? (
+          <Text style={[ctaStyles.errorText, { color: "#ef4444", fontFamily: "DMSans_400Regular" }]}>
+            {error}
+          </Text>
+        ) : null}
+        <Pressable
+          onPress={handleCheckout}
+          disabled={loading}
+          style={({ pressed }) => [
+            ctaStyles.buyBtn,
+            { backgroundColor: loading || pressed ? accent + "bb" : accent, opacity: loading ? 0.7 : 1 },
+          ]}
+        >
+          <Ionicons name="card-outline" size={16} color="#fff" />
+          <Text style={[ctaStyles.buyBtnText, { fontFamily: "DMSans_700Bold" }]}>
+            {loading ? "Opening checkout…" : (kit.ctaLabel ?? "Get This Kit")}
+          </Text>
+        </Pressable>
+        <Text style={[ctaStyles.hint, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+          Secure checkout via Stripe
+        </Text>
+      </View>
+    );
+  }
+
+  if (inquirySent) {
+    return (
+      <View style={[ctaStyles.section, { backgroundColor: accent + "0E", borderColor: accent + "33", borderWidth: 1, borderRadius: 12, marginHorizontal: 16, marginBottom: 16, padding: 16, alignItems: "center" }]}>
+        <Ionicons name="checkmark-circle-outline" size={36} color={accent} />
+        <Text style={[ctaStyles.successTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
+          Inquiry received!
+        </Text>
+        <Text style={[ctaStyles.ctaLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", textAlign: "center" }]}>
+          You'll hear back within a few business days about the {kit.name}.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[ctaStyles.section, { backgroundColor: accent + "0E", borderColor: accent + "33", borderWidth: 1, borderRadius: 12, marginHorizontal: 16, marginBottom: 16, padding: 16 }]}>
+      <Text style={[ctaStyles.inquiryTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold", marginBottom: 4 }]}>
+        {kit.ctaLabel ?? `Apply for ${kit.name}`}
+      </Text>
+      <Text style={[ctaStyles.ctaLabel, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", marginBottom: 14 }]}>
+        This kit works best with a conversation first. Leave your details and you'll hear back soon.
+      </Text>
+
+      <Text style={[ctaStyles.fieldLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>Name</Text>
+      <View style={[ctaStyles.inputRow, { borderColor: accent + "55", backgroundColor: colors.card }]}>
+        <Ionicons name="person-outline" size={14} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+        <TextInput
+          value={inquiryName}
+          onChangeText={setInquiryName}
+          placeholder="Your name"
+          placeholderTextColor={colors.mutedForeground + "88"}
+          style={[ctaStyles.input, { color: colors.foreground, fontFamily: "DMSans_400Regular", flex: 1 }]}
+        />
+      </View>
+
+      <Text style={[ctaStyles.fieldLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold", marginTop: 10 }]}>Email</Text>
+      <View style={[ctaStyles.inputRow, { borderColor: accent + "55", backgroundColor: colors.card }]}>
+        <Ionicons name="mail-outline" size={14} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+        <TextInput
+          value={inquiryEmail}
+          onChangeText={setInquiryEmail}
+          placeholder="your@email.com"
+          placeholderTextColor={colors.mutedForeground + "88"}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          style={[ctaStyles.input, { color: colors.foreground, fontFamily: "DMSans_400Regular", flex: 1 }]}
+        />
+      </View>
+
+      <Text style={[ctaStyles.fieldLabel, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold", marginTop: 10 }]}>Notes (optional)</Text>
+      <View style={[ctaStyles.inputRow, { borderColor: accent + "55", backgroundColor: colors.card, alignItems: "flex-start", minHeight: 70 }]}>
+        <TextInput
+          value={inquiryNotes}
+          onChangeText={setInquiryNotes}
+          placeholder="Tell us about your situation…"
+          placeholderTextColor={colors.mutedForeground + "88"}
+          multiline
+          numberOfLines={3}
+          style={[ctaStyles.input, { color: colors.foreground, fontFamily: "DMSans_400Regular", flex: 1 }]}
+        />
+      </View>
+
+      {error ? (
+        <Text style={[ctaStyles.errorText, { color: "#ef4444", fontFamily: "DMSans_400Regular", marginTop: 8 }]}>
+          {error}
+        </Text>
+      ) : null}
+
+      <Pressable
+        onPress={handleInquiry}
+        disabled={loading}
+        style={({ pressed }) => [
+          ctaStyles.buyBtn,
+          { marginTop: 14, backgroundColor: loading || pressed ? accent + "bb" : accent, opacity: loading ? 0.7 : 1 },
+        ]}
+      >
+        <Ionicons name="send-outline" size={16} color="#fff" />
+        <Text style={[ctaStyles.buyBtnText, { fontFamily: "DMSans_700Bold" }]}>
+          {loading ? "Sending…" : "Send Inquiry"}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const ctaStyles = StyleSheet.create({
+  section: { gap: 4 },
+  priceRow: { flexDirection: "row", alignItems: "baseline", marginBottom: 4 },
+  price: { fontSize: 32, lineHeight: 38 },
+  priceUnit: { fontSize: 13 },
+  ctaLabel: { fontSize: 13, lineHeight: 19 },
+  inquiryTitle: { fontSize: 17, lineHeight: 22 },
+  fieldLabel: { fontSize: 10, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 2,
+  },
+  input: { fontSize: 13, paddingVertical: 0 },
+  buyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  buyBtnText: { fontSize: 15, color: "#fff" },
+  hint: { fontSize: 11, textAlign: "center", marginTop: 8 },
+  errorText: { fontSize: 12, marginTop: 4 },
+  successTitle: { fontSize: 17, marginTop: 8, marginBottom: 6, textAlign: "center" },
+});
+
 function FamilyEditionToggle({
   edition,
   onChange,
@@ -485,23 +885,8 @@ export default function KitDetailScreen() {
           </View>
         )}
 
-        {/* ── Purchase CTA ── */}
-        <View style={infoStyles.section}>
-          <Pressable
-            style={({ pressed }) => [
-              infoStyles.purchaseBtn,
-              {
-                borderColor: accent + "66",
-                backgroundColor: pressed ? accent + "18" : "transparent",
-              },
-            ]}
-          >
-            <Ionicons name="cart-outline" size={16} color={accent} />
-            <Text style={[infoStyles.purchaseBtnText, { color: accent, fontFamily: "DMSans_600SemiBold" }]}>
-              Get Access to {kit.name}
-            </Text>
-          </Pressable>
-        </View>
+        {/* ── Purchase / Inquiry CTA ── */}
+        <KitPurchaseCTA kit={kit} accent={accent} />
 
         {/* ── Episodes section heading ── */}
         {kit.episodes.length > 0 && (

@@ -103,6 +103,14 @@ const server = app.listen(port, (err) => {
   // Initialise Stripe after server is ready (non-blocking)
   initStripe();
 
+  // Ensure Kit Stripe products + prices exist (non-blocking)
+  import("./lib/kit-products")
+    .then(({ ensureKitProducts }) => ensureKitProducts())
+    .then(() => logger.info("kit-products: all direct-kit prices ready"))
+    .catch((err) =>
+      logger.warn({ err }, "kit-products: setup skipped (non-fatal) — Stripe may not be connected"),
+    );
+
   // Ensure Brigade Stripe product + prices exist (non-blocking)
   import("./lib/brigade-products")
     .then(({ ensureBrigadeProducts }) => ensureBrigadeProducts())

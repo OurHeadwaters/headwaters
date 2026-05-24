@@ -1,18 +1,21 @@
 /**
- * Kit routes — kit registry API.
+ * Kit routes — kit registry API and commerce endpoints.
  *
- * GET /api/kits          — all 7 kits (metadata only)
- * GET /api/kits/:slug    — single kit with its full content bundle:
- *                          transformation/track metadata + curated episodes + matched gear
+ * GET  /api/kits                      — all kits (metadata only)
+ * GET  /api/kits/:slug                — single kit with full content bundle
+ * POST /api/kits/:slug/checkout       — create Stripe Checkout session (direct kits)
+ * POST /api/kits/:slug/inquire        — submit inquiry form (consultative kits)
+ * GET  /api/kits/:slug/access         — check if current user/email has access
  */
 
 import { Router, type IRouter } from "express";
-import { db, reviewedProductsTable } from "@workspace/db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { db, reviewedProductsTable, kitPurchasesTable, kitInquiriesTable } from "@workspace/db";
+import { eq, and, or, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
 import { trackBySlug } from "../lib/tracks";
+import { sendKitInquiryNotification } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -22,11 +25,6 @@ function esc(s: string): string {
   return s.replace(/'/g, "''");
 }
 
-/**
- * Build a SQL WHERE fragment that matches content_items whose tags or
- * categories overlap with any of the provided lists.  Returns "false"
- * (matches nothing) when both lists are empty.
- */
 function contentWhereFragment(tags: string[], categories: string[]): string {
   const parts: string[] = [];
   if (tags.length) {
@@ -67,8 +65,6 @@ router.get("/kits/:slug", async (req, res) => {
     const tracks = kit.trackSlugs
       .map(trackBySlug)
       .filter(Boolean);
-
-    // ── Episodes ───────────────────────────────────────────────────────────
 
     const allTags: string[] = [];
     const allCategories: string[] = [];
@@ -132,9 +128,6 @@ router.get("/kits/:slug", async (req, res) => {
       }));
     }
 
-    // ── Gear ───────────────────────────────────────────────────────────────
-
-    // Build keyword filters from transformation/track tags + explicit kit gear tags
     const keywordFilters = [
       ...uniqueTags.map((s) => s.toLowerCase()),
       ...uniqueCategories.map((s) => s.toLowerCase()),
@@ -165,7 +158,6 @@ router.get("/kits/:slug", async (req, res) => {
       gear = matched;
     }
 
-    // Fallback: return recent visible products when keyword match yields nothing
     if (gear.length === 0) {
       gear = await db
         .select()
@@ -185,6 +177,147 @@ router.get("/kits/:slug", async (req, res) => {
   } catch (err) {
     logger.error({ err }, `kits: GET /${req.params.slug} failed`);
     res.status(500).json({ error: "Failed to load kit" });
+  }
+});
+
+/* ─────────────────── POST /api/kits/:slug/checkout ─────────────────── */
+
+router.post("/kits/:slug/checkout", async (req, res) => {
+  const kit = kitBySlug(req.params.slug);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  if (kit.priceType !== "direct") {
+    res.status(400).json({ error: "This kit requires an inquiry, not a direct checkout." });
+    return;
+  }
+
+  if (!kit.stripePriceId) {
+    res.status(503).json({ error: "Kit pricing not yet configured — Stripe may not be connected." });
+    return;
+  }
+
+  try {
+    const { getUncachableStripeClient } = await import("../stripeClient");
+    const stripe = await getUncachableStripeClient();
+
+    const userId = (req as any).user?.id ?? null;
+    const reqHost = req.get("host");
+    const fallbackDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0];
+    const baseUrl = reqHost
+      ? `${req.protocol}://${reqHost}`
+      : `https://${fallbackDomain}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: kit.stripePriceId, quantity: 1 }],
+      success_url: `${baseUrl}/kits/${kit.slug}/welcome?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/kits/${kit.slug}`,
+      metadata: {
+        kit_slug: kit.slug,
+        ...(userId ? { user_id: userId } : {}),
+      },
+      allow_promotion_codes: true,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    logger.error({ err, slug: kit.slug }, "kits: POST /checkout failed");
+    res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
+/* ─────────────────── POST /api/kits/:slug/inquire ─────────────────── */
+
+router.post("/kits/:slug/inquire", async (req, res) => {
+  const kit = kitBySlug(req.params.slug);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  if (kit.priceType !== "consultative") {
+    res.status(400).json({ error: "This kit uses direct checkout, not an inquiry form." });
+    return;
+  }
+
+  const { name, email, notes } = req.body as { name?: string; email?: string; notes?: string };
+
+  if (!name || !email) {
+    res.status(400).json({ error: "name and email are required" });
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    res.status(400).json({ error: "Invalid email address" });
+    return;
+  }
+
+  try {
+    await db.insert(kitInquiriesTable).values({
+      kitSlug: kit.slug,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      notes: notes?.trim() ?? null,
+    });
+
+    sendKitInquiryNotification({
+      kitName: kit.name,
+      kitSlug: kit.slug,
+      name: name.trim(),
+      email: email.trim(),
+      notes: notes?.trim() ?? "",
+    }).catch((err) =>
+      logger.warn({ err, kitSlug: kit.slug }, "kits: inquiry email failed (non-fatal)"),
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error({ err, slug: kit.slug }, "kits: POST /inquire failed");
+    res.status(500).json({ error: "Failed to submit inquiry" });
+  }
+});
+
+/* ─────────────────── GET /api/kits/:slug/access ─────────────────── */
+
+router.get("/kits/:slug/access", async (req, res) => {
+  const kit = kitBySlug(req.params.slug);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  const userId = (req as any).user?.id ?? null;
+  const email = (req.query.email as string) ?? null;
+
+  if (!userId && !email) {
+    res.json({ hasAccess: false });
+    return;
+  }
+
+  try {
+    const conditions = [];
+    if (userId) conditions.push(eq(kitPurchasesTable.userId, userId));
+    if (email) conditions.push(eq(kitPurchasesTable.buyerEmail, email.toLowerCase()));
+
+    const rows = await db
+      .select({ id: kitPurchasesTable.id })
+      .from(kitPurchasesTable)
+      .where(
+        and(
+          eq(kitPurchasesTable.kitSlug, kit.slug),
+          or(...conditions),
+        ),
+      )
+      .limit(1);
+
+    res.json({ hasAccess: rows.length > 0 });
+  } catch (err) {
+    logger.error({ err, slug: kit.slug }, "kits: GET /access failed");
+    res.status(500).json({ error: "Failed to check access" });
   }
 });
 

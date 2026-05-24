@@ -8,6 +8,7 @@ import {
   cohortsTable,
   cohortEnrollmentsTable,
   wishingWellTipsTable,
+  kitPurchasesTable,
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
@@ -164,6 +165,13 @@ export class WebhookHandlers {
       );
     }
 
+    // ── Kit purchase checkout ─────────────────────────────────────────────────
+    const kitSlug = session.metadata?.kit_slug;
+    if (kitSlug) {
+      await WebhookHandlers.handleKitCheckoutComplete(session, kitSlug);
+      return;
+    }
+
     // ── Expert listing checkout ──────────────────────────────────────────────
     const expertSlug = session.metadata?.expert_slug;
     if (expertSlug && session.customer) {
@@ -189,6 +197,54 @@ export class WebhookHandlers {
       logger.info(
         { expertSlug, customerId, subscriptionId },
         "webhookHandlers: expert listing checkout complete — customer + subscription linked",
+      );
+    }
+  }
+
+  /**
+   * Records a kit purchase after a successful Checkout session.
+   * Idempotent via stripe_checkout_session_id unique constraint.
+   */
+  static async handleKitCheckoutComplete(
+    session: Stripe.Checkout.Session,
+    kitSlug: string,
+  ): Promise<void> {
+    const buyerEmail =
+      session.customer_details?.email ?? session.customer_email ?? null;
+    const buyerName = session.customer_details?.name ?? null;
+    const userId = session.metadata?.user_id ?? null;
+    const amountPaid = session.amount_total ?? 0;
+
+    if (!buyerEmail) {
+      logger.warn(
+        { sessionId: session.id, kitSlug },
+        "webhookHandlers: kit checkout missing buyer email — skipping",
+      );
+      return;
+    }
+
+    const [inserted] = await db
+      .insert(kitPurchasesTable)
+      .values({
+        kitSlug,
+        userId: userId || null,
+        buyerEmail: buyerEmail.toLowerCase(),
+        buyerName: buyerName || null,
+        stripeCheckoutSessionId: session.id,
+        amountPaidCents: amountPaid,
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (inserted) {
+      logger.info(
+        { kitSlug, buyerEmail, amountPaid, sessionId: session.id },
+        "webhookHandlers: kit purchase recorded",
+      );
+    } else {
+      logger.info(
+        { sessionId: session.id, kitSlug },
+        "webhookHandlers: kit purchase already recorded (idempotent skip)",
       );
     }
   }

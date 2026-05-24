@@ -11,6 +11,9 @@ export type KitSummary = {
   trackSlugs: string[];
   gearCategoryTags: string[];
   externalLinks: { label: string; url: string }[];
+  priceType: "direct" | "consultative";
+  priceCents?: number;
+  ctaLabel: string;
 };
 
 export type KitTrack = {

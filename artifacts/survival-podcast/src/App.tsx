@@ -55,6 +55,8 @@ import HeadwatersPage from "@/pages/headwaters";
 import KitsPage from "@/pages/kits";
 import KitDetailPage from "@/pages/kit-detail";
 import KitFinderPage from "@/pages/kit-finder";
+import KitWelcomePage from "@/pages/kit-welcome";
+import { AdminKitPurchases } from "@/pages/admin-kit-purchases";
 
 const queryClient = new QueryClient();
 
@@ -122,9 +124,11 @@ function Router() {
         <Route path="/cohorts" component={CohortsPage} />
         <Route path="/cohorts/:id" component={CohortDetailPage} />
         <Route path="/admin/cohorts" component={AdminCohorts} />
+        <Route path="/admin/kit-purchases" component={AdminKitPurchases} />
         <Route path="/headwaters" component={HeadwatersPage} />
         <Route path="/kits" component={KitsPage} />
         <Route path="/kits/find" component={KitFinderPage} />
+        <Route path="/kits/:slug/welcome" component={KitWelcomePage} />
         <Route path="/kits/:slug" component={KitDetailPage} />
         <Route component={NotFound} />
       </Switch>

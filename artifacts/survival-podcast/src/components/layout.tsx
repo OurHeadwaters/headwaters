@@ -44,6 +44,7 @@ const communityItems = [
 const adminItems = [
   { href: "/admin/brigade", label: "The Headwaters", desc: "Membership stats: members, MRR, renewals" },
   { href: "/admin/ground-events", label: "Workshop Board", desc: "Manage ground events and workshops" },
+  { href: "/admin/kit-purchases", label: "Kit Commerce", desc: "Kit purchases, revenue, and inquiries" },
   { href: "/admin/categories", label: "Category Descriptions", desc: "Edit category descriptions" },
   { href: "/admin/content-gaps", label: "Content Gaps", desc: "Identify content gaps" },
   { href: "/admin/gear", label: "Gear Catalog", desc: "Manage the gear catalog" },
