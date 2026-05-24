@@ -1,17 +1,38 @@
-import { useGetHeadwatersDashboard } from "@workspace/api-client-react";
+import { useGetHeadwatersDashboard, useGetHeadwatersBusinessSection } from "@workspace/api-client-react";
 import { getHwHeaders, getZoneLabel } from "@/lib/api-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { PlusCircle, Users, Activity } from "lucide-react";
+import { PlusCircle, Users, DollarSign, Rss, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { useProfile } from "@/hooks/use-profile";
+
+function fmt(n: number) {
+  if (!n) return "—";
+  return "$" + Math.round(n).toLocaleString();
+}
 
 export default function Dashboard() {
   const { name } = useProfile();
   const { data: dashboard, isLoading, error } = useGetHeadwatersDashboard({
     request: getHwHeaders()
   });
+
+  const { data: finData } = useGetHeadwatersBusinessSection("financials");
+  const { data: oeData } = useGetHeadwatersBusinessSection("online-engine");
+
+  const finRows = Array.isArray(finData?.value) ? (finData.value as { monthlyLow?: number; monthlyHigh?: number }[]) : [];
+  const finLow = finRows.reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const finHigh = finRows.reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+
+  const oeRaw = oeData?.value as any;
+  const oeRows = Array.isArray(oeRaw) ? oeRaw : Array.isArray(oeRaw?.rows) ? oeRaw.rows : [];
+  const oeLow = (oeRows as { monthlyLow?: number; monthlyHigh?: number }[]).reduce((s, r) => s + (r.monthlyLow || 0), 0);
+  const oeHigh = (oeRows as { monthlyLow?: number; monthlyHigh?: number }[]).reduce((s, r) => s + (r.monthlyHigh || 0), 0);
+
+  const combinedLow = finLow + oeLow;
+  const combinedHigh = finHigh + oeHigh;
+  const hasBusinessData = finHigh > 0 || oeHigh > 0 || finLow > 0 || oeLow > 0;
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading journal...</div>;
   if (error || !dashboard) return <div className="p-8 text-center text-destructive">Failed to load dashboard.</div>;
@@ -42,6 +63,52 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {hasBusinessData && (
+        <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <DollarSign size={16} className="text-primary" />
+              Business Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <Link href="/business/financials" className="group space-y-1 hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <DollarSign size={12} className="text-primary" />
+                  Grindstone
+                  <ArrowRight size={11} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                </div>
+                <div className="text-2xl font-serif font-bold text-foreground tabular-nums">
+                  {fmt(finLow)}{finHigh !== finLow && <span className="text-lg text-muted-foreground"> – {fmt(finHigh)}</span>}
+                </div>
+                <div className="text-xs text-muted-foreground">per month</div>
+              </Link>
+
+              <Link href="/business/online-engine" className="group space-y-1 hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Rss size={12} className="text-cyan-500" />
+                  Online Engine
+                  <ArrowRight size={11} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                </div>
+                <div className="text-2xl font-serif font-bold text-foreground tabular-nums">
+                  {fmt(oeLow)}{oeHigh !== oeLow && <span className="text-lg text-muted-foreground"> – {fmt(oeHigh)}</span>}
+                </div>
+                <div className="text-xs text-muted-foreground">per month</div>
+              </Link>
+
+              <div className="space-y-1 sm:border-l sm:border-border sm:pl-6">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Combined</div>
+                <div className="text-2xl font-serif font-bold text-primary tabular-nums">
+                  {fmt(combinedLow)}{combinedHigh !== combinedLow && <span className="text-lg text-primary/70"> – {fmt(combinedHigh)}</span>}
+                </div>
+                <div className="text-xs text-muted-foreground">per month</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">
