@@ -380,6 +380,42 @@ html, body {
   font-size: 12px;
 }
 
+/* ── Kit intro ── */
+.kit-intro {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 0;
+}
+.kit-intro-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(200, 185, 155, 0.18);
+  border-radius: 12px;
+  padding: 24px 28px;
+}
+.kit-intro-gord {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.kit-intro-text {
+  flex: 1;
+}
+.kit-intro-welcome {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #F5C842;
+  margin: 0 0 8px;
+}
+.kit-intro-body {
+  font-size: 0.92rem;
+  color: #C8B99B;
+  line-height: 1.7;
+  margin: 0;
+}
+
 /* ── Main content ── */
 .trail-content {
   max-width: 1100px;

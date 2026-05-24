@@ -846,7 +846,7 @@ export default function App() {
   }, []);
 
   const gordTips: Record<string, string> = {
-    "core-principles": "Zone 0 is sacred — keep the personal stuff in The Clearing!",
+    "core-principles": "Zone 0 is sacred — keep the personal stuff in The Clearing. Your Privacy Kit starts here!",
     "tools-workshop": "Mullvad & ProtonVPN are the trail-tested choices. Both accept cash!",
     "threat-clearing": "A good VPN is like a covered wagon — nobody sees what's inside.",
   };
@@ -857,8 +857,8 @@ export default function App() {
       <header className="site-header no-print">
         <div className="site-header-inner">
           <div className="site-header-brand">
-            <span className="site-header-title">Family Privacy Guide</span>
-            <span className="site-header-sub">The Clearing &amp; The Lodge</span>
+            <span className="site-header-title">Privacy Kit</span>
+            <span className="site-header-sub">Clearing &amp; Lodge Privacy Guide</span>
           </div>
           <div className="site-header-controls">
             {isCustomized && (
@@ -892,7 +892,7 @@ export default function App() {
 
       {/* ── Print header (shows only on print) ── */}
       <header className="print-header print-only">
-        <span className="print-header-title">Family Privacy Guide — The Clearing &amp; The Lodge</span>
+        <span className="print-header-title">Privacy Kit — Clearing &amp; Lodge Privacy Guide</span>
         <span className="print-header-sub">Homeschool Digital Handbook</span>
       </header>
 
@@ -906,7 +906,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
           >
-            Privacy on the Stomping Path
+            Privacy Kit
           </motion.h1>
           <motion.p
             className="hero-subtitle"
@@ -914,7 +914,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.7, ease: "easeOut" }}
           >
-            A field manual for homeschool families navigating The Clearing &amp; The Lodge
+            Clearing &amp; Lodge Privacy Guide — protecting your digital home so the rest of your resilience work stays private
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
@@ -930,6 +930,26 @@ export default function App() {
 
       {/* ── Trail nav ── */}
       <TrailNav />
+
+      {/* ── Kit intro ── */}
+      <div className="kit-intro no-print">
+        <div className="kit-intro-inner">
+          <div className="kit-intro-gord">
+            <motion.div
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <GordBird size={52} variant="full" />
+            </motion.div>
+          </div>
+          <div className="kit-intro-text">
+            <p className="kit-intro-welcome">Welcome to your Privacy Kit.</p>
+            <p className="kit-intro-body">
+              This is the privacy and home-resilience component of your kit — the part that protects your digital clearing and lodge so everything else you build stays private. Work through the five trails at your own pace: each one covers a piece of your family's digital perimeter, from how The Clearing and The Lodge store your data, to the habits and tools that keep the gate closed by default.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* ── Main content ── */}
       <main className="trail-content">
