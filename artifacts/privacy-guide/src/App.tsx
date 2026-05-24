@@ -932,9 +932,9 @@ export default function App() {
       <TrailNav />
 
       {/* ── Kit intro ── */}
-      <div className="kit-intro no-print">
+      <div className="kit-intro">
         <div className="kit-intro-inner">
-          <div className="kit-intro-gord">
+          <div className="kit-intro-gord no-print">
             <motion.div
               animate={{ y: [0, -5, 0] }}
               transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}

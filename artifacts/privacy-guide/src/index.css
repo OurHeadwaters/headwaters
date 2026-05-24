@@ -1259,6 +1259,29 @@ html, body {
   .lantern-divider { display: none; }
   .questions-gord { display: none; }
 
+  .kit-intro {
+    padding: 16pt 0 8pt;
+  }
+
+  .kit-intro-inner {
+    border: 1px solid #ccc;
+    border-radius: 4pt;
+    padding: 10pt 14pt;
+    background: none;
+  }
+
+  .kit-intro-welcome {
+    font-size: 11pt;
+    color: #1C3020;
+    margin-bottom: 5pt;
+  }
+
+  .kit-intro-body {
+    font-size: 9pt;
+    color: black;
+    line-height: 1.55;
+  }
+
   .nightfall-checklist {
     break-inside: avoid;
   }
