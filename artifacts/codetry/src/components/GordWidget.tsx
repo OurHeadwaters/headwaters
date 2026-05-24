@@ -14,10 +14,18 @@ type Message = {
   content: string;
 };
 
-const OPENING_LINE: Message = {
-  role: "assistant",
-  content: "Gord's on board. You're on a digital sovereignty site, which means you're already thinking better than most. What do you want to know?",
+const CODETRY_OPENING_LINES: Record<string, string> = {
+  "/": "Gord's on board. You're on the Codetry homepage — a digital sovereignty agency. Owning your stack starts here. What are you trying to figure out?",
+  "/services": "Gord's on board. Services page — web presence, self-hosted tools, community platforms, digital education. What kind of help are you looking for?",
+  "/work": "Gord's on board. The portfolio — real projects, real clients, real outcomes. See anything that looks like your situation?",
+  "/discover": "Gord's on board. Discover page — pathways and resources for getting started with digital self-reliance. Where are you starting from?",
 };
+
+function getCodetryOpeningLine(path: string): Message {
+  const content = CODETRY_OPENING_LINES[path]
+    ?? "Gord's on board. You're on a digital sovereignty site, which means you're already thinking better than most. What do you want to know?";
+  return { role: "assistant", content };
+}
 
 const TIP_THANK_YOU: Message = {
   role: "assistant",
@@ -108,7 +116,7 @@ export function GordWidget() {
         return;
       }
       localStorage.setItem("gord_tipped", "1");
-      setMessages([OPENING_LINE, TIP_THANK_YOU]);
+      setMessages([getCodetryOpeningLine(location), TIP_THANK_YOU]);
       setHasOpened(true);
       setOpen(true);
     }
@@ -116,7 +124,7 @@ export function GordWidget() {
 
   function handleOpen() {
     if (!hasOpened) {
-      setMessages([OPENING_LINE]);
+      setMessages([getCodetryOpeningLine(location)]);
       setHasOpened(true);
     }
     setOpen(true);
@@ -138,7 +146,7 @@ export function GordWidget() {
     } catch {
       /* ignore */
     }
-    setMessages([OPENING_LINE]);
+    setMessages([getCodetryOpeningLine(location)]);
     setHasOpened(true);
     setInput("");
     setError(null);
@@ -146,7 +154,7 @@ export function GordWidget() {
 
   function handleTip() {
     if (!hasOpened) {
-      setMessages([OPENING_LINE]);
+      setMessages([getCodetryOpeningLine(location)]);
       setHasOpened(true);
     }
     setOpen(true);

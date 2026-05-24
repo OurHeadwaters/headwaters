@@ -15,10 +15,35 @@ type Message = {
   content: string;
 };
 
-const OPENING_LINE: Message = {
-  role: "assistant",
-  content: "Gord's on board. You look like someone who's either got a great plan or no plan whatsoever. Either way, I'm here. What's on your mind?",
+const TSP_OPENING_LINES: Record<string, string> = {
+  "/": "Gord's on board. You're on the homepage — good starting point. The featured stuff up here is worth your time. What are you trying to figure out today?",
+  "/tracks": "Gord's on board. Tracks are how you actually learn something instead of just listening randomly. Pick one and follow it. What track are you curious about?",
+  "/zones": "Gord's on board. Zones — as in permaculture zones, the ones that actually map to your life. Zone 0 is your head, Zone 1 is your kitchen. Where are you working right now?",
+  "/transform": "Gord's on board. You're on the Transform page. This is where people decide to actually change something instead of just thinking about it. Which path is calling you?",
+  "/kits": "Gord's on board. Kits are the gear-and-knowledge bundles — no fluff, just what you need for each path. Looking for something specific?",
+  "/series": "Gord's on board. Deep dives. Multi-episode runs on one subject. If you've got a topic you want to go all the way into, this is the place. What are you after?",
+  "/library": "Gord's on board. The full archive — every episode, searchable, filterable. It's a lot. What are you trying to find?",
+  "/stomping-grounds": "Gord's on board. The Stomping Grounds — community, shared wisdom, conversations that don't go in circles. Got something on your mind worth sharing?",
+  "/wisdom-dig": "Gord's on board. Wisdom Dig — the good stuff that floats up from the community. See anything here that lands for you?",
+  "/wishing-well": "Gord's on board. Wishing Well — where listener ideas go so they don't disappear. Got something you want to see covered?",
+  "/council": "Gord's on board. The Expert Council — the people behind the depth on this platform. Want to know more about any of them?",
+  "/about": "Gord's on board. The About page. Origin story, mission, the whole deal. What brought you here today?",
+  "/headwaters": "Gord's on board. The Headwaters — the deeper water. This is the paid membership side. Are you already a member or thinking about it?",
+  "/brigade": "Gord's on board. Brigade — member country. You're in. What are you looking to dig into?",
+  "/map": "Gord's on board. Your Map — a picture of where you've been and where you're headed across tracks, zones, and transformations. What does your progress look like so far?",
 };
+
+function getTspOpeningLine(path: string): Message {
+  let content = TSP_OPENING_LINES[path];
+  if (!content) {
+    if (path.startsWith("/tracks/")) content = "Gord's on board. You're inside a track — a curated run of episodes on a single thread. Good move. What do you want to know about this one?";
+    else if (path.startsWith("/zones/")) content = "Gord's on board. You're in a zone — specific episodes and resources for this slice of your life. Anything I can help you navigate here?";
+    else if (path.startsWith("/transform/")) content = "Gord's on board. You're on a transformation path page. These are the ones that actually change how you live. What's on your mind?";
+    else if (path.startsWith("/library/")) content = "Gord's on board. You're on an episode page — chapters, links, the whole thing. Want to talk through what's in this episode?";
+    else content = "Gord's on board. You look like someone who's either got a great plan or no plan whatsoever. Either way, I'm here. What's on your mind?";
+  }
+  return { role: "assistant", content };
+}
 
 const TIP_THANK_YOU: Message = {
   role: "assistant",
@@ -197,7 +222,7 @@ export function GordGuide(_props: GordGuideProps) {
         return;
       }
       localStorage.setItem("gord_tipped", "1");
-      setMessages([OPENING_LINE, TIP_THANK_YOU]);
+      setMessages([getTspOpeningLine(location), TIP_THANK_YOU]);
       setHasOpened(true);
       setOpen(true);
     }
@@ -205,7 +230,7 @@ export function GordGuide(_props: GordGuideProps) {
 
   function handleOpen() {
     if (!hasOpened) {
-      setMessages([OPENING_LINE]);
+      setMessages([getTspOpeningLine(location)]);
       setHasOpened(true);
     }
     setOpen(true);
@@ -218,7 +243,7 @@ export function GordGuide(_props: GordGuideProps) {
     } catch {
       /* ignore */
     }
-    setMessages([OPENING_LINE]);
+    setMessages([getTspOpeningLine(location)]);
     setHasOpened(true);
     setInput("");
     setError(null);
@@ -235,7 +260,7 @@ export function GordGuide(_props: GordGuideProps) {
 
   function handleTip() {
     if (!hasOpened) {
-      setMessages([OPENING_LINE]);
+      setMessages([getTspOpeningLine(location)]);
       setHasOpened(true);
     }
     setOpen(true);
