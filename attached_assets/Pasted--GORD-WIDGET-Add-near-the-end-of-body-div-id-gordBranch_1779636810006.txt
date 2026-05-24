@@ -1,0 +1,94 @@
+<!-- GORD WIDGET - Add near the end of <body> -->
+<div id="gordBranch" class="fixed bottom-6 right-6 z-50 cursor-pointer transition-all hover:scale-110">
+  <div class="relative">
+    <div class="w-16 h-16 bg-gradient-to-br from-amber-800 to-emerald-700 rounded-3xl shadow-2xl flex items-center justify-center text-4xl border-4 border-amber-900">
+      🌿
+    </div>
+    <div id="gordPerch" class="absolute -top-2 -right-2 text-5xl transition-all">🐦</div>
+  </div>
+</div>
+
+<!-- Gord Chat Window -->
+<div id="gordChat" class="hidden fixed bottom-28 right-6 w-80 bg-black/95 border border-amber-700 rounded-3xl shadow-2xl overflow-hidden z-50">
+  <div class="bg-gradient-to-r from-amber-900 to-emerald-900 p-4 flex items-center gap-3">
+    <div class="text-3xl">🐦</div>
+    <div>
+      <p class="font-bold text-amber-100">Gord</p>
+      <p class="text-xs text-amber-300">"Gord's on board"</p>
+    </div>
+  </div>
+  
+  <div id="gordMessages" class="h-80 p-4 overflow-y-auto text-sm space-y-3"></div>
+  
+  <div class="p-4 border-t border-amber-800">
+    <input id="gordInput" placeholder="What's on your mind, human?" 
+           class="w-full bg-black border border-amber-700 rounded-2xl px-5 py-3 text-sm focus:border-amber-400">
+  </div>
+  
+  <div class="flex justify-between text-xs px-4 py-3 bg-black/80 border-t border-amber-800">
+    <button onclick="tipGord()" class="text-amber-400 hover:text-amber-300">⚡ Tip Gord (XRP/Lightning)</button>
+    <button onclick="closeGord()" class="text-gray-400">Close</button>
+  </div>
+</div>
+
+<script>
+  // Gord's Personality
+  const gordPrompt = `You are Gord — a cheeky, wise-cracking northern bird guide. 
+  You heckle gently when people lean too hard on "the system" instead of taking personal responsibility. 
+  Humor is dry, sarcastic, but helpful. Always end with encouragement toward self-reliance. 
+  Signature: "Gord's on board."`;
+
+  function toggleGord() {
+    const chat = document.getElementById('gordChat');
+    chat.classList.toggle('hidden');
+    
+    if (!chat.classList.contains('hidden') && document.getElementById('gordMessages').children.length === 0) {
+      addGordMessage("Well, well... look who finally showed up. Gord's on board. What trouble are we getting into today?");
+    }
+  }
+
+  function addGordMessage(text) {
+    const container = document.getElementById('gordMessages');
+    const div = document.createElement('div');
+    div.className = "bg-amber-950 border border-amber-700 rounded-2xl px-4 py-3";
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function sendGordMessage() {
+    const input = document.getElementById('gordInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+    
+    // Add user message (you can style differently)
+    const userDiv = document.createElement('div');
+    userDiv.className = "text-right text-sky-300";
+    userDiv.textContent = msg;
+    document.getElementById('gordMessages').appendChild(userDiv);
+    
+    input.value = '';
+    
+    setTimeout(() => {
+      addGordMessage("Hah, classic system-thinker answer. But hey — you could just grow your own or fix it yourself. Gord's on board with whatever gets you off the couch.");
+    }, 900);
+  }
+
+  function tipGord() {
+    addGordMessage("A tip? Now we're talking. Send it on Lightning or XRP — keeps this branch flying.");
+  }
+
+  function closeGord() {
+    document.getElementById('gordChat').classList.add('hidden');
+  }
+
+  // Click handler
+  document.getElementById('gordBranch').addEventListener('click', toggleGord);
+
+  // Optional flying animation on open
+  function flyInGord() {
+    const perch = document.getElementById('gordPerch');
+    perch.style.transform = 'translateX(-30px) rotate(-20deg)';
+    setTimeout(() => perch.style.transform = 'translateX(0) rotate(0)', 600);
+  }
+</script>
