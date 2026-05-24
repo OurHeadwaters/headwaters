@@ -31,6 +31,7 @@ const journeyItems = [
   { href: "/tracks", label: "Tracks", desc: "Structured learning paths through TSP's best content" },
   { href: "/zones", label: "Zones", desc: "Browse episodes by life-skills topic area" },
   { href: "/transform", label: "Transform", desc: "Guided paths for real personal transformation" },
+  { href: "/kits", label: "Kits", desc: "Bundled episodes, gear, and resources per transformation" },
   { href: "/series", label: "Series", desc: "Multi-episode deep dives on a single subject" },
   { href: "https://ourheadwaters.ca/headwaters-learning/forge", label: "The Forge", desc: "Crypto Castle — learn blockchain by faction", external: true },
 ];
