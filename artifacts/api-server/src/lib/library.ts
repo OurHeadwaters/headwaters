@@ -10,6 +10,8 @@ import { parseChannel } from "./rss";
 import { findUlgCrossLink, findExpertLink } from "./history-enrichment";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
+const STARTUP_DELAY_MS = 45_000;
+const INTER_SOURCE_DELAY_MS = 2_000;
 const BATCH_SIZE = 200;
 
 async function upsertBatch(items: InsertContentItem[]): Promise<number> {
@@ -303,46 +305,80 @@ const ALL_SOURCES = ["wordpress", "youtube", "ulg", "council", "fireside-freedom
 
 let inflight: Promise<RefreshSummary> | null = null;
 
+const skipped = { status: "skipped", itemsSeen: 0, itemsUpserted: 0 } as const;
+
 export async function refreshAll(options: { force?: boolean } = {}): Promise<RefreshSummary> {
   if (inflight) return inflight;
-  if (!options.force) {
-    const recent = await db
-      .select()
-      .from(syncRunsTable)
-      .where(eq(syncRunsTable.status, "ok"))
-      .orderBy(desc(syncRunsTable.finishedAt))
-      .limit(3);
-    const now = Date.now();
-    const hasRecent = (s: string) => {
-      const r = recent.find((x) => x.source === s);
-      return r && r.finishedAt && now - r.finishedAt.getTime() < REFRESH_THROTTLE_MS;
+
+  // Per-source throttle: check each source individually so a recently-synced
+  // source is skipped even if other sources are stale.
+  const recentRows = options.force
+    ? []
+    : await db
+        .select()
+        .from(syncRunsTable)
+        .where(eq(syncRunsTable.status, "ok"))
+        .orderBy(desc(syncRunsTable.finishedAt))
+        .limit(20);
+
+  const now = Date.now();
+  const isRecent = (source: string) => {
+    const row = recentRows.find((r) => r.source === source);
+    return !!(row?.finishedAt && now - row.finishedAt.getTime() < REFRESH_THROTTLE_MS);
+  };
+
+  const needsSync = ALL_SOURCES.some((s) => !isRecent(s));
+  if (!needsSync) {
+    logger.info("Skipping refresh: all sources have recent successful runs");
+    return {
+      wordpress: skipped,
+      youtube: skipped,
+      ulg: skipped,
+      council: skipped,
+      firesideFreedom: skipped,
     };
-    if (ALL_SOURCES.every((s) => hasRecent(s))) {
-      logger.info("Skipping refresh: recent successful run within throttle window");
-      return {
-        wordpress: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
-        youtube: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
-        ulg: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
-        council: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
-        firesideFreedom: { status: "skipped", itemsSeen: 0, itemsUpserted: 0 },
-      };
-    }
   }
+
   inflight = (async () => {
-    logger.info("Library refresh starting");
-    const [wp, yt, ulg, council, firesideFreedom] = await Promise.all([
-      recordRun("wordpress", syncWordPress),
-      recordRun("youtube", syncYouTube),
-      recordRun("ulg", syncUlgSource),
-      recordRun("council", syncAllCouncilFeeds),
-      recordRun("fireside-freedom", () =>
-        syncFiresideFreedom({ upsertBatch: (items) => upsertBatch(items) }),
-      ),
-    ]);
+    logger.info("Library refresh starting (sequential, per-source throttle)");
+
+    // Run sources sequentially with a pause between each to avoid hammering
+    // the DB and CPU simultaneously on every server restart.
+    const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+    const wp = isRecent("wordpress")
+      ? skipped
+      : await recordRun("wordpress", syncWordPress);
+
+    await sleep(INTER_SOURCE_DELAY_MS);
+
+    const yt = isRecent("youtube")
+      ? skipped
+      : await recordRun("youtube", syncYouTube);
+
+    await sleep(INTER_SOURCE_DELAY_MS);
+
+    const ulg = isRecent("ulg")
+      ? skipped
+      : await recordRun("ulg", syncUlgSource);
+
+    await sleep(INTER_SOURCE_DELAY_MS);
+
+    const council = isRecent("council")
+      ? skipped
+      : await recordRun("council", syncAllCouncilFeeds);
+
+    await sleep(INTER_SOURCE_DELAY_MS);
+
+    const firesideFreedom = isRecent("fireside-freedom")
+      ? skipped
+      : await recordRun("fireside-freedom", () =>
+          syncFiresideFreedom({ upsertBatch: (items) => upsertBatch(items) }),
+        );
+
     logger.info({ wp, yt, ulg, council, firesideFreedom }, "Library refresh complete");
 
-    // After sync is done (ULG content is now up-to-date), pre-compute cross-links
-    // for any history episodes that don't yet have them cached in `extra`.
+    // After sync is done, pre-compute cross-links for history episodes.
     precomputeHistoryCrossLinks().catch((err) => {
       logger.warn({ err }, "precomputeHistoryCrossLinks failed");
     });
@@ -362,9 +398,14 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
  * empty and subsequent hits populate as data lands.
  */
 export function startBackgroundRefresh(): void {
-  void refreshAll().catch((err) => {
-    logger.error({ err }, "Background refresh failed");
-  });
+  // Delay the first sync so the server finishes starting up and can serve
+  // requests before we start hammering the DB with 6,000+ upserts.
+  setTimeout(() => {
+    void refreshAll().catch((err) => {
+      logger.error({ err }, "Background refresh failed");
+    });
+  }, STARTUP_DELAY_MS).unref();
+
   setInterval(() => {
     void refreshAll().catch((err) => {
       logger.error({ err }, "Scheduled refresh failed");
