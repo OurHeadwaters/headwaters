@@ -797,14 +797,17 @@ export default function App() {
   const [sections, setSections] = useState<Record<string, string>>(loadSections);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [gordTipSection, setGordTipSection] = useState<string | null>(null);
+  const [communityName, setCommunityName] = useState<string>("");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) || "";
     if (inputRef.current) inputRef.current.value = saved;
+    setCommunityName(saved);
   }, []);
 
   function handleCommunityChange(e: React.ChangeEvent<HTMLInputElement>) {
     localStorage.setItem(STORAGE_KEY, e.target.value);
+    setCommunityName(e.target.value);
   }
 
   const handleSectionSave = useCallback((id: string, html: string) => {
@@ -892,6 +895,9 @@ export default function App() {
 
       {/* ── Print header (shows only on print) ── */}
       <header className="print-header print-only">
+        {communityName && (
+          <span className="print-header-community">{communityName}</span>
+        )}
         <span className="print-header-title">Privacy Kit — Clearing &amp; Lodge Privacy Guide</span>
         <span className="print-header-sub">Homeschool Digital Handbook</span>
       </header>

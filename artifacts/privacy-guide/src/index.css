@@ -1164,6 +1164,15 @@ html, body {
     margin-bottom: 16pt;
   }
 
+  .print-header-community {
+    font-family: 'Fraunces', serif;
+    font-size: 18pt;
+    font-weight: 700;
+    color: #1C3020;
+    letter-spacing: -0.01em;
+    margin-bottom: 2pt;
+  }
+
   .print-header-title {
     font-family: 'Fraunces', serif;
     font-size: 14pt;
