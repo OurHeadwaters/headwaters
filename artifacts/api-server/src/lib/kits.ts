@@ -37,6 +37,8 @@ export type KitDef = {
   priceCents?: number;
   ctaLabel: string;
   stripePriceId?: string;
+  /** Zaprite-hosted payment page URL for Bitcoin / Lightning / XRP / RLUSD checkout */
+  zapriteUrl?: string;
   userManual?: KitUserManual;
 };
 

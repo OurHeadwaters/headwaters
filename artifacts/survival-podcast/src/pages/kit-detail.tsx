@@ -17,6 +17,7 @@ import {
   CreditCard,
   Send,
   CheckCircle2,
+  Zap,
 } from "lucide-react";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
@@ -152,6 +153,8 @@ function KitPricingBlock({
   const [inquiryNotes, setInquiryNotes] = useState("");
   const [inquirySent, setInquirySent] = useState(false);
 
+  const [cryptoLoading, setCryptoLoading] = useState(false);
+
   async function handleCheckout() {
     setLoading(true);
     setError(null);
@@ -163,6 +166,21 @@ function KitPricingBlock({
     } catch (err: any) {
       setError(err.message ?? "Something went wrong. Please try again.");
       setLoading(false);
+    }
+  }
+
+  async function handleCryptoCheckout() {
+    setCryptoLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/zaprite-checkout`), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Crypto checkout not yet available");
+      if (data.url) window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+    } finally {
+      setCryptoLoading(false);
     }
   }
 
@@ -227,25 +245,49 @@ function KitPricingBlock({
               <p className="text-sm text-red-500 mb-4">{error}</p>
             )}
 
-            <button
-              onClick={handleCheckout}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-              style={{
-                color: "#fff",
-                background: meta.color,
-                boxShadow: `0 4px 24px ${meta.color}50`,
-              }}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CreditCard className="w-4 h-4" />
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleCheckout}
+                disabled={loading || cryptoLoading}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                style={{
+                  color: "#fff",
+                  background: meta.color,
+                  boxShadow: `0 4px 24px ${meta.color}50`,
+                }}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                {loading ? "Redirecting…" : (kit.ctaLabel ?? "Get This Kit")}
+              </button>
+
+              {(kit as any).zapriteUrl && (
+                <button
+                  onClick={handleCryptoCheckout}
+                  disabled={loading || cryptoLoading}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-bold border transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  style={{
+                    color: "#F7931A",
+                    borderColor: "#F7931A44",
+                    background: "#F7931A0D",
+                  }}
+                >
+                  {cryptoLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4" />
+                  )}
+                  {cryptoLoading ? "Opening…" : "Pay with Bitcoin / Lightning / XRP"}
+                </button>
               )}
-              {loading ? "Redirecting to checkout…" : (kit.ctaLabel ?? "Get This Kit")}
-            </button>
-            <p className="text-xs text-muted-foreground mt-4">
-              Secure checkout via Stripe. One-time payment, no subscription.
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-3">
+              Card checkout via Stripe.{(kit as any).zapriteUrl ? " Bitcoin / Lightning / XRP via Zaprite." : ""}{" "}
+              One-time payment, no subscription.
             </p>
           </>
         ) : inquirySent ? (

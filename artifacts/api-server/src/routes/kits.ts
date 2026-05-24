@@ -281,6 +281,35 @@ router.post("/kits/:slug/inquire", async (req, res) => {
   }
 });
 
+/* ─────────────────── POST /api/kits/:slug/zaprite-checkout ──────── */
+
+/**
+ * Returns the Zaprite payment page URL for this kit so the frontend can
+ * redirect to it. Zaprite hosts the payment page; we just track the intent.
+ *
+ * Full purchase recording happens via the Zaprite webhook at
+ * POST /api/zaprite/webhook (see app.ts).
+ */
+router.post("/kits/:slug/zaprite-checkout", async (req, res) => {
+  const kit = kitBySlug(req.params.slug);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  if (kit.priceType !== "direct") {
+    res.status(400).json({ error: "This kit requires an inquiry, not a direct checkout." });
+    return;
+  }
+
+  if (!kit.zapriteUrl) {
+    res.status(503).json({ error: "Bitcoin/Lightning checkout not yet configured for this kit." });
+    return;
+  }
+
+  res.json({ url: kit.zapriteUrl });
+});
+
 /* ─────────────────── GET /api/kits/:slug/access ─────────────────── */
 
 router.get("/kits/:slug/access", async (req, res) => {

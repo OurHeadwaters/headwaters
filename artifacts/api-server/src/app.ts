@@ -48,6 +48,24 @@ app.post("/api/stripe/webhook", stripeWebhookHandler, handleStripeWebhook);
 // by metadata.brigade_user_id presence inside WebhookHandlers.processWebhook.
 app.post("/api/brigade/webhook", stripeWebhookHandler, handleStripeWebhook);
 
+// ─── Zaprite webhook — Bitcoin / Lightning / XRP / RLUSD payments ─────────────
+// Zaprite sends a JSON body (no raw Buffer needed) with an HMAC-SHA256 signature
+// in the X-Zaprite-Signature header. Must be registered BEFORE express.json().
+app.post(
+  "/api/zaprite/webhook",
+  express.raw({ type: "application/json" }),
+  async (req: import("express").Request, res: import("express").Response) => {
+    try {
+      await import("./zapriteWebhook").then(({ handleZapriteWebhook }) =>
+        handleZapriteWebhook(req, res),
+      );
+    } catch (err) {
+      logger.error({ err }, "zaprite webhook: handler import failed");
+      res.status(500).json({ error: "Internal error" });
+    }
+  },
+);
+
 // ─── All other middleware (applied AFTER the webhook route) ───────────────────
 app.use(
   pinoHttp({
