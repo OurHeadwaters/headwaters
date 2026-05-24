@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Services from "@/pages/services";
 import Work from "@/pages/work";
 import Discover from "@/pages/discover";
+import { GordWidget } from "@/components/GordWidget";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ function App() {
           <Router />
         </WouterRouter>
         <Toaster />
+        <GordWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );

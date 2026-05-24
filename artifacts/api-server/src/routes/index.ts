@@ -41,6 +41,7 @@ import kitsRouter from "./kits";
 import adminKitPurchasesRouter from "./admin-kit-purchases";
 import practitionersRouter from "./practitioners";
 import trailblazerRouter from "./trailblazer";
+import gordRouter from "./gord";
 
 const router: IRouter = Router();
 
@@ -86,5 +87,6 @@ router.use(kitsRouter);
 router.use(adminKitPurchasesRouter);
 router.use(practitionersRouter);
 router.use(trailblazerRouter);
+router.use(gordRouter);
 
 export default router;

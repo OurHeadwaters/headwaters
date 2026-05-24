@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Heart } from "lucide-react";
-import { GordBird, type IdleAnim } from "./gord-bird";
+import { GordBird } from "@workspace/gord-bird";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -15,86 +15,21 @@ type Message = {
 
 const OPENING_LINE: Message = {
   role: "assistant",
-  content: "Gord's on board. You look like someone who's either got a great plan or no plan whatsoever. Either way, I'm here. What's on your mind?",
+  content: "Gord's on board. You're on a digital sovereignty site, which means you're already thinking better than most. What do you want to know?",
 };
 
 const TIP_RESPONSE: Message = {
   role: "assistant",
-  content: "Ha. Tip Gord. I appreciate the thought, but I'm a bird — what am I going to do with your money? Buy sunflower seeds? Put it toward your own self-reliance stack instead. That's the tip.",
+  content: "Tip Gord. Right. I'm a bird. I live in a tree. What exactly do you think I'm going to do with a tip? Put it toward your own stack. That's the best tip I can give you.",
 };
 
-const ACCENT = "#D9A066";
-const BG = "#1a2e1a";
-const BORDER = "#D9A06633";
-const TEXT = "#FDFBF7";
-const MUTED = "#C8D4C0";
+const ACCENT = "#E07B39";
+const BG = "#0D1510";
+const BORDER = "#E07B3933";
+const TEXT = "#F5F0E8";
+const MUTED = "#A8B8A0";
 
-const HEAD_ANIMS: IdleAnim[] = ["head-tilt", "head-bob"];
-const ANIM_DURATION_MS = 1400;
-
-function useIdleAnimation(paused: boolean): IdleAnim {
-  const [anim, setAnim] = useState<IdleAnim>(null);
-  const pausedRef = useRef(paused);
-  pausedRef.current = paused;
-
-  useEffect(() => {
-    let cycleTimeout: ReturnType<typeof setTimeout>;
-    let clearAnim: ReturnType<typeof setTimeout>;
-
-    function runCycle() {
-      const delay = 9000 + Math.random() * 8000;
-      cycleTimeout = setTimeout(() => {
-        if (pausedRef.current) { runCycle(); return; }
-        const pick = HEAD_ANIMS[Math.floor(Math.random() * HEAD_ANIMS.length)];
-        setAnim(pick);
-        clearAnim = setTimeout(() => { setAnim(null); runCycle(); }, ANIM_DURATION_MS);
-      }, delay);
-    }
-
-    runCycle();
-    return () => { clearTimeout(cycleTimeout); clearTimeout(clearAnim); };
-  }, []);
-
-  return anim;
-}
-
-function useEyeTarget(containerRef: React.RefObject<HTMLDivElement | null>) {
-  const [eyeTarget, setEyeTarget] = useState({ dx: 0, dy: 0 });
-  const rafRef = useRef<number | null>(null);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const rawDx = e.clientX - cx;
-      const rawDy = e.clientY - cy;
-      const dist = Math.sqrt(rawDx * rawDx + rawDy * rawDy);
-      if (dist < 1) return;
-      const maxDist = 280;
-      const factor = Math.min(dist, maxDist) / maxDist;
-      setEyeTarget({ dx: (rawDx / dist) * factor, dy: (rawDy / dist) * factor });
-    });
-  }, [containerRef]);
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    };
-  }, [handleMouseMove]);
-
-  return eyeTarget;
-}
-
-interface GordGuideProps {
-  path?: string;
-}
-
-export function GordGuide(_props: GordGuideProps) {
+export function GordWidget() {
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -106,10 +41,6 @@ export function GordGuide(_props: GordGuideProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const buttonRef = useRef<HTMLDivElement>(null);
-
-  const idleAnim = useIdleAnimation(open || hovered);
-  const eyeTarget = useEyeTarget(buttonRef);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -237,7 +168,7 @@ export function GordGuide(_props: GordGuideProps) {
               border: `1px solid ${BORDER}`,
               borderRadius: 16,
               overflow: "hidden",
-              boxShadow: "0 8px 36px rgba(0,0,0,0.55)",
+              boxShadow: "0 8px 36px rgba(0,0,0,0.65)",
             }}
           >
             <div
@@ -245,10 +176,10 @@ export function GordGuide(_props: GordGuideProps) {
               style={{ borderBottom: `1px solid ${BORDER}` }}
             >
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-lg leading-none"
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: ACCENT + "22", border: `1px solid ${ACCENT}55` }}
               >
-                🐦
+                <GordBird size={28} variant="head" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold leading-none mb-0.5" style={{ color: TEXT }}>Gord</p>
@@ -281,7 +212,7 @@ export function GordGuide(_props: GordGuideProps) {
                     style={
                       msg.role === "user"
                         ? { background: ACCENT, color: TEXT, borderRadius: "16px 16px 4px 16px" }
-                        : { background: "#253525", color: MUTED, border: `1px solid #4A7A3A33`, borderRadius: "4px 16px 16px 16px" }
+                        : { background: "#1A2A1A", color: MUTED, border: `1px solid #3A6A2A33`, borderRadius: "4px 16px 16px 16px" }
                     }
                   >
                     {msg.content || (streaming && i === messages.length - 1 ? (
@@ -321,8 +252,8 @@ export function GordGuide(_props: GordGuideProps) {
                 disabled={streaming}
                 className="flex-1 rounded-xl px-3 py-2 text-sm resize-none outline-none"
                 style={{
-                  background: "#253525",
-                  border: `1px solid #4A7A3A44`,
+                  background: "#1A2A1A",
+                  border: `1px solid #3A6A2A44`,
                   color: TEXT,
                   maxHeight: 100,
                   lineHeight: "1.5",
@@ -335,9 +266,9 @@ export function GordGuide(_props: GordGuideProps) {
                 style={{ background: ACCENT }}
               >
                 {streaming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#1a2e1a" }} />
+                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: BG }} />
                 ) : (
-                  <Send className="w-4 h-4" style={{ color: "#1a2e1a" }} />
+                  <Send className="w-4 h-4" style={{ color: BG }} />
                 )}
               </button>
             </div>
@@ -355,7 +286,9 @@ export function GordGuide(_props: GordGuideProps) {
             transition={{ type: "spring", stiffness: 280, damping: 24 }}
             onClick={handleOpen}
             aria-label="Chat with Gord"
-            className="fixed bottom-20 right-4 z-[60] cursor-pointer group"
+            className="fixed bottom-8 right-4 z-[60] cursor-pointer group"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
           >
             <motion.div
               whileHover={{ scale: 1.1 }}
@@ -363,30 +296,29 @@ export function GordGuide(_props: GordGuideProps) {
               className="relative"
             >
               <div
-                className="w-14 h-14 rounded-3xl shadow-2xl flex items-center justify-center text-3xl border-2 border-[#8B6F47]"
-                style={{ background: "linear-gradient(135deg, #7B4F2B, #2C4A36)" }}
+                className="w-14 h-14 rounded-3xl shadow-2xl flex items-center justify-center text-3xl border-2"
+                style={{
+                  background: "linear-gradient(135deg, #5A3A1A, #0D2B14)",
+                  borderColor: ACCENT + "88",
+                }}
               >
                 🌿
               </div>
               <motion.div
-                ref={buttonRef}
-                className="absolute -top-2 -right-2 text-3xl leading-none"
+                className="absolute -top-2 -right-2"
                 animate={{ y: [0, -3, 0] }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}
+                style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}
               >
-                <GordBird
-                  size={32}
-                  variant="head"
-                  eyeTarget={eyeTarget}
-                  idleAnim={idleAnim}
-                  hovered={hovered}
-                />
+                <GordBird size={32} variant="head" hovered={hovered} />
               </motion.div>
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#FDF6EC] border border-[#D9A066]/60 rounded-lg px-2 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
-                <span className="text-[10px] font-bold text-[#D9A066]">Gord&rsquo;s on Board</span>
+              <div
+                className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-lg px-2 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none"
+                style={{ background: "#1A2A1A", border: `1px solid ${ACCENT}55` }}
+              >
+                <span className="text-[10px] font-bold" style={{ color: ACCENT }}>
+                  Gord&rsquo;s on Board
+                </span>
               </div>
             </motion.div>
           </motion.button>

@@ -1,0 +1,104 @@
+<!-- ====================== GORD WIDGET ====================== -->
+<div id="gordBranch" class="fixed bottom-6 right-6 z-50 cursor-pointer transition-all hover:scale-110 group">
+  <div class="relative">
+    <div class="w-16 h-16 bg-gradient-to-br from-amber-800 to-emerald-700 rounded-3xl shadow-2xl flex items-center justify-center text-4xl border-4 border-amber-900">🌿</div>
+    <div id="gordPerch" class="absolute -top-3 -right-3 text-5xl transition-all group-hover:rotate-12">🐦</div>
+  </div>
+</div>
+
+<!-- Gord Chat -->
+<div id="gordChat" class="hidden fixed bottom-28 right-6 w-80 bg-black/95 border border-amber-700 rounded-3xl shadow-2xl overflow-hidden z-50">
+  <div class="bg-gradient-to-r from-amber-900 to-emerald-900 p-4 flex items-center gap-3">
+    <div class="text-3xl">🐦</div>
+    <div>
+      <p class="font-bold text-amber-100">Gord</p>
+      <p class="text-xs text-amber-300">"Gord's on board"</p>
+    </div>
+  </div>
+  
+  <div id="gordMessages" class="h-64 p-4 overflow-y-auto text-sm space-y-3"></div>
+  
+  <div class="p-4 border-t border-amber-800 bg-black">
+    <div class="flex items-center gap-2 mb-3">
+      <input type="checkbox" id="bottleMode" class="w-5 h-5 accent-amber-500">
+      <label for="bottleMode" class="text-amber-300 text-sm cursor-pointer">
+        🌊 Cast as Message in a Bottle (save to Universe Map)
+      </label>
+    </div>
+    
+    <input id="gordInput" placeholder="Talk to Gord..." 
+           class="w-full bg-black border border-amber-700 rounded-2xl px-5 py-3 text-sm focus:border-amber-400">
+  </div>
+  
+  <div class="flex justify-between text-xs px-4 py-3 bg-black/80 border-t border-amber-800">
+    <button onclick="tipGord()" class="text-amber-400 hover:text-amber-300">⚡ Tip Gord</button>
+    <button onclick="showCompiledNotes()" class="text-emerald-400">📜 View Bottles</button>
+    <button onclick="closeGord()" class="text-gray-400">Close</button>
+  </div>
+</div>
+
+<script>
+  let gordNotes = JSON.parse(localStorage.getItem('gordUniverseBottles')) || [];
+
+  function saveBottle(message) {
+    gordNotes.unshift({
+      date: new Date().toLocaleString(),
+      message: message
+    });
+    localStorage.setItem('gordUniverseBottles', JSON.stringify(gordNotes));
+  }
+
+  function addGordMessage(text) {
+    const container = document.getElementById('gordMessages');
+    const div = document.createElement('div');
+    div.className = "bg-amber-950 border border-amber-700 rounded-2xl px-4 py-3";
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function sendGordMessage() {
+    const input = document.getElementById('gordInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    const isBottle = document.getElementById('bottleMode').checked;
+
+    // Show user message
+    const userDiv = document.createElement('div');
+    userDiv.className = "text-right text-sky-300";
+    userDiv.textContent = message;
+    document.getElementById('gordMessages').appendChild(userDiv);
+
+    if (isBottle) {
+      saveBottle(message);
+      addGordMessage("🌊 Message cast into the current. Gord will carry it to the Universe Map.");
+    } else {
+      addGordMessage("Hah, got it. Gord's on board.");
+    }
+
+    input.value = '';
+    document.getElementById('bottleMode').checked = false; // reset checkbox
+  }
+
+  function showCompiledNotes() {
+    let text = "🌊 Gord's Messages in Bottles:\n\n";
+    gordNotes.forEach((b, i) => {
+      text += `${i+1}. ${b.date}\n   ${b.message}\n\n`;
+    });
+    alert(text || "No bottles yet. Check 'Cast as Message in a Bottle' before sending.");
+  }
+
+  function tipGord() {
+    addGordMessage("A tip? Respect. Keeps this old bird flying.");
+  }
+
+  function closeGord() {
+    document.getElementById('gordChat').classList.add('hidden');
+  }
+
+  // Activate branch
+  document.getElementById('gordBranch').addEventListener('click', () => {
+    document.getElementById('gordChat').classList.toggle('hidden');
+  });
+</script>
