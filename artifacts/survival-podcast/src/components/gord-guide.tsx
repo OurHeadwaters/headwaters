@@ -36,6 +36,7 @@ const HEAD_ANIMS: IdleAnim[] = ["head-tilt", "head-bob"];
 const ANIM_DURATION_MS = 1400;
 
 type TipState = "idle" | "picking" | "loading" | "error";
+type TipSubState = "buttons" | "custom";
 
 function useIdleAnimation(paused: boolean): IdleAnim {
   const [anim, setAnim] = useState<IdleAnim>(null);
@@ -137,6 +138,8 @@ export function GordGuide(_props: GordGuideProps) {
   const [error, setError] = useState<string | null>(null);
   const [hovered, setHovered] = useState(false);
   const [tipState, setTipState] = useState<TipState>("idle");
+  const [tipSubState, setTipSubState] = useState<TipSubState>("buttons");
+  const [customAmount, setCustomAmount] = useState("")
   const [tipError, setTipError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -223,6 +226,8 @@ export function GordGuide(_props: GordGuideProps) {
     abortRef.current?.abort();
     setOpen(false);
     setTipState("idle");
+    setTipSubState("buttons");
+    setCustomAmount("");
     setTipError(null);
   }
 
@@ -233,6 +238,8 @@ export function GordGuide(_props: GordGuideProps) {
     }
     setOpen(true);
     setTipState("picking");
+    setTipSubState("buttons");
+    setCustomAmount("");
     setTipError(null);
   }
 
@@ -444,7 +451,7 @@ export function GordGuide(_props: GordGuideProps) {
                 className="flex-shrink-0 px-4 py-3 flex flex-col gap-2"
                 style={{ borderTop: `1px solid ${BORDER}`, background: "#1e341e" }}
               >
-                {tipState === "picking" && (
+                {tipState === "picking" && tipSubState === "buttons" && (
                   <>
                     <p className="text-[11px] font-semibold" style={{ color: ACCENT }}>
                       Buy Gord a seed. Pick an amount:
@@ -465,11 +472,68 @@ export function GordGuide(_props: GordGuideProps) {
                         $5 Tip
                       </button>
                       <button
+                        onClick={() => { setTipSubState("custom"); setCustomAmount(""); }}
+                        className="flex-1 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
+                        style={{ background: ACCENT + "22", color: ACCENT, border: `1px solid ${ACCENT}55` }}
+                      >
+                        Other
+                      </button>
+                      <button
                         onClick={() => setTipState("idle")}
                         className="px-3 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-70"
                         style={{ color: MUTED }}
                       >
                         Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+                {tipState === "picking" && tipSubState === "custom" && (
+                  <>
+                    <p className="text-[11px] font-semibold" style={{ color: ACCENT }}>
+                      Enter a custom amount (min $1):
+                    </p>
+                    <div className="flex gap-2 items-center">
+                      <div className="relative flex-1">
+                        <span
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold pointer-events-none"
+                          style={{ color: MUTED }}
+                        >$</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={customAmount}
+                          onChange={(e) => setCustomAmount(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const cents = Math.round(parseFloat(customAmount) * 100);
+                              if (!isNaN(cents) && cents >= 100) handleTipAmount(cents);
+                            }
+                          }}
+                          placeholder="10"
+                          className="w-full pl-6 pr-3 py-2 rounded-xl text-sm font-bold outline-none"
+                          style={{ background: "#253525", border: `1px solid ${ACCENT}55`, color: ACCENT }}
+                          autoFocus
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const cents = Math.round(parseFloat(customAmount) * 100);
+                          if (!isNaN(cents) && cents >= 100) handleTipAmount(cents);
+                        }}
+                        disabled={(() => { const c = Math.round(parseFloat(customAmount) * 100); return isNaN(c) || c < 100; })()}
+                        className="px-3 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-30"
+                        style={{ background: ACCENT, color: BG }}
+                      >
+                        Tip
+                      </button>
+                      <button
+                        onClick={() => setTipSubState("buttons")}
+                        className="px-3 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-70"
+                        style={{ color: MUTED }}
+                      >
+                        Back
                       </button>
                     </div>
                   </>

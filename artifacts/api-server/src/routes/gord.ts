@@ -151,9 +151,8 @@ router.post("/gord/tip", async (req, res) => {
       cancelUrl?: string;
     };
 
-    const ALLOWED_AMOUNTS = [200, 500];
-    if (!amountCents || !ALLOWED_AMOUNTS.includes(amountCents)) {
-      res.status(400).json({ error: "amountCents must be 200 or 500" });
+    if (!amountCents || typeof amountCents !== "number" || !Number.isInteger(amountCents) || amountCents < 100) {
+      res.status(400).json({ error: "amountCents must be an integer of at least 100 (i.e. $1.00)" });
       return;
     }
     if (!successUrl || !cancelUrl) {
