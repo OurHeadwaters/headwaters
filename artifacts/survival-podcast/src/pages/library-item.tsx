@@ -1,4 +1,5 @@
 import { useRoute } from "wouter";
+import { useGordPageTitle } from "@/context/gord-context";
 import { useGetLibraryItem, getGetLibraryItemQueryKey } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
@@ -17,6 +18,8 @@ export function LibraryItemDetail() {
   const { data: item, isLoading, isError } = useGetLibraryItem(slug, {
     query: { enabled: !!slug, queryKey: getGetLibraryItemQueryKey(slug) }
   });
+
+  useGordPageTitle(item?.title ?? null);
 
   if (isLoading) {
     return (

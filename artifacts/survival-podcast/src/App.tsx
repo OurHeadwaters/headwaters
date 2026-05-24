@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { PlayerProvider } from "@/context/player-context";
+import { GordProvider } from "@/context/gord-context";
 import { Home } from "@/pages/home";
 import { Archive } from "@/pages/archive";
 import { EpisodeDetail } from "@/pages/episode";
@@ -143,10 +144,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <PlayerProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
+          <GordProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </GordProvider>
         </PlayerProvider>
       </TooltipProvider>
     </QueryClientProvider>

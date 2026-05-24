@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
+import { useGordPageTitle } from "@/context/gord-context";
 import { useQuery } from "@tanstack/react-query";
 import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -451,6 +452,9 @@ export default function ZoneDetailPage() {
 
   const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
   const { data, isLoading, isError } = useZoneResources(slug, apiSource);
+
+  const zoneName = data?.zone ? `Zone ${data.zone.number}: ${data.zone.name}` : null;
+  useGordPageTitle(zoneName);
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const { data: gearProducts = [] } = useQuery<ReviewedProduct[]>({

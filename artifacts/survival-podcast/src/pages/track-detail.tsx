@@ -1,4 +1,5 @@
 import { Link, useRoute } from "wouter";
+import { useGordPageTitle } from "@/context/gord-context";
 import { useQuery } from "@tanstack/react-query";
 import { useGetTrackEpisodes, fetchAllTrackEpisodes, type TrackNugget } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
@@ -601,6 +602,8 @@ export default function TrackDetailPage() {
   const { data: transformations } = useTransformations();
 
   const track = data?.track;
+
+  useGordPageTitle(track?.title ?? null);
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
   const topTags = data?.topTags ?? [];

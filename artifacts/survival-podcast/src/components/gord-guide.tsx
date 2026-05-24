@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
+import { useGordContext } from "@/context/gord-context";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Heart } from "lucide-react";
 import { GordBird, type IdleAnim } from "./gord-bird";
@@ -130,6 +131,7 @@ interface GordGuideProps {
 
 export function GordGuide(_props: GordGuideProps) {
   const [location] = useLocation();
+  const { pageTitle } = useGordContext();
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -285,7 +287,12 @@ export function GordGuide(_props: GordGuideProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMessages,
-          context: { path: location, description: getTspPageDescription(location) },
+          context: {
+            path: location,
+            description: pageTitle
+              ? `${getTspPageDescription(location)} Currently viewing: "${pageTitle}".`
+              : getTspPageDescription(location),
+          },
         }),
         signal: abortRef.current.signal,
       });
