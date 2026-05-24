@@ -239,6 +239,35 @@ export default function KitsScreen() {
           data={kits}
           keyExtractor={(item) => item.slug}
           renderItem={({ item }) => <KitCard kit={item} />}
+          ListHeaderComponent={
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/kits/find" as never);
+              }}
+              style={({ pressed }) => [
+                finderBannerStyles.banner,
+                {
+                  backgroundColor: colors.forestDeep,
+                  borderColor: "#8FA88355",
+                  opacity: pressed ? 0.88 : 1,
+                },
+              ]}
+            >
+              <View style={[finderBannerStyles.iconWrap, { backgroundColor: "#8FA88322" }]}>
+                <Ionicons name="compass-outline" size={22} color="#8FA883" />
+              </View>
+              <View style={finderBannerStyles.textBlock}>
+                <Text style={[finderBannerStyles.title, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+                  Find My Kit
+                </Text>
+                <Text style={[finderBannerStyles.sub, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+                  3 questions → your recommended kit
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#8FA88399" />
+            </Pressable>
+          }
           contentContainerStyle={{ paddingTop: 16, paddingBottom: bottomPadding }}
           showsVerticalScrollIndicator={false}
         />
@@ -246,6 +275,30 @@ export default function KitsScreen() {
     </View>
   );
 }
+
+const finderBannerStyles = StyleSheet.create({
+  banner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  textBlock: { flex: 1, gap: 2 },
+  title: { fontSize: 15 },
+  sub: { fontSize: 12, lineHeight: 17 },
+});
 
 const styles = StyleSheet.create({
   root: { flex: 1 },

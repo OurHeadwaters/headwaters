@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Package, Loader2 } from "lucide-react";
+import { Package, Loader2, Compass } from "lucide-react";
 import { useListKits } from "@/hooks/use-kits";
 import { KitCard } from "@/components/kit-card";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -59,6 +59,19 @@ export default function KitsPage() {
 
           <div className="mt-8 flex gap-3 flex-wrap items-center">
             <Link
+              href="/kits/find"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px border"
+              style={{
+                color: "#fff",
+                background: "#8FA883",
+                borderColor: "#8FA88300",
+                boxShadow: "0 4px 16px #8FA88340",
+              }}
+            >
+              <Compass className="w-4 h-4" />
+              Find my kit
+            </Link>
+            <Link
               href="/tracks"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors border"
               style={{
@@ -95,6 +108,14 @@ export default function KitsPage() {
               Find the bundle that matches your transformation.
             </p>
           </div>
+          <Link
+            href="/kits/find"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors whitespace-nowrap"
+            style={{ color: "#8FA883" }}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            Not sure? Find yours →
+          </Link>
         </div>
 
         {isLoading && (

@@ -1,4 +1,4 @@
-import { Link, useRoute } from "wouter";
+import { Link, useRoute, useSearch } from "wouter";
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
@@ -13,7 +13,9 @@ import {
   ArrowRight,
   Package,
   ShoppingBag,
+  Compass,
 } from "lucide-react";
+import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 import { ProductShelf } from "@/components/product-shelf";
 import { formatDuration } from "@/components/episode-card";
@@ -126,6 +128,15 @@ export default function KitDetailPage() {
   const slug = params?.slug ?? "";
   const { data: kit, isLoading, isError } = useKitDetail(slug);
   const [edition, setEdition] = useState<"general" | "homeschool">("general");
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const fromFinder = searchParams.get("from_finder") === "1";
+  const finderSituation = searchParams.get("situation") as Parameters<typeof situationLabel>[0] | null;
+  const finderGoal = searchParams.get("goal") as Parameters<typeof goalLabel>[0] | null;
+  const finderCompanions = searchParams.get("companions") as Parameters<typeof companionsLabel>[0] | null;
+  const finderReadiness = searchParams.get("readiness") as Parameters<typeof readinessLabel>[0] | null;
+  const finderReason = searchParams.get("reason");
+  const finderSecondary = searchParams.get("secondary");
 
   const meta = KIT_META[slug] ?? { icon: "📦", color: "#6B7280" };
   const isLinkOut = LINK_OUT_KITS.has(slug);
@@ -176,6 +187,64 @@ export default function KitDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Finder recommendation banner */}
+      {fromFinder && finderReason && (
+        <div
+          className="border-b"
+          style={{ background: "#8FA88312", borderColor: "#8FA88333" }}
+        >
+          <div className="max-w-4xl mx-auto px-6 py-4 flex items-start gap-3">
+            <div
+              className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5"
+              style={{ background: "#8FA88320", border: "1px solid #8FA88344" }}
+            >
+              <Compass className="w-4 h-4" style={{ color: "#8FA883" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                style={{ color: "#8FA883" }}
+              >
+                Kit Finder recommendation
+              </div>
+              {(finderSituation || finderGoal) && (
+                <p className="text-xs text-muted-foreground mb-1.5">
+                  {[
+                    finderSituation && situationLabel(finderSituation),
+                    finderGoal && `focused on ${goalLabel(finderGoal)}`,
+                    finderCompanions && companionsLabel(finderCompanions),
+                    finderReadiness && readinessLabel(finderReadiness),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
+              <p className="text-sm leading-relaxed text-foreground/90">
+                {finderReason}
+              </p>
+              {finderSecondary && (
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Also consider:{" "}
+                  <Link
+                    href={`/kits/${finderSecondary}`}
+                    className="font-semibold hover:underline"
+                    style={{ color: "#8FA883" }}
+                  >
+                    {finderSecondary.replace(/-kit$/, "").replace(/-/g, " ")} kit →
+                  </Link>
+                </p>
+              )}
+            </div>
+            <Link
+              href="/kits/find"
+              className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap ml-2"
+            >
+              Retake
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <div
         className="border-b border-border relative overflow-hidden"

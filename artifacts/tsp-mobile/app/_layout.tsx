@@ -50,6 +50,7 @@ function RootLayoutNav() {
       <Stack.Screen name="episode/[slug]" options={{ headerShown: false, animation: "slide_from_bottom" }} />
       <Stack.Screen name="transformation/[slug]" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen name="kits/index" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="kits/find" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen name="kits/[slug]" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen name="queue" options={{ headerShown: false, animation: "slide_from_bottom", presentation: "modal" }} />
     </Stack>

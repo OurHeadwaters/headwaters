@@ -1081,7 +1081,24 @@ function CommunitySection() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12">
+          {/* Kit Finder secondary CTA */}
+          <div className="flex justify-center mb-8">
+            <Link
+              href="/kits/find"
+              className="group inline-flex items-center gap-3 px-6 py-3.5 rounded-xl border border-[#8FA883]/30 bg-[#8FA883]/10 hover:bg-[#8FA883]/18 hover:border-[#8FA883]/50 transition-all"
+            >
+              <Compass className="w-5 h-5 text-[#8FA883] group-hover:scale-110 transition-transform" />
+              <div className="text-left">
+                <div className="font-serif font-bold text-[#FDFBF7] text-sm leading-tight">
+                  Find your kit
+                </div>
+                <div className="text-xs text-[#FDFBF7]/50">5 questions · instant recommendation</div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#8FA883]/60 group-hover:text-[#8FA883] group-hover:translate-x-0.5 transition-all" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-0">
             {[
               { href: "/library", label: "Search Archive", desc: "6,000+ episodes", Icon: Search },
               { href: "/tracks", label: "Learning Tracks", desc: "Seven curated paths", Icon: Compass },
