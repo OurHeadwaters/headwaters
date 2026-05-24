@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Footprints } from "lucide-react";
 import { GordBird, type IdleAnim } from "./gord-bird";
+import { TrailblazerChat } from "./trailblazer-chat";
 import {
   routeKeyFromPath,
   getCurrentGordTip,
@@ -96,6 +97,7 @@ export function GordGuide({ path }: GordGuideProps) {
   const [perchVisible, setPerchVisible] = useState(false);
   const [tipHovered, setTipHovered] = useState(false);
   const [gordHovered, setGordHovered] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const guideBirdRef = useRef<HTMLDivElement>(null);
   const perchBirdRef = useRef<HTMLDivElement>(null);
@@ -159,8 +161,17 @@ export function GordGuide({ path }: GordGuideProps) {
 
   return (
     <>
+      {/* Trailblazer chat panel */}
       <AnimatePresence>
-        {visible && tip && (
+        {chatOpen && (
+          <div className="fixed bottom-4 right-4 z-[70]">
+            <TrailblazerChat onClose={() => setChatOpen(false)} />
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {visible && tip && !chatOpen && (
           <motion.div
             key="gord-guide"
             initial={{ x: 120, opacity: 0 }}
@@ -204,9 +215,17 @@ export function GordGuide({ path }: GordGuideProps) {
               <p className="text-sm font-semibold text-[#2C1810] leading-snug mb-1">
                 {tip.heading}
               </p>
-              <p className="text-xs text-[#5A3E2B]/80 leading-relaxed">
+              <p className="text-xs text-[#5A3E2B]/80 leading-relaxed mb-3">
                 {tip.body}
               </p>
+              <button
+                onClick={() => setChatOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 pointer-events-auto"
+                style={{ background: "#C4622D", color: "#FDFBF7" }}
+              >
+                <Footprints className="w-3 h-3" />
+                Chat with the Trailblazer
+              </button>
             </motion.div>
 
             <motion.div
@@ -224,7 +243,7 @@ export function GordGuide({ path }: GordGuideProps) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {perchVisible && !visible && (
+        {perchVisible && !visible && !chatOpen && (
           <motion.button
             key="gord-perch"
             initial={{ x: 80, opacity: 0 }}

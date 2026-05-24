@@ -40,6 +40,7 @@ import adminXrpRateRouter from "./admin-xrp-rate";
 import kitsRouter from "./kits";
 import adminKitPurchasesRouter from "./admin-kit-purchases";
 import practitionersRouter from "./practitioners";
+import trailblazerRouter from "./trailblazer";
 
 const router: IRouter = Router();
 
@@ -84,5 +85,6 @@ router.use(adminXrpRateRouter);
 router.use(kitsRouter);
 router.use(adminKitPurchasesRouter);
 router.use(practitionersRouter);
+router.use(trailblazerRouter);
 
 export default router;
