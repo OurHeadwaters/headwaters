@@ -766,12 +766,130 @@ const toggleStyles = StyleSheet.create({
   label: { fontSize: 13 },
 });
 
+const KIT_NAMES: Record<string, string> = {
+  "family-kit":       "Family Kit",
+  "producer-kit":     "Producer Kit",
+  "practitioner-kit": "Practitioner Kit",
+  "council-kit":      "Council Kit",
+  "care-kit":         "Care Kit",
+  "digital-kit":      "Digital Kit",
+  "physical-kit":     "Physical Kit",
+};
+
+function FinderBanner({
+  reason,
+  secondary,
+  accent,
+}: {
+  reason: string;
+  secondary?: string;
+  accent: string;
+}) {
+  const colors = useColors();
+  const FINDER_GREEN = "#4A8C5C";
+
+  return (
+    <View
+      style={[
+        finderBannerStyles.wrap,
+        { backgroundColor: FINDER_GREEN + "15", borderColor: FINDER_GREEN + "55" },
+      ]}
+    >
+      <View style={finderBannerStyles.topRow}>
+        <View style={[finderBannerStyles.badge, { backgroundColor: FINDER_GREEN + "22" }]}>
+          <Ionicons name="compass-outline" size={13} color={FINDER_GREEN} />
+          <Text style={[finderBannerStyles.badgeLabel, { color: FINDER_GREEN, fontFamily: "DMSans_700Bold" }]}>
+            Recommended for you
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => router.replace("/kits/find" as never)}
+          style={({ pressed }) => [finderBannerStyles.retakeBtn, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Ionicons name="refresh-outline" size={12} color={colors.mutedForeground} />
+          <Text style={[finderBannerStyles.retakeText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            Retake
+          </Text>
+        </Pressable>
+      </View>
+
+      <Text style={[finderBannerStyles.reason, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
+        {reason}
+      </Text>
+
+      {secondary && KIT_NAMES[secondary] && (
+        <Pressable
+          onPress={() => router.replace(`/kits/${secondary}` as never)}
+          style={({ pressed }) => [
+            finderBannerStyles.secondaryRow,
+            { borderTopColor: FINDER_GREEN + "33", opacity: pressed ? 0.75 : 1 },
+          ]}
+        >
+          <Ionicons name="arrow-forward-circle-outline" size={14} color={FINDER_GREEN} />
+          <Text style={[finderBannerStyles.secondaryText, { color: FINDER_GREEN, fontFamily: "DMSans_500Medium" }]}>
+            Also consider: {KIT_NAMES[secondary]}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const finderBannerStyles = StyleSheet.create({
+  wrap: {
+    marginHorizontal: 16,
+    marginBottom: 4,
+    marginTop: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    gap: 8,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  badgeLabel: { fontSize: 11, letterSpacing: 0.3 },
+  retakeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  retakeText: { fontSize: 12 },
+  reason: { fontSize: 13, lineHeight: 20 },
+  secondaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingTop: 10,
+    marginTop: 2,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  secondaryText: { fontSize: 13 },
+});
+
 export default function KitDetailScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, from_finder, reason, secondary } = useLocalSearchParams<{
+    slug: string;
+    from_finder?: string;
+    reason?: string;
+    secondary?: string;
+  }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { currentEpisode } = usePlayer();
   const [familyEdition, setFamilyEdition] = useState<"general" | "homeschool">("general");
+
+  const fromFinder = from_finder === "1" && !!reason;
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPadding = currentEpisode
@@ -846,8 +964,13 @@ export default function KitDetailScreen() {
           </View>
         </View>
 
+        {/* ── Kit Finder recommendation banner ── */}
+        {fromFinder && reason && (
+          <FinderBanner reason={reason} secondary={secondary} accent={accent} />
+        )}
+
         {/* ── User Manual ── */}
-        <View style={{ paddingTop: 20 }}>
+        <View style={{ paddingTop: fromFinder ? 12 : 20 }}>
           <ManualSection kit={kit} accent={accent} />
         </View>
 
