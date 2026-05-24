@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Heart } from "lucide-react";
 import { GordBird } from "@workspace/gord-bird";
@@ -23,6 +24,17 @@ const TIP_RESPONSE: Message = {
   content: "Tip Gord. Right. I'm a bird. I live in a tree. What exactly do you think I'm going to do with a tip? Put it toward your own stack. That's the best tip I can give you.",
 };
 
+const CODETRY_PAGE_DESCRIPTIONS: Record<string, string> = {
+  "/": "Home page — introducing Codetry, a digital sovereignty and self-reliance agency helping people and communities own their digital stack",
+  "/services": "Services page — Codetry's offerings: web presence, self-hosted tools, community platforms, and digital education",
+  "/work": "Work page — portfolio of Codetry projects and past client work",
+  "/discover": "Discover page — resources and pathways for getting started with digital self-reliance",
+};
+
+function getCodetryPageDescription(path: string): string {
+  return CODETRY_PAGE_DESCRIPTIONS[path] ?? "Codetry — a digital sovereignty and self-reliance agency";
+}
+
 const ACCENT = "#E07B39";
 const BG = "#0D1510";
 const BORDER = "#E07B3933";
@@ -30,6 +42,7 @@ const TEXT = "#F5F0E8";
 const MUTED = "#A8B8A0";
 
 export function GordWidget() {
+  const [location] = useLocation();
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -87,7 +100,10 @@ export function GordWidget() {
       const res = await fetch(apiUrl("/gord/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          messages: newMessages,
+          context: { path: location, description: getCodetryPageDescription(location) },
+        }),
         signal: abortRef.current.signal,
       });
 
@@ -140,7 +156,7 @@ export function GordWidget() {
       setStreaming(false);
       abortRef.current = null;
     }
-  }, [input, messages, streaming]);
+  }, [input, messages, streaming, location]);
 
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {

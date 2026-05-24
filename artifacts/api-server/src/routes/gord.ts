@@ -50,8 +50,9 @@ async function gordHandler(req: import("express").Request, res: import("express"
       return;
     }
 
-    const { messages } = req.body as {
+    const { messages, context } = req.body as {
       messages: Array<{ role: "user" | "assistant"; content: string }>;
+      context?: { path?: string; description?: string };
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -90,11 +91,23 @@ async function gordHandler(req: import("express").Request, res: import("express"
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
+    const systemMessages: Array<{ role: "system"; content: string }> = [
+      { role: "system", content: GORD_SYSTEM_PROMPT },
+    ];
+
+    if (context?.path || context?.description) {
+      const contextParts: string[] = ["[Current page context]"];
+      if (context.path) contextParts.push(`Path: ${context.path}`);
+      if (context.description) contextParts.push(`Page: ${context.description}`);
+      contextParts.push("Use this to give specific, relevant answers — point people to the right section of the site when it makes sense.");
+      systemMessages.push({ role: "system", content: contextParts.join("\n") });
+    }
+
     const stream = await openai.chat.completions.create({
       model: "gpt-4.1",
       max_completion_tokens: 512,
       messages: [
-        { role: "system", content: GORD_SYSTEM_PROMPT },
+        ...systemMessages,
         ...validMessages,
       ],
       stream: true,
