@@ -41,7 +41,10 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-4xl font-bold text-foreground">Overview</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="font-serif text-4xl font-bold text-foreground">Overview</h1>
+            <span className="text-xs font-bold tracking-widest text-primary/70 uppercase border border-primary/20 px-2 py-0.5 rounded">Practitioner Kit</span>
+          </div>
           <p className="text-muted-foreground mt-2">Welcome back, {name}. Here is the current state of your practice.</p>
         </div>
         <Link href="/clients/new" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors">

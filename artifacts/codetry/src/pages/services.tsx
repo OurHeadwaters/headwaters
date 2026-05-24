@@ -144,7 +144,7 @@ export default function Services() {
           variants={stagger}
         >
           <motion.p variants={fadeInUp} className="text-sm font-bold tracking-widest text-[#D9A066] uppercase">
-            Services
+            Council Kit
           </motion.p>
           <motion.h1
             variants={fadeInUp}
@@ -158,8 +158,21 @@ export default function Services() {
         </motion.div>
       </section>
 
-      {/* Engagement Types */}
+      {/* Council Kit — Engagement Types */}
       <section className="py-24 px-6 md:px-12 max-w-6xl mx-auto w-full">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeInUp}
+          className="text-center mb-16 space-y-4"
+        >
+          <p className="text-sm font-bold tracking-widest text-[#D9A066] uppercase">The Council Kit</p>
+          <h2 className="text-3xl md:text-4xl font-serif text-foreground">A 4-phase, community-owned journey</h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+            The Council Kit is a structured engagement for communities ready to own their digital infrastructure. Starting from ambient listening and ending with full hand-off — your tools, your data, your team running it without us.
+          </p>
+        </motion.div>
         <motion.div
           initial="hidden"
           whileInView="visible"

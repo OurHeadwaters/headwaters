@@ -29,6 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="p-6 border-b border-border">
           <h1 className="font-serif text-2xl font-bold tracking-tight text-primary">Headwaters</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-wider">Field Journal</p>
+          <p className="text-xs font-bold tracking-widest text-primary/70 uppercase mt-1.5">Practitioner Kit</p>
           {(name || bio) && (
             <div className="mt-3 pt-3 border-t border-border/60">
               <p className="text-sm font-medium text-foreground leading-snug">{name}</p>

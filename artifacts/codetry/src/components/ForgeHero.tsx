@@ -123,6 +123,11 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
               Find your zone
             </span>
           </Link>
+          <Link href="/services">
+            <span className="inline-block px-7 py-3 rounded-md font-medium text-[#8A9E8A] border border-[#4A8C5C]/30 hover:border-[#4A8C5C]/60 hover:bg-[#4A8C5C]/10 transition-all duration-200 cursor-pointer">
+              Council Kit
+            </span>
+          </Link>
         </motion.div>
 
         <motion.div variants={fadeInUp} className="flex items-center justify-center gap-6 pt-4 text-[#8A7A66] text-sm">

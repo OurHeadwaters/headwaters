@@ -4,7 +4,7 @@ import CodetryWordmark from "@/components/CodetryWordmark";
 
 const links = [
   { href: "/", label: "Home" },
-  { href: "/services", label: "Services" },
+  { href: "/services", label: "Council Kit" },
   { href: "/work", label: "Work" },
 ];
 
