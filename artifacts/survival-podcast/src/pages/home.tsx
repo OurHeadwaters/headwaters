@@ -559,7 +559,7 @@ function HeroEntrance() {
           className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-black/30 backdrop-blur-sm mb-4 md:mb-6"
         >
           <Sparkles className="w-3.5 h-3.5 text-[#D9A066]" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">A Fan Redesign · The Stomping Path</span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">The Worn Path · Transition · Zone 2</span>
         </motion.div>
 
         <motion.h1
@@ -575,10 +575,20 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="text-lg md:text-xl text-[#FDFBF7]/85 max-w-2xl mb-6 md:mb-10 font-light leading-relaxed"
+          className="text-lg md:text-xl text-[#FDFBF7]/85 max-w-2xl mb-3 md:mb-4 font-light leading-relaxed"
         >
           See the problems. Stomp the solutions. <br className="hidden sm:block" />
           Reclaim your sovereignty — one footprint at a time.
+        </motion.p>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.65 }}
+          className="text-sm text-[#FDFBF7]/50 max-w-xl mb-6 md:mb-10 leading-relaxed"
+        >
+          Zone 2 on the permaculture map — where the household meets the community.
+          Tools, tracks, and practitioners for the transition from fear to watershed.
         </motion.p>
 
         <motion.div

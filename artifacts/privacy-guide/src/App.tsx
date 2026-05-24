@@ -920,7 +920,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.7, ease: "easeOut" }}
           >
-            Clearing &amp; Lodge Privacy Guide — protecting your digital home so the rest of your resilience work stays private
+            Your family's digital perimeter — keeping what you build at home private, so your self-reliance work stays yours
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
@@ -949,9 +949,9 @@ export default function App() {
             </motion.div>
           </div>
           <div className="kit-intro-text">
-            <p className="kit-intro-welcome">Welcome to your Privacy Kit.</p>
+            <p className="kit-intro-welcome">Your family's digital homestead starts here.</p>
             <p className="kit-intro-body">
-              This is the privacy and home-resilience component of your kit — the part that protects your digital clearing and lodge so everything else you build stays private. Work through the five trails at your own pace: each one covers a piece of your family's digital perimeter, from how The Clearing and The Lodge store your data, to the habits and tools that keep the gate closed by default.
+              The Privacy Kit is a core self-reliance tool — the same discipline that keeps your pantry stocked and your land held, applied to your family's digital perimeter. Work through the five trails at your own pace: Zone 0 (your private Clearing), the Lodge (your co-op), key habits, the covered-wagon VPN route, and the legal landscape. Every step keeps the gate closed by default, so the sovereignty work your household is doing stays inside the watershed.
             </p>
           </div>
         </div>
@@ -1264,8 +1264,8 @@ export default function App() {
       <footer className="site-footer">
         <div className="footer-inner">
           <div className="footer-message">
-            <h2 className="footer-title">Walk the Path with Confidence</h2>
-            <p className="footer-sub">Your family's privacy is worth protecting. These tools and habits make it possible.</p>
+            <h2 className="footer-title">A secure family is a sovereign family.</h2>
+            <p className="footer-sub">Privacy is Zone 0 stewardship — close the gate on your digital homestead before you build the rest of the watershed.</p>
           </div>
           <nav className="footer-links no-print" aria-label="Next steps">
             <a href="https://mullvad.net" target="_blank" rel="noopener noreferrer" className="footer-link">Get Mullvad VPN</a>
@@ -1273,7 +1273,7 @@ export default function App() {
             <a href="https://priv.gc.ca" target="_blank" rel="noopener noreferrer" className="footer-link">Privacy Commissioner</a>
           </nav>
           <p className="footer-disclaimer">
-            This guide provides general privacy information for homeschool families and does not constitute legal advice.
+            This guide provides general privacy information for homeschool and homestead families and does not constitute legal advice.
             Consult a qualified privacy professional for advice specific to your situation. Prepared for The Clearing &amp; The Lodge communities.
           </p>
         </div>

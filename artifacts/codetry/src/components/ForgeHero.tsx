@@ -44,7 +44,7 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
       >
         <motion.div variants={fadeInUp} className="flex justify-center mb-2">
           <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase bg-[#D9A066]/10 border border-[#D9A066]/20 px-3 py-1 rounded-full">
-            The Forge — Word Playground
+            Codetry · Digital Self-Reliance · The Stomping Path
           </span>
         </motion.div>
 
@@ -108,8 +108,25 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           variants={fadeInUp}
           className="text-sm text-[#8A9E8A] max-w-xl mx-auto leading-relaxed -mt-2"
         >
-          The method for people who see the problem clearly and are finally ready to build the solution — with tools they own, in a community they're already part of.
+          Codetry is the digital sovereignty workbench for Stomping Path practitioners — XRPL tools, key custody, community payment rails, and the code skills to run them yourself.
         </motion.p>
+
+        {/* Actionable first step */}
+        <motion.div
+          variants={fadeInUp}
+          className="mx-auto max-w-md rounded-xl border border-[#4A8C5C]/40 bg-[#0A1A0A]/60 px-5 py-4 text-left"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A8C5C] mb-1">Start here</p>
+          <p className="text-sm text-[#C4B49A] leading-snug">
+            Set up your first private wallet — generate a self-custody XRPL address, write down the seed phrase, and hold the keys yourself. That's Zone 0 for your money.
+          </p>
+          <button
+            onClick={onEnterForge}
+            className="mt-3 text-xs font-semibold text-[#D9A066] hover:text-[#F0C07A] transition-colors"
+          >
+            Open the Forge to begin →
+          </button>
+        </motion.div>
 
         <motion.div variants={fadeInUp} className="flex flex-wrap gap-3 justify-center pt-2">
           <button
@@ -125,7 +142,7 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           </Link>
           <Link href="/services">
             <span className="inline-block px-7 py-3 rounded-md font-medium text-[#8A9E8A] border border-[#4A8C5C]/30 hover:border-[#4A8C5C]/60 hover:bg-[#4A8C5C]/10 transition-all duration-200 cursor-pointer">
-              Council Kit
+              View the Handbook
             </span>
           </Link>
         </motion.div>
