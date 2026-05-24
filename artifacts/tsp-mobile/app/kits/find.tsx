@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -13,6 +14,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+
+export const KIT_FINDER_REC_KEY = "kit_finder_rec";
 
 const ACCENT = "#8FA883";
 
@@ -310,6 +313,10 @@ export default function KitFinderScreen() {
     } else {
       const full = newAnswers as Required<Answers>;
       const result = resolveKit(full);
+      AsyncStorage.setItem(
+        KIT_FINDER_REC_KEY,
+        JSON.stringify({ slug: result.primary, reason: result.reason, secondary: result.secondary ?? null }),
+      ).catch(() => {});
       const params: Record<string, string> = {
         from_finder: "1",
         situation: full.situation,

@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import { Image } from "expo-image";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { useColors } from "@/hooks/useColors";
 import { usePlayer } from "@/context/PlayerContext";
+import { KIT_FINDER_REC_KEY } from "./find";
 
 const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 const MINI_PLAYER_HEIGHT = 64;
@@ -780,10 +782,12 @@ function FinderBanner({
   reason,
   secondary,
   accent,
+  onDismiss,
 }: {
   reason: string;
   secondary?: string;
   accent: string;
+  onDismiss: () => void;
 }) {
   const colors = useColors();
   const FINDER_GREEN = "#4A8C5C";
@@ -802,15 +806,24 @@ function FinderBanner({
             Recommended for you
           </Text>
         </View>
-        <Pressable
-          onPress={() => router.replace("/kits/find" as never)}
-          style={({ pressed }) => [finderBannerStyles.retakeBtn, { opacity: pressed ? 0.6 : 1 }]}
-        >
-          <Ionicons name="refresh-outline" size={12} color={colors.mutedForeground} />
-          <Text style={[finderBannerStyles.retakeText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
-            Retake
-          </Text>
-        </Pressable>
+        <View style={finderBannerStyles.topActions}>
+          <Pressable
+            onPress={() => router.replace("/kits/find" as never)}
+            style={({ pressed }) => [finderBannerStyles.retakeBtn, { opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Ionicons name="refresh-outline" size={12} color={colors.mutedForeground} />
+            <Text style={[finderBannerStyles.retakeText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+              Retake
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={onDismiss}
+            style={({ pressed }) => [finderBannerStyles.dismissBtn, { opacity: pressed ? 0.6 : 1 }]}
+            hitSlop={8}
+          >
+            <Ionicons name="close" size={16} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
       </View>
 
       <Text style={[finderBannerStyles.reason, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
@@ -859,12 +872,20 @@ const finderBannerStyles = StyleSheet.create({
     borderRadius: 20,
   },
   badgeLabel: { fontSize: 11, letterSpacing: 0.3 },
+  topActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   retakeBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
   retakeText: { fontSize: 12 },
+  dismissBtn: {
+    padding: 2,
+  },
   reason: { fontSize: 13, lineHeight: 20 },
   secondaryRow: {
     flexDirection: "row",
@@ -888,8 +909,35 @@ export default function KitDetailScreen() {
   const insets = useSafeAreaInsets();
   const { currentEpisode } = usePlayer();
   const [familyEdition, setFamilyEdition] = useState<"general" | "homeschool">("general");
+  const [storedRec, setStoredRec] = useState<{ reason: string; secondary?: string } | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  const fromFinder = from_finder === "1" && !!reason;
+  useEffect(() => {
+    setBannerDismissed(false);
+    setStoredRec(null);
+    AsyncStorage.getItem(KIT_FINDER_REC_KEY).then((raw) => {
+      if (!raw) { setStoredRec(null); return; }
+      try {
+        const parsed = JSON.parse(raw) as { slug: string; reason: string; secondary?: string | null };
+        if (parsed.slug === slug) {
+          setStoredRec({ reason: parsed.reason, secondary: parsed.secondary ?? undefined });
+        } else {
+          setStoredRec(null);
+        }
+      } catch {
+        setStoredRec(null);
+      }
+    });
+  }, [slug]);
+
+  async function handleDismissBanner() {
+    setBannerDismissed(true);
+    await AsyncStorage.removeItem(KIT_FINDER_REC_KEY).catch(() => {});
+  }
+
+  const fromFinder = !bannerDismissed && ((from_finder === "1" && !!reason) || !!storedRec);
+  const bannerReason = (from_finder === "1" && reason) ? reason : storedRec?.reason ?? "";
+  const bannerSecondary = (from_finder === "1" && secondary) ? secondary : storedRec?.secondary;
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPadding = currentEpisode
@@ -965,8 +1013,8 @@ export default function KitDetailScreen() {
         </View>
 
         {/* ── Kit Finder recommendation banner ── */}
-        {fromFinder && reason && (
-          <FinderBanner reason={reason} secondary={secondary} accent={accent} />
+        {fromFinder && bannerReason && (
+          <FinderBanner reason={bannerReason} secondary={bannerSecondary} accent={accent} onDismiss={handleDismissBanner} />
         )}
 
         {/* ── Purchase / Inquiry CTA ── */}
