@@ -579,6 +579,29 @@ export default function KitDetailPage() {
                   <ExternalLink className="w-4 h-4" />
                 </a>
               ))
+            ) : kit.priceType === "direct" ? (
+              <div className="flex flex-wrap items-center gap-4">
+                {kit.priceCents && (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-serif text-3xl font-bold" style={{ color: "#FDFBF7" }}>
+                      {formatPrice(kit.priceCents)}
+                    </span>
+                    <span className="text-sm" style={{ color: "#8FA883" }}>one-time</span>
+                  </div>
+                )}
+                <a
+                  href="#get-access"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+                  style={{
+                    color: "#fff",
+                    background: meta.color,
+                    boxShadow: `0 4px 20px ${meta.color}40`,
+                  }}
+                >
+                  <CreditCard className="w-4 h-4" />
+                  {kit.ctaLabel ?? "Get This Kit"}
+                </a>
+              </div>
             ) : (
               <a
                 href="#get-access"
@@ -589,7 +612,7 @@ export default function KitDetailPage() {
                   boxShadow: `0 4px 20px ${meta.color}40`,
                 }}
               >
-                Get Access
+                {kit.ctaLabel ?? "Apply for Access"}
                 <ChevronRight className="w-4 h-4" />
               </a>
             )}
@@ -597,7 +620,18 @@ export default function KitDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 space-y-14">
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        <div className="lg:flex lg:gap-10 lg:items-start">
+
+        {/* ── Main content column ───────────────────────────────────── */}
+        <div className="flex-1 min-w-0 space-y-14">
+
+        {/* ── Mobile-only pricing block (above content) ─────────────── */}
+        {kit && (
+          <div className="lg:hidden">
+            <KitPricingBlock kit={kit} displayName={displayName} meta={meta} />
+          </div>
+        )}
 
         {/* ── External link kits (Practitioner / Council) ───────────── */}
         {isLinkOut && (
@@ -905,9 +939,6 @@ export default function KitDetailPage() {
           </section>
         )}
 
-        {/* ── Pricing Block & CTA ──────────────────────────────────── */}
-        {kit && <KitPricingBlock kit={kit} displayName={displayName} meta={meta} />}
-
         {/* ── Back nav ─────────────────────────────────────────────── */}
         <div className="pb-4">
           <Link
@@ -919,6 +950,17 @@ export default function KitDetailPage() {
             All Kits
           </Link>
         </div>
+
+        </div>{/* end main content column */}
+
+        {/* ── Desktop sticky pricing sidebar ───────────────────────── */}
+        {kit && (
+          <div className="hidden lg:block w-80 shrink-0 sticky top-6 self-start">
+            <KitPricingBlock kit={kit} displayName={displayName} meta={meta} />
+          </div>
+        )}
+
+        </div>{/* end lg:flex */}
       </div>
     </div>
   );

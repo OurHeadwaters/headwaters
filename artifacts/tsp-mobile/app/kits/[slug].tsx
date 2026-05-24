@@ -969,8 +969,11 @@ export default function KitDetailScreen() {
           <FinderBanner reason={reason} secondary={secondary} accent={accent} />
         )}
 
+        {/* ── Purchase / Inquiry CTA ── */}
+        <KitPurchaseCTA kit={kit} accent={accent} />
+
         {/* ── User Manual ── */}
-        <View style={{ paddingTop: fromFinder ? 12 : 20 }}>
+        <View style={{ paddingTop: 4 }}>
           <ManualSection kit={kit} accent={accent} />
         </View>
 
@@ -1007,9 +1010,6 @@ export default function KitDetailScreen() {
             ))}
           </View>
         )}
-
-        {/* ── Purchase / Inquiry CTA ── */}
-        <KitPurchaseCTA kit={kit} accent={accent} />
 
         {/* ── Episodes section heading ── */}
         {kit.episodes.length > 0 && (
