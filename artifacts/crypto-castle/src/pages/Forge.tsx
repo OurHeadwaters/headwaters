@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MODULES, type LessonCard, type Module } from "@/data/courses";
+import { MODULES, type LessonCard, type Module, type QuizQuestion } from "@/data/courses";
 import { FACTIONS } from "@/data/factions";
 import { useFaction } from "@/context/FactionContext";
 import { useProgress } from "@/hooks/useProgress";
@@ -14,6 +14,9 @@ interface DynamicLesson {
   moduleIcon: string;
   title: string;
   body: string;
+  videoUrl?: string;
+  xpReward?: number;
+  quiz?: QuizQuestion[];
 }
 
 function useDynamicModules(): Module[] {
@@ -40,6 +43,9 @@ function useDynamicModules(): Module[] {
             id: lesson.id,
             title: lesson.title,
             body: lesson.body,
+            videoUrl: lesson.videoUrl,
+            xpReward: lesson.xpReward,
+            quiz: lesson.quiz,
           } as LessonCard);
         }
         setDynamic(Array.from(moduleMap.values()));
@@ -75,6 +81,241 @@ function ProgressBar({
   );
 }
 
+function VideoBlock({ url, primaryColor }: { url: string; primaryColor: string }) {
+  const ytMatch = url.match(/(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/);
+  if (ytMatch) {
+    const embedId = ytMatch[1];
+    return (
+      <div className="rounded-xl overflow-hidden border border-white/10" style={{ aspectRatio: "16/9" }}>
+        <iframe
+          src={`https://www.youtube.com/embed/${embedId}`}
+          title="Lesson video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/10 transition-all hover:border-white/20 text-sm font-semibold"
+      style={{ background: `${primaryColor}10`, color: primaryColor }}
+    >
+      <span className="text-lg">📖</span>
+      <span>Read the full explainer →</span>
+    </a>
+  );
+}
+
+type QuizPhase = "idle" | "active" | "done";
+
+function QuizBlock({
+  quiz,
+  xpReward,
+  primaryColor,
+  secondaryColor,
+  glowColor,
+  onComplete,
+}: {
+  quiz: QuizQuestion[];
+  xpReward: number;
+  primaryColor: string;
+  secondaryColor: string;
+  glowColor: string;
+  onComplete: (xpEarned: number) => void;
+}) {
+  const [phase, setPhase] = useState<QuizPhase>("idle");
+  const [step, setStep] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [correct, setCorrect] = useState(0);
+
+  const current = quiz[step];
+  const isLast = step === quiz.length - 1;
+  const bonusXp = Math.round(xpReward * 0.2);
+
+  const handleStart = () => {
+    setPhase("active");
+    setStep(0);
+    setPicked(null);
+    setRevealed(false);
+    setCorrect(0);
+  };
+
+  const handlePick = (idx: number) => {
+    if (revealed) return;
+    setPicked(idx);
+  };
+
+  const handleSubmit = () => {
+    if (picked === null) return;
+    const isCorrect = picked === current.correct;
+    if (isCorrect) setCorrect((c) => c + 1);
+    setRevealed(true);
+  };
+
+  const handleNext = () => {
+    if (isLast) {
+      const earned = xpReward + (correct + (picked === current.correct ? 1 : 0) === quiz.length ? bonusXp : 0);
+      setPhase("done");
+      onComplete(earned);
+    } else {
+      setStep((s) => s + 1);
+      setPicked(null);
+      setRevealed(false);
+    }
+  };
+
+  if (phase === "idle") {
+    return (
+      <button
+        onClick={handleStart}
+        className="w-full py-3 rounded-xl font-black text-sm transition-all"
+        style={{ background: primaryColor, color: secondaryColor, boxShadow: `0 0 20px ${glowColor}` }}
+      >
+        Take the Quiz ✓
+      </button>
+    );
+  }
+
+  if (phase === "done") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-xl p-5 border text-center"
+        style={{ background: `${primaryColor}10`, borderColor: `${primaryColor}40` }}
+      >
+        <div className="text-3xl mb-2">⚡</div>
+        <p className="font-black text-lg mb-1" style={{ color: primaryColor }}>
+          Quiz Complete
+        </p>
+        <p className="text-sm opacity-60">
+          {correct}/{quiz.length} correct
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      key={step}
+      initial={{ opacity: 0, x: 10 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="rounded-xl p-5 border flex flex-col gap-4"
+      style={{ background: `${primaryColor}08`, borderColor: `${primaryColor}30` }}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs opacity-40 uppercase tracking-wider">
+          Question {step + 1} of {quiz.length}
+        </span>
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${primaryColor}20`, color: primaryColor }}>
+          +{bonusXp} bonus XP if all correct
+        </span>
+      </div>
+
+      <p className="font-bold text-base leading-snug">{current.question}</p>
+
+      <div className="flex flex-col gap-2">
+        {current.options.map((opt, i) => {
+          let bg = "rgba(255,255,255,0.04)";
+          let border = "rgba(255,255,255,0.1)";
+          let textOpacity = "1";
+
+          if (revealed) {
+            if (i === current.correct) {
+              bg = "rgba(34,197,94,0.12)";
+              border = "rgba(34,197,94,0.5)";
+            } else if (i === picked && i !== current.correct) {
+              bg = "rgba(239,68,68,0.12)";
+              border = "rgba(239,68,68,0.5)";
+              textOpacity = "0.7";
+            } else {
+              textOpacity = "0.3";
+            }
+          } else if (i === picked) {
+            bg = `${primaryColor}18`;
+            border = primaryColor;
+          }
+
+          return (
+            <button
+              key={i}
+              onClick={() => handlePick(i)}
+              disabled={revealed}
+              className="text-left px-4 py-3 rounded-xl text-sm transition-all border"
+              style={{ background: bg, borderColor: border, opacity: Number(textOpacity) }}
+            >
+              <span className="font-semibold mr-2 opacity-40">{String.fromCharCode(65 + i)}.</span>
+              {opt}
+              {revealed && i === current.correct && (
+                <span className="ml-2 text-green-400 font-bold">✓</span>
+              )}
+              {revealed && i === picked && i !== current.correct && (
+                <span className="ml-2 text-red-400 font-bold">✗</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {revealed && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl px-4 py-3 text-sm border"
+          style={{
+            background: picked === current.correct ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+            borderColor: picked === current.correct ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)",
+          }}
+        >
+          <p className="font-bold mb-1" style={{ color: picked === current.correct ? "#4ade80" : "#f87171" }}>
+            {picked === current.correct ? "Correct!" : "Not quite."}
+          </p>
+          <p className="opacity-70 leading-relaxed">{current.explanation}</p>
+        </motion.div>
+      )}
+
+      {!revealed ? (
+        <button
+          onClick={handleSubmit}
+          disabled={picked === null}
+          className="w-full py-3 rounded-xl font-black text-sm disabled:opacity-20 transition-all"
+          style={{ background: primaryColor, color: secondaryColor }}
+        >
+          Submit Answer
+        </button>
+      ) : (
+        <button
+          onClick={handleNext}
+          className="w-full py-3 rounded-xl font-black text-sm transition-all"
+          style={{ background: primaryColor, color: secondaryColor }}
+        >
+          {isLast ? "Finish Quiz →" : "Next Question →"}
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+function XpToast({ xp, color }: { xp: number; color: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black"
+      style={{ background: `${color}18`, color }}
+    >
+      <span className="text-lg">⚡</span>
+      <span>+{xp} XP earned</span>
+    </motion.div>
+  );
+}
+
 function LessonView({
   lesson,
   module: mod,
@@ -98,6 +339,26 @@ function LessonView({
 }) {
   const factionData = faction ? FACTIONS[faction] : null;
   const factionNote = faction && lesson.factionNote?.[faction];
+  const primaryColor = factionData?.colors.primary ?? "#e2e8f0";
+  const secondaryColor = factionData?.colors.secondary ?? "#080810";
+  const glowColor = factionData?.colors.glow ?? "rgba(255,255,255,0.2)";
+
+  const [quizDone, setQuizDone] = useState(false);
+  const [xpEarned, setXpEarned] = useState<number | null>(null);
+
+  const hasQuiz = !!lesson.quiz?.length;
+  const xpReward = lesson.xpReward ?? 25;
+
+  const handleGotIt = () => {
+    setXpEarned(xpReward);
+    onComplete();
+  };
+
+  const handleQuizComplete = (earned: number) => {
+    setQuizDone(true);
+    setXpEarned(earned);
+    onComplete();
+  };
 
   return (
     <motion.div
@@ -119,17 +380,21 @@ function LessonView({
       <div
         className="rounded-2xl p-8 border card-lesson"
         style={{
-          borderLeftColor: factionData?.colors.primary ?? "#e2e8f0",
+          borderLeftColor: primaryColor,
           background: "rgba(255,255,255,0.02)",
         }}
       >
-        <h2 className="text-2xl font-black mb-4" style={{ color: factionData?.colors.primary ?? "#e2e8f0" }}>
+        <h2 className="text-2xl font-black mb-4" style={{ color: primaryColor }}>
           {lesson.title}
         </h2>
         <p className="text-base leading-relaxed opacity-80 whitespace-pre-line">
           {lesson.body}
         </p>
       </div>
+
+      {lesson.videoUrl && (
+        <VideoBlock url={lesson.videoUrl} primaryColor={primaryColor} />
+      )}
 
       {factionNote && factionData && (
         <motion.div
@@ -157,6 +422,10 @@ function LessonView({
         </div>
       )}
 
+      {isComplete && xpEarned !== null && (
+        <XpToast xp={xpEarned} color={primaryColor} />
+      )}
+
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={onPrev}
@@ -167,25 +436,38 @@ function LessonView({
         </button>
 
         {!isComplete ? (
-          <button
-            onClick={onComplete}
-            className="flex-1 max-w-xs py-3 rounded-xl font-black text-sm transition-all animate-pulse-glow"
-            style={{
-              background: factionData?.colors.primary ?? "#e2e8f0",
-              color: factionData?.colors.secondary ?? "#080810",
-              boxShadow: `0 0 20px ${factionData?.colors.glow ?? "rgba(255,255,255,0.2)"}`,
-            }}
-          >
-            Got it ✓
-          </button>
+          hasQuiz ? (
+            <div className="flex-1 max-w-sm">
+              <QuizBlock
+                quiz={lesson.quiz!}
+                xpReward={xpReward}
+                primaryColor={primaryColor}
+                secondaryColor={secondaryColor}
+                glowColor={glowColor}
+                onComplete={handleQuizComplete}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={handleGotIt}
+              className="flex-1 max-w-xs py-3 rounded-xl font-black text-sm transition-all animate-pulse-glow"
+              style={{
+                background: primaryColor,
+                color: secondaryColor,
+                boxShadow: `0 0 20px ${glowColor}`,
+              }}
+            >
+              Got it ✓
+            </button>
+          )
         ) : (
           <button
             onClick={onNext}
             className="flex-1 max-w-xs py-3 rounded-xl font-black text-sm transition-all"
             style={{
-              background: `${factionData?.colors.primary ?? "#e2e8f0"}20`,
-              color: factionData?.colors.primary ?? "#e2e8f0",
-              border: `1px solid ${factionData?.colors.primary ?? "#e2e8f0"}`,
+              background: `${primaryColor}20`,
+              color: primaryColor,
+              border: `1px solid ${primaryColor}`,
             }}
           >
             {index < total - 1 ? "Next →" : "Module Complete ✓"}
@@ -249,6 +531,11 @@ export default function Forge() {
     setLessonIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
   };
 
+  const totalXp = allModules
+    .flatMap((m) => m.lessons)
+    .filter((l) => isLessonComplete(l.id))
+    .reduce((sum, l) => sum + (l.xpReward ?? 25), 0);
+
   return (
     <div
       className={`min-h-screen ${faction ? `faction-${faction}` : ""}`}
@@ -286,6 +573,9 @@ export default function Forge() {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm opacity-50">Total forge progress</span>
                 <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold opacity-60">
+                    ⚡ {totalXp.toLocaleString()} XP
+                  </span>
                   <span className="text-sm font-bold" style={{ color: factionData?.colors.primary }}>
                     {totalProgress.completed}/{totalProgress.total} lessons
                   </span>
@@ -381,6 +671,7 @@ export default function Forge() {
                 const mp = getModuleProgress(mod.id, allModules);
                 const isUnlocked = i === 0 || getModuleProgress(allModules[i - 1].id, allModules).percent === 100;
                 const isComplete = mp.percent === 100;
+                const modXp = mod.lessons.reduce((sum, l) => sum + (l.xpReward ?? 25), 0);
 
                 return (
                   <motion.div
@@ -422,6 +713,7 @@ export default function Forge() {
                                 ✓ Complete
                               </span>
                             )}
+                            <span className="text-xs opacity-30">⚡{modXp} XP</span>
                             <span className="text-sm opacity-40">{mp.completed}/{mp.total}</span>
                           </div>
                         </div>

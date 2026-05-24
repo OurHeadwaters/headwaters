@@ -3,12 +3,21 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const PASSPHRASE_HINT = "Enter the forge passphrase to access admin tools.";
 
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+}
+
 interface FormData {
   moduleName: string;
   moduleDescription: string;
   moduleIcon: string;
   lessonTitle: string;
   lessonBody: string;
+  videoUrl: string;
+  xpReward: number;
 }
 
 const EMPTY_FORM: FormData = {
@@ -17,6 +26,15 @@ const EMPTY_FORM: FormData = {
   moduleIcon: "📚",
   lessonTitle: "",
   lessonBody: "",
+  videoUrl: "",
+  xpReward: 50,
+};
+
+const EMPTY_QUESTION: QuizQuestion = {
+  question: "",
+  options: ["", "", "", ""],
+  correct: 0,
+  explanation: "",
 };
 
 export default function Admin() {
@@ -28,6 +46,7 @@ export default function Admin() {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [fileUploading, setFileUploading] = useState(false);
   const [fileResult, setFileResult] = useState<{ name: string; chars: number } | null>(null);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -95,10 +114,41 @@ export default function Admin() {
     }
   };
 
+  const addQuestion = () => {
+    setQuizQuestions(q => [...q, { ...EMPTY_QUESTION, options: ["", "", "", ""] }]);
+  };
+
+  const removeQuestion = (i: number) => {
+    setQuizQuestions(q => q.filter((_, idx) => idx !== i));
+  };
+
+  const updateQuestion = (i: number, field: keyof QuizQuestion, value: string | number | string[]) => {
+    setQuizQuestions(q =>
+      q.map((item, idx) => idx === i ? { ...item, [field]: value } : item)
+    );
+  };
+
+  const updateOption = (qi: number, oi: number, value: string) => {
+    setQuizQuestions(q =>
+      q.map((item, idx) =>
+        idx === qi
+          ? { ...item, options: item.options.map((opt, oidx) => oidx === oi ? value : opt) }
+          : item
+      )
+    );
+  };
+
   const handleAddLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
     setUploadResult(null);
+
+    const validQuiz = quizQuestions.filter(q =>
+      q.question.trim() &&
+      q.options.every(o => o.trim()) &&
+      q.explanation.trim()
+    );
+
     try {
       const res = await fetch("/api/castle/admin/lesson", {
         method: "POST",
@@ -113,6 +163,9 @@ export default function Admin() {
           lesson: {
             title: formData.lessonTitle,
             body: formData.lessonBody,
+            videoUrl: formData.videoUrl.trim() || undefined,
+            xpReward: formData.xpReward,
+            quiz: validQuiz.length > 0 ? validQuiz : undefined,
           },
         }),
       });
@@ -120,6 +173,7 @@ export default function Admin() {
       if (data.ok) {
         setUploadResult({ success: true, message: "Lesson added to the forge and saved to disk. The weapons are sharpened." });
         setFormData(EMPTY_FORM);
+        setQuizQuestions([]);
         setFileResult(null);
       } else {
         setUploadResult({ success: false, message: data.error ?? "Upload failed." });
@@ -133,6 +187,7 @@ export default function Admin() {
 
   const inputClass = "w-full rounded-xl px-4 py-2.5 text-sm outline-none border border-white/10";
   const inputStyle = { background: "rgba(255,255,255,0.04)", color: "#e2e8f0" };
+  const labelClass = "block text-xs opacity-40 mb-1 uppercase tracking-wider";
 
   return (
     <div className="min-h-screen" style={{ background: "#080810" }}>
@@ -241,7 +296,7 @@ export default function Admin() {
 
               <form
                 onSubmit={handleAddLesson}
-                className="rounded-2xl p-6 border border-white/10 flex flex-col gap-4"
+                className="rounded-2xl p-6 border border-white/10 flex flex-col gap-5"
                 style={{ background: "rgba(255,255,255,0.02)" }}
               >
                 <div>
@@ -253,7 +308,7 @@ export default function Admin() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-xs opacity-40 mb-1 uppercase tracking-wider">Module Name</label>
+                    <label className={labelClass}>Module Name</label>
                     <input
                       required
                       value={formData.moduleName}
@@ -264,7 +319,7 @@ export default function Admin() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs opacity-40 mb-1 uppercase tracking-wider">Icon</label>
+                    <label className={labelClass}>Icon</label>
                     <input
                       value={formData.moduleIcon}
                       onChange={(e) => setFormData(f => ({ ...f, moduleIcon: e.target.value }))}
@@ -276,7 +331,7 @@ export default function Admin() {
                 </div>
 
                 <div>
-                  <label className="block text-xs opacity-40 mb-1 uppercase tracking-wider">Module Description</label>
+                  <label className={labelClass}>Module Description</label>
                   <input
                     required
                     value={formData.moduleDescription}
@@ -288,7 +343,7 @@ export default function Admin() {
                 </div>
 
                 <div>
-                  <label className="block text-xs opacity-40 mb-1 uppercase tracking-wider">Lesson Title</label>
+                  <label className={labelClass}>Lesson Title</label>
                   <input
                     required
                     value={formData.lessonTitle}
@@ -300,7 +355,7 @@ export default function Admin() {
                 </div>
 
                 <div>
-                  <label className="block text-xs opacity-40 mb-1 uppercase tracking-wider">Lesson Body</label>
+                  <label className={labelClass}>Lesson Body</label>
                   <textarea
                     required
                     rows={8}
@@ -312,8 +367,151 @@ export default function Admin() {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Video / Reference URL (optional)</label>
+                    <input
+                      type="url"
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData(f => ({ ...f, videoUrl: e.target.value }))}
+                      placeholder="https://youtube.com/embed/... or reference link"
+                      className={inputClass}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>XP Reward</label>
+                    <input
+                      type="number"
+                      min={5}
+                      max={500}
+                      value={formData.xpReward}
+                      onChange={(e) => setFormData(f => ({ ...f, xpReward: Number(e.target.value) }))}
+                      className={inputClass}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="font-bold text-sm">Quiz Questions</h3>
+                      <p className="text-xs opacity-40 mt-0.5">Optional. Add questions learners must answer to complete this lesson.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addQuestion}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+                      style={{ background: "rgba(255,255,255,0.04)" }}
+                    >
+                      + Add Question
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    {quizQuestions.map((q, qi) => (
+                      <div
+                        key={qi}
+                        className="rounded-xl p-4 border border-white/10 flex flex-col gap-3"
+                        style={{ background: "rgba(255,255,255,0.02)" }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold opacity-50 uppercase tracking-wider">
+                            Question {qi + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeQuestion(qi)}
+                            className="text-xs text-red-400 opacity-60 hover:opacity-100 transition-opacity"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className={labelClass}>Question Text</label>
+                          <input
+                            required
+                            value={q.question}
+                            onChange={(e) => updateQuestion(qi, "question", e.target.value)}
+                            placeholder="What is...?"
+                            className={inputClass}
+                            style={inputStyle}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {q.options.map((opt, oi) => (
+                            <div key={oi}>
+                              <label className={labelClass}>
+                                Option {String.fromCharCode(65 + oi)}
+                                {oi === q.correct && (
+                                  <span className="ml-1 text-green-400">✓ correct</span>
+                                )}
+                              </label>
+                              <input
+                                required
+                                value={opt}
+                                onChange={(e) => updateOption(qi, oi, e.target.value)}
+                                placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                className={inputClass}
+                                style={{
+                                  ...inputStyle,
+                                  borderColor: oi === q.correct ? "rgba(74,222,128,0.3)" : "rgba(255,255,255,0.1)",
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+
+                        <div>
+                          <label className={labelClass}>Correct Answer</label>
+                          <select
+                            value={q.correct}
+                            onChange={(e) => updateQuestion(qi, "correct", Number(e.target.value))}
+                            className={inputClass}
+                            style={inputStyle}
+                          >
+                            {q.options.map((opt, oi) => (
+                              <option key={oi} value={oi} style={{ background: "#1a1a2e" }}>
+                                {String.fromCharCode(65 + oi)}: {opt || `(Option ${String.fromCharCode(65 + oi)})`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className={labelClass}>Explanation (shown after answer)</label>
+                          <textarea
+                            required
+                            rows={3}
+                            value={q.explanation}
+                            onChange={(e) => updateQuestion(qi, "explanation", e.target.value)}
+                            placeholder="Explain why the correct answer is right, and give context."
+                            className={`${inputClass} resize-none`}
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    {quizQuestions.length === 0 && (
+                      <p className="text-xs opacity-30 text-center py-3">
+                        No quiz questions yet. Click "Add Question" to require learners to test their knowledge.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 {uploadResult && !fileUploading && !uploadResult.success && (
                   <div className="rounded-xl px-4 py-3 text-sm text-red-400 bg-red-400/10 border border-red-400/20">
+                    {uploadResult.message}
+                  </div>
+                )}
+
+                {uploadResult && uploadResult.success && (
+                  <div className="rounded-xl px-4 py-3 text-sm text-green-400 bg-green-400/10 border border-green-400/20">
                     {uploadResult.message}
                   </div>
                 )}

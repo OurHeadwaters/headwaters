@@ -18,6 +18,13 @@ const ADMIN_PASSPHRASE = process.env.CASTLE_ADMIN_PASSPHRASE ?? "";
 const FACTION_IDS = new Set(["btc", "xrp", "eth", "wild"]);
 const FACTION_DEFAULTS: Record<string, number> = { btc: 1247, xrp: 892, eth: 1103, wild: 634 };
 
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+}
+
 interface AddedLesson {
   id: string;
   moduleId: string;
@@ -26,6 +33,9 @@ interface AddedLesson {
   moduleIcon: string;
   title: string;
   body: string;
+  videoUrl?: string;
+  xpReward?: number;
+  quiz?: QuizQuestion[];
   addedAt: string;
 }
 
@@ -241,13 +251,36 @@ router.post("/admin/lesson", requirePassphrase, (req, res) => {
     moduleName?: string;
     moduleDescription?: string;
     moduleIcon?: string;
-    lesson?: { title?: string; body?: string };
+    lesson?: {
+      title?: string;
+      body?: string;
+      videoUrl?: string;
+      xpReward?: number;
+      quiz?: QuizQuestion[];
+    };
   };
 
   if (!moduleName || !lesson?.title || !lesson?.body) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
+
+  const validQuiz: QuizQuestion[] | undefined =
+    Array.isArray(lesson.quiz) && lesson.quiz.length > 0
+      ? lesson.quiz.filter(
+          (q) =>
+            typeof q.question === "string" &&
+            q.question.trim() &&
+            Array.isArray(q.options) &&
+            q.options.length >= 2 &&
+            q.options.every((o) => typeof o === "string" && o.trim()) &&
+            typeof q.correct === "number" &&
+            q.correct >= 0 &&
+            q.correct < q.options.length &&
+            typeof q.explanation === "string" &&
+            q.explanation.trim()
+        )
+      : undefined;
 
   const newLesson: AddedLesson = {
     id: `custom-${Date.now()}`,
@@ -257,6 +290,9 @@ router.post("/admin/lesson", requirePassphrase, (req, res) => {
     moduleIcon: (moduleIcon ?? "📚").trim(),
     title: lesson.title.trim(),
     body: lesson.body.trim(),
+    videoUrl: lesson.videoUrl?.trim() || undefined,
+    xpReward: typeof lesson.xpReward === "number" && lesson.xpReward > 0 ? lesson.xpReward : 50,
+    quiz: validQuiz,
     addedAt: new Date().toISOString(),
   };
 
