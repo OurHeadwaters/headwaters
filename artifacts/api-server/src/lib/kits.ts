@@ -58,6 +58,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Family Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=family-kit",
     userManual: {
       what: "Build 30-day food and water baseline this month. Then move to the 90-day pantry rotation and home security audit.",
       first: "Start the Prepared at Home track. The earliest episodes lay the foundation — start there before buying any gear.",
@@ -77,6 +78,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Producer Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=producer-kit",
     userManual: {
       what: "Start the Mind & Money track — specifically the early episodes on financial philosophy and the debt payoff framework.",
       first: "Get your money working for you before you try to build income from scratch. The debt-reduction framework comes first.",
@@ -126,6 +128,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Care Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=care-kit",
     userManual: {
       what: "Filter the Outsourced Health → Health Sovereign episodes by earliest publish date. The philosophical foundation matters most.",
       first: "Build one concrete home-health practice at a time. Most people start with food quality and sleep before adding herbalism or supplements.",
@@ -147,6 +150,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Budget Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=budget-kit",
     userManual: {
       what: "The envelope budgeting framework applies immediately to your current income. Start splitting your income into buckets this month.",
       first: "Listen to the Mind & Money track's early episodes on financial philosophy, then set up your first budget buckets.",
@@ -166,6 +170,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Digital Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=digital-kit",
     userManual: {
       what: "Start with the TradFi → Hard Assets transformation episodes. Understand the 'why' before touching a hardware wallet.",
       first: "Set up a hardware wallet with a small amount before you hold anything significant. The gear shelf has Jack's reviewed hardware wallets.",
@@ -185,6 +190,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Physical Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=physical-kit",
     userManual: {
       what: "Start the When Things Get Hard track. It's short and covers the high-probability scenarios most families should prepare for.",
       first: "Work through the Grid → Off-Grid transformation for energy independence concepts, then use the gear shelf to identify the right hardware.",

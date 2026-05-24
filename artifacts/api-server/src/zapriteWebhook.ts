@@ -30,8 +30,49 @@ interface ZapriteOrderPayload {
     currency?: string;
     customerEmail?: string;
     customerName?: string;
+    /** Zaprite metadata key-value map (set via payment link custom fields) */
     metadata?: Record<string, string>;
+    /** Zaprite custom fields array — alternate shape some versions use */
+    customFields?: Array<{ name: string; value: string }>;
+    /** Free-text reference / note the buyer or merchant sets */
+    reference?: string;
+    note?: string;
+    /** The payment link URL — we parse kit_slug from query params as fallback */
+    paymentLinkUrl?: string;
+    returnUrl?: string;
   };
+}
+
+/** Extract kit_slug from all the places Zaprite might put it */
+function extractKitSlug(order: ZapriteOrderPayload["order"]): string | null {
+  // 1. Flat metadata map
+  if (order.metadata?.kit_slug) return order.metadata.kit_slug;
+
+  // 2. Custom fields array
+  if (Array.isArray(order.customFields)) {
+    const field = order.customFields.find(
+      (f) => f.name === "kit_slug" || f.name === "kit",
+    );
+    if (field?.value) return field.value;
+  }
+
+  // 3. Reference / note field (buyer typed it in)
+  const ref = order.reference ?? order.note ?? "";
+  if (ref && ref.endsWith("-kit")) return ref.trim();
+
+  // 4. Parse from payment link URL query params (our ?kit_slug=xxx fallback)
+  for (const urlStr of [order.paymentLinkUrl, order.returnUrl]) {
+    if (!urlStr) continue;
+    try {
+      const u = new URL(urlStr);
+      const slug = u.searchParams.get("kit_slug");
+      if (slug) return slug;
+    } catch {
+      // not a valid URL, skip
+    }
+  }
+
+  return null;
 }
 
 function verifySignature(rawBody: Buffer, signature: string, secret: string): boolean {
@@ -85,9 +126,9 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
     return;
   }
 
-  const kitSlug = order.metadata?.kit_slug;
+  const kitSlug = extractKitSlug(order);
   if (!kitSlug) {
-    logger.warn({ orderId: order.id }, "zaprite webhook: no kit_slug in order metadata — skipping");
+    logger.warn({ orderId: order.id }, "zaprite webhook: could not determine kit_slug — skipping");
     res.status(200).json({ received: true, skipped: true });
     return;
   }
