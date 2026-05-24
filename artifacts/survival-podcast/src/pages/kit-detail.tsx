@@ -265,19 +265,39 @@ export default function KitDetailPage() {
           </p>
 
           {/* CTA */}
-          <div className="mt-8">
-            <a
-              href="#get-access"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
-              style={{
-                color: "#fff",
-                background: meta.color,
-                boxShadow: `0 4px 20px ${meta.color}40`,
-              }}
-            >
-              Get Access
-              <ChevronRight className="w-4 h-4" />
-            </a>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            {kit.externalLinks.length > 0 ? (
+              kit.externalLinks.map((link) => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target={link.url.startsWith("http") ? "_blank" : undefined}
+                  rel={link.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+                  style={{
+                    color: "#fff",
+                    background: meta.color,
+                    boxShadow: `0 4px 20px ${meta.color}40`,
+                  }}
+                >
+                  {link.label}
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              ))
+            ) : (
+              <a
+                href="#get-access"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+                style={{
+                  color: "#fff",
+                  background: meta.color,
+                  boxShadow: `0 4px 20px ${meta.color}40`,
+                }}
+              >
+                Get Access
+                <ChevronRight className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>

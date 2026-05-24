@@ -89,7 +89,7 @@ export default function KitsPage() {
         <div className="flex items-end justify-between mb-8">
           <div>
             <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
-              The seven kits
+              The kits
             </h2>
             <p className="text-sm text-muted-foreground">
               Find the bundle that matches your transformation.
