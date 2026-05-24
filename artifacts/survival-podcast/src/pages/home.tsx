@@ -1081,7 +1081,7 @@ function CommunitySection() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12">
             {[
               { href: "/library", label: "Search Archive", desc: "6,000+ episodes", Icon: Search },
               { href: "/tracks", label: "Learning Tracks", desc: "Seven curated paths", Icon: Compass },
@@ -1098,6 +1098,17 @@ function CommunitySection() {
                 <div className="text-xs text-[#FDFBF7]/50">{card.desc}</div>
               </Link>
             ))}
+            <a
+              href="https://ourheadwaters.ca/headwaters-learning/forge"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => bumpProgress(3)}
+              className="group flex flex-col items-center gap-2 p-5 rounded-xl border border-white/8 hover:border-[#D9A066]/40 hover:bg-white/[0.02] transition-all"
+            >
+              <Flame className="w-6 h-6 text-[#D9A066] group-hover:scale-110 transition-transform" />
+              <div className="font-serif font-bold text-[#FDFBF7]">The Forge ↗</div>
+              <div className="text-xs text-[#FDFBF7]/50">Crypto Castle learning</div>
+            </a>
           </div>
         </motion.div>
       </div>

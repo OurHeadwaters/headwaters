@@ -1,4 +1,4 @@
-import app, { castleDevProxy, hwDevProxy } from "./app";
+import app, { hwDevProxy } from "./app";
 import { logger } from "./lib/logger";
 import { startBackgroundRefresh } from "./lib/library";
 import { startGearSchedule } from "./routes/gear";
@@ -64,16 +64,13 @@ const server = app.listen(port, (err) => {
   // Both handlers must be behind a single "upgrade" listener with URL routing —
   // stacking two independent .upgrade handlers causes the first to intercept
   // all upgrades, breaking HMR for the second app.
-  if (castleDevProxy || hwDevProxy) {
+  if (hwDevProxy) {
     server.on("upgrade", (req, socket, head) => {
-      if (req.url?.startsWith("/headwaters") && hwDevProxy) {
+      if (req.url?.startsWith("/headwaters")) {
         hwDevProxy.upgrade(req, socket, head);
-      } else if (req.url?.startsWith("/crypto-castle") && castleDevProxy) {
-        castleDevProxy.upgrade(req, socket, head);
       }
     });
-    if (castleDevProxy) logger.info("crypto-castle: WebSocket HMR proxy attached");
-    if (hwDevProxy) logger.info("headwaters: WebSocket HMR proxy attached");
+    logger.info("headwaters: WebSocket HMR proxy attached");
   }
 
   logger.info({ port }, "Server listening");

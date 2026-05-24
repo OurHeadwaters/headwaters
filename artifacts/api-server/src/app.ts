@@ -103,37 +103,5 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// ─── Crypto Castle — dev proxy or static SPA ──────────────────────────────────
-// In development: proxy to the Vite dev server (hot reload, instant edits).
-// In production: serve the pre-built static files.
-// Run `pnpm --filter @workspace/crypto-castle run build` to update prod assets.
-const castleDist = path.resolve(__dirname, "../../../artifacts/crypto-castle/dist/public");
-
-let castleDevProxy: RequestHandler | undefined;
-
-if (process.env.NODE_ENV !== "production") {
-  const castleDevPort = process.env.CASTLE_DEV_PORT ?? "21501";
-  castleDevProxy = createProxyMiddleware({
-    target: `http://127.0.0.1:${castleDevPort}`,
-    changeOrigin: true,
-    ws: true,
-    logger: console,
-  });
-  // Mount at root WITHOUT a path prefix so Express does NOT strip /crypto-castle
-  // before forwarding — Vite's base is /crypto-castle/ and needs the full path.
-  app.use((req, res, next) => {
-    if (req.url?.startsWith("/crypto-castle")) {
-      return (castleDevProxy as express.RequestHandler)(req, res, next);
-    }
-    next();
-  });
-  logger.info({ castleDevPort }, "crypto-castle: proxying to Vite dev server");
-} else {
-  app.use("/crypto-castle", express.static(castleDist));
-  app.get("/crypto-castle/*splat", (_req, res) => {
-    res.sendFile(path.join(castleDist, "index.html"));
-  });
-}
-
-export { castleDevProxy, hwDevProxy };
+export { hwDevProxy };
 export default app;

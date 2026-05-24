@@ -32,6 +32,7 @@ const journeyItems = [
   { href: "/zones", label: "Zones", desc: "Browse episodes by life-skills topic area" },
   { href: "/transform", label: "Transform", desc: "Guided paths for real personal transformation" },
   { href: "/series", label: "Series", desc: "Multi-episode deep dives on a single subject" },
+  { href: "https://ourheadwaters.ca/headwaters-learning/forge", label: "The Forge", desc: "Crypto Castle — learn blockchain by faction", external: true },
 ];
 
 const communityItems = [
@@ -166,19 +167,35 @@ function DropdownMenu({
           className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-64 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl pt-3 pb-2 z-50"
         >
           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1e3428] border-l border-t border-white/10 rotate-45" />
-          {items.map((item, i) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              role="menuitem"
-              ref={(el) => { itemRefs.current[i] = el as HTMLAnchorElement | null; }}
-              onClick={() => close()}
-              className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10"
-            >
-              <span className="text-sm font-semibold text-white">{item.label}</span>
-              <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
-            </Link>
-          ))}
+          {items.map((item, i) =>
+            (item as { external?: boolean }).external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                role="menuitem"
+                ref={(el) => { itemRefs.current[i] = el as HTMLAnchorElement | null; }}
+                onClick={() => close()}
+                className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10"
+              >
+                <span className="text-sm font-semibold text-white">{item.label} ↗</span>
+                <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                role="menuitem"
+                ref={(el) => { itemRefs.current[i] = el as HTMLAnchorElement | null; }}
+                onClick={() => close()}
+                className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10"
+              >
+                <span className="text-sm font-semibold text-white">{item.label}</span>
+                <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
+              </Link>
+            )
+          )}
         </div>
       )}
     </div>
