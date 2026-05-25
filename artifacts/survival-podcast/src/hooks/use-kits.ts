@@ -86,6 +86,7 @@ export const KIT_META: Record<string, { icon: string; color: string }> = {
   "practitioner-kit": { icon: "🌿", color: "#5B8A60" },
   "council-kit":      { icon: "🌊", color: "#3A6B7A" },
   "care-kit":         { icon: "🌱", color: "#7A4A8A" },
+  "budget-kit":       { icon: "🪣", color: "#7A6A3A" },
   "digital-kit":      { icon: "🔐", color: "#3A5A8A" },
   "physical-kit":     { icon: "⚡", color: "#8A5A3A" },
 };
