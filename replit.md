@@ -1,5 +1,8 @@
 # Headwaters — Living Watershed System
-*Agent orientation file. Read this first before any work in this repo.*
+*Agent orientation file.*
+
+> **New to this repo? Read `HANDOFF.md` first.** It is the hempcrete brief — the single load-bearing document that carries the ethos, the built system, the constitutional rules, and the build direction in one place. This file supplements it with operational detail.
+
 
 ---
 
