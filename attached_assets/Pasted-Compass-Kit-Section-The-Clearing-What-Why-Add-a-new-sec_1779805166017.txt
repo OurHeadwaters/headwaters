@@ -1,0 +1,30 @@
+Compass Kit Section — The Clearing
+What & Why
+Add a new section to The Clearing (artifacts/headwaters/src/App.tsx) that names the purpose of the Compass Kit — the reason Headwaters was built. The section draws on two ideas the steward has articulated:
+
+The brain-science reality: Rabbit holes hijack the same dopamine circuits as gambling. Chronic pattern-seeking spikes cortisol, narrows focus, erodes reality-testing. The spiral can go supercritical. Once someone is deep in the trees, pharmaceuticals or external anchors sometimes become the only off-ramp — because insight alone isn't enough. The antidote isn't debate or theory. It's agency + connection: a practical, human-scale system that interrupts the doom loop by giving people something to build.
+
+The intervention moment and the trail metaphor: Headwaters lands where you are — right when you need it. The core warning (rendered visually as a quiet alarm, not a lecture): "Never just start walking when you're deep in the trees — people may not be able to find you." The Compass Kit is what gets offered instead of another theory. The steward shows up with a smile and a helping hand, shows them the compass they built, teaches them to craft their own, trains them on the map (the zones), and then together they decide: keep strolling, or go stomp their own ground.
+
+Done looks like
+A new section inserted between "The Stomping Path" (spiral section) and "Trailhead Voices" in App.tsx
+Section has a label (e.g. "The Compass Kit · Why We Built This") and an evocative heading
+Three visual beats rendered as distinct blocks or columns:
+The moment — the brain-science framing, no jargon: the spiral goes supercritical, doom-scrolling replaces agency, isolation replaces connection; the quote/warning about not walking blind in the trees
+The offer — what the steward shows up with: the compass already built, an outstretched hand, no lecture
+The trail ahead — the three possible endings: walk together, stomp their own ground, or hand the compass to someone else down the line
+Copy is in the Headwaters register: warm northern, grounded, no hype, practitioner-to-practitioner
+Palette and type consistent with the rest of the Clearing (dark bg, amber/gold accents, Georgia serif headings, sans-serif body)
+Out of scope
+Changes to other sections (Trailhead Voices, Stomping Path, Zone Map, etc.)
+Any new routes, components, or files — everything goes into App.tsx inline
+Video or animation
+Steps
+Write the copy for all three beats — using the steward's language: the rabbit-hole/brain-science anchor (cortisol, dopamine loops, going supercritical), the trees warning, the compass offer (smile + helping hand + show don't tell), and the trail-choice close (together or stomping their own ground).
+
+Build the section in App.tsx — insert it between the closing </div> of the Stomping Path section and the opening of the Trailhead Voices section. Use the existing inline-style pattern (no Tailwind, no new imports). Three-beat layout: a full-width intro block for the brain-science framing + warning quote, then a two- or three-column grid for the offer and trail-choice beats.
+
+Style it distinctly but cohesively — give the section a background that marks it as a pause/pivot between the spiral and the voices. A dark pine-green tint (rgba(3,20,10,...)) or muted charcoal differentiates it from adjacent sections without breaking the palette.
+
+Relevant files
+artifacts/headwaters/src/App.tsx:277-293
