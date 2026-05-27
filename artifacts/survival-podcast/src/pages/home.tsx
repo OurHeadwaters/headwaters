@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import {
-  Compass, Search, ArrowRight, PlayCircle, Sparkles, Footprints,
+  Compass, Search, ArrowRight, PlayCircle, Footprints,
   Mountain, Sprout, Sun, Cloud, Wind, Flame, Library as LibraryIcon,
   Mic, ChevronRight, Send, CheckCircle2, X, Map as MapIcon,
 } from "lucide-react";
@@ -11,51 +11,34 @@ import { useGetFeaturedEpisodes, useListZones } from "@workspace/api-client-reac
 import { useTransformations } from "@/hooks/use-transformations";
 import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 
-// ─── Daily Stomp local state ───────────────────────────────────────────────────
+// ─── Daily Stomp (Imprint) local state ────────────────────────────────────────
 
 const STOMP_KEY = "tsp-daily-stomp-v1";
-const PROGRESS_KEY = "tsp-path-progress-v1";
 
-interface StompState {
+interface ImprintState {
   date: string;
   completed: boolean;
-  streak: number;
 }
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function readStomp(): StompState {
-  if (typeof window === "undefined") return { date: todayISO(), completed: false, streak: 0 };
+function readImprint(): ImprintState {
+  if (typeof window === "undefined") return { date: todayISO(), completed: false };
   try {
     const raw = localStorage.getItem(STOMP_KEY);
-    if (!raw) return { date: todayISO(), completed: false, streak: 0 };
-    const parsed = JSON.parse(raw) as StompState;
+    if (!raw) return { date: todayISO(), completed: false };
+    const parsed = JSON.parse(raw) as ImprintState & { streak?: number };
     if (parsed.date !== todayISO()) {
-      const y = new Date(); y.setDate(y.getDate() - 1);
-      const wasYesterday = parsed.date === y.toISOString().slice(0, 10);
-      return { date: todayISO(), completed: false, streak: wasYesterday && parsed.completed ? parsed.streak : 0 };
+      return { date: todayISO(), completed: false };
     }
-    return parsed;
-  } catch { return { date: todayISO(), completed: false, streak: 0 }; }
+    return { date: parsed.date, completed: parsed.completed };
+  } catch { return { date: todayISO(), completed: false }; }
 }
 
-function writeStomp(s: StompState) {
+function writeImprint(s: ImprintState) {
   try { localStorage.setItem(STOMP_KEY, JSON.stringify(s)); } catch {}
-}
-
-function readProgress(): number {
-  if (typeof window === "undefined") return 0;
-  try { return parseInt(localStorage.getItem(PROGRESS_KEY) || "0", 10) || 0; } catch { return 0; }
-}
-function bumpProgress(by = 5) {
-  try {
-    const cur = readProgress();
-    const next = Math.min(100, cur + by);
-    localStorage.setItem(PROGRESS_KEY, String(next));
-    window.dispatchEvent(new CustomEvent("path-progress", { detail: next }));
-  } catch {}
 }
 
 // ─── Custom Cursor (subtle glowing orb) ────────────────────────────────────────
@@ -128,20 +111,12 @@ function ParticleField({ count = 24, color = "#D9A066" }: { count?: number; colo
 function VineProgress() {
   const { scrollYProgress } = useScroll();
   const scaleY = useSpring(scrollYProgress, { damping: 30, stiffness: 90 });
-  const [bonus, setBonus] = useState(0);
-
-  useEffect(() => {
-    setBonus(readProgress());
-    const onProgress = (e: Event) => setBonus((e as CustomEvent<number>).detail);
-    window.addEventListener("path-progress", onProgress);
-    return () => window.removeEventListener("path-progress", onProgress);
-  }, []);
 
   return (
     <div className="hidden lg:block fixed left-6 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
       <div className="relative h-[55vh] w-[3px] rounded-full bg-white/8">
         <motion.div
-          className="absolute inset-x-0 top-0 origin-top rounded-full bg-gradient-to-b from-[#D9A066] via-[#A64B36] to-[#2C4A36] shadow-[0_0_18px_rgba(217,160,102,0.6)]"
+          className="absolute inset-x-0 top-0 origin-top rounded-full bg-gradient-to-b from-[#D9A066] via-[#A64B36] to-[#2C4A36]"
           style={{ height: "100%", scaleY }}
         />
         {/* Vine leaves */}
@@ -155,15 +130,9 @@ function VineProgress() {
             viewport={{ once: true, margin: "-20%" }}
             transition={{ delay: 0.2 + i * 0.1, type: "spring", stiffness: 200 }}
           >
-            <Sprout className="w-4 h-4 text-[#7FA77F] drop-shadow-[0_0_6px_rgba(127,167,127,0.6)]" />
+            <Sprout className="w-4 h-4 text-[#7FA77F]" />
           </motion.div>
         ))}
-        <div className="absolute -bottom-8 -left-3 flex flex-col items-center gap-1">
-          <Footprints className="w-3 h-3 text-[#D9A066]" />
-          <span className="text-[9px] font-bold uppercase tracking-widest text-[#D9A066]/80">
-            {bonus}xp
-          </span>
-        </div>
       </div>
     </div>
   );
@@ -181,29 +150,21 @@ const STOMP_PROMPTS = [
 
 function DailyStompOrb() {
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<StompState>(() => ({ date: todayISO(), completed: false, streak: 0 }));
+  const [imprint, setImprint] = useState<ImprintState>(() => ({ date: todayISO(), completed: false }));
   const [response, setResponse] = useState("");
-  const [showConfetti, setShowConfetti] = useState(false);
-  const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prompt = useMemo(() => {
     const day = new Date().getDate();
     return STOMP_PROMPTS[day % STOMP_PROMPTS.length];
   }, []);
 
-  useEffect(() => { setState(readStomp()); }, []);
-  useEffect(() => () => {
-    if (confettiTimer.current) clearTimeout(confettiTimer.current);
-  }, []);
+  useEffect(() => { setImprint(readImprint()); }, []);
 
   function complete() {
-    setState((prev) => {
+    setImprint((prev) => {
       if (prev.completed) return prev;
-      const next: StompState = { date: todayISO(), completed: true, streak: prev.streak + 1 };
-      writeStomp(next);
-      bumpProgress(10);
-      setShowConfetti(true);
-      if (confettiTimer.current) clearTimeout(confettiTimer.current);
-      confettiTimer.current = setTimeout(() => setShowConfetti(false), 2500);
+      const next: ImprintState = { date: todayISO(), completed: true };
+      writeImprint(next);
+      window.dispatchEvent(new CustomEvent("StompOn"));
       return next;
     });
   }
@@ -223,15 +184,10 @@ function DailyStompOrb() {
         <span className="absolute inset-0 rounded-full bg-[#D9A066]/40 animate-tsp-pulse-ring" />
         <span className="absolute inset-0 rounded-full bg-[#D9A066]/20 animate-tsp-pulse-ring" style={{ animationDelay: "0.7s" }} />
         <span className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#D9A066] to-[#A64B36] shadow-[0_8px_30px_rgba(217,160,102,0.5)] border-2 border-[#FDFBF7]/90">
-          {state.completed
+          {imprint.completed
             ? <CheckCircle2 className="w-7 h-7 text-[#FDFBF7]" />
             : <Footprints className="w-7 h-7 text-[#FDFBF7] group-hover:rotate-12 transition-transform" />}
         </span>
-        {state.streak > 0 && (
-          <span className="absolute -top-1 -right-1 bg-[#2C4A36] text-[#D9A066] text-[10px] font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#FDFBF7] shadow">
-            {state.streak}
-          </span>
-        )}
       </motion.button>
 
       <AnimatePresence>
@@ -262,11 +218,11 @@ function DailyStompOrb() {
               <div className="relative p-7">
                 <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#D9A066] mb-3">
                   <Footprints className="w-3.5 h-3.5" />
-                  Today's Stomp · Day {state.streak + (state.completed ? 0 : 1)}
+                  Today's Stomp
                 </div>
                 <h3 className="font-serif text-2xl text-white leading-snug mb-4">{prompt}</h3>
 
-                {!state.completed ? (
+                {!imprint.completed ? (
                   <>
                     <textarea
                       value={response}
@@ -289,46 +245,11 @@ function DailyStompOrb() {
                       <CheckCircle2 className="w-7 h-7 text-[#D9A066]" />
                     </div>
                     <p className="text-white font-serif text-lg mb-1">Stomped.</p>
-                    <p className="text-white/60 text-sm">{state.streak}-day streak. Come back tomorrow.</p>
+                    <p className="text-white/60 text-sm">Come back tomorrow.</p>
                   </div>
                 )}
               </div>
             </motion.div>
-          </motion.div>
-        )}
-
-        {showConfetti && (
-          <motion.div
-            key="conf"
-            className="fixed inset-0 z-[60] pointer-events-none"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 0 }}
-            transition={{ delay: 1.5, duration: 1 }}
-          >
-            {Array.from({ length: 40 }).map((_, i) => {
-              const angle = (i / 40) * Math.PI * 2;
-              const dist = 200 + Math.random() * 200;
-              const color = ["#D9A066", "#A64B36", "#7FA77F", "#FDFBF7"][i % 4];
-              return (
-                <motion.span
-                  key={i}
-                  className="absolute rounded-sm"
-                  style={{
-                    left: "calc(100% - 4rem - 32px)", top: "calc(100% - 4rem - 32px)",
-                    width: 6 + Math.random() * 4, height: 6 + Math.random() * 4,
-                    background: color,
-                  }}
-                  initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-                  animate={{
-                    x: Math.cos(angle) * dist,
-                    y: Math.sin(angle) * dist - 50,
-                    opacity: 0,
-                    rotate: Math.random() * 720,
-                  }}
-                  transition={{ duration: 1.6 + Math.random() * 0.6, ease: "easeOut" }}
-                />
-              );
-            })}
           </motion.div>
         )}
       </AnimatePresence>
@@ -360,8 +281,8 @@ function HeroEntrance() {
   }
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const yMountains = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const yMid = useTransform(scrollYProgress, [0, 1], ["0%", "55%"]);
+  const yMountains = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
+  const yMid = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
   const yFog = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
   const headlineY = useTransform(scrollYProgress, [0.4, 1], ["0%", "120%"]);
   const headlineOpacity = useTransform(scrollYProgress, [0.55, 0.92], [1, 0]);
@@ -388,7 +309,7 @@ function HeroEntrance() {
     <section
       ref={ref}
       onMouseMove={handleMouseMove}
-      className="relative h-[100vh] min-h-[640px] w-full overflow-hidden bg-[#0c1611]"
+      className="relative h-[78vh] min-h-[560px] w-full overflow-hidden bg-[#0c1611]"
       style={{ background: "radial-gradient(ellipse at 50% 100%, #2C4A36 0%, #15241b 55%, #0c1611 100%)" }}
     >
       {/* Sky gradient + sun */}
@@ -501,7 +422,7 @@ function HeroEntrance() {
             const [cx, cy] = positions[i] ?? [500, 380];
             const side = i % 2 === 0 ? -8 : 8;
             return (
-              <g key={i} filter="url(#glow)">
+              <g key={i}>
                 <ellipse
                   cx={cx + side}
                   cy={cy}
@@ -558,7 +479,7 @@ function HeroEntrance() {
           transition={{ duration: 1, ease: "easeOut" }}
           className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-black/30 backdrop-blur-sm mb-4 md:mb-6"
         >
-          <Sparkles className="w-3.5 h-3.5 text-[#D9A066]" />
+          <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
           <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">The Worn Path · Transition · Zone 2</span>
         </motion.div>
 
@@ -566,29 +487,18 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-          className="font-serif text-5xl sm:text-7xl md:text-8xl font-bold text-[#FDFBF7] leading-[0.95] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)]"
+          className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FDFBF7] leading-[1.05] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)] max-w-3xl"
         >
-          The <span className="italic text-[#D9A066]">Stomping</span><br /> Path
+          The clearing is where your <span className="italic text-[#D9A066]">Ridge ideas</span> get neighbours.
         </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          className="text-lg md:text-xl text-[#FDFBF7]/85 max-w-2xl mb-3 md:mb-4 font-light leading-relaxed"
-        >
-          See the problems. Stomp the solutions. <br className="hidden sm:block" />
-          Reclaim your sovereignty — one footprint at a time.
-        </motion.p>
 
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.65 }}
-          className="text-sm text-[#FDFBF7]/50 max-w-xl mb-6 md:mb-10 leading-relaxed"
+          transition={{ duration: 0.9, delay: 0.5 }}
+          className="text-base md:text-lg text-[#FDFBF7]/65 max-w-lg mb-7 md:mb-10 leading-relaxed"
         >
-          Zone 2 on the permaculture map — where the household meets the community.
-          Tools, tracks, and practitioners for the transition from fear to watershed.
+          The worn path between the Lodge and the Clearing. Walk it.
         </motion.p>
 
         <motion.div
@@ -599,7 +509,6 @@ function HeroEntrance() {
         >
           <a
             href="#problems"
-            onClick={() => bumpProgress(3)}
             className="group relative inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#2C4A36] bg-gradient-to-r from-[#D9A066] to-[#e8b06b] shadow-[0_10px_40px_rgba(217,160,102,0.45)] hover:shadow-[0_14px_50px_rgba(217,160,102,0.65)] hover:-translate-y-0.5 transition-all"
           >
             <Footprints className="w-4 h-4" />
@@ -610,8 +519,8 @@ function HeroEntrance() {
             href="#daily"
             className="inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/25 backdrop-blur-sm hover:bg-[#FDFBF7]/10 transition-all"
           >
-            <Sparkles className="w-4 h-4 text-[#D9A066]" />
-            Join the Daily Path
+            <Footprints className="w-4 h-4 text-[#D9A066]" />
+            Today's trail
           </a>
         </motion.div>
 
@@ -769,7 +678,6 @@ function StormCard({ item, index }: { item: typeof STORM_SOLUTIONS[number]; inde
           </p>
           <Link
             href={item.track}
-            onClick={() => bumpProgress(4)}
             className="inline-flex items-center gap-1.5 text-sm font-bold transition-all hover:gap-2.5"
             style={{ color: item.accent }}
           >
@@ -892,7 +800,7 @@ function CuratedPathsSection() {
                 <div key={i} className="h-56 rounded-2xl bg-[#0c1611] animate-pulse border border-white/5" />
               ))
             : featured.map((t) => (
-                <Link key={t.slug} href={`/episodes?transformation=${encodeURIComponent(t.slug)}`} onClick={() => bumpProgress(4)}>
+                <Link key={t.slug} href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}>
                   <TiltCard accent={t.color}>
                     <div className="flex items-start justify-between mb-4">
                       <span className="text-4xl leading-none">{t.icon}</span>
@@ -972,7 +880,6 @@ function StoriesSection() {
                 >
                   <Link
                     href={`/episodes/${ep.slug}`}
-                    onClick={() => bumpProgress(3)}
                     className="group block h-full rounded-2xl overflow-hidden border border-white/8 bg-[#15241b] hover:border-[#D9A066]/50 transition-all hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(217,160,102,0.2)]"
                   >
                     <div className="relative aspect-[16/10] bg-[#0c1611] overflow-hidden">
@@ -1030,7 +937,6 @@ function CommunitySection() {
     e.preventDefault();
     if (!email.includes("@")) return;
     setSubmitted(true);
-    bumpProgress(8);
   }
 
   return (
@@ -1046,7 +952,7 @@ function CommunitySection() {
           transition={{ duration: 0.8 }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-[#D9A066]/10 mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-[#D9A066]" />
+            <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">Next Steps</span>
           </div>
 
@@ -1117,7 +1023,6 @@ function CommunitySection() {
               <Link
                 key={card.href}
                 href={card.href}
-                onClick={() => bumpProgress(3)}
                 className="group flex flex-col items-center gap-2 p-5 rounded-xl border border-white/8 hover:border-[#D9A066]/40 hover:bg-white/[0.02] transition-all"
               >
                 <card.Icon className="w-6 h-6 text-[#D9A066] group-hover:scale-110 transition-transform" />
@@ -1129,7 +1034,6 @@ function CommunitySection() {
               href="https://ourheadwaters.ca/headwaters-learning/forge"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => bumpProgress(3)}
               className="group flex flex-col items-center gap-2 p-5 rounded-xl border border-white/8 hover:border-[#D9A066]/40 hover:bg-white/[0.02] transition-all"
             >
               <Flame className="w-6 h-6 text-[#D9A066] group-hover:scale-110 transition-transform" />
@@ -1176,11 +1080,6 @@ function GlobalStompStyles() {
 // ─── Page export ───────────────────────────────────────────────────────────────
 
 export function Home() {
-  // Reset progress if it's been a while — just keep it light
-  useEffect(() => {
-    // bump small progress on first paint so the vine isn't empty
-    if (readProgress() === 0) bumpProgress(2);
-  }, []);
 
   // Tiny GSAP smoothness ping (no ScrollTrigger plugin — keeps deps tiny)
   useEffect(() => {

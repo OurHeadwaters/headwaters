@@ -27,18 +27,12 @@ function useBrigadeStatus(isAuthenticated: boolean) {
   });
 }
 
-const journeyItems = [
-  { href: "/tracks", label: "Tracks", desc: "Structured learning paths through TSP's best content" },
-  { href: "/zones", label: "Zones", desc: "Browse episodes by life-skills topic area" },
-  { href: "/transform", label: "Transform", desc: "Guided paths for real personal transformation" },
-  { href: "/kits", label: "Kits", desc: "Bundled episodes, gear, and resources per transformation" },
-  { href: "/series", label: "Series", desc: "Multi-episode deep dives on a single subject" },
-  { href: "https://ourheadwaters.ca/headwaters-learning/forge", label: "The Forge", desc: "Crypto Castle — learn blockchain by faction", external: true },
-];
-
-const communityItems = [
-  { href: "/council", label: "Expert Council", desc: "Creators and experts behind The Stomping Path" },
-  { href: "/about", label: "About", desc: "The mission and story of TSP" },
+const landmarkItems = [
+  { href: "/codetry/", label: "The Arch", desc: "Digital sovereignty — Codetry", external: true },
+  { href: "/headwaters", label: "The Well", desc: "The spring — Zone 1 source" },
+  { href: "https://ourheadwaters.ca/headwaters-learning/forge", label: "The Kiln", desc: "The Forge — maker space", external: true },
+  { href: "/library", label: "The Granary", desc: "6,000+ episodes — accumulated knowledge" },
+  { href: "/zones", label: "The Path", desc: "Zone map — navigate the terrain" },
 ];
 
 const adminItems = [
@@ -207,26 +201,20 @@ function DropdownMenu({
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [journeyOpen, setJourneyOpen] = useState(false);
-  const [communityOpen, setCommunityOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const { episode } = usePlayer();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const { data: brigadeData } = useBrigadeStatus(isAuthenticated);
   const isBrigadeMember = brigadeData?.isMember === true;
 
-  const journeyPaths = journeyItems.map((i) => i.href);
-  const communityPaths = communityItems.map((i) => i.href);
   const adminPaths = adminItems.map((i) => i.href);
+  const landmarkPaths = landmarkItems.map((i) => i.href);
 
-  const isJourneyActive = journeyPaths.some(
-    (p) => location === p || location.startsWith(p + "/")
-  );
-  const isCommunityActive = communityPaths.some(
-    (p) => location === p || location.startsWith(p + "/")
-  );
   const isAdminActive = adminPaths.some(
     (p) => location === p || location.startsWith(p + "/")
+  );
+  const isLandmarkActive = landmarkPaths.some(
+    (p) => !p.startsWith("http") && (location === p || location.startsWith(p + "/"))
   );
   const isGroundsActive =
     location === "/stomping-grounds" ||
@@ -259,34 +247,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Home
             </Link>
 
-            {/* Journey dropdown */}
+            {/* Hempcrete Landmark links */}
             <DropdownMenu
-              label="Journey"
-              items={journeyItems}
-              isActive={isJourneyActive}
-            />
-
-            {/* Library */}
-            <Link
-              href="/library"
-              className={`relative text-sm font-medium transition-colors flex items-center pb-0.5 ${
-                location === "/library" || location.startsWith("/library/")
-                  ? "text-white border-b-2 border-[#D9A066]"
-                  : "text-white/65 hover:text-white"
-              }`}
-            >
-              Library
-              <span className="absolute -top-1 -right-4 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D9A066] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#D9A066]"></span>
-              </span>
-            </Link>
-
-            {/* Community dropdown */}
-            <DropdownMenu
-              label="Community"
-              items={communityItems}
-              isActive={isCommunityActive}
+              label="Landmarks"
+              items={landmarkItems}
+              isActive={isLandmarkActive}
             />
 
             {/* Grounds */}
@@ -412,89 +377,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Home
             </Link>
 
-            {/* Journey accordion */}
-            <div>
-              <button
-                onClick={() => setJourneyOpen((v) => !v)}
-                className={`w-full flex items-center justify-between text-base font-medium px-3 py-2.5 rounded-md ${
-                  isJourneyActive
-                    ? "bg-white/10 text-white"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                Journey
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${journeyOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {journeyOpen && (
-                <div className="mt-1 ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
-                  {journeyItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`text-sm font-medium px-2 py-2 rounded-md ${
-                        location === item.href || location.startsWith(item.href + "/")
-                          ? "text-white bg-white/8"
-                          : "text-white/60 hover:text-white hover:bg-white/5"
-                      }`}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Library */}
-            <Link
-              href="/library"
-              className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
-                location === "/library" || location.startsWith("/library/")
-                  ? "bg-white/10 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
-              }`}
-              onClick={() => setMenuOpen(false)}
-            >
-              Library
-              <span className="bg-[#D9A066] text-[#2C4A36] text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
-                New
-              </span>
-            </Link>
-
-            {/* Community accordion */}
-            <div>
-              <button
-                onClick={() => setCommunityOpen((v) => !v)}
-                className={`w-full flex items-center justify-between text-base font-medium px-3 py-2.5 rounded-md ${
-                  isCommunityActive
-                    ? "bg-white/10 text-white"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                Community
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${communityOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {communityOpen && (
-                <div className="mt-1 ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
-                  {communityItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`text-sm font-medium px-2 py-2 rounded-md ${
-                        location === item.href || location.startsWith(item.href + "/")
-                          ? "text-white bg-white/8"
-                          : "text-white/60 hover:text-white hover:bg-white/5"
-                      }`}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
+            {/* Landmarks — mobile flat list */}
+            <div className="ml-1 border-l border-white/10 pl-3 flex flex-col gap-0.5">
+              {landmarkItems.map((item) =>
+                (item as { external?: boolean }).external ? (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium px-2 py-2 rounded-md text-white/60 hover:text-white hover:bg-white/5"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {item.label} ↗
+                  </a>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`text-sm font-medium px-2 py-2 rounded-md ${
+                      location === item.href || location.startsWith(item.href + "/")
+                        ? "text-white bg-white/8"
+                        : "text-white/60 hover:text-white hover:bg-white/5"
+                    }`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                )
               )}
             </div>
 
@@ -631,7 +541,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               "Helping you live a better life, if times get tough or even if they don't."
             </p>
           </div>
-          <div className="mt-8 pt-8 border-t border-white/10 text-xs text-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="mt-6 pt-6 border-t border-white/10 flex flex-wrap justify-center md:justify-start gap-4 text-sm text-white/55">
+            <Link href="/about" className="hover:text-white transition-colors">About</Link>
+            <Link href="/council" className="hover:text-white transition-colors">Expert Council</Link>
+          </div>
+          <div className="mt-6 pt-6 border-t border-white/10 text-xs text-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
             <span>&copy; {new Date().getFullYear()} The Stomping Path. All rights reserved.</span>
             <div className="flex items-center gap-4">
               <Link href="/admin/categories" className="hover:text-white/70 transition-colors">
