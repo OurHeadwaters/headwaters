@@ -3,7 +3,7 @@ import { getHwHeaders, getZoneLabel } from "@/lib/api-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { PlusCircle, Users, DollarSign, Rss, ArrowRight } from "lucide-react";
+import { PlusCircle, Users, DollarSign, Rss, ArrowRight, Footprints } from "lucide-react";
 import { format } from "date-fns";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -164,6 +164,17 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      <div className="pt-4 border-t border-border/40 flex items-center justify-end">
+        <a
+          href="/stomping-path"
+          className="inline-flex items-center gap-2 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors group"
+        >
+          <Footprints size={13} className="opacity-50 group-hover:opacity-80 transition-opacity" />
+          <span className="tracking-wide uppercase font-medium">Trail marker — Zone 2: The Stomping Path</span>
+          <ArrowRight size={11} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+        </a>
       </div>
     </div>
   );
