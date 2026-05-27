@@ -1,0 +1,38 @@
+Stomping Path — Strip Gamification, Restore Terrain Register
+What & Why
+The Stomping Path (Zone 2) is currently designed to impress on first arrival — XP, confetti, streak counters, cinematic scale, manifesto copy. The brief says Zone 2 should change your pace for what comes next. Everything that performs is the gap. Everything that grounds is already there and working. This task strips the performance layer and restores the terrain register throughout.
+
+Done looks like
+No XP numbers, confetti, or streak counters appear anywhere on the page
+The vine grows as you walk — no reward framing, no score
+The footprint orb changes state (Footprints → CheckCircle2) on completion — no badge overlay
+"Stomped. Come back tomorrow." is the completion state, unchanged
+The hero is 75–80vh, reduced parallax depth, not cinematic
+Hero headline reads: "The clearing is where your Ridge ideas get neighbours."
+Footprints SVG is amber-tinted but unlit — no glow filter
+Navigation shows five hempcrete landmark links directly — no Journey dropdown, no Community dropdown
+The Sparkles icon in the eyebrow tag is replaced with Footprints icon or removed
+Out of scope
+Shared Coordinates layer (mutual connections / degrees of separation map) — separate task
+Load state distinction (first-time visitor vs. returning practitioner) — separate task
+Any changes to the Daily Stomp questions themselves
+Ambient audio opt-in behaviour
+Zone Bubble Map internals
+Steps
+Strip XP system — Remove {bonus}xp label from the VineProgress rail. Remove all bumpProgress() calls. Rename the scroll/walk event to StompOn. Rename the completion mark / footprint state to Imprint. The vine grows because you're StompingOn; the Imprint is what the path holds after.
+
+Remove confetti and streak badge — Delete the confetti burst triggered on Daily Stomp completion. Remove the streak counter badge (-top-1 -right-1 overlay showing {state.streak}) from the orb. The Footprints → CheckCircle2 state change is the only completion signal needed.
+
+Fix the eyebrow icon — Replace <Sparkles /> in the "The Worn Path · Transition · Zone 2" eyebrow tag with <Footprints /> or remove the icon entirely. The text is correct; the icon signals wrong register.
+
+Rewrite hero copy — Replace the current headline ("See the problems. Stomp the solutions. Reclaim your sovereignty — one footprint at a time.") with: "The clearing is where your Ridge ideas get neighbours." Replace the sub-copy ("Tools, tracks, and practitioners for the transition from fear to watershed") with a single directional line. Reduce hero height to 75–80vh. Reduce parallax effect depth so the page begins to reveal below the fold immediately.
+
+Remove footprint glow — Remove filter: url(#glow) from the footprint path SVG. Keep the amber tint. Real footprints in dirt don't glow — the symbol should be grounded, not lit.
+
+Rebuild navigation as hempcrete landmarks — Remove the Journey dropdown (Tracks, Zones, Transform, Kits, Series, The Forge) and Community dropdown (Expert Council, About). Surface five named hempcrete landmark links directly in the nav: The Arch (Codetry Forged Archways), The Well (source, Aquifer connection), The Kiln (The Forge — maker space), The Granary (Library, accumulated knowledge), The Path (Zone Bubble Map). Move institutional links (About, Expert Council) to a low-weight footer treatment.
+
+Naming decisions (canonical, do not revert)
+bumpProgress() → StompOn — the experience as it's happening, the walk live
+leaveFootprint() / completion mark → Imprint — the mark the path holds after you've moved on
+Relevant files
+stomping-path-documentation.replit.app — target site (separate Repl, not this repo)
