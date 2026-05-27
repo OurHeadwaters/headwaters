@@ -15,8 +15,4 @@ export interface HeadwatersPushRequest {
   practitionerNotes: string;
   practitionerName?: string;
   dump?: string;
-  landZone?: string;
-  landSecondaryZone?: string;
-  landRationale?: string;
-  harmonyNote?: string;
 }

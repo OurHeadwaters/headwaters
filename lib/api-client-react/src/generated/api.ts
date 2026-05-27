@@ -25,7 +25,11 @@ import type {
   AuthUserEnvelope,
   BeginBrowserLoginParams,
   CategoryCount,
+  CompassClusterInput,
+  CompassClusterResult,
   CreateFiresideFlameRequest,
+  CreatorOverlapInput,
+  CreatorOverlapResult,
   Episode,
   EpisodeDetail,
   EpisodePage,
@@ -62,6 +66,8 @@ import type {
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  OverlapQueryInput,
+  OverlapResult,
   RefreshLibraryParams,
   RefreshSummary,
   SearchLibraryParams,
@@ -70,6 +76,8 @@ import type {
   ThisDayEpisode,
   TrackProgressResponse,
   TrackProgressUpdate,
+  WadeInInput,
+  WadeInResult,
   ZoneEpisodePage,
   ZoneSummary
 } from './api.schemas';
@@ -3116,4 +3124,365 @@ export const useUpdateTrackProgress = <TError = ErrorType<ErrorEnvelope>,
       > => {
       return useMutation(getUpdateTrackProgressMutationOptions(options));
     }
+
+export const getStompingPathClusterUrl = () => {
+
+
+
+
+  return `/api/stomping-path/compass/cluster`
+}
+
+/**
+ * @summary Cluster a list of teacher/influence names into watershed terrain labels
+ */
+export const stompingPathCluster = async (compassClusterInput: CompassClusterInput, options?: RequestInit): Promise<CompassClusterResult> => {
+
+  return customFetch<CompassClusterResult>(getStompingPathClusterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      compassClusterInput,)
+  }
+);}
+
+
+
+
+export const getStompingPathClusterMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathCluster>>, TError,{data: BodyType<CompassClusterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stompingPathCluster>>, TError,{data: BodyType<CompassClusterInput>}, TContext> => {
+
+const mutationKey = ['stompingPathCluster'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stompingPathCluster>>, {data: BodyType<CompassClusterInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  stompingPathCluster(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StompingPathClusterMutationResult = NonNullable<Awaited<ReturnType<typeof stompingPathCluster>>>
+    export type StompingPathClusterMutationBody = BodyType<CompassClusterInput>
+    export type StompingPathClusterMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Cluster a list of teacher/influence names into watershed terrain labels
+ */
+export const useStompingPathCluster = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathCluster>>, TError,{data: BodyType<CompassClusterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stompingPathCluster>>,
+        TError,
+        {data: BodyType<CompassClusterInput>},
+        TContext
+      > => {
+      return useMutation(getStompingPathClusterMutationOptions(options));
+    }
+
+export const getStompingPathWadeInUrl = () => {
+
+
+
+
+  return `/api/stomping-path/compass/wade-in`
+}
+
+/**
+ * @summary Cross the threshold — assign a water-name handle and store teachers in the anonymous pool
+ */
+export const stompingPathWadeIn = async (wadeInInput: WadeInInput, options?: RequestInit): Promise<WadeInResult> => {
+
+  return customFetch<WadeInResult>(getStompingPathWadeInUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      wadeInInput,)
+  }
+);}
+
+
+
+
+export const getStompingPathWadeInMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathWadeIn>>, TError,{data: BodyType<WadeInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stompingPathWadeIn>>, TError,{data: BodyType<WadeInInput>}, TContext> => {
+
+const mutationKey = ['stompingPathWadeIn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stompingPathWadeIn>>, {data: BodyType<WadeInInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  stompingPathWadeIn(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StompingPathWadeInMutationResult = NonNullable<Awaited<ReturnType<typeof stompingPathWadeIn>>>
+    export type StompingPathWadeInMutationBody = BodyType<WadeInInput>
+    export type StompingPathWadeInMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Cross the threshold — assign a water-name handle and store teachers in the anonymous pool
+ */
+export const useStompingPathWadeIn = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathWadeIn>>, TError,{data: BodyType<WadeInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stompingPathWadeIn>>,
+        TError,
+        {data: BodyType<WadeInInput>},
+        TContext
+      > => {
+      return useMutation(getStompingPathWadeInMutationOptions(options));
+    }
+
+export const getStompingPathGetOverlapUrl = () => {
+
+
+
+
+  return `/api/stomping-path/compass/overlap`
+}
+
+/**
+ * @summary Get overlap counts for a list of teacher names against the anonymous pool
+ */
+export const stompingPathGetOverlap = async (overlapQueryInput: OverlapQueryInput, options?: RequestInit): Promise<OverlapResult> => {
+
+  return customFetch<OverlapResult>(getStompingPathGetOverlapUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      overlapQueryInput,)
+  }
+);}
+
+
+
+
+export const getStompingPathGetOverlapMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathGetOverlap>>, TError,{data: BodyType<OverlapQueryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stompingPathGetOverlap>>, TError,{data: BodyType<OverlapQueryInput>}, TContext> => {
+
+const mutationKey = ['stompingPathGetOverlap'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stompingPathGetOverlap>>, {data: BodyType<OverlapQueryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  stompingPathGetOverlap(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StompingPathGetOverlapMutationResult = NonNullable<Awaited<ReturnType<typeof stompingPathGetOverlap>>>
+    export type StompingPathGetOverlapMutationBody = BodyType<OverlapQueryInput>
+    export type StompingPathGetOverlapMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Get overlap counts for a list of teacher names against the anonymous pool
+ */
+export const useStompingPathGetOverlap = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathGetOverlap>>, TError,{data: BodyType<OverlapQueryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stompingPathGetOverlap>>,
+        TError,
+        {data: BodyType<OverlapQueryInput>},
+        TContext
+      > => {
+      return useMutation(getStompingPathGetOverlapMutationOptions(options));
+    }
+
+export const getStompingPathCreatorOverlapUrl = () => {
+
+
+
+
+  return `/api/stomping-path/creator/overlap`
+}
+
+/**
+ * @summary Creator view — submit influences and get a shareable overlap map
+ */
+export const stompingPathCreatorOverlap = async (creatorOverlapInput: CreatorOverlapInput, options?: RequestInit): Promise<CreatorOverlapResult> => {
+
+  return customFetch<CreatorOverlapResult>(getStompingPathCreatorOverlapUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      creatorOverlapInput,)
+  }
+);}
+
+
+
+
+export const getStompingPathCreatorOverlapMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathCreatorOverlap>>, TError,{data: BodyType<CreatorOverlapInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stompingPathCreatorOverlap>>, TError,{data: BodyType<CreatorOverlapInput>}, TContext> => {
+
+const mutationKey = ['stompingPathCreatorOverlap'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stompingPathCreatorOverlap>>, {data: BodyType<CreatorOverlapInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  stompingPathCreatorOverlap(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StompingPathCreatorOverlapMutationResult = NonNullable<Awaited<ReturnType<typeof stompingPathCreatorOverlap>>>
+    export type StompingPathCreatorOverlapMutationBody = BodyType<CreatorOverlapInput>
+    export type StompingPathCreatorOverlapMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Creator view — submit influences and get a shareable overlap map
+ */
+export const useStompingPathCreatorOverlap = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stompingPathCreatorOverlap>>, TError,{data: BodyType<CreatorOverlapInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stompingPathCreatorOverlap>>,
+        TError,
+        {data: BodyType<CreatorOverlapInput>},
+        TContext
+      > => {
+      return useMutation(getStompingPathCreatorOverlapMutationOptions(options));
+    }
+
+export const getStompingPathGetCreatorShareUrl = (shareId: string,) => {
+
+
+
+
+  return `/api/stomping-path/creator/share/${shareId}`
+}
+
+/**
+ * @summary Retrieve a shared creator overlap map by share ID
+ */
+export const stompingPathGetCreatorShare = async (shareId: string, options?: RequestInit): Promise<CreatorOverlapResult> => {
+
+  return customFetch<CreatorOverlapResult>(getStompingPathGetCreatorShareUrl(shareId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStompingPathGetCreatorShareQueryKey = (shareId: string,) => {
+    return [
+    `/api/stomping-path/creator/share/${shareId}`
+    ] as const;
+    }
+
+
+export const getStompingPathGetCreatorShareQueryOptions = <TData = Awaited<ReturnType<typeof stompingPathGetCreatorShare>>, TError = ErrorType<ErrorEnvelope>>(shareId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof stompingPathGetCreatorShare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStompingPathGetCreatorShareQueryKey(shareId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof stompingPathGetCreatorShare>>> = ({ signal }) => stompingPathGetCreatorShare(shareId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(shareId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof stompingPathGetCreatorShare>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type StompingPathGetCreatorShareQueryResult = NonNullable<Awaited<ReturnType<typeof stompingPathGetCreatorShare>>>
+export type StompingPathGetCreatorShareQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Retrieve a shared creator overlap map by share ID
+ */
+
+export function useStompingPathGetCreatorShare<TData = Awaited<ReturnType<typeof stompingPathGetCreatorShare>>, TError = ErrorType<ErrorEnvelope>>(
+ shareId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof stompingPathGetCreatorShare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getStompingPathGetCreatorShareQueryOptions(shareId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 

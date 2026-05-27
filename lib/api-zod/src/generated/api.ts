@@ -995,3 +995,106 @@ export const UpdateTrackProgressResponse = zod.object({
 })
 
 
+/**
+ * @summary Cluster a list of teacher/influence names into watershed terrain labels
+ */
+
+
+
+export const StompingPathClusterBody = zod.object({
+  "teachers": zod.array(zod.string()).min(1)
+})
+
+export const StompingPathClusterResponse = zod.object({
+  "clusters": zod.array(zod.object({
+  "label": zod.string(),
+  "teachers": zod.array(zod.string())
+}))
+})
+
+
+/**
+ * @summary Cross the threshold — assign a water-name handle and store teachers in the anonymous pool
+ */
+
+
+
+export const StompingPathWadeInBody = zod.object({
+  "teachers": zod.array(zod.string()).min(1),
+  "sessionToken": zod.string()
+})
+
+export const StompingPathWadeInResponse = zod.object({
+  "handle": zod.string(),
+  "overlap": zod.array(zod.object({
+  "teacher": zod.string(),
+  "count": zod.number()
+})),
+  "poolSize": zod.number().optional()
+})
+
+
+/**
+ * @summary Get overlap counts for a list of teacher names against the anonymous pool
+ */
+
+
+
+export const StompingPathGetOverlapBody = zod.object({
+  "teachers": zod.array(zod.string()).min(1)
+})
+
+export const StompingPathGetOverlapResponse = zod.object({
+  "overlap": zod.array(zod.object({
+  "teacher": zod.string(),
+  "count": zod.number()
+})),
+  "poolSize": zod.number()
+})
+
+
+/**
+ * @summary Creator view — submit influences and get a shareable overlap map
+ */
+
+
+
+
+export const StompingPathCreatorOverlapBody = zod.object({
+  "creatorName": zod.string().min(1),
+  "teachers": zod.array(zod.string()).min(1)
+})
+
+export const StompingPathCreatorOverlapResponse = zod.object({
+  "shareId": zod.string(),
+  "creatorName": zod.string(),
+  "teachers": zod.array(zod.string()),
+  "overlap": zod.array(zod.object({
+  "teacher": zod.string(),
+  "count": zod.number()
+})),
+  "poolSize": zod.number(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Retrieve a shared creator overlap map by share ID
+ */
+export const StompingPathGetCreatorShareParams = zod.object({
+  "shareId": zod.coerce.string()
+})
+
+export const StompingPathGetCreatorShareResponse = zod.object({
+  "shareId": zod.string(),
+  "creatorName": zod.string(),
+  "teachers": zod.array(zod.string()),
+  "overlap": zod.array(zod.object({
+  "teacher": zod.string(),
+  "count": zod.number()
+})),
+  "poolSize": zod.number(),
+  "createdAt": zod.string().optional()
+})
+
+

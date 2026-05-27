@@ -27,6 +27,8 @@ tags:
   - name: headwaters
   - name: fireside-chats
     description: Community discussion flames — spark, fan, and browse posts tied to Fireside Freedom episodes.
+  - name: stomping-path
+    description: The Stomping Path — Zone 2. Compass influence excavation and overlap map.
 paths:
   /healthz:
     get:
@@ -876,6 +878,125 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+
+  /stomping-path/compass/cluster:
+    post:
+      operationId: stompingPathCluster
+      tags: [stomping-path]
+      summary: Cluster a list of teacher/influence names into watershed terrain labels
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompassClusterInput'
+      responses:
+        '200':
+          description: Clustered terrain map
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompassClusterResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /stomping-path/compass/wade-in:
+    post:
+      operationId: stompingPathWadeIn
+      tags: [stomping-path]
+      summary: Cross the threshold — assign a water-name handle and store teachers in the anonymous pool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WadeInInput'
+      responses:
+        '200':
+          description: Water-name handle assigned and overlap counts returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WadeInResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /stomping-path/compass/overlap:
+    post:
+      operationId: stompingPathGetOverlap
+      tags: [stomping-path]
+      summary: Get overlap counts for a list of teacher names against the anonymous pool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverlapQueryInput'
+      responses:
+        '200':
+          description: Overlap counts per teacher
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverlapResult'
+
+  /stomping-path/creator/overlap:
+    post:
+      operationId: stompingPathCreatorOverlap
+      tags: [stomping-path]
+      summary: Creator view — submit influences and get a shareable overlap map
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatorOverlapInput'
+      responses:
+        '200':
+          description: Shareable overlap map
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorOverlapResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /stomping-path/creator/share/{shareId}:
+    get:
+      operationId: stompingPathGetCreatorShare
+      tags: [stomping-path]
+      summary: Retrieve a shared creator overlap map by share ID
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Shared creator overlap map
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorOverlapResult'
+        '404':
+          description: Share not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -1443,3 +1564,99 @@ components:
         body: { type: string, maxLength: 500 }
         authorName: { type: string, maxLength: 80 }
         episodeId: { type: integer }
+
+    CompassClusterInput:
+      type: object
+      required: [teachers]
+      properties:
+        teachers:
+          type: array
+          items: { type: string }
+          minItems: 1
+
+    TerrainCluster:
+      type: object
+      required: [label, teachers]
+      properties:
+        label: { type: string }
+        teachers:
+          type: array
+          items: { type: string }
+
+    CompassClusterResult:
+      type: object
+      required: [clusters]
+      properties:
+        clusters:
+          type: array
+          items: { $ref: '#/components/schemas/TerrainCluster' }
+
+    WadeInInput:
+      type: object
+      required: [teachers, sessionToken]
+      properties:
+        teachers:
+          type: array
+          items: { type: string }
+          minItems: 1
+        sessionToken: { type: string }
+
+    TeacherOverlapCount:
+      type: object
+      required: [teacher, count]
+      properties:
+        teacher: { type: string }
+        count: { type: integer }
+
+    WadeInResult:
+      type: object
+      required: [handle, overlap]
+      properties:
+        handle: { type: string }
+        overlap:
+          type: array
+          items: { $ref: '#/components/schemas/TeacherOverlapCount' }
+        poolSize: { type: integer }
+
+    OverlapQueryInput:
+      type: object
+      required: [teachers]
+      properties:
+        teachers:
+          type: array
+          items: { type: string }
+          minItems: 1
+
+    OverlapResult:
+      type: object
+      required: [overlap, poolSize]
+      properties:
+        overlap:
+          type: array
+          items: { $ref: '#/components/schemas/TeacherOverlapCount' }
+        poolSize: { type: integer }
+
+    CreatorOverlapInput:
+      type: object
+      required: [creatorName, teachers]
+      properties:
+        creatorName: { type: string, minLength: 1 }
+        teachers:
+          type: array
+          items: { type: string }
+          minItems: 1
+
+    CreatorOverlapResult:
+      type: object
+      required: [shareId, creatorName, teachers, overlap, poolSize]
+      properties:
+        shareId: { type: string }
+        creatorName: { type: string }
+        teachers:
+          type: array
+          items: { type: string }
+        overlap:
+          type: array
+          items: { $ref: '#/components/schemas/TeacherOverlapCount' }
+        poolSize: { type: integer }
+        createdAt: { type: string }

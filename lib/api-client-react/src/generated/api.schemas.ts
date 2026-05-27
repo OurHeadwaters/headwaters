@@ -422,7 +422,6 @@ export interface HeadwatersInterpretRequest {
   /** @minLength 10 */
   dump: string;
   clientId?: string;
-  landDump?: string;
 }
 
 export interface HeadwatersInterpretResult {
@@ -431,14 +430,6 @@ export interface HeadwatersInterpretResult {
   riskProfile: number;
   clientRationale: string;
   practitionerSummary: string;
-  /** @nullable */
-  landZone?: string | null;
-  /** @nullable */
-  landSecondaryZone?: string | null;
-  /** @nullable */
-  landRationale?: string | null;
-  /** @nullable */
-  harmonyNote?: string | null;
 }
 
 export interface HeadwatersPushRequest {
@@ -450,10 +441,6 @@ export interface HeadwatersPushRequest {
   practitionerNotes: string;
   practitionerName?: string;
   dump?: string;
-  landZone?: string;
-  landSecondaryZone?: string;
-  landRationale?: string;
-  harmonyNote?: string;
 }
 
 export interface HeadwatersPushResult {
@@ -496,6 +483,63 @@ export interface CreateFiresideFlameRequest {
   /** @maxLength 80 */
   authorName?: string;
   episodeId?: number;
+}
+
+export interface CompassClusterInput {
+  /** @minItems 1 */
+  teachers: string[];
+}
+
+export interface TerrainCluster {
+  label: string;
+  teachers: string[];
+}
+
+export interface CompassClusterResult {
+  clusters: TerrainCluster[];
+}
+
+export interface WadeInInput {
+  /** @minItems 1 */
+  teachers: string[];
+  sessionToken: string;
+}
+
+export interface TeacherOverlapCount {
+  teacher: string;
+  count: number;
+}
+
+export interface WadeInResult {
+  handle: string;
+  overlap: TeacherOverlapCount[];
+  poolSize?: number;
+}
+
+export interface OverlapQueryInput {
+  /** @minItems 1 */
+  teachers: string[];
+}
+
+export interface OverlapResult {
+  overlap: TeacherOverlapCount[];
+  poolSize: number;
+}
+
+export interface CreatorOverlapInput {
+  /** @minLength 1 */
+  creatorName: string;
+  /** @minItems 1 */
+  teachers: string[];
+}
+
+export interface CreatorOverlapResult {
+  shareId: string;
+  creatorName: string;
+  teachers: string[];
+  overlap: TeacherOverlapCount[];
+  poolSize: number;
+  createdAt?: string;
 }
 
 /**

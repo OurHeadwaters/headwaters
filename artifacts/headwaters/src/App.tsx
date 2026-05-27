@@ -22,32 +22,48 @@ import SettingsPage from "@/pages/settings";
 import SubmissionsPage from "@/pages/submissions/index";
 import NotFound from "@/pages/not-found";
 
+import StompingPathIndex from "@/pages/stomping-path/index";
+import StompingPathCompass from "@/pages/stomping-path/compass";
+import StompingPathDamDays from "@/pages/stomping-path/dam-days";
+import StompingPathCreator from "@/pages/stomping-path/creator";
+import StompingPathShare from "@/pages/stomping-path/share";
+
 const queryClient = new QueryClient();
 
 function Router() {
   return (
     <ProfileProvider>
-    <PassphraseGuard>
-      <Layout>
-        <IntakeProvider>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/clients" component={ClientsList} />
-            <Route path="/clients/new" component={NewClient} />
-            <Route path="/clients/:clientId" component={ClientDetail} />
-            <Route path="/intake/:clientId" component={IntakeDump} />
-            <Route path="/intake/:clientId/review" component={IntakeReview} />
-            <Route path="/business/priorities" component={BusinessPriorities} />
-            <Route path="/business/financials" component={BusinessFinancials} />
-            <Route path="/business/notes" component={BusinessNotes} />
-            <Route path="/business/online-engine" component={OnlineEngine} />
-            <Route path="/settings" component={SettingsPage} />
-            <Route path="/submissions" component={SubmissionsPage} />
-            <Route component={NotFound} />
-          </Switch>
-        </IntakeProvider>
-      </Layout>
-    </PassphraseGuard>
+      <Switch>
+        <Route path="/stomping-path" component={StompingPathIndex} />
+        <Route path="/stomping-path/compass" component={StompingPathCompass} />
+        <Route path="/stomping-path/dam-days" component={StompingPathDamDays} />
+        <Route path="/stomping-path/creator" component={StompingPathCreator} />
+        <Route path="/stomping-path/share/:shareId" component={StompingPathShare} />
+
+        <Route path="*">
+          <PassphraseGuard>
+            <Layout>
+              <IntakeProvider>
+                <Switch>
+                  <Route path="/" component={Dashboard} />
+                  <Route path="/clients" component={ClientsList} />
+                  <Route path="/clients/new" component={NewClient} />
+                  <Route path="/clients/:clientId" component={ClientDetail} />
+                  <Route path="/intake/:clientId" component={IntakeDump} />
+                  <Route path="/intake/:clientId/review" component={IntakeReview} />
+                  <Route path="/business/priorities" component={BusinessPriorities} />
+                  <Route path="/business/financials" component={BusinessFinancials} />
+                  <Route path="/business/notes" component={BusinessNotes} />
+                  <Route path="/business/online-engine" component={OnlineEngine} />
+                  <Route path="/settings" component={SettingsPage} />
+                  <Route path="/submissions" component={SubmissionsPage} />
+                  <Route component={NotFound} />
+                </Switch>
+              </IntakeProvider>
+            </Layout>
+          </PassphraseGuard>
+        </Route>
+      </Switch>
     </ProfileProvider>
   );
 }

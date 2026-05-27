@@ -43,6 +43,7 @@ import adminGordTipsRouter from "./admin-gord-tips";
 import practitionersRouter from "./practitioners";
 import trailblazerRouter from "./trailblazer";
 import gordRouter from "./gord";
+import stompingPathRouter from "./stomping-path";
 
 const router: IRouter = Router();
 
@@ -90,5 +91,6 @@ router.use(adminGordTipsRouter);
 router.use(practitionersRouter);
 router.use(trailblazerRouter);
 router.use(gordRouter);
+router.use(stompingPathRouter);
 
 export default router;

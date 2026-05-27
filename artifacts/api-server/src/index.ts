@@ -5,6 +5,7 @@ import { startGearSchedule } from "./routes/gear";
 import { getFeedCached } from "./lib/rss";
 import { checkSeriesConsistency, validateSeriesRegistry } from "./lib/series-consistency";
 import { seedExpertCouncil, seedUlgBusinesses, seedCouncilPodcastFeeds } from "./lib/seed-expert-council";
+import { seedStompingPathHandles } from "./lib/seed-stomping-path";
 import { startNostrIngestion } from "./lib/nostr-ingestion";
 import { startYouTubeIngestion } from "./lib/youtube-ingestion";
 import { startXrpRateRefresh } from "./lib/xrp-rate";
@@ -99,6 +100,10 @@ const server = app.listen(port, (err) => {
   seedCouncilPodcastFeeds()
     .then((n) => logger.info({ count: n }, "council-podcast-feeds: startup seed complete"))
     .catch((err) => logger.warn({ err }, "council-podcast-feeds: startup seed failed (non-fatal)"));
+  // Seed Stomping Path water-name handles pool (idempotent)
+  seedStompingPathHandles()
+    .then((n) => logger.info({ count: n }, "stomping-path: handles seed complete"))
+    .catch((err) => logger.warn({ err }, "stomping-path: handles seed failed (non-fatal)"));
 
   // Initialise Stripe after server is ready (non-blocking)
   initStripe();
