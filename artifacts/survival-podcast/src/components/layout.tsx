@@ -247,12 +247,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Home
             </Link>
 
-            {/* Hempcrete Landmark links */}
-            <DropdownMenu
-              label="Landmarks"
-              items={landmarkItems}
-              isActive={isLandmarkActive}
-            />
+            {/* Hempcrete Landmark direct links */}
+            {landmarkItems.map((item) =>
+              (item as { external?: boolean }).external ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative text-sm font-medium transition-colors pb-0.5 text-white/65 hover:text-white"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative text-sm font-medium transition-colors pb-0.5 ${
+                    location === item.href || location.startsWith(item.href + "/")
+                      ? "text-white border-b-2 border-[#D9A066]"
+                      : "text-white/65 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
 
             {/* Grounds */}
             <Link

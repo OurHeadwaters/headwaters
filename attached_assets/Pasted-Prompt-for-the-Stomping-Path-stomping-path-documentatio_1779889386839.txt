@@ -1,0 +1,90 @@
+Prompt for the Stomping Path (stomping-path-documentation Replit agent)
+You are building The Stomping Path — Zone 2 of the Headwaters watershed system. The Worn Path. Bench and Trail. Transition.
+
+This is the active zone. If the Shallows is still water, the Stomping Path is the current that leads there. You are building the trail, not the destination. Everything here is in motion.
+
+What the Stomping Path is
+A stomping path is the worn groove of repeated movement. In permaculture: a desire path — the line grass wears down where people actually walk, not where the planner put the sidewalk. In the early internet: your bookmarks list, your daily forum check, the eight sites in the same order every morning, the RSS reader you scanned before coffee. In a practitioner's life: the morning capture ritual, the daily drop of a fragment or a take or a half-thought at 2am, the worn groove between the tools you actually use.
+
+The Stomping Path is where the practitioner orients before they move. It is not the destination. It is the daily practice that makes you capable of arriving somewhere real.
+
+Zone 2 sits between:
+
+Zone 1 (The Lodge / The Spring) — daily tools, the operational center, where the work gets done. Functional, interior, practical.
+Zone 3 (The Clearing) and Zone 5 (The Shallows) — gathering, rest, the still water, the anonymous pond.
+The Stomping Path is the membrane and the motion between them. You leave the Lodge with something in your hands. By the time you reach the Clearing or wade into the Shallows, your pace has changed. The Stomping Path is what changes it.
+
+The Compass lives here
+The primary tool on the Stomping Path is The Compass — a two-layer instrument for orientation before movement.
+
+Layer 1 — Private compass (no network, no account required):
+
+You need to figure out your past and what has left a mark on your soul. Before you can navigate forward, you need to know the terrain you've already crossed without realizing it. The Compass is where that excavation happens.
+
+A person enters the teachers, books, thinkers, experiences, and voices that shaped them. Not categories — names. Specific humans. Specific works. The things that, when you encountered them, something shifted. The tool takes these entries and renders the shape of the person's influences: clusters of terrain they've been traveling, named in watershed language rather than political or ideological labels.
+
+Sound money thinkers
+Land-based practitioners
+Decentralized governance writers
+Craft and trade teachers
+Spiritual and philosophical elders
+The person sees: this is the terrain that made you. Not a political identity. Not a tribe. A map of actual influences. This is complete without any other user. Useful alone. No sharing required.
+
+Layer 2 — The Overlap Map (opt-in, anonymous, network-powered):
+
+If the person chooses to wade in, they enter the shared pool. A water-name handle is assigned (Driftwood, Tide, Pebble, Eddy, Ripple, Lantern, Compass, Anchor). Their teachers are matched against the pool. They see: 14 other people in this pond were also shaped by [teacher X].
+
+The Ron Paul listener and the permaculture listener discover they both read the same three books. The homesteader and the crypto advocate discover they share four teachers. The tool names the shared watershed between people who assumed they had nothing in common. This is the polarization-reduction mechanism. It works because it is true — people are closer than they think, and their teachers are the evidence.
+
+The go-to-market insight — appeal to the teachers, the students will flock
+Do not target students directly. Go to the teachers.
+
+A teacher — a podcaster, a writer, a practitioner who has built an audience — opens the Compass and sees the overlap map of their own students. The tool shows them: your audience overlaps with the audiences of these other teachers by this much, across these specific influences. That is a shareable insight. The teacher shares it because it validates their work and because it is genuinely interesting. The students arrive because the teacher sent them.
+
+This is the correct entry point for Layer 2 to reach critical mass. The Stomping Path tool should be built with a teacher-facing view: a creator can enter their own teacher influences, see where their audience likely overlaps with other communities, and share that map with their people. The students who arrive bring their own compass entries. The pool grows.
+
+Build for teachers first. Students are the downstream effect.
+
+What the path documents
+The Stomping Path holds the record of where people actually go — not the prescribed route, the real one. This surfaces in three forms:
+
+The daily capture — the fragment, the take, the 2am voice note, the half-thought dropped before it evaporates. The Stomping Path is where practitioners deposit these without pressure to publish or explain. This is Dam Days: the private capture surface, the morning ritual, the worn groove of consistent practice.
+The compass entries — the accumulated record of what shaped you, growing over time as you remember more, as new teachers find you, as old influences resurface.
+The overlap discoveries — when the pool reveals closeness between people who thought they were strangers. These are not algorithmic recommendations. They are cartographic facts: you walked the same terrain.
+What it should feel like
+A trail, not a road. Trails follow the terrain. They bend around obstacles. They have texture underfoot. Roads are imposed on the landscape. Trails grow from use.
+
+Wayfinding without signage. You know where you are because of the landmarks, not because someone put up a sign. The design orients without explaining.
+
+The bench midway. There is a resting point — a place to pause, look back at where you came from, look forward at where you're going. Not a CTA. A bench. The Stomping Path does not rush you to the Shallows. It changes your pace.
+
+Worn texture over polished surface. The surfaces show use. Not unfinished — worn. There is a difference. The groove underfoot is the evidence that people have been here before, found this useful, came back.
+
+Active rhythm. Unlike the Shallows — which is still, slow, ambient — the Stomping Path has motion. The pace is the practitioner's morning pace: deliberate, directional, not urgent. You are going somewhere. You know roughly which way.
+
+Creek language is correct here. The creek is Zone 2. Moving water. Current. Flow. The trail follows the water. Use: the worn groove, the current, the daily path, the flow between tools, following the water. Save pond and still water language for the Shallows.
+
+What it should NOT feel like
+A dashboard with metrics
+A streak tracker or habit gamification layer
+A social feed optimized for engagement
+A funnel pointing toward the Shallows — the path leads there, it does not advertise it
+An onboarding flow explaining what to do
+Anything that requires an account before you can begin
+The crossing into the Shallows
+When a person on the Stomping Path chooses to wade in — to take the optional Layer 2 step — the transition from Zone 2 (active, identified, their own tools) to Zone 5 (still water, anonymous, the pond) should feel like a crossing, not a click.
+
+The Eave is crossed going downward. Zone 3 reputation is left at the water's edge. The person explicitly chooses to step off the path onto the bank. A water-name handle is assigned. Their identity stays on the trail. Only their teachers come with them into the water.
+
+Design this moment as a threshold, not a button. The person should feel the step.
+
+Copy direction
+Active voice, present tense — you are on a path, moving
+Short. The path is not where you read. It is where you walk.
+Terrain language: trail, worn, groove, the long way, toward, through, across
+Directional without commanding: "the clearing is this way" not "click here to continue"
+For the Compass: excavation language — "what left a mark on your soul," "the terrain that made you," "the shape of your influences"
+For the overlap map: closeness language — "you are closer than you think," "the same watershed, different tributaries," "the teachers you share"
+The crossing moment: "leave your name at the water's edge"
+The thesis
+The worn groove of daily practice, the excavation of what shaped you, and the discovery that the person you assumed was your opposite drank from the same spring. Build the trail. The teachers will send their students. The students will find each other in the water.

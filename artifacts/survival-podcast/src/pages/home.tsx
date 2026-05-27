@@ -13,7 +13,8 @@ import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 
 // ─── Daily Stomp (Imprint) local state ────────────────────────────────────────
 
-const STOMP_KEY = "tsp-daily-stomp-v1";
+const IMPRINT_KEY = "tsp-imprint-v1";
+const STOMP_KEY_LEGACY = "tsp-daily-stomp-v1";
 
 interface ImprintState {
   date: string;
@@ -27,7 +28,8 @@ function todayISO(): string {
 function readImprint(): ImprintState {
   if (typeof window === "undefined") return { date: todayISO(), completed: false };
   try {
-    const raw = localStorage.getItem(STOMP_KEY);
+    const raw = localStorage.getItem(IMPRINT_KEY)
+      ?? localStorage.getItem(STOMP_KEY_LEGACY);
     if (!raw) return { date: todayISO(), completed: false };
     const parsed = JSON.parse(raw) as ImprintState & { streak?: number };
     if (parsed.date !== todayISO()) {
@@ -38,7 +40,7 @@ function readImprint(): ImprintState {
 }
 
 function writeImprint(s: ImprintState) {
-  try { localStorage.setItem(STOMP_KEY, JSON.stringify(s)); } catch {}
+  try { localStorage.setItem(IMPRINT_KEY, JSON.stringify(s)); } catch {}
 }
 
 // ─── Custom Cursor (subtle glowing orb) ────────────────────────────────────────
@@ -244,8 +246,7 @@ function DailyStompOrb() {
                     <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#D9A066]/15 border border-[#D9A066]/40 mb-3">
                       <CheckCircle2 className="w-7 h-7 text-[#D9A066]" />
                     </div>
-                    <p className="text-white font-serif text-lg mb-1">Stomped.</p>
-                    <p className="text-white/60 text-sm">Come back tomorrow.</p>
+                    <p className="text-white font-serif text-lg">Stomped. Come back tomorrow.</p>
                   </div>
                 )}
               </div>
