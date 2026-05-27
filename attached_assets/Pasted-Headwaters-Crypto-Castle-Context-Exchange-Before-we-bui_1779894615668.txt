@@ -1,0 +1,31 @@
+Headwaters ↔ Crypto Castle — Context Exchange
+
+Before we build anything, let's orient to each other. I'm going to tell you about the watershed this build lives inside. Then I want you to tell me everything you know about the crypto castle — what was built, what's running, where it lives, what decisions were made. Once we've both spoken, we match energy and move.
+
+What I'm carrying in:
+
+This build is part of Headwaters — a community economic sovereignty infrastructure rooted in 807 Food Co-operative Inc., Dryden, Ontario. Not a startup. Not a platform. A watershed.
+
+The circuit:
+From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Clearing (3), flows to the Market Square (4), and is held on the Ridge (5). The Aquifer keeps the entire watershed cycling.
+
+The financial primitive at the base of this system is sound money without an issuer — decentralized crypto as the Aquifer layer. Not opposition to the bankster system. Irrelevance to it. The primitive needs a membrane to cross into household budgets: a state-adjacent crossing rail (RLUSD / XRPL) that lets value move through both worlds without surrendering its nature in either. The primitive is the first half of a forever pair. The membrane is the companion.
+
+The Machine is a pressure canner. It doesn't generate heat — it holds it. Four sequenced buckets: Cost Basis → Reserve → Reinvestment → Eave Flow. Eave Flow only activates when the first three are funded and the Reserve is full. That's the Honey Principle: you don't take from inside the comb.
+
+Tone: practitioner, warm northern, quiet competence, grounded poetry. No hype. No corporate gloss. No grant-application language. The community this is built for has watched development projects arrive with fanfare and leave with the furniture. They read gloss as predatory — because it usually has been.
+
+Words we don't use here: platform, onboarding, ecosystem, stakeholder, synergy, scalable, user acquisition. Those are from a different watershed.
+
+Now your turn.
+
+Tell me about the crypto castle:
+
+What was built, and when?
+What's live vs. stubbed vs. concept only?
+What stack, what decisions, what's held together with tape?
+What's the terrain it was built for — who uses it, what problem does it solve in the watershed?
+What's the one thing you'd want an outside agent to know before touching it?
+Once I hear that, I'll know where we're standing. Then we work.
+
+That's the prompt. Warm enough to land, precise enough to get real answers back. Paste it in, let the other agent speak, then bring that response back here and we'll calibrate together.
