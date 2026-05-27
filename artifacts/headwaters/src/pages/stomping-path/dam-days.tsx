@@ -21,9 +21,26 @@ function formatDate(ts: string): string {
   });
 }
 
+function exportEntries(entries: DamEntry[]) {
+  const lines = entries
+    .slice()
+    .reverse()
+    .map((e) => `[${formatDate(e.timestamp)}]\n${e.text}`)
+    .join("\n\n---\n\n");
+
+  const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dam-days.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function DamDays() {
   const [entries, setEntries] = useState<DamEntry[]>([]);
   const [draft, setDraft] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -57,6 +74,12 @@ export default function DamDays() {
       e.preventDefault();
       saveEntry();
     }
+  }
+
+  function clearEntries() {
+    localStorage.removeItem(STORAGE_KEY);
+    setEntries([]);
+    setConfirmClear(false);
   }
 
   return (
@@ -167,34 +190,127 @@ export default function DamDays() {
               Nothing here yet. The groove starts with one mark.
             </p>
           ) : (
-            <div className="flex flex-col gap-1">
-              <AnimatePresence initial={false}>
-                {entries.map((entry) => (
-                  <motion.div
-                    key={entry.id}
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.35 }}
-                    className="py-5 border-b"
-                    style={{ borderColor: "#2a2a1c" }}
-                  >
-                    <p
-                      className="text-sm mb-3"
-                      style={{ color: "#a89e7e", lineHeight: 1.75, whiteSpace: "pre-wrap" }}
+            <>
+              <div className="flex flex-col gap-1">
+                <AnimatePresence initial={false}>
+                  {entries.map((entry) => (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.35 }}
+                      className="py-5 border-b"
+                      style={{ borderColor: "#2a2a1c" }}
                     >
-                      {entry.text}
-                    </p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "#4a4830" }}
+                      <p
+                        className="text-sm mb-3"
+                        style={{ color: "#a89e7e", lineHeight: 1.75, whiteSpace: "pre-wrap" }}
+                      >
+                        {entry.text}
+                      </p>
+                      <p
+                        className="text-xs"
+                        style={{ color: "#4a4830" }}
+                      >
+                        {formatDate(entry.timestamp)}
+                      </p>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Footer actions */}
+              <div className="mt-12 pt-6 flex items-center justify-between" style={{ borderTop: "1px solid #1e1e14" }}>
+                <button
+                  onClick={() => exportEntries(entries)}
+                  className="text-xs tracking-widest"
+                  style={{
+                    color: "#5a5640",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    letterSpacing: "0.12em",
+                    padding: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#a89e7e")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#5a5640")}
+                >
+                  EXPORT ENTRIES
+                </button>
+
+                <AnimatePresence mode="wait">
+                  {confirmClear ? (
+                    <motion.div
+                      key="confirm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-4"
                     >
-                      {formatDate(entry.timestamp)}
-                    </p>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                      <span className="text-xs" style={{ color: "#5a5640" }}>
+                        clear everything?
+                      </span>
+                      <button
+                        onClick={clearEntries}
+                        className="text-xs tracking-widest"
+                        style={{
+                          color: "#8a5a4a",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          letterSpacing: "0.12em",
+                          padding: 0,
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#c47a5a")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#8a5a4a")}
+                      >
+                        YES, CLEAR
+                      </button>
+                      <button
+                        onClick={() => setConfirmClear(false)}
+                        className="text-xs tracking-widest"
+                        style={{
+                          color: "#4a4830",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          letterSpacing: "0.12em",
+                          padding: 0,
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#7a7055")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#4a4830")}
+                      >
+                        KEEP IT
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.button
+                      key="trigger"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => setConfirmClear(true)}
+                      className="text-xs tracking-widest"
+                      style={{
+                        color: "#3a3828",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        letterSpacing: "0.12em",
+                        padding: 0,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#6a5a4a")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#3a3828")}
+                    >
+                      CLEAR THE GROOVE
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </>
           )}
         </motion.div>
       </div>
