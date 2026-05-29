@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Services from "@/pages/services";
 import Work from "@/pages/work";
 import Discover from "@/pages/discover";
+import Workbench from "@/pages/workbench";
 import { GordWidget } from "@/components/GordWidget";
 
 const queryClient = new QueryClient();
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/services" component={Services} />
       <Route path="/work" component={Work} />
       <Route path="/discover" component={Discover} />
+      <Route path="/workbench" component={Workbench} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -28,6 +28,12 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  define: {
+    global: "globalThis",
+  },
+  optimizeDeps: {
+    include: ["buffer"],
+  },
   plugins: [
     react(),
     tailwindcss(),
