@@ -111,30 +111,37 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           Codetry is the digital sovereignty workbench for Stomping Path practitioners — XRPL tools, key custody, community payment rails, and the code skills to run them yourself.
         </motion.p>
 
-        {/* Actionable first step */}
-        <motion.div
-          variants={fadeInUp}
-          className="mx-auto max-w-md rounded-xl border border-[#4A8C5C]/40 bg-[#0A1A0A]/60 px-5 py-4 text-left"
-        >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A8C5C] mb-1">Start here</p>
-          <p className="text-sm text-[#C4B49A] leading-snug">
-            Set up your first private wallet — generate a self-custody XRPL address, write down the seed phrase, and hold the keys yourself. That's Zone 0 for your money.
-          </p>
-          <button
-            onClick={onEnterForge}
-            className="mt-3 text-xs font-semibold text-[#D9A066] hover:text-[#F0C07A] transition-colors"
-          >
-            Open the Forge to begin →
-          </button>
+        {/* Two entry doors */}
+        <motion.div variants={fadeInUp} className="mx-auto max-w-2xl w-full grid sm:grid-cols-2 gap-3 text-left">
+          {/* Door 1 — The Forge (code literacy) */}
+          <div className="rounded-xl border border-[#4A8C5C]/40 bg-[#0A1A0A]/60 px-5 py-4 flex flex-col">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A8C5C] mb-1">Code literacy</p>
+            <p className="text-sm text-[#C4B49A] leading-snug flex-1">
+              Write real HTML, CSS, and JavaScript in the browser. Strike the anvil, see it run. No setup, nothing to install.
+            </p>
+            <button
+              onClick={onEnterForge}
+              className="mt-4 text-xs font-semibold text-[#D9A066] hover:text-[#F0C07A] transition-colors"
+            >
+              Open the Forge →
+            </button>
+          </div>
+
+          {/* Door 2 — The Workbench (crypto keys) */}
+          <div className="rounded-xl border border-[#2A8A9A]/40 bg-[#060F10]/60 px-5 py-4 flex flex-col">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#2A8A9A] mb-1">Crypto keys</p>
+            <p className="text-sm text-[#C4B49A] leading-snug flex-1">
+              Generate your first Bitcoin seed and XRPL wallet. Browser-only, nothing transmitted. Understand the layered stack. Calibrate The Machine.
+            </p>
+            <Link href="/workbench">
+              <span className="mt-4 inline-block text-xs font-semibold text-[#2A8A9A] hover:text-[#5ABCCC] transition-colors cursor-pointer">
+                Enter the Workbench →
+              </span>
+            </Link>
+          </div>
         </motion.div>
 
         <motion.div variants={fadeInUp} className="flex flex-wrap gap-3 justify-center pt-2">
-          <button
-            onClick={onEnterForge}
-            className="forge-btn-primary px-7 py-3 rounded-md font-medium text-[#2B2825] transition-all duration-200"
-          >
-            Open the Forge
-          </button>
           <Link href="/discover">
             <span className="inline-block px-7 py-3 rounded-md font-medium text-[#D9A066] border border-[#D9A066]/30 hover:border-[#D9A066]/60 hover:bg-[#D9A066]/10 transition-all duration-200 cursor-pointer">
               Find your zone
@@ -147,14 +154,14 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           </Link>
         </motion.div>
 
-        <motion.div variants={fadeInUp} className="flex items-center justify-center gap-6 pt-4 text-[#8A7A66] text-sm">
+        <motion.div variants={fadeInUp} className="flex items-center justify-center gap-6 pt-2 text-[#8A7A66] text-sm">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#4A8C5C]" />
-            Instant results
+            Runs in the browser
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#D9A066]" />
-            No experience needed
+            <span className="w-2 h-2 rounded-full bg-[#2A8A9A]" />
+            Keys stay local
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#8B6F47]" />
