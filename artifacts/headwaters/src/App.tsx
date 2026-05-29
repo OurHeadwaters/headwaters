@@ -28,6 +28,7 @@ import StompingPathDamDays from "@/pages/stomping-path/dam-days";
 import StompingPathCreator from "@/pages/stomping-path/creator";
 import StompingPathShare from "@/pages/stomping-path/share";
 import Shallows from "@/pages/shallows";
+import Overview from "@/pages/overview";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ function Router() {
         <Route path="/stomping-path/creator" component={StompingPathCreator} />
         <Route path="/stomping-path/share/:shareId" component={StompingPathShare} />
         <Route path="/shallows" component={Shallows} />
+        <Route path="/overview" component={Overview} />
 
         <Route path="*">
           <PassphraseGuard>

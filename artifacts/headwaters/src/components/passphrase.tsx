@@ -134,6 +134,19 @@ export function PassphraseGuard({ children }: { children: ReactNode }) {
             The practitioner field journal. And the trail that runs through it.
           </motion.p>
 
+          {/* Map link */}
+          <motion.div variants={fade} className="mb-6">
+            <a
+              href="/headwaters/overview"
+              className="text-[11px] transition-colors"
+              style={{ color: "#4a4030" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#7a6e54")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#4a4030")}
+            >
+              See the full map →
+            </a>
+          </motion.div>
+
           {/* Fork */}
           <AnimatePresence mode="wait">
             {mode === "fork" && (
