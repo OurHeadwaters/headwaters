@@ -1,0 +1,1 @@
+- [Full Context Pack](watershed-context-pack.md) — complete project inventory: zones, artifacts, routes, DB schema, API, constitutional rules, open items
