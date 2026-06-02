@@ -1133,6 +1133,346 @@ html, body {
 .print-only { display: none; }
 
 /* ── Print styles ── */
+/* ── Satellite & Drone section ── */
+.sd-rule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 1.25rem;
+}
+@media (max-width: 640px) {
+  .sd-rule-grid { grid-template-columns: 1fr; }
+}
+.sd-rule-item {
+  background: var(--cream-warm);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sd-rule-label {
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-bright);
+}
+.sd-rule-body {
+  font-size: 13px;
+  color: var(--charcoal);
+  line-height: 1.6;
+}
+
+/* ── Keeper's Kit section ── */
+.kk-instruments-heading {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin: 2rem 0 1rem;
+}
+.kk-instruments {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.kk-instrument {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  background: var(--cream-warm);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.kk-num {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--forest-bright);
+  opacity: 0.6;
+  min-width: 36px;
+  line-height: 1;
+  padding-top: 2px;
+}
+.kk-body {
+  flex: 1;
+}
+.kk-title {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 6px;
+}
+.kk-text {
+  font-size: 13.5px;
+  color: var(--charcoal);
+  line-height: 1.65;
+}
+.kk-toggle-btn {
+  background: var(--forest-bright);
+  color: var(--cream);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.kk-toggle-btn:hover {
+  background: var(--forest-deep);
+}
+.kk-declaration-wrapper {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+.kk-declaration {
+  background: white;
+  border: 1.5px solid #bbb;
+  border-radius: 6px;
+  padding: 28px 32px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #111;
+  page-break-inside: avoid;
+}
+.kk-declaration-header {
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #bbb;
+  padding-bottom: 14px;
+}
+.kk-declaration-title {
+  font-size: 17px;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+.kk-declaration-sub {
+  font-size: 12px;
+  color: #555;
+  margin-top: 4px;
+}
+.kk-declaration-body {
+  margin-bottom: 16px;
+  font-style: italic;
+  color: #333;
+}
+.kk-field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+.kk-field-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.kk-field-label {
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+.kk-field-line {
+  flex: 1;
+  border-bottom: 1px solid #999;
+  min-width: 80px;
+}
+.kk-field-short {
+  flex: none;
+  width: 120px;
+}
+.kk-field-note {
+  font-size: 10px;
+  color: #888;
+  font-style: italic;
+}
+.kk-declaration-clause {
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: #fafafa;
+  border-left: 3px solid #bbb;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.kk-declaration-handoff {
+  background: #f5f5f5;
+  border-left-color: #888;
+}
+.kk-declaration-filed {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #888;
+}
+.kk-print-note {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.kk-print-btn {
+  background: none;
+  border: 1px solid var(--forest-bright);
+  color: var(--forest-bright);
+  border-radius: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.kk-print-btn:hover {
+  background: var(--forest-bright);
+  color: white;
+}
+
+/* ── Battered Kit / Duck Song section ── */
+.bk-signal-card-intro {
+  text-align: center;
+}
+.bk-signal-phrase {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--forest-bright);
+  letter-spacing: 0.01em;
+  margin-bottom: 12px;
+}
+.bk-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 1.25rem;
+}
+.bk-tier {
+  display: flex;
+  gap: 16px;
+  background: var(--cream-warm);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  align-items: flex-start;
+}
+.bk-tier-num {
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-bright);
+  background: var(--tint-moss);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.bk-tier-body {
+  flex: 1;
+}
+.bk-tier-title {
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 8px;
+}
+.bk-tier-list {
+  list-style: disc;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--charcoal);
+  line-height: 1.55;
+}
+.bk-protocol {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bk-protocol li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.bk-step-num {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--amber);
+  min-width: 24px;
+  line-height: 1.2;
+}
+.bk-step-body {
+  flex: 1;
+  color: var(--charcoal);
+}
+.bk-donot {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bk-donot li {
+  font-size: 13px;
+  color: var(--charcoal);
+  line-height: 1.55;
+  padding-left: 18px;
+  position: relative;
+}
+.bk-donot li::before {
+  content: "×";
+  position: absolute;
+  left: 0;
+  color: var(--terracotta);
+  font-weight: bold;
+}
+.bk-card-section { }
+.bk-slip-wrapper {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+.bk-slip {
+  border: 2px dashed #888;
+  border-radius: 6px;
+  padding: 20px 28px;
+  max-width: 480px;
+  background: white;
+  page-break-inside: avoid;
+}
+.bk-slip-phrase {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 10px;
+}
+.bk-slip-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+}
+
 @media print {
   html, body {
     background: white;

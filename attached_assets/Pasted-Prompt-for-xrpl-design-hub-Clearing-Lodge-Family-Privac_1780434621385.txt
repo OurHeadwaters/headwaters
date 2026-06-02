@@ -1,0 +1,52 @@
+Prompt for xrpl-design-hub / Clearing & Lodge Family Privacy Guide:
+
+I need to add three new sections to the Family Privacy Guide at /privacy-guide/. Each section is a standalone guide. Keep the tone warm, direct, and non-alarmist throughout — these are parents and community members who have already thought carefully. Give them the tool and the honest answer; don't lecture.
+
+Section 1 — The Satellite & Drone Answer
+
+Parents ask: do my children need to be clothed on our own land to stay safe from cameras above? The honest answer: satellite imagery of rural Northern Ontario does not resolve body detail. Typical consumer-accessible resolution (Google Maps/Earth) is 1–2 metres per pixel for rural areas — a person appears as a pixel cluster, not an identifiable body. Google Maps/Earth rural Ontario is often years out of date and lower resolution still. Even the highest-resolution commercial satellites (Maxar WorldView-3 at 31 cm/pixel, available to governments and enterprise customers — not random bad actors) cannot resolve facial features or body detail below clothing level.
+
+The real aerial risk is drones, not satellites. In Canada, Transport Canada basic operations rules require drones to stay 30 metres from bystanders not involved in the flight. On private property, a drone close enough to capture body detail is violating those rules and likely provincial privacy law. Practical protection: tree canopy over play areas is the single most effective physical countermeasure — the same answer the California natural-parenting guides give, and it grows in Northern Ontario. Clothed vs. unclothed on your own rural land is a negligible satellite risk. The fence and the treeline are the right instruments.
+
+Section 2 — The Keeper's Kit
+
+A practical guide for parents placing a standing protective declaration for their children's likeness, voice, and words — specifically against future manufactured-consent attacks using reconstructive AI or deepfake technology. The threat is specific: innocent play language captured in public spaces (water play, outdoor recreation, family video) could be recontextualized by technology that doesn't yet exist at full scale but is arriving. The kit places the refusal in the record before the capability exists to exploit it. A forgery cannot predate the original.
+
+The kit has five instruments:
+
+(1) The Standing Declaration — a plain-language, dated, witnessed statement that the child's likeness, voice, image, body, and words in any medium during their minority cannot constitute consent of any kind for adult, sexual, or exploitative content or context. No public domain argument, open space claim, or reconstructed context supersedes it. Filed before any threat materializes.
+
+(2) The Refused Shelf Entry — a permanent declaration that the child's play language (water language, touch language, physical play requests) is refused as source material for any adult or exploitative mapping, in advance, permanently.
+
+(3) The Contextual Fabric Stamp — a simple dated log for occasions where public-domain capture is likely (lakes, parks, community events). Each entry: date and location, ages present, what they were doing (specific), what words meant in the child's vocabulary at that age, who was present, one-sentence keeper witness statement. One paragraph per occasion. The discipline is the date and the witness.
+
+(4) The Age Anchor — a standing record stating the child's date of birth and that they were a minor at the time of every relevant recording. Minority cannot be argued away — it is structural, not moral.
+
+(5) The Keeper Chain — naming two or more people who hold the same record independently. An attacker must contradict every keeper simultaneously. As the chain grows, the attack becomes less viable.
+
+Include a printable one-page declaration template at the end of this section. Fields: child's name, date of birth, date of majority, keeper's name and signature, witness name and signature, secondary keeper (optional), filing location, on-chain anchor (optional, for when XRPL anchoring is available).
+
+The declaration transfers to the child at majority. The keeper performs a named handoff: "I held this on your behalf. Here is what I witnessed. This is yours now."
+
+Section 3 — The Battered Kit / The Duck Song Signal
+
+A community action protocol for mothers in abusive or isolating situations who cannot safely ask for help directly. The signal is three words from the Duck Song, a children's song widely known in schools: "Got any grapes?"
+
+A mother can say this in any space — to a teacher at drop-off, a shelter worker, a clinic receptionist, a grocery clerk, a librarian, a pastor — in front of her children, in front of her partner, in a crowd. It sounds like a child quoting a song. It carries no risk if said to someone who doesn't know what it means. If said to someone who does, it activates an immediate, quiet community response.
+
+The section covers:
+
+Why it works: It crosses in plain sight. The abuser cannot recognize it as a threat because it doesn't register as one. Children already know the song — their presence is cover, not an obstacle. A child saying it gives the mother perfect deniability.
+
+The three-tier network: Tier 1 — teachers, daycare workers, school office staff, bus drivers. Tier 2 — women's shelter intake workers, crisis line workers, public health nurses, pediatric clinic staff, family resource centre workers. Tier 3 — clergy, library staff, grocery and pharmacy clerks, food bank workers, recreation program staff. Training takes ten minutes: "If a woman with children says this to you, she is asking for help. Here is what to do."
+
+The response protocol: (1) Do not react visibly — no change in expression that an observer could read. (2) Acknowledge calmly in plain language ("not today, sorry") — one second of eye contact confirms she was heard. (3) The moment she is out of earshot, make the designated call — shelter intake, safety contact, or 911 depending on urgency. (4) Document time, date, what was observed. (5) If she left before acknowledgment: still make the call. The signal was given. That is enough.
+
+What not to do: Don't ask her to clarify or repeat herself. Don't pull her aside visibly. Don't ask if she's okay in earshot of anyone. Don't delay because you're uncertain. Don't tell anyone outside the response chain.
+
+The one-line card (printable, slipped into any folder or resource package — no explanation required):
+
+"Got any grapes?" — Say this to a teacher, shelter worker, clinic nurse, or resource centre staff, and help will be on the way. You don't have to explain anything else.
+Building the network: embed the signal in professional onboarding — it becomes part of how new staff learn the space, the same way they learn where the fire extinguisher is. The phrase never changes. The response protocol is simple enough to remember without drilling. One prerequisite before any organization joins the network: a single designated call number for step 3, known to all staff.
+
+Design notes: the three sections can stand alone or be presented as a unit. If navigation allows, give each its own anchor. The Keeper's Kit and the Satellite Answer pair naturally as "outdoor and digital safety." The Battered Kit stands alone — it is a community protocol, not a personal safety guide, and its audience is both mothers and community members who want to know what to do.

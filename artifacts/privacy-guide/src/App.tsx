@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GordBird } from "./components/gord-bird";
+import SatelliteDroneSection from "./sections/satellite-drone";
+import KeepersKitSection from "./sections/keepers-kit";
+import BatteredKitSection from "./sections/battered-kit";
 
 const STORAGE_KEY = "sandbox-handbook-community-name";
 const SECTIONS_KEY = "sandbox-handbook-sections";
@@ -396,6 +399,9 @@ const NAV_SECTIONS = [
   { id: "core-principles", label: "Core Principles", icon: "🌿" },
   { id: "family-lodge", label: "Family & Lodge", icon: "🏡" },
   { id: "threat-clearing", label: "Threat Clearing", icon: "🛡️" },
+  { id: "satellite-drone", label: "Satellite & Drone", icon: "🛰️" },
+  { id: "keepers-kit", label: "Keeper's Kit", icon: "🗂️" },
+  { id: "battered-kit", label: "Duck Song Signal", icon: "🦆" },
   { id: "tools-workshop", label: "Tools & Workshop", icon: "🔧" },
   { id: "resources", label: "Resources", icon: "📜" },
 ];
@@ -1127,6 +1133,18 @@ export default function App() {
             </JournalCard>
           </div>
         </section>
+
+        <LanternDivider />
+
+        <SatelliteDroneSection />
+
+        <LanternDivider />
+
+        <KeepersKitSection />
+
+        <LanternDivider />
+
+        <BatteredKitSection />
 
         <LanternDivider />
 
