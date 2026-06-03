@@ -30,6 +30,7 @@ import StompingPathShare from "@/pages/stomping-path/share";
 import Shallows from "@/pages/shallows";
 import Overview from "@/pages/overview";
 import Print from "@/pages/print";
+import Guide from "@/pages/guide";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ function Router() {
         <Route path="/shallows" component={Shallows} />
         <Route path="/overview" component={Overview} />
         <Route path="/print" component={Print} />
+        <Route path="/guide" component={Guide} />
 
         <Route path="*">
           <PassphraseGuard>
