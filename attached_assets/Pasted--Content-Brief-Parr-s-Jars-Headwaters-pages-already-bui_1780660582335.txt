@@ -1,0 +1,92 @@
+## Content Brief — Parr's Jars / Headwaters (pages already built, need your content)
+
+The pages and email sequence below are already live. I built them. I'm not asking you 
+to redesign or recreate anything — I need you to help me fill them with better, more 
+reliable content so Bobbie's real knowledge shows up properly.
+
+Bobbie Parr runs Parr's Jars (jar kitchen / food preservation, Wabigoon, Ontario), 
+the 807 Food Co-operative, and Headwaters (consulting). She appeared on The Survival 
+Podcast. The primary audience is TSP listeners — people who already know something is 
+wrong with the food supply chain and are looking for practical northern solutions.
+
+Brand voice: warm, practitioner, northern Ontario, quiet competence. Not corporate, 
+not panic-prepper, not Pinterest homesteading.
+
+Five-line manifesto (use everywhere):
+START WHERE YOU ARE / USE WHAT YOU HAVE / DO WHAT YOU CAN / TRACK IT ALL / GROW, BABY, GROW
+
+---
+
+### PAGE 1 already live at /headwaters/start
+
+Sections that exist and need better content:
+
+**Hero paragraph** — currently: "Jack's audience shows up knowing something is wrong 
+with the food supply chain..." 
+→ If you know what episode Bobbie was on or what specific thing Jack said, add that 
+callback. If not, suggest a stronger opening line than what's there.
+
+**Backstory** — currently a 3-paragraph summary: Ron Paul 2011 → Wabigoon homestead 
+→ Parr's Jars → 807 Food Co-op → Headwaters.
+→ Is there one specific story or moment from the homestead that would land harder 
+than this summary? A real incident — a storm, a road closure, a winter that tested 
+the system?
+
+**Social proof** — currently nothing.
+→ What real proof exists? (Years operating, co-op member count, crate subscribers, 
+any testimonials, any media mentions beyond TSP?) List what Bobbie should pull 
+together so I can add it to the page.
+
+---
+
+### PAGE 2 already live at /headwaters/products
+
+Each product has a name, price, and 2–3 sentence description. They need more:
+
+- **Zone 0 Starter Kit ($17)** — what exactly is in it? Bullet list.
+- **Preparedness Pack ($17)** — same.
+- **Jars & Scars founding edition ($27)** — what are the 8 chapters? What's the 
+  founding edition promise specifically?
+- **Course 1 — Food Preservation & Canning ($97)** — what does each of the 10 
+  sessions actually cover? Session-by-session outline.
+- **Green Salt / The Salty Onion** — origin story for each. Why did Bobbie make 
+  this? What problem does it solve?
+- **PJ Solutions consulting** — who is this actually for? What does an engagement 
+  look like? What's a realistic outcome?
+
+---
+
+### LEAD MAGNET already live at /suite/northern-pantry
+
+A one-page printable. Three layers:
+1. The Jar Kitchen (Zone 0 — active pantry, rotation, root cellar)
+2. The Standby Room (Zone 1 — dry storage, preservation, freezer)
+3. The 72-Hour Exit Layer (Zone 2 — two packs, contents, the rule)
+
+→ Is everything accurate? What's wrong or missing from Bobbie's actual system?
+→ Anything northern-Ontario-specific missing from the 72-hour pack list?
+→ Should each layer have a "do this first" action? What would it be?
+
+---
+
+### EMAIL SEQUENCE already written (8 emails, 2 days apart)
+
+Topics: Plastic Purge → Sourcing → Sunday Prep → Dry Storage → Freezer System → 
+Preservation → Jar Hacks → Course Offer
+
+The bones are solid. What's missing is Bobbie's specific voice and northern detail.
+
+→ One specific story or image from the Wabigoon homestead for each email topic
+→ Email 8 (the $97 course offer): what's the real reason it's $97 now? What's 
+  the founding-edition story? Any early-buyer language that's true?
+→ What's the strongest single thing Bobbie has said about this system — a quote, 
+  a story, a moment — that isn't in any of these emails yet?
+
+---
+
+### What I need from you
+
+Not a redesign. Just content fills — answers to the questions above, rewritten 
+paragraphs where you have better material, real specifics to replace the placeholders.
+
+Organize your response by section so I can drop it straight into the existing pages.
