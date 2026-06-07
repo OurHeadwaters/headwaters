@@ -192,7 +192,7 @@ export default function Print() {
         <p style={S.p}><strong>Circuit paragraph — use everywhere:</strong></p>
         <blockquote style={S.blockquote}>
           "From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers
-          in the Clearing (3), flows to the Market Square (4), and is held on the Ridge (5). The Mill
+          in the Greenhouse (3), flows through the Clearing (4), and is held at the Edge (5). The Aquifer
           keeps the entire watershed cycling."
         </blockquote>
 
@@ -220,17 +220,17 @@ export default function Print() {
             <tr><TH>Zone</TH><TH>Name</TH><TH>Tagline</TH><TH>Core Focus</TH></tr>
           </thead>
           <tbody>
-            <tr><TD>0</TD><TD>Salt Box</TD><TD>The Hearth · Home Center</TD><TD>Kitchen, preservation, Eave, Forge, root cellar</TD></tr>
-            <tr><TD>1</TD><TD>Lodge / Headwaters Core</TD><TD>The Spring · Daily Tools</TD><TD>Learning, handbook, library, practitioner intake</TD></tr>
-            <tr><TD>2</TD><TD>Bench / Trail</TD><TD>The Worn Path · Transition</TD><TD>Stomping Path, privacy, Codetry tools</TD></tr>
-            <tr><TD>3</TD><TD>Standby / Gather Round</TD><TD>The Clearing · Circle</TD><TD>Creative, storytelling, making</TD></tr>
-            <tr><TD>4</TD><TD>Community Hall</TD><TD>The Market Square · Exchange</TD><TD>Knowledge hub, grants, market, Deadfall</TD></tr>
-            <tr><TD>5</TD><TD>The Wild</TD><TD>The Ridge · Long View</TD><TD>X-Buckets vision, horizon planning</TD></tr>
+            <tr><TD>0</TD><TD>Saltbox</TD><TD>The Hearth · Home Center</TD><TD>Kitchen, preservation, Eave, Forge, root cellar</TD></tr>
+            <tr><TD>1</TD><TD>Kitchen Table</TD><TD>The Spring · Daily Tools</TD><TD>Learning, handbook, library, practitioner intake</TD></tr>
+            <tr><TD>2</TD><TD>Workbench</TD><TD>The Worn Path · Transition</TD><TD>Stomping Path, privacy, Codetry tools</TD></tr>
+            <tr><TD>3</TD><TD>Greenhouse</TD><TD>The Clearing · Circle</TD><TD>Creative, storytelling, making</TD></tr>
+            <tr><TD>4</TD><TD>Clearing</TD><TD>The Market Square · Exchange</TD><TD>Knowledge hub, grants, market, Deadfall</TD></tr>
+            <tr><TD>5</TD><TD>Edge</TD><TD>The Ridge · Long View</TD><TD>X-Buckets vision, horizon planning</TD></tr>
           </tbody>
         </T>
         <p style={S.p}>
-          <strong>The Mill</strong> = cross-zone substrate (un-numbered). Not a zone — the hidden infrastructure
-          backbone. Water table / aquifer metaphor. In this repo: the shared API server.
+          <strong>The Aquifer</strong> = cross-zone substrate (un-numbered). Not a zone — the hidden infrastructure
+          backbone. Water table metaphor. In this repo: the shared API server.
         </p>
         <div style={S.warn}>
           <strong>Two zone frameworks coexist — do not conflate:</strong><br />
@@ -635,8 +635,8 @@ export default function Print() {
         <h2 style={S.h2}>12. Language & Framing Rules</h2>
         <ul style={{ paddingLeft: "20px", marginBottom: "10px" }}>
           <li style={{ marginBottom: "4px" }}>Lead always with watershed / water-cycle + permaculture lens.</li>
-          <li style={{ marginBottom: "4px" }}>Salt Box = Zone 0 is the unambiguous centre of the whole system.</li>
-          <li style={{ marginBottom: "4px" }}>The Mill = infrastructure substrate, never a numbered zone. Never brand it after any external company.</li>
+          <li style={{ marginBottom: "4px" }}>Saltbox = Zone 0 is the unambiguous centre of the whole system.</li>
+          <li style={{ marginBottom: "4px" }}>The Aquifer = infrastructure substrate, never a numbered zone. Never brand it after any external company.</li>
           <li style={{ marginBottom: "4px" }}>Tone: practitioner, warm northern, quiet competence, grounded poetry. No hype, no corporate gloss.</li>
           <li style={{ marginBottom: "4px" }}>Avoid: "platform," "onboarding," "ecosystem," "stakeholder," "synergy," "scalable," "user acquisition."</li>
           <li style={{ marginBottom: "4px" }}>Wayfinding: every artifact should carry "Zone X of 5" somewhere visible.</li>
@@ -706,11 +706,11 @@ pnpm --filter @workspace/db run db:push`}</pre>
         {/* 16. Open Items */}
         <h2 style={S.h2}>16. Open Items (as of May 30, 2026)</h2>
         <ol style={{ paddingLeft: "20px", marginBottom: "10px" }}>
-          <li style={{ marginBottom: "6px" }}><strong>/mill framing page</strong> — public cross-zone substrate explanation. Not built.</li>
+          <li style={{ marginBottom: "6px" }}><strong>/aquifer framing page</strong> — public cross-zone substrate explanation. Not built.</li>
           <li style={{ marginBottom: "6px" }}><strong>Consistent "Zone X of 5" wayfinding</strong> — present on hero badges; missing from many interior pages.</li>
           <li style={{ marginBottom: "6px" }}><strong>Domain hygiene</strong> — Zone 2 at xrpl-design-hub.replit.app. Target: stomping-path.replit.app or custom domain.</li>
-          <li style={{ marginBottom: "6px" }}><strong>Zone 5 population</strong> — The Wild / Ridge is thin.</li>
-          <li style={{ marginBottom: "6px" }}><strong>Gord cross-door links</strong> — Clearing ↔ Portal not wired.</li>
+          <li style={{ marginBottom: "6px" }}><strong>Zone 5 population</strong> — Edge / Ridge is thin.</li>
+          <li style={{ marginBottom: "6px" }}><strong>Gord cross-door links</strong> — Greenhouse ↔ Portal not wired.</li>
           <li style={{ marginBottom: "6px" }}><strong>Deadfall archiving</strong> — Renamed from "Deadhead." Not built.</li>
           <li style={{ marginBottom: "6px" }}><strong>ZAPRITE_WEBHOOK_SECRET not set</strong> — signature check skipped. Must be set before real Bitcoin payments go live.</li>
           <li style={{ marginBottom: "6px" }}><strong>KIT_STRIPE_PRICE_IDS not set</strong> — Stripe auto-creates products on cold start (wasteful).</li>

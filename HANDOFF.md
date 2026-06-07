@@ -8,16 +8,16 @@
 **Bobbie Parr** — practitioner, project author, northern Ontario. Headwaters is her system.
 **Jack Spirko** — The Survival Podcast host. Bitcoin-only. Opposes XRP publicly ("shit coin"). Keep XRPL off TSP-facing content unless explicitly asked.
 
-This repo is **Zone 2 of the Headwaters watershed** — The Bench/Trail, The Worn Path, Transition. It is where TSP listeners become practitioners. Everything here serves that crossing.
+This repo is **Zone 2 of the Headwaters watershed** — Workbench, The Worn Path, Transition. It is where TSP listeners become practitioners. Everything here serves that crossing.
 
 ---
 
 ## The Watershed in One Paragraph
 
-Headwaters is a northern Ontario self-reliance project network structured as a living watershed. Zone 0 (Salt Box) is the hearth — home, kitchen, family. Zone 1 (Lodge) is the spring — daily tools, learning, practitioner intake. Zone 2 (Bench/Trail) is the worn path — transition, digital tools, The Stomping Path. Zone 3 (The Clearing) is the circle — creative, storytelling, community. Zone 4 (Community Hall) is the market square — grants, exchange, studio, Deadfall. Zone 5 (The Wild) is the ridge — X-Buckets, horizon planning. The Mill is the un-numbered substrate — infrastructure, backups, local economy plumbing — the water table that keeps it all cycling.
+Headwaters is a northern Ontario self-reliance project network structured as a living watershed. Zone 0 (Saltbox) is the hearth — home, kitchen, family. Zone 1 (Kitchen Table) is the spring — daily tools, learning, practitioner intake. Zone 2 (Workbench) is the worn path — transition, digital tools, The Stomping Path. Zone 3 (Greenhouse) is the circle — creative, storytelling, community. Zone 4 (Clearing) is the market square — grants, exchange, studio, Deadfall. Zone 5 (Edge) is the ridge — X-Buckets, horizon planning. The Aquifer is the un-numbered substrate — infrastructure, backups, local economy plumbing — the water table that keeps it all cycling.
 
 **Circuit paragraph. Use it everywhere:**
-> "From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Clearing (3), flows to the Market Square (4), and is held on the Ridge (5). The Mill keeps the entire watershed cycling."
+> "From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Greenhouse (3), flows through the Clearing (4), and is held at the Edge (5). The Aquifer keeps the entire watershed cycling."
 
 ---
 
@@ -138,7 +138,7 @@ Northern Ontario constraints are real. Lazy-load, paginate, degrade gracefully. 
 - **API server must stay on port 8080** — Previous port collision was resolved. Don't change this without checking workflow config.
 - **After any OpenAPI change** — Run `pnpm --filter @workspace/api-spec run codegen` before using updated hooks or types. All API hooks and Zod schemas are generated from `lib/api-spec/openapi.yaml`.
 - **Library backfill** — Runs in background on boot. Fresh DBs show ~30s of partial state. Expected.
-- **Two zone frameworks coexist** — The Headwaters system zone chain (0–5, Salt Box → The Wild) is different from the TSP practitioner journey zones (Z0=Self → Z5=Wild used in `zones.ts`). Both exist. Do not conflate them.
+- **Two zone frameworks coexist** — The Headwaters system zone chain (0–5, Saltbox → Edge) is different from the TSP practitioner journey zones (Z0=Self → Z5=Wild used in `zones.ts`). Both exist. Do not conflate them.
 
 ---
 

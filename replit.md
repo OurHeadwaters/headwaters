@@ -8,7 +8,7 @@
 
 ## One-Sentence Mission
 
-Help make Headwaters feel like one coherent, living watershed where Zone 0 stays warm, the water flows visibly between zones, and the Mill keeps everything reliable — all rooted in northern Ontario self-reliance.
+Help make Headwaters feel like one coherent, living watershed where Zone 0 stays warm, the water flows visibly between zones, and the Aquifer keeps everything reliable — all rooted in northern Ontario self-reliance.
 
 ---
 
@@ -16,17 +16,17 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 
 | Zone | Canonical Name | Terrain Tagline | Core Focus | Artifact / Domain |
 |---|---|---|---|---|
-| 0 | Salt Box | The Hearth · Home Center | Kitchen, preservation, Eave, Forge, root cellar | salt-box.replit.app |
-| 1 | Lodge / Headwaters Core | The Spring · Daily Tools | Learning, handbook, library, practitioner intake | northern-store-plan.replit.app |
-| 2 | Bench / Trail | The Worn Path · Transition | Stomping Path, privacy, Codetry tools | xrpl-design-hub.replit.app *(migrate pending)* |
-| 3 | Standby / Gather Round | The Clearing · Circle | Creative, storytelling, making | creative-hub-xbucketsapp.replit.app |
-| 4 | Community Hall | The Market Square · Exchange | Knowledge hub, grants, market, studio, Deadfall | community-knowledge-hub.replit.app |
-| 5 | The Wild | The Ridge · Long View | X-Buckets vision, horizon planning | x-buckets-vision.replit.app |
+| 0 | Saltbox | The Hearth · Home Center | Kitchen, preservation, Eave, Forge, root cellar | salt-box.replit.app |
+| 1 | Kitchen Table | The Spring · Daily Tools | Learning, handbook, library, practitioner intake | northern-store-plan.replit.app |
+| 2 | Workbench | The Worn Path · Transition | Stomping Path, privacy, Codetry tools | xrpl-design-hub.replit.app *(migrate pending)* |
+| 3 | Greenhouse | The Clearing · Circle | Creative, storytelling, making | creative-hub-xbucketsapp.replit.app |
+| 4 | Clearing | The Market Square · Exchange | Knowledge hub, grants, market, studio, Deadfall | community-knowledge-hub.replit.app |
+| 5 | Edge | The Ridge · Long View | X-Buckets vision, horizon planning | x-buckets-vision.replit.app |
 
-**The Mill** = Cross-zone substrate (un-numbered). Water table / aquifer metaphor. Handles hosting, logistics, local economy plumbing, backups, 807-specific infrastructure, grant pipelines, archiving, physical–digital bridging. Not a zone — the hidden work that sustains all zones.
+**The Aquifer** = Cross-zone substrate (un-numbered). Not a zone — the hidden infrastructure that sustains all zones. Hosting, logistics, local economy plumbing, backups, 807-specific infrastructure, grant pipelines, archiving, physical–digital bridging.
 
 **Circuit paragraph (use everywhere):**
-> "From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Clearing (3), flows to the Market Square (4), and is held on the Ridge (5). The Mill keeps the entire watershed cycling."
+> "From the Hearth (Zone 0) water rises at the Spring (1), runs the Worn Path (2), gathers in the Greenhouse (3), flows through the Clearing (4), and is held at the Edge (5). The Aquifer keeps the entire watershed cycling."
 
 ---
 
@@ -37,9 +37,9 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 | `artifacts/survival-podcast` | Zone 2 | The Stomping Path — fan redesign / transition platform |
 | `artifacts/codetry` | Zone 2 | Codetry — digital sovereignty workbench |
 | `artifacts/privacy-guide` | Zone 2 | Privacy Kit — Clearing & Lodge family guide |
-| `artifacts/headwaters` | Zone 1 | Practitioner Intake Tool (Headwaters Core) |
+| `artifacts/headwaters` | Zone 4 | Practitioner Intake Tool (Headwaters Core) |
 | `artifacts/tsp-mobile` | Zone 2 | TSP Mobile (Expo) |
-| `artifacts/api-server` | The Mill | Shared Express API — backbone for all artifacts |
+| `artifacts/api-server` | The Aquifer | Shared Express API — backbone for all artifacts |
 
 ---
 
@@ -93,8 +93,8 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 ## Key Language & Framing Rules
 
 - **Always lead** with the watershed / water-cycle + permaculture lens.
-- **Salt Box = Zone 0** is the unambiguous centre of the whole system.
-- **The Mill** = infrastructure substrate, never a numbered zone. Never brand it after any external company.
+- **Saltbox = Zone 0** is the unambiguous centre of the whole system.
+- **The Aquifer** = infrastructure substrate, never a numbered zone. Never brand it after any external company.
 - **Tone:** Practitioner, warm northern, quiet competence, grounded poetry. No hype, no corporate gloss.
 - **Avoid:** Crypto signaling on Zone 2 pages, vague "feels" tester prompts, disconnected sub-sites that don't name their zone.
 - **Wayfinding:** Every artifact should carry "Zone X of 5" somewhere visible.
@@ -140,14 +140,13 @@ No table, no foreign key, no join, no query path, and no stored reference may ev
 
 ## Open Items (as of May 24, 2026)
 
-1. Build public `/mill` framing page — cross-zone substrate explanation.
+1. Build public `/aquifer` framing page — cross-zone substrate explanation.
 2. Consistent wayfinding ("Zone X of 5") across all apps.
 3. Domain hygiene — especially Zone 2 (`xrpl-design-hub.replit.app` → `stomping-path.replit.app` or custom domain).
-4. Populate thin zones — especially Zone 5 (The Wild / Ridge).
-5. Gord the owl access + cross-door links (The Clearing ↔ Portal).
+4. Populate thin zones — especially Zone 5 (Edge / Ridge).
+5. Gord the owl access + cross-door links (Greenhouse ↔ Portal).
 6. Full visual language alignment — celestial sky + earth terrain throughout.
-7. Public `/mill` page for the cross-zone substrate role.
-8. Deadfall archiving (was "Deadhead" — renamed to Deadfall).
+7. Deadfall archiving (was "Deadhead" — renamed to Deadfall).
 
 ---
 
