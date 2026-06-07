@@ -40,6 +40,12 @@ export type KitDef = {
   /** Zaprite-hosted payment page URL for Bitcoin / Lightning / XRP / RLUSD checkout */
   zapriteUrl?: string;
   userManual?: KitUserManual;
+  /**
+   * Direct access URL sent in the welcome email button.
+   * When set, overrides the generic /kits/:slug/welcome fallback.
+   * Populated from env vars for kits whose content lives outside this repo.
+   */
+  accessUrl?: string;
 };
 
 export const KITS: KitDef[] = [
@@ -175,6 +181,29 @@ export const KITS: KitDef[] = [
       what: "Start with the TradFi → Hard Assets transformation episodes. Understand the 'why' before touching a hardware wallet.",
       first: "Set up a hardware wallet with a small amount before you hold anything significant. The gear shelf has Jack's reviewed hardware wallets.",
       next: "Layer in the privacy tools after you've secured your digital assets. Digital security compounds over time.",
+    },
+  },
+  {
+    slug: "parrs-jars",
+    name: "Parr's Jars — Food Preservation Course",
+    tagline: "Ten sessions on canning, preserving, and stocking your pantry from the North",
+    description:
+      "Bobbie Parr's ten-session food preservation course from Dryden, Ontario. Canning, fermenting, and stocking a real northern pantry — taught from a kitchen that has been doing this since 2020. Practitioner-grade skills, no fluff.",
+    transformationSlugs: [],
+    trackSlugs: ["prepared-at-home"],
+    gearCategoryTags: ["food-storage", "home"],
+    externalLinks: [
+      { label: "Parr's Jars", url: "https://parrsjars.ca" },
+      { label: "807 Food Co-operative", url: "https://807foodcoop.ca" },
+    ],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Course",
+    accessUrl: process.env.COURSE1_ACCESS_URL,
+    userManual: {
+      what: "Ten recorded sessions on food preservation from Bobbie Parr's kitchen in Dryden, Ontario. Canning, fermenting, and pantry stocking for real northern winters.",
+      first: "Watch Session 1 before you buy anything. The philosophy of stocking a real pantry matters more than which lids you use.",
+      next: "Work through the sessions in order. Each one builds on the last. By Session 5 you will have more preserved food than most families buy in a month.",
     },
   },
   {

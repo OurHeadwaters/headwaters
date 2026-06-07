@@ -443,11 +443,13 @@ export interface KitWelcomeEmailOptions {
     first: string;
     next: string;
   };
+  /** When set, the welcome email's primary button links here instead of the generic /kits/:slug/welcome page. */
+  accessUrl?: string;
 }
 
 function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
   const displayName = opts.buyerName ?? "there";
-  const welcomeUrl = `https://www.thesurvivalpodcast.com/kits/${opts.kitSlug}/welcome`;
+  const welcomeUrl = opts.accessUrl ?? `https://www.thesurvivalpodcast.com/kits/${opts.kitSlug}/welcome`;
 
   const manualSection = opts.userManual
     ? `

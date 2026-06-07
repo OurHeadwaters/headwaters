@@ -258,6 +258,7 @@ export class WebhookHandlers {
         kitName: kit?.name ?? kitSlug,
         kitSlug,
         userManual: kit?.userManual,
+        accessUrl: kit?.accessUrl,
       });
 
       // Notify the Arc so it can record the purchase and send its own
