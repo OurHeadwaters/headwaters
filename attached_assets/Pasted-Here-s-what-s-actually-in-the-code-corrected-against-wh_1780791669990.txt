@@ -1,0 +1,40 @@
+Here's what's actually in the code, corrected against what that other agent described.
+
+Jars & Scars — Founding Edition ($27)
+The other agent is wrong on the chapter titles. Those 8 names (Plastic Purge, Sourcing Food, Whole Food Prep, Dry Storage, Freezer System, Preservation, Jar Kitchen Hacks, Taking Action) are the email drip sequence topics — not the book chapters. The agent crossed two different content structures.
+
+The actual chapter list in the code is explicitly marked as placeholder with a comment asking Bobbie to replace them. The placeholder chapters are:
+
+The Jar as Infrastructure
+Zone 0 Before Anything Else
+What the Garden Teaches About Failure
+Sourcing in the North
+Pricing What You Make
+The 72-Hour Test
+Scars
+The Long Game
+The founding edition note on the page currently reads: "The price is $27 now. It goes up when the revision is done. Founding edition buyers get the update free." — no closing date, no cap. There's also a code comment explicitly asking Bobbie to fill in what the founding buyer gets and when it closes.
+
+There is no "filed under How to Become a Jarista" connection on the products page for this book.
+
+Course 1 — Food Preservation & Canning ($97)
+The other agent is wrong here too. The session list is not missing — it's fully built out in the code. All 10 sessions with titles and descriptions are live:
+
+#	Title	Description
+01	Why Canning Works	Pressure vs. water-bath, acidity, botulism — when it matters and when it doesn't
+02	Equipment Without the Fluff	What you actually need, what to skip, how to source a canner in a northern town
+03	Your First Water-Bath Batch	Jam, pickles, or tomatoes — step by step, nothing assumed
+04	Pressure Canning Basics	Meat, beans, broth — process, rules, common mistakes, reading a dial gauge
+05	Rotation Discipline	FIFO, label systems, the shelf map — pantry as a food system, not a storage problem
+06	Fermentation as Preservation	Lacto-fermentation from scratch — kraut, kvass, fermented hot sauce
+07	Dehydrating and Freeze-Drying	What dehydrating is good for, what it isn't, how Green Salt came out of this
+08	Building the 72-Hour Layer	The exit pack as preservation practice; northern Ontario-specific kit
+09	Selling from the Kitchen	Cottage food rules in Ontario, labelling, pricing, how Parr's Jars started
+10	Running the Jar Kitchen Year-Round	Seasonal planning, what to preserve when, the whole-system view
+The three-module structure "Reality Check → Discovery → Charter Your Freedom" does not exist anywhere in the code. That may be from an earlier planning doc or a different product conception that was never built.
+
+What is still missing on the page: the founding cap (40 spots is on file elsewhere in the project), the post-founding price ($197 on file), and Bobbie's own words for why it's $97 now. There's an explicit code comment flagging those.
+
+Summary of what the other agent got right: price ($27 book, $97 course), the general product structure.
+
+What it got wrong: chapter names for the book (confused with email sequence), and said the session list was missing when it's fully built.
