@@ -102,7 +102,7 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           variants={fadeInUp}
           className="text-lg md:text-xl text-[#C4B49A] max-w-2xl mx-auto leading-relaxed"
         >
-          Build it yourself. Own it forever. Start from where you are.
+          We always knew how to fix it; Now we can.
         </motion.p>
         <motion.p
           variants={fadeInUp}

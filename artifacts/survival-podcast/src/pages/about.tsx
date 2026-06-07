@@ -4,7 +4,7 @@ import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 function stripTagline(html: string): string {
   const stripped = html
-    .replace(/^[\s"'\u201C\u201D]*Helping you live a better life, if times get tough or even if they don't\.[\s"'\u201C\u201D]*/i, "")
+    .replace(/^[\s"'\u201C\u201D]*We always knew how to fix it; Now we can\.[\s"'\u201C\u201D]*/i, "")
     .replace(/^(<br\s*\/?>)+/, "")
     .trim();
   return stripped;
@@ -30,7 +30,7 @@ export function About() {
             {feed?.title || "The Stomping Path"}
           </h1>
           <p className="text-xl text-muted-foreground font-medium max-w-xl text-balance">
-            "Helping you live a better life, if times get tough or even if they don't."
+            "We always knew how to fix it; Now we can."
           </p>
         </div>
 

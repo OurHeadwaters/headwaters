@@ -928,6 +928,14 @@ export default function App() {
           >
             Your family's digital perimeter — keeping what you build at home private, so your self-reliance work stays yours
           </motion.p>
+          <motion.p
+            className="hero-subtitle"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.7, ease: "easeOut" }}
+          >
+            We always knew how to fix it; Now we can.
+          </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

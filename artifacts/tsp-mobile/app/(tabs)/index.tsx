@@ -433,7 +433,7 @@ export default function HomeScreen() {
               Mobile on the{"\n"}Stomping Path
             </Text>
             <Text style={[styles.heroTagline, { color: "rgba(255,255,255,0.8)", fontFamily: "DMSans_400Regular" }]}>
-              Stay connected, stay sovereign, stay prepared — even off-grid.
+              We always knew how to fix it; Now we can.
             </Text>
           </View>
         </View>

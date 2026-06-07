@@ -558,7 +558,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span className="font-serif font-semibold text-white/80">The Stomping Path</span>
             </div>
             <p className="text-sm text-white/60 text-center md:text-right max-w-sm italic">
-              "Helping you live a better life, if times get tough or even if they don't."
+              "We always knew how to fix it; Now we can."
             </p>
           </div>
           <div className="mt-6 pt-6 border-t border-white/10 flex flex-wrap justify-center md:justify-start gap-4 text-sm text-white/55">
