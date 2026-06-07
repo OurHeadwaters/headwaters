@@ -1,0 +1,28 @@
+Here's the honest verdict on that brief against this actual codebase.
+
+What the brief gets right
+Jars & Scars chapter titles are placeholders — confirmed, exactly as the brief says. Do not ship them without Bobbie's confirmation.
+Course 1 session list is real and complete — 10 sessions are fully in the code, titles confirmed correct in the brief's list.
+Founding cap / post-founding price — $97 founding price is live; 40-spot cap and $197 post-founding price are flagged awaiting Bobbie confirmation and are not displayed on the live page.
+The Eave Rule — eave-guard.ts exists in artifacts/api-server/src/lib/. The rule is real and enforced.
+api-server is the backend — correct.
+Green Salt and Salty Onion origin copy — what the brief says matches what's in the code.
+Brand voice rules — accurate.
+What the brief gets wrong for this repo
+This is the part that matters most. The brief is describing a different project structure, likely an earlier or parallel version. File paths and artifact names do not match.
+
+Brief says	Actual in this repo
+/headwaters/products lives in artifacts/survival-podcast/src/	Lives in artifacts/codetry-ship/src/pages/HeadwatersProductsPage.tsx
+artifacts/survival-podcast/	Does not exist — closest is artifacts/codetry-ship/
+artifacts/headwaters/	Does not exist — closest is artifacts/north-star/
+artifacts/codetry/	Does not exist — closest is artifacts/codetry-ship/
+artifacts/tsp-mobile/	Does not exist — mobile is artifacts/codetry-handbook/
+artifacts/privacy-guide/	Does not exist
+api-server/src/lib/kit-products.ts	Does not exist — kits live in kitsRegistry.ts
+api-server/src/lib/brigade-products.ts	Does not exist
+api-server/src/routes/stripe-workshops.ts	Does not exist
+kit-detail.tsx (~1010 lines)	Does not exist in this repo
+/kit-finder wizard	Not confirmed present in this repo
+Bottom line: If an agent uses those file paths from the brief, it will fail to find them. Anyone working from that brief needs the corrected paths above before touching anything.
+
+The rules, content fills, and "known open items" sections of the brief are directionally correct. The directory/file map is not.

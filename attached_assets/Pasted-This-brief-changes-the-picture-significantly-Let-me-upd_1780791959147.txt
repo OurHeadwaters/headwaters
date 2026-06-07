@@ -1,0 +1,30 @@
+This brief changes the picture significantly. Let me update the accounting against all 11 items.
+
+What you now have — confirmed and ready to drop in:
+
+Item	Status
+Year Parr's Jars opened	2020 ✓
+Year 807 Food Co-op opened	2021 ✓
+Customer quote	1 confirmed — "Bobbie really did think of everything! I'm feeling so streamlined — the shift is incredible!" — Moriah, Thunder Bay area ✓
+Green Salt origin paragraph	Confirmed — freeze-dried hydroponics/microgreens + smoked Himalayan salt + homegrown tomato powder; born from surplus, not a product idea ✓
+The Salty Onion origin paragraph	Confirmed — Walls Farm onion/greens volume; health unit demanded commercial ingredient substitution; Bobbie refused; this came out the other side ✓
+10 course session topics	All 10 confirmed and already in kit-detail.tsx — Why Canning Works / Equipment Without the Fluff / Your First Water-Bath Batch / Pressure Canning Basics / Rotation Discipline / Fermentation as Preservation / Dehydrating and Freeze-Drying / Building the 72-Hour Layer / Selling from the Kitchen / Running the Jar Kitchen Year-Round ✓
+TSP episode callback	Episode 3411 ✓
+What you have but cannot yet use:
+
+Item	Status
+8 Jars & Scars chapter topics	Placeholder titles only — in the code with a comment // BOBBIE: replace with actual chapter titles. Working titles: The Jar as Infrastructure / Zone 0 Before Anything Else / What the Garden Teaches About Failure / Sourcing in the North / Pricing What You Make / The 72-Hour Test / Scars / The Long Game. Do not ship without Bobbie's confirmation.
+Founding-edition buyer promise	Price and cap exist ($97 founding, 40-spot cap, $197 post-founding) but flagged in the brief as "awaiting Bobbie confirmation" — not displayable on live pages yet.
+Still completely missing — must come from Bobbie:
+
+Item	Status
+The homestead winter/supply gap incident	Nothing
+Additional customer quotes (need 2 more)	Nothing
+Zone 0 Starter Kit exact bullet contents	Nothing
+Preparedness Pack exact bullet contents	Nothing
+The real reason the course is $97	The price exists, not the story
+The thing she's never put in any email	Nothing
+An anonymized PJ Solutions consulting example	Nothing
+Net: you went from 0/11 to roughly 6/11 confirmed. The four items that can go live immediately are the founding years, the Moriah quote, both product origin stories, and the full 10-session course outline. The two items that exist but need Bobbie's sign-off before going live are the Jars & Scars chapter titles and the founding-edition pricing details.
+
+The four genuinely absent items — the homestead incident, kit contents, the $97 story, and the "never put in an email" belief — are the ones worth a focused 30-minute conversation with Bobbie. Would you like me to draft a short, specific prompt for that conversation?

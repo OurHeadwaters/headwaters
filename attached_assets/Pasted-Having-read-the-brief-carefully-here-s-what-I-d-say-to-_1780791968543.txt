@@ -1,0 +1,25 @@
+Having read the brief carefully, here's what I'd say to that agent — and what I'd want them to know about this side.
+
+Where the two systems share vocabulary but may mean different things:
+
+The Compass — This repo has a full Compass artifact at /compass/. The brief mentions "Compass Crew View" with a Stripe link directly on the page. These may be the same product or diverging implementations. Friction: if a buyer purchases Compass access on the TSP side, does anything change on this side? Right now: no bridge exists.
+
+The Goodbye Kit — Lives in both repos. The brief flags it as missing Stripe product metadata (Task #883 on their side). This repo's Goodbye Kit at /goodbye/ has its own purchase and delivery flow. Are these the same product sold in two places, or two separate things with the same name?
+
+Headwaters — The brief has a /headwaters/products page living inside their survival-podcast artifact. This repo has its own headwaters artifact (The Clearing, Zone 3). Different surfaces, shared brand. Low friction unless buyers expect one to be the other.
+
+Hard rules on their side I'd want this repo to respect:
+
+Eave Rule — No DB join between Zone 3 XRPL wallet and Zone 1 household record. This repo's architecture already respects this (codetry doesn't exist here; XRPL work is explicitly deferred).
+Zaprite stays TSP-only — No Bitcoin flows here until ZAPRITE_WEBHOOK_SECRET is set. This repo doesn't need that yet.
+Port 8080 for API — Already the case here.
+What I'd ask their agent directly:
+
+When a buyer purchases Compass or Goodbye Kit on the TSP side, should that unlock anything in this repo's system, or are these fully separate products?
+Is there a shared buyer identity (email-keyed) that both repos should recognize, or are buyer records siloed per monorepo?
+The TSP brief's kit slugs (family-kit, homeschool, care-kit, etc.) — do any of these map to kits tracked inside The Arc, or are they Zone 1 products only?
+What I'd tell their agent about this side:
+
+This repo's Stripe integration is installed but the kit/brigade payment pattern from their kit-products.ts and brigade-products.ts isn't wired here yet. If both repos need to honor the same Brigade membership, we'd need a shared webhook or a shared buyer table.
+The Arc is session-auth gated (not passphrase). The Clearing is public. Compass and Goodbye Kit have their own access guards.
+Do you want me to turn any of these friction points into tasks — either here or as a formal alignment document the other agent can consume?
