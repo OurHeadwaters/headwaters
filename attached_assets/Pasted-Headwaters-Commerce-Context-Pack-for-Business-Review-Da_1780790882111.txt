@@ -1,0 +1,95 @@
+Headwaters Commerce — Context Pack for Business Review
+Date: June 6, 2026
+Purpose: Full picture of what was built in the payment/commerce layer. Written for the kitchen table — what exists, how it works, what a buyer experiences, and what questions remain open.
+
+The Short Version
+Headwaters now has a working storefront. Buyers can find products, pay through Stripe, receive their purchase by email, and access it from any device. The email list (Kit.com) captures every buyer. Everything is live and running.
+
+What Is Being Sold
+There are three distinct product categories:
+
+1. Digital Kits (Parr's Jars)
+PDF downloads. Instant delivery.
+
+Product	Price	What it is
+Zone 0 Starter Kit	$17	Entry-level preparedness kit
+Northern Preparedness Pack	$17	Expanded preparedness kit
+Bundle (both kits)	$27	Both kits together
+Buyer experience: Pay → receive email with download link → land on a thank-you page with a live download button. If the browser closes before the redirect, the system still catches the payment and delivers. If the buyer switches devices, they enter their purchase email and get access restored. The download link is permanent and bookmarkable.
+
+2. Course 1 — Food Preservation & Canning
+$97. Access-based delivery.
+
+Buyer experience: Pay → receive email confirming enrollment → land on thank-you page with a link to course content. Content releases over time. A PDF download will also be available once it is ready — the page will automatically show a download button the moment it is added to the system. No re-purchase, no manual steps.
+
+Current status: The course access link points to a placeholder page until the Lodge (the course platform) is live. Task #877 is tracking this — the link needs to be updated once the Lodge exists. The buyer experience is otherwise complete.
+
+3. Practitioner Subscriptions (The Goodbye Kit)
+Annual subscriptions for practitioners who want a listed profile on the network.
+
+Tier	Price	What they get
+Basin	$20/yr	Digital badge on practitioner profile
+Rainmaker	$100/yr	Higher-tier digital badge on practitioner profile
+Buyer experience: Apply → pay → badge tier appears on their public practitioner profile immediately. Renews annually. Badge expires if subscription lapses.
+
+4. Physical Products
+Green Salt and The Salty Onion redirect buyers out to parrsjars.ca — handled entirely by an external Shopify store. No inventory, shipping, or fulfillment goes through this system.
+
+Where Buyers Come From
+Three places a buyer can enter the system:
+
+1. The Clearing — Products Page (stomping-path-documentation.replit.app/headwaters/products)
+The main storefront. All digital kits and Course 1 are listed here. Physical products link out.
+
+2. The Compass (stomping-path-documentation.replit.app/compass)
+A free self-reading tool (teachers, direction, vigor). There is a paid upgrade — "Crew View" — that unlocks a deeper reading. Payment happens directly on the Compass page via a Stripe link.
+
+3. The Goodbye Kit — Practitioner Application (stomping-path-documentation.replit.app/goodbye/practitioners-apply)
+Entry point for practitioners who want a listed profile and badge.
+
+How Payment Works (Under the Hood, Simply)
+All payments go through Stripe — the industry standard, no Headwaters money is ever touched directly.
+When a buyer pays, Stripe fires a webhook (an instant signal) to the Headwaters server, which records the purchase and sends the delivery email. This happens even if the buyer closes their browser before the thank-you page loads.
+Each buyer gets a session link that is permanent — they can bookmark the thank-you page and re-download any time.
+Second-device recovery: If a buyer paid on one device and wants access on another, they enter the email from their Stripe receipt. The system finds the purchase and re-issues access.
+Email list: Every buyer is automatically added to Bobbie's Kit.com email list at the moment of purchase. The Kit.com integration is live as of today (credentials added June 6, 2026).
+The Delivery Email
+Every buyer receives an email after purchase. It contains:
+
+A direct download link (for kit buyers)
+A link to their permanent session/thank-you page
+A "next step" pointer (pointing to the next relevant kit in the sequence)
+For Course 1 buyers, the email confirms enrollment and points to the course.
+
+Operational Safeguards Built In
+Stripe link health check: A script runs before every deploy verifying all four payment links are live and resolving correctly. If a link is broken, it catches it before buyers see it.
+PDF link check: A separate script verifies that all PDF download URLs are still resolving. Also runs automatically alongside the link check.
+Smoke test passed: A full end-to-end purchase was verified (Task #847) — real payment, real access grant, real delivery. It works.
+What Is Not Done Yet / Open Questions for the Kitchen Table
+Confirmed gaps:
+Course 1 access link — Points to a placeholder until the Lodge is live. Buyers who purchase Course 1 today will see a "coming soon" state for the course content link. The PDF download experience is fine. Question: When does the Lodge open? What should the interim link point to?
+
+Kit.com subscriber verification — Task #870 is proposed but not yet run. We know the integration is wired; we have not yet confirmed a test subscriber flowed through to Bobbie's Kit.com account. Question: Can Bobbie check her Kit.com account and confirm she is seeing new subscribers?
+
+Compass and Goodbye Kit not tagged in Stripe — Task #883 notes that The Compass and Goodbye Kit products don't yet have the brand and type metadata tags that the kit products have. This is minor but means the system can't programmatically distinguish them the same way. Question: Does Bobbie need these tagged for any reporting or automation on the Stripe side?
+
+Stripe receipt email with course link — Task #878 is proposed: sending buyers a direct course access link inside the Stripe receipt email (the automated email Stripe sends). Currently the Headwaters delivery email does this, but the Stripe receipt is the first thing buyers see. Question: Is it worth adding the link to the Stripe receipt email too?
+
+Kitchen table questions:
+Is the $17 / $17 / $27 pricing the right structure, or should the bundle discount be larger to drive bundle purchases?
+Is there a referral or affiliate path needed? Nothing is built for that yet.
+Are there any products that should not be listed publicly and should instead require an invite or access code?
+What is the intended sequence after a kit purchase — what is the "next step" email pointing buyers toward right now?
+Is Course 1 the right first course, or should something lower-priced (a mini-course or workshop) sit before the $97 threshold?
+What Is Running Today (All Live)
+Location	URL	Status
+The Clearing (storefront)	/headwaters/	Live
+Products Page	/headwaters/products	Live
+The Compass	/compass/	Live
+The Goodbye Kit	/goodbye/	Live
+The Arc (steward portal)	/	Live
+Print Suite	/suite/	Live
+API Server	/api	Live
+Production domain: stomping-path-documentation.replit.app
+
+Prepared by the technical planning layer, June 6, 2026. Pass to the business agent for kitchen table review.

@@ -1,0 +1,125 @@
+Headwaters Universe — Agent Context Brief
+For Replit agents holding projects in the Headwaters network
+YOUR ROLE IN THIS CONVERSATION
+You are holding one of the tools or apps in the Headwaters Universe — a northern Ontario self-reliance network built by Bobbie Parr (Wabigoon, ON).
+
+Do NOT build anything. Do NOT make code changes.
+
+Your job in this conversation is three things only:
+
+Fill the context gaps — read your codebase and tell me what this tool actually does, how far along it is, what's working and what isn't. Be specific. I need real feature descriptions, not aspirational ones.
+
+Write marketing copy — using the tone and context below, write the one-sentence description, the "who this is for" paragraph, and the first action a new user should take. Tone: practitioner, warm northern, quiet competence, grounded poetry. No hype, no corporate gloss. No emojis.
+
+List the actions left before this goes to market — prioritized, honest, specific. What is broken, missing, or not good enough yet? What needs to happen before a stranger can walk in and get value on their first visit?
+
+THE HEADWATERS UNIVERSE — WHAT IT IS
+Headwaters is a network of self-reliance tools for northern communities, families, practitioners, and co-ops. Every tool belongs to one of six divisions. The tools are designed from the inside — Bobbie has lived inside every system she is building for.
+
+The six divisions:
+
+#	Division	Core idea
+0	Headwaters Care	Tools for people caring for others — frictionless, person-centred, built from lived experience
+1	Headwaters Finance	Income harnessing — buckets, reserves, four-bucket architecture, from households to municipalities
+2	Headwaters Business	Income generating — business operating system, multi-reservoir practitioners
+3	Headwaters Community	Collective structures — co-ops, non-profits, band councils, circular economy
+4	Headwaters Media	Free knowledge commons — Stomping Grounds, Odyssey, Research Library, curation layer
+5	Headwaters Studio	Creative tech — XRPL Studio, builder tools
+The principle: All knowledge free. Curation converts. Every tool is better alone and transformative in the network.
+
+DIVISION DETAILS — CAPS AND TOOLS
+Division 0 — Headwaters Care
+For people caring for others. Intuitive. Person-centred. Built from the inside.
+
+Cap	Tool	Status
+Mother running a home and raising kids	Homemaking Kit	Live
+Homeschooling parent	Homeschooling Kit	Live
+Residential Therapist with residents	Bright Side app	Built
+Community Living support worker	Client self-growth tools	To build
+Network supporting a friend	Fill Her Bucket	Built + in active use
+Family doing life planning before hands-on elder care	Legacy Asset Manager	Legacy asset — exists
+Saying goodbye — keepsakes, end-of-life memories	Goodbye Kits	Concept
+Mom revamping wardrobe and home, saving money	Closet Corner + used shop network	Built — network growing
+Family wanting home-based games and fun	Creative Hub / Kids Corner	Built
+Social worker supporting clients	(TBD)	To build
+Child camp provider	(TBD)	To build
+Network effect note: Closet Corner + used shop partners → AR mix-and-match from bedroom → capsule wardrobe gaps → local sourcing. Better alone, transformative when the network signs on.
+
+Division 1 — Headwaters Finance
+Income harnessing. Zone 1 is universal — without a tight zone 1, everything suffers.
+
+Cap	Tool
+Household — no idea where it all goes	xBuckets / Buckets app
+Co-op treasurer	Money Machine Kit
+Non-profit finance manager	Money Machine Kit
+Economic development association	Money Machine Kit
+Town or small city	Money Machine Kit (large)
+Division 2 — Headwaters Business
+Income generating. Small business is the distributed supply layer — without it, towns depend on centralized sources only.
+
+Cap	Tool
+Someone with a business idea, starting from scratch	Business Operating System
+Small business owner running tighter	Business Operating System
+Practitioner managing finances across multiple orgs	Multi-reservoir financial stack
+Community organizer building local business resilience	Business OS + Money Machine
+Flagship: Business Operating System — idea → business plan + operating guide + website + operating app + 3 internal tools, all integrated, all at once.
+
+Division 3 — Headwaters Community
+Collective structures. Co-ops, non-profits, band councils, circular economy.
+
+Cap	Tool
+Co-op running membership and applying revenue	Co-op Benefits App
+Non-profit generating revenue through physical products	Circular Economy Product Engine
+Community organizer building local engagement	Community Engagement System + Market Mosaic
+Band council building economic self-determination	Northern Reserve Grassroots Economic System
+Researcher / knowledge keeper	Research Library
+Division 4 — Headwaters Media
+Free knowledge commons. All knowledge free. Curation converts.
+
+Cap	Tool
+Learner coming to explore and absorb	The Stomping Grounds (Zone 4 — everyone's)
+Someone on a self-reliance journey	The Odyssey
+Researcher / knowledge keeper contributing	Research Library
+Ready to go deeper than free	Headwaters Kits (curation layer)
+Sponsor supporting the network	Zone 4/5 sponsorship layer — building
+P2P exchange participant	Zone 4/5 P2P layer — building
+Division 5 — Headwaters Studio
+Creative tech. Code with music. Build on the blockchain.
+
+Cap	Tool
+Developer / creative coder	XRPL Studio
+Builder who wants to make their own	Tools + code made available
+BRAND VOICE — USE THIS WHEN WRITING COPY
+Tone: practitioner, warm northern, quiet competence, grounded poetry
+No hype, no corporate gloss, no emojis
+Fraunces 800 weight for display headings (bold, substantial, never delicate)
+DM Sans tracked small caps for labels
+The person reading this has done real work. Write like you have too.
+"Different caps. Same eternal river."
+Example voice:
+
+"A community treasurer who has been running the co-op's money through a personal chequing account and cannot tell you right now what belongs to operations, what's reserve, and what overflows to the members."
+
+That register. That specificity. That respect for the reader's real situation.
+
+WHAT TO RETURN TO ME
+Please respond with:
+
+1. What this tool actually is
+Read your codebase. Tell me: what does it do today, what features work, what is incomplete or broken, what a first-time user would experience if they walked in right now.
+
+2. Marketing copy (ready to use)
+One-sentence description (for the routing table — 15 words max)
+"Who this is for" paragraph (3–5 sentences, the specific person, the specific situation)
+First action (one sentence — what should a new user do first, and why)
+3. Pre-market action list (prioritized)
+List everything that needs to happen before a stranger gets value on their first visit. Be honest. Prioritize by: (1) blocking issues, (2) missing core features, (3) polish and copy.
+
+CONTEXT ON THE BROADER NETWORK
+The front door is ourheadwaters.ca → The Clearing (/headwaters/)
+The tester portal is at / (Headwaters Maps)
+Tools live at their own Replit app domains
+All external links open in a new tab
+Bobbie Parr is the builder, operator, and primary user of most of these tools
+The network effect is real: tools are better alone and transformative when connected
+This brief was written by the Headwaters Core agent. Do not modify it. Return your three responses above and nothing else.
