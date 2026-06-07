@@ -1,0 +1,40 @@
+#892 - Kit Purchase Webhook + Slug Registry
+What & Why
+The Stomping Path (TSP) fires a purchase event when a buyer buys a kit. Right now nothing on this side catches it — the purchase disappears silently. This task builds the receiving end: a canonical slug registry and a webhook endpoint the TSP can fire at.
+
+Done looks like
+A canonical slug registry (kitsRegistry.ts in the API server) lists every kit slug this side recognizes, each mapped to a kit name in the DB
+POST /api/kits/purchase-webhook accepts a JSON payload { slug, stripeSessionId, buyerEmail } verified by a shared secret (KIT_WEBHOOK_SECRET env var)
+A valid slug resolves to a kit name, records the purchase in a new kit_purchases table (stripeSessionId, buyerEmail, kitSlug, accessToken uuid, emailSentAt, createdAt), and queues the delivery email
+An unknown slug returns 422 with a clear error — no silent failures
+The endpoint is registered in the OpenAPI spec and codegen is run after
+Out of scope
+The delivery email itself (Task 2)
+The buyer-facing reader page (Task 2)
+Any changes to the TSP repo (see coordination notes below)
+Steps
+Confirm slug mapping with Bobbie before writing code — The seeded kit names ("Freelance Homemaker Kit", "The Minnow Circuit", doctrine kits) need to be mapped to TSP slugs (family-kit, homeschool, producer-kit, care-kit, digital-kit, etc.). Ask in a comment block at the top of kitsRegistry.ts and stub every slug as TODO until confirmed. Do not ship hardcoded wrong mappings.
+
+Add kit_purchases table to the DB schema — Fields: id, stripeSessionId (unique), buyerEmail, kitSlug, accessToken (uuid, unique — used to gate the reader page), emailSentAt, createdAt. Run pnpm --filter @workspace/db run push after.
+
+Write kitsRegistry.ts — A record mapping each canonical slug string to the kit's DB name and a human-readable display name. Import this in the webhook handler.
+
+Build POST /api/kits/purchase-webhook route — Verify Authorization: Bearer {KIT_WEBHOOK_SECRET} header. Parse and validate body. Resolve slug via registry (422 if not found). Insert into kit_purchases (onConflictDoNothing for idempotency). Call delivery email helper (stub for now — Task 2 fills it in). Return 200.
+
+Add the route to the OpenAPI spec and run codegen — pnpm --filter @workspace/api-spec run codegen
+
+Coordination note for TSP side
+Once this endpoint is live, tell the TSP agent:
+
+Endpoint URL: https://stomping-path-documentation.replit.app/api/kits/purchase-webhook
+Auth: Authorization: Bearer {KIT_WEBHOOK_SECRET} (share the secret value via Replit Secrets, not in code)
+Payload shape: { slug: string, stripeSessionId: string, buyerEmail: string }
+Canonical slug list: copy from kitsRegistry.ts once confirmed
+Relevant files
+artifacts/api-server/src/webhookHandlers.ts
+artifacts/api-server/src/lib/parrsJarsKits.ts
+artifacts/api-server/src/routes/kits.ts
+lib/db/src/schema/kits.ts
+lib/db/src/schema/parrs-jars-orders.ts
+lib/db/src/schema/index.ts
+lib/api-spec/openapi.yaml
