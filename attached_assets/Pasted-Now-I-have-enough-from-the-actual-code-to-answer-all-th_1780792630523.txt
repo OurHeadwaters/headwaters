@@ -1,0 +1,46 @@
+Now I have enough from the actual code to answer all three questions from ground truth. Here's the real picture.
+
+Q1: Shared buyer identity?
+Currently: no shared identity, no cross-unlock. Here's the exact flow in this repo:
+
+TSP fires POST /kits/purchase-webhook with kit_id, buyer_email, buyer_name, purchase_id
+api-server generates a token, writes it to a flat JSON file (data/kit-tokens.json), sends a delivery email via Gmail connector
+The token expires in 30 days; buyer re-requests via email if needed
+No database table. No Clerk user created. No record on the Codetry-Ship side
+There is no mechanism that currently unlocks anything on the Codetry-Ship side when someone buys on TSP, or vice versa. The other agent's recommendation — build self-contained, email-keyed flows now, bridge later — is exactly what this system already does. That's the right call until there's an explicit product decision to link the two.
+
+If that decision ever gets made, the join key exists: buyer_email is stored in every token record. A shared buyer table would key off that.
+
+Q2: Kit slugs — shared registry?
+These are different kits. The slugs do not match.
+
+This repo (kitsRegistry.ts)	Other agent's brief
+economy-kit	—
+family-kit	family-kit ✓
+homeschool-kit	homeschool ✗ (different slug)
+community-economy-kit	—
+engagement-kit	—
+practitioner-kit	producer-kit ✗ (different product)
+standby-kit	care-kit ✗
+field-guide-finance-kit	digital-kit ✗
+pioneer-path-kit	—
+handbook-kit	—
+pj-solutions-kit	—
+The canonical list for this api-server is kitsRegistry.ts. The comment in that file says explicitly: "stable slug, used in webhook payload from TSP." Meaning: if TSP fires a webhook with producer-kit or care-kit, this api-server will reject it — those slugs don't exist in the registry and the webhook handler returns a 422.
+
+What needs to happen: Either the TSP side updates its slugs to match this registry, or someone documents that the two registries are intentionally separate systems serving different products. Right now they are silently incompatible.
+
+Q3: Course 1 access link — who owns "the Lodge"?
+"Lodge" in this codebase is not a course platform. It's the confirmed name for the Zone 1 household identity layer — a privacy/identity concept defined in the Codetry Handbook glossary. It has nothing to do with course delivery.
+
+The Course 1 purchase flow in this repo goes directly to a Stripe Payment Link (STRIPE_COURSE1 constant in HeadwatersProductsPage.tsx). There is no webhook-based delivery for Course 1 in this repo — no token, no delivery email, no access link logic. It's a direct Stripe link, full stop.
+
+The course platform the other agent calls "the Lodge" does not exist in this codebase under any name. The closest candidate is artifacts/field-guide-finance (titled "Headwaters Learning") — that's the one artifact that could plausibly be a course delivery surface — but whether it's meant to handle Course 1 access would need confirmation from whoever owns that artifact's roadmap.
+
+Until that's resolved: the Stripe Payment Link is what fires. Whoever receives payment on Stripe's side needs to manually route the buyer to course content. No automated handoff exists in this repo.
+
+Summary for Bobbie / product owner:
+
+Buyer identity is email-keyed and self-contained today — no action needed unless cross-system unlock is a real product goal.
+Kit slug lists between the two repos are incompatible and need reconciliation before either agent adds new kit products.
+"The Lodge" as a course platform is not a concept in this codebase — someone needs to name which artifact (probably field-guide-finance) owns Course 1 delivery before Task #877 can be closed.

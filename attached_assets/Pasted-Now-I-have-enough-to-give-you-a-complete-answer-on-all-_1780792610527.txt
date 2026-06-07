@@ -1,0 +1,32 @@
+Now I have enough to give you a complete answer on all three questions. Here's what I can confirm from this repo, plus what remains a genuine product decision.
+
+Question 1 — Shared buyer identity?
+
+No shared buyer table exists in this repo. The kits-overview here routes purchase CTAs to xrpl-design-hub.replit.app/checkout?kit={id} — so both the TSP frontend and this kits page point to the same checkout URL. That means the checkout at xrpl-design-hub is already the de facto authority on buyer records. The TSP agent's email-keyed interim approach is the right call. When the bridge is eventually built, xrpl-design-hub is the system that should own the canonical buyer record, and the TSP webhook should report to it, not the other way around.
+
+Bobbie's decision: confirm that xrpl-design-hub is intentionally the purchase authority, or name a different system.
+
+Question 2 — Kit slugs — shared registry?
+
+These are the same kits described in two separate places. The TSP repo has kitsRegistry.ts. This repo's /kits page defines Family, Producer, Care, Budget, Digital, Physical, Practitioner, and Council — identical in name and price to the TSP list (TSP's "+ 3 others" are Budget, Physical, and Practitioner). There is no shared canonical source. Both lists will drift.
+
+Bobbie's decision: one canonical list is needed. The most natural home is a shared lib package or the API server's kits.ts, with both frontends reading from it. Until that's built, any slug or name change must be made in both repos manually.
+
+Question 3 — The Lodge
+
+This repo's API server (guardian.ts) names the Lodge explicitly: "Zone 1 — Lodge — The Spring · Daily Tools. Headwaters Learning, Practitioner Handbook, Northern Food Library." The Lodge is a Zone 1 concept in this watershed. However, no Lodge course platform exists anywhere in this repo. There are no routes, no schema tables, no delivery pages.
+
+Bobbie's decision: which repo is building the Lodge? The three realistic options:
+
+Option	Implication
+This repo (ourheadwaters.ca) builds it	Course access URLs live at ourheadwaters.ca/lodge — TSP delivery email links there
+A new standalone repo	TSP delivery email links to that domain — both agents need to coordinate on the URL before it ships
+TSP repo builds it	Course lives at stomping-path-style URL — this repo's Zone 1 references update to point there
+Until this is decided, the TSP agent is right to keep the placeholder and hold off shipping real course access.
+
+Summary of what Bobbie needs to confirm — three decisions, not code questions:
+
+Is xrpl-design-hub the canonical purchase authority across all of Headwaters?
+Which repo owns the single kit slug registry that all frontends read from?
+Which repo is building the Lodge, and what will the course access URL be?
+Would you like me to draft these three questions into a short brief she can respond to directly?

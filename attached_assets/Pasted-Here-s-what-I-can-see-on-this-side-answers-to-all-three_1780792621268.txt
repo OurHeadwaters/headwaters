@@ -1,0 +1,35 @@
+Here's what I can see on this side — answers to all three:
+
+Q1: Shared buyer identity?
+
+This side does not store buyer email in the payments table. goodbye_kit_payments keys off stripeCheckoutSessionId + an optional userId (for logged-in stewards). Email lives on the Stripe session only — it's not written to our DB.
+
+The TSP side keys off email (permanent session link, recoverable by receipt email). These are not compatible today. Both sides are Stripe-keyed at the session level, but the recovery mechanism differs.
+
+Recommendation to carry back: Add buyerEmail to goodbye_kit_payments on this side (and any future payment tables) so both systems are email-recoverable. Neither side needs to be the authority yet — both self-contained, both email-keyed, bridge later via shared email lookup.
+
+Q2: Kit slugs — shared registry?
+
+No — completely different systems, same word.
+
+The kits table on this side is a steward organizational tool — named containers a logged-in steward creates to hold their kit pieces (Gate doctrine, Shattered Kit content, etc.). Nothing to do with purchase products.
+
+The Parr's Jars product keys on this side are: zone0, preparedness, bundle, course1 — defined in parrsJarsKits.ts. These don't overlap with the TSP slugs (family-kit, producer-kit, care-kit, etc.) and shouldn't be merged into one registry.
+
+Recommendation: Document this explicitly. Two registries, two namespaces, no conflict. TSP slugs = Zone 1 products. Parr's Jars keys = Zone 0/preparedness products. The Eave Rule framing applies: don't join them unless there's a clear cross-zone handoff reason.
+
+Q3: The Lodge — who owns the Course 1 URL?
+
+Zone 1 = Lodge / Headwaters Core = northern-store-plan.replit.app per the canonical zone map. That repo is not in this workspace and not in the TSP monorepo. The Lodge is a third repo, not yet built.
+
+On this side, course1 next-step currently points to our-headwaters.replit.app/kits/ (a placeholder). On the TSP side, the brief flags the same gap (Task #877). Both sides are pointing at a placeholder for the same missing thing.
+
+Recommendation: Neither agent should build the Lodge. The handoff URL for Course 1 buyers should be stored in an env var on both sides (COURSE1_ACCESS_URL) — set to the placeholder now, swapped to real when Zone 1 is live. No code change needed at handoff time.
+
+Summary for Bobbie / product owner — three decisions needed:
+
+Decision	Status
+Add buyerEmail to payment tables on both sides	Code change, no product decision needed — both agents can do this now
+Kit slug namespaces are separate (Zone 0 vs Zone 1)	Confirm so no one wastes time merging registries
+Lodge URL env var pattern	Confirm so both agents use the same variable name
+Want me to create a task to add buyerEmail to the payment tables on this side?
