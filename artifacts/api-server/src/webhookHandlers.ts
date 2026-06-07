@@ -259,12 +259,100 @@ export class WebhookHandlers {
         kitSlug,
         userManual: kit?.userManual,
       });
+
+      // Notify the Arc so it can record the purchase and send its own
+      // delivery email. Non-blocking — a failure here never fails the
+      // purchase itself; the buyer already has their welcome email above.
+      WebhookHandlers.notifyArcKitPurchase({
+        slug: kitSlug,
+        stripeSessionId: session.id,
+        buyerEmail: buyerEmail.toLowerCase(),
+      }).catch((err) =>
+        logger.warn({ err, kitSlug }, "webhookHandlers: Arc kit notification failed (non-fatal)"),
+      );
     } else {
       logger.info(
         { sessionId: session.id, kitSlug },
         "webhookHandlers: kit purchase already recorded (idempotent skip)",
       );
     }
+  }
+
+  /**
+   * Fires an outbound webhook to the Arc's kit purchase endpoint.
+   *
+   * Endpoint: POST https://stomping-path-documentation.replit.app/api/kits/purchase-webhook
+   * Auth:     Authorization: Bearer {KIT_WEBHOOK_SECRET}
+   * Payload:  { slug, stripeSessionId, buyerEmail }
+   *
+   * A 422 response means the slug is not in the Arc's registry — log as an
+   * error so slug mismatches are immediately visible rather than silent.
+   * All other non-200 responses are logged as warnings (non-fatal).
+   *
+   * If KIT_WEBHOOK_SECRET is not set, the call is skipped entirely — log a
+   * warning so the operator knows to set it.
+   */
+  static async notifyArcKitPurchase({
+    slug,
+    stripeSessionId,
+    buyerEmail,
+  }: {
+    slug: string;
+    stripeSessionId: string;
+    buyerEmail: string;
+  }): Promise<void> {
+    const secret = process.env.KIT_WEBHOOK_SECRET;
+    if (!secret) {
+      logger.warn(
+        { slug },
+        "webhookHandlers: KIT_WEBHOOK_SECRET not set — skipping Arc kit notification. " +
+          "Add this secret to Replit Secrets (copy from the Arc repo) to enable cross-system kit delivery.",
+      );
+      return;
+    }
+
+    const endpoint =
+      process.env.ARC_KIT_WEBHOOK_URL ??
+      "https://stomping-path-documentation.replit.app/api/kits/purchase-webhook";
+
+    const body = JSON.stringify({ slug, stripeSessionId, buyerEmail });
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secret}`,
+      },
+      body,
+    });
+
+    if (res.ok) {
+      const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+      logger.info(
+        { slug, stripeSessionId, buyerEmail, duplicate: json.duplicate ?? false },
+        "webhookHandlers: Arc kit purchase notification delivered",
+      );
+      return;
+    }
+
+    if (res.status === 422) {
+      const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+      // 422 = slug not in Arc's registry — this is a slug mismatch, not a
+      // transient error. Log as error so it surfaces immediately.
+      logger.error(
+        { slug, stripeSessionId, arcError: json.error ?? "unknown" },
+        "webhookHandlers: Arc rejected kit slug with 422 — slug is not in kitsRegistry.ts. " +
+          "Reconcile the slug on one side before this kit goes live.",
+      );
+      return;
+    }
+
+    // Any other non-2xx — transient or config issue, log as warning
+    const text = await res.text().catch(() => "");
+    logger.warn(
+      { slug, stripeSessionId, status: res.status, body: text.slice(0, 200) },
+      "webhookHandlers: Arc kit purchase notification returned non-200",
+    );
   }
 
   /**
