@@ -1,0 +1,21 @@
+Here's the full inventory across all 12 items:
+
+✅ In the project — ready to use
+
+Year Parr's Jars opened — Summer 2020. Bobbie's own words in an interview file: "I started my producer journey by starting Parrs Jars in 2020."
+Year 807 Food Co-op opened — 2021, incorporated. Confirmed in two separate files.
+The 8 chapter topics — All there in shared/kits/parrs-jars.md, working titles: Plastic Purge / Sourcing Food / Whole Food Prep / Dry Storage / Freezer System / Preservation / Jar Kitchen Hacks / Taking Action. (Filed under the e-book title How to Become a Jarista — same content.)
+🟡 Partial — frame exists, detail missing
+
+The 10 course sessions — The email drip confirms "ten recorded sessions from my kitchen" and $97, and the three module names exist (Reality Check / Discovery / Charter Your Freedom), but the actual 10-session list with individual topics, format, and length isn't written anywhere.
+Why Green Salt and The Salty Onion exist — One sentence in shared/foundations/scale-gate-doctrine.md: the health unit required lab testing of each farm ingredient and recommended commercial substitution; Bobbie refused; Green Salt and The Salty Onion are what came out the other side of the Gate holding. The problem→solution arc is there, but not written as a paragraph.
+❌ Not in the project — Bobbie needs to supply
+
+Current member count — Flagged as a gap in at least two prior sessions. Nothing on file.
+1–3 real customer quotes — Mentioned as needed in multiple places, none recorded anywhere.
+Literal contents of the Zone 0 Starter Kit and Preparedness Pack — The preparedness kit documents the bug-out bags, but these two as named retail/program products with specific literal contents don't exist in any file.
+One anonymized consulting example for PJ Solutions — PJ Solutions doesn't appear anywhere in the project.
+The real reason the course is $97 — Price is documented, rationale isn't.
+What founding-edition buyers get — Not written anywhere.
+The one thing she's never put in any email — Not written anywhere.
+Seven of the twelve need Bobbie directly. Five are in the codebase, three of those ready to drop in. Want me to pull those three into a gathered doc so she can see exactly what's already done while she fills the gaps?
