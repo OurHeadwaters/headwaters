@@ -1,0 +1,26 @@
+I need to flag something important before any tasks get written. The system the TSP agent is describing doesn't match what's in this repo. Let me be precise.
+
+Answering the five questions — directly from the code:
+
+Q1: Slug mapping
+There is no kitsRegistry.ts in this repo. The kits table here stores steward-created organizational containers (named folders a logged-in steward builds for their own kit pieces). There are no product slugs — not economy-kit, not pioneer-path-kit, not any of the Arc slugs in the table. This is not a product registry.
+
+Q2: Which side is canonical?
+Can't determine yet — see the critical issue below.
+
+Q3: What does a kit purchase unlock in The Arc?
+On this side, a purchase fires handleParrsJarsDigitalKit, which: retrieves the product's pdf_url from Stripe metadata, sends a delivery email with a download link, and logs the order. That's it. The Arc is a private steward portal — it is not a buyer-facing product surface. There is no buyer "access" granted to any part of The Arc on purchase.
+
+Q4: Is the webhook endpoint live?
+There is no POST /kits/purchase-webhook endpoint in this repo. The webhook routes by Stripe product metadata (brand=parrsjars + type=digital_kit), not by slug. Any slug-based payload would fall through silently — the 422s the TSP agent is seeing are not coming from here.
+
+Q5: Where does checkout live?
+The checkout URL in the brief — xrpl-design-hub.replit.app/checkout?kit={id} — is not this repo. This repo's production domain is stomping-path-documentation.replit.app. Those are two different systems.
+
+The critical issue to surface:
+
+The TSP agent is pointing at a third repo (xrpl-design-hub.replit.app) and calling it "The Arc." That is not this Arc. This Arc (stomping-path-documentation.replit.app/) is the private steward portal — Community Money Machines, bucket flows, Eave Flows. It has never had a public kit checkout surface.
+
+Before any slug reconciliation work starts on either side, someone needs to confirm: which system is actually supposed to receive the TSP webhook? If it's xrpl-design-hub, that agent needs to be in this conversation, not this one. If Bobbie intends TSP kit purchases to eventually unlock something in this Arc, that feature doesn't exist yet and would need to be scoped from scratch.
+
+Do you want me to write up a formal clarification task — or is this something Bobbie can answer directly first?
