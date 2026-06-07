@@ -490,7 +490,7 @@ function HeroEntrance() {
           transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
           className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FDFBF7] leading-[1.05] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)] max-w-3xl"
         >
-          The clearing is where your <span className="italic text-[#D9A066]">Ridge ideas</span> get neighbours.
+          The clearing is where your <span className="italic text-[#D9A066]">Edgy ideas</span> get neighbours.
         </motion.h1>
 
         <motion.p
