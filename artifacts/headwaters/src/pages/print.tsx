@@ -708,7 +708,7 @@ pnpm --filter @workspace/db run db:push`}</pre>
         <ol style={{ paddingLeft: "20px", marginBottom: "10px" }}>
           <li style={{ marginBottom: "6px" }}><strong>/aquifer framing page</strong> — public cross-zone substrate explanation. Not built.</li>
           <li style={{ marginBottom: "6px" }}><strong>Consistent "Zone X of 5" wayfinding</strong> — present on hero badges; missing from many interior pages.</li>
-          <li style={{ marginBottom: "6px" }}><strong>Domain hygiene</strong> — Zone 2 at xrpl-design-hub.replit.app. Target: stomping-path.replit.app or custom domain.</li>
+          <li style={{ marginBottom: "6px" }}><strong>Domain hygiene</strong> — Zone 2 now live at stomping-paths.replit.app. Custom domain migration still optional.</li>
           <li style={{ marginBottom: "6px" }}><strong>Zone 5 population</strong> — Edge / Ridge is thin.</li>
           <li style={{ marginBottom: "6px" }}><strong>Gord cross-door links</strong> — Greenhouse ↔ Portal not wired.</li>
           <li style={{ marginBottom: "6px" }}><strong>Deadfall archiving</strong> — Renamed from "Deadhead." Not built.</li>
