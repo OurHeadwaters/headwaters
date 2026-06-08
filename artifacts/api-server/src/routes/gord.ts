@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { db, gordTipsTable } from "@workspace/db";
+import { desc, isNotNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -135,6 +137,46 @@ async function gordHandler(req: import("express").Request, res: import("express"
 
 router.post("/gord", gordHandler);
 router.post("/gord/chat", gordHandler);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/gord/tips/recent
+//
+// Public (no auth). Returns the most recent named tips for the supporter wall.
+// Anonymous tips (no tipperName) are excluded.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Anonymise a tipper name for public display.
+ * Only the first name (first whitespace-delimited word) is exposed — never a
+ * full legal/cardholder name.  e.g. "John Smith" → "John".
+ */
+function anonymiseName(fullName: string): string {
+  return fullName.trim().split(/\s+/)[0] ?? fullName.trim();
+}
+
+router.get("/gord/tips/recent", async (_req, res) => {
+  try {
+    const rows = await db
+      .select({
+        tipperName: gordTipsTable.tipperName,
+        amountPaidCents: gordTipsTable.amountPaidCents,
+        tippedAt: gordTipsTable.tippedAt,
+      })
+      .from(gordTipsTable)
+      .where(isNotNull(gordTipsTable.tipperName))
+      .orderBy(desc(gordTipsTable.tippedAt))
+      .limit(20);
+    res.json(
+      rows.map((r) => ({
+        name: anonymiseName(r.tipperName as string),
+        amountCents: r.amountPaidCents,
+        tippedAt: (r.tippedAt as Date).toISOString(),
+      })),
+    );
+  } catch (err) {
+    console.error("gord-tips-recent: GET failed", err);
+    res.status(500).json({ error: "Failed to load recent supporters" });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/gord/tip

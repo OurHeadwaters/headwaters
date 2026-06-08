@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useGordContext } from "@/context/gord-context";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Heart } from "lucide-react";
 import { GordBird, type IdleAnim } from "./gord-bird";
@@ -63,6 +64,12 @@ const ANIM_DURATION_MS = 1400;
 
 type TipState = "idle" | "picking" | "loading" | "error";
 type TipSubState = "buttons" | "custom";
+
+interface RecentSupporter {
+  name: string;
+  amountCents: number;
+  tippedAt: string;
+}
 
 function useIdleAnimation(paused: boolean): IdleAnim {
   const [anim, setAnim] = useState<IdleAnim>(null);
@@ -173,6 +180,17 @@ export function GordGuide(_props: GordGuideProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+
+  const { data: recentSupporters = [] } = useQuery<RecentSupporter[]>({
+    queryKey: ["gord-tips-recent"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/gord/tips/recent"));
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const idleAnim = useIdleAnimation(open || hovered);
   const eyeTarget = useEyeTarget(buttonRef);
@@ -588,6 +606,43 @@ export function GordGuide(_props: GordGuideProps) {
                     </button>
                   </>
                 )}
+              </div>
+            )}
+
+            {tipState === "idle" && recentSupporters.length > 0 && (
+              <div
+                className="flex-shrink-0 px-4 pt-2.5 pb-2"
+                style={{ borderTop: `1px solid ${BORDER}` }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Heart className="w-3 h-3 flex-shrink-0" style={{ color: ACCENT }} />
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: ACCENT }}
+                  >
+                    Recent Supporters
+                  </span>
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
+                  {recentSupporters.map((s, i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                      style={{
+                        background: ACCENT + "18",
+                        border: `1px solid ${ACCENT}33`,
+                        color: TEXT,
+                      }}
+                    >
+                      <span>{s.name}</span>
+                      <span style={{ color: ACCENT }}>
+                        · ${(s.amountCents / 100 % 1 === 0
+                          ? s.amountCents / 100
+                          : (s.amountCents / 100).toFixed(2))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
