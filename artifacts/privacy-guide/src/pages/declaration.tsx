@@ -203,7 +203,11 @@ const S = {
 };
 
 export default function DeclarationPage() {
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   const [showPdfTip, setShowPdfTip] = useState(false);
 
   useEffect(() => {
@@ -226,6 +230,11 @@ export default function DeclarationPage() {
           .no-print { display: none !important; }
           body { margin: 0; padding: 0; }
           @page { margin: 18mm 18mm 22mm; }
+          .prefilled-date {
+            color: #555 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
         }
       `}</style>
 
@@ -328,7 +337,9 @@ export default function DeclarationPage() {
             <span style={S.fieldLabel}>Keeper's signature</span>
             <span style={S.fieldLine}></span>
             <span style={{ ...S.fieldLabel, marginLeft: "2rem" }}>Date</span>
-            <span style={S.fieldLineShort}></span>
+            <span style={{ ...S.fieldLineShort, display: "flex", alignItems: "flex-end", paddingBottom: "1px" }}>
+              <span className="prefilled-date" style={{ fontSize: "11px", color: "#999", fontStyle: "italic", lineHeight: 1 }}>{today}</span>
+            </span>
           </div>
           <div style={S.fieldRow}>
             <span style={S.fieldLabel}>Witness name</span>
