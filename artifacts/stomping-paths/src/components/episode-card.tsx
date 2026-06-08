@@ -118,8 +118,10 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
 
         {transformation && (
           <div className="mt-auto pt-3 border-t border-border/50">
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-sm"
+            <Link
+              href={`/transform/${transformation.slug}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-sm hover:opacity-80 transition-opacity"
               style={{
                 color: transformation.color,
                 background: `${transformation.color}18`,
@@ -130,7 +132,7 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
               <span>{transformation.from}</span>
               <span className="opacity-50 font-normal">→</span>
               <span>{transformation.to}</span>
-            </span>
+            </Link>
           </div>
         )}
 

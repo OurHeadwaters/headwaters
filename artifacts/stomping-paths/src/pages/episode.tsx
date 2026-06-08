@@ -272,7 +272,7 @@ export function EpisodeDetail() {
               {matchedTransformations.map((t) => (
                 <Link
                   key={t.slug}
-                  href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+                  href={`/transform/${t.slug}`}
                   className="inline-flex items-center gap-1.5 border px-2.5 py-1 rounded-full font-bold text-xs uppercase tracking-wider transition-colors hover:opacity-80"
                   style={{
                     backgroundColor: `${t.color}18`,
