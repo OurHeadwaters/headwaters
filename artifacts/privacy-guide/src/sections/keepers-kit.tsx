@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 
 const FABRIC_LOG_KEY = "sandbox-handbook-fabric-stamp-log";
 
@@ -45,7 +46,7 @@ export default function KeepersKitSection() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [errors, setErrors] = useState<Partial<typeof EMPTY_FORM>>({});
-
+  const [, navigate] = useLocation();
   const today = new Date().toLocaleDateString("en-CA");
 
   useEffect(() => {
@@ -547,7 +548,7 @@ export default function KeepersKitSection() {
             </div>
 
             <div className="kk-print-note no-print">
-              <button onClick={() => window.print()} className="kk-print-btn">
+              <button onClick={() => navigate("/declaration")} className="kk-print-btn">
                 Print this declaration
               </button>
               <span>Complete the blanks by hand after printing. File one copy, give one to each keeper.</span>
