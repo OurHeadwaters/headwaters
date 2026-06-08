@@ -236,10 +236,6 @@ export function GordGuide(_props: GordGuideProps) {
       const url = new URL(window.location.href);
       url.searchParams.delete("tip");
       window.history.replaceState({}, "", url.toString());
-      if (localStorage.getItem("gord_tipped")) {
-        return;
-      }
-      localStorage.setItem("gord_tipped", "1");
       setMessages([getTspOpeningLine(location), TIP_THANK_YOU]);
       setHasOpened(true);
       setOpen(true);
