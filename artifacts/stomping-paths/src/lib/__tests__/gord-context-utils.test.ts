@@ -44,6 +44,61 @@ describe("getTspPageDescription", () => {
   });
 });
 
+describe("buildGordContextDescription — zone detail page", () => {
+  it("includes 'Currently viewing' with the zone name when pageTitle is set", () => {
+    const path = "/zones/zone-1";
+    const pageTitle = "Zone 1: Structures & Spaces";
+    const result = buildGordContextDescription(path, pageTitle);
+
+    assert.ok(
+      result.includes("Currently viewing"),
+      `Expected "Currently viewing" in context description, got: ${result}`
+    );
+    assert.ok(
+      result.includes("Zone 1: Structures & Spaces"),
+      `Expected zone name in context description, got: ${result}`
+    );
+    assert.ok(
+      result.includes("Zone detail page"),
+      `Expected base page description in context, got: ${result}`
+    );
+  });
+
+  it("does not include 'Currently viewing' when pageTitle is null", () => {
+    const path = "/zones/zone-0";
+    const result = buildGordContextDescription(path, null);
+
+    assert.ok(
+      !result.includes("Currently viewing"),
+      `Expected no "Currently viewing" when pageTitle is null, got: ${result}`
+    );
+    assert.equal(
+      result,
+      "Zone detail page — episodes and resources for a specific permaculture zone"
+    );
+  });
+
+  it("formats the full context description correctly for a known slug", () => {
+    const result = buildGordContextDescription(
+      "/zones/zone-1",
+      "Zone 1: Structures & Spaces"
+    );
+    assert.equal(
+      result,
+      'Zone detail page — episodes and resources for a specific permaculture zone Currently viewing: "Zone 1: Structures & Spaces".'
+    );
+  });
+
+  it("works for other zone slugs", () => {
+    const result = buildGordContextDescription(
+      "/zones/zone-2",
+      "Zone 2: Food & Growing"
+    );
+    assert.ok(result.includes('Currently viewing: "Zone 2: Food & Growing".'));
+    assert.ok(result.includes("Zone detail page"));
+  });
+});
+
 describe("buildGordContextDescription — transform detail page", () => {
   it("includes 'Currently viewing' with the transformation name when pageTitle is set", () => {
     const path = "/transform/conventional-to-regenerative";
