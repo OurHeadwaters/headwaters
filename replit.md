@@ -18,7 +18,7 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 |---|---|---|---|---|
 | 0 | Saltbox | The Hearth · Home Center | Kitchen, preservation, Eave, Forge, root cellar | salt-box.replit.app |
 | 1 | Kitchen Table | The Spring · Daily Tools | Learning, handbook, library, practitioner intake | northern-store-plan.replit.app |
-| 2 | Workbench | The Worn Path · Transition | Stomping Path, privacy, Codetry tools | xrpl-design-hub.replit.app *(migrate pending)* |
+| 2 | Workbench | The Worn Path · Transition | Stomping Path, privacy, Codetry tools | stomping-paths.replit.app *(rename repl in Replit dashboard to activate)* |
 | 3 | Greenhouse | The Clearing · Circle | Creative, storytelling, making | creative-hub-xbucketsapp.replit.app |
 | 4 | Clearing | The Market Square · Exchange | Knowledge hub, grants, market, studio, Deadfall | community-knowledge-hub.replit.app |
 | 5 | Edge | The Ridge · Long View | X-Buckets vision, horizon planning | x-buckets-vision.replit.app |
@@ -134,7 +134,7 @@ No table, no foreign key, no join, no query path, and no stored reference may ev
 - Bobbie Parr is the practitioner name for Headwaters / Intake work.
 - Stripe is test mode only. Real payments = Bitcoin.
 - Tone is always: warm northern, practitioner, grounded. Not corporate, not hype.
-- Domain note: `xrpl-design-hub.replit.app` is Zone 2's current address — rename/migration is a noted goal.
+- Domain note: Zone 2's target domain is `stomping-paths.replit.app`. To activate it, rename the repl to `stomping-paths` in the Replit dashboard (Settings → Repl name). The artifact ID in `artifact.toml` is platform-immutable; only the repl rename changes the public URL.
 
 ---
 
@@ -142,7 +142,7 @@ No table, no foreign key, no join, no query path, and no stored reference may ev
 
 1. Build public `/aquifer` framing page — cross-zone substrate explanation.
 2. Consistent wayfinding ("Zone X of 5") across all apps.
-3. Domain hygiene — especially Zone 2 (`xrpl-design-hub.replit.app` → `stomping-path.replit.app` or custom domain).
+3. ~~Domain hygiene — Zone 2~~ Target domain is `stomping-paths.replit.app`; activate by renaming the repl to `stomping-paths` in Replit dashboard (Settings → Repl name). Artifact `id` is platform-immutable so this is a one-time manual step.
 4. Populate thin zones — especially Zone 5 (Edge / Ridge).
 5. Gord the owl access + cross-door links (Greenhouse ↔ Portal).
 6. Full visual language alignment — celestial sky + earth terrain throughout.
