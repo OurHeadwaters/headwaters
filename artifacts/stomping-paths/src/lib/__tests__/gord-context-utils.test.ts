@@ -44,6 +44,70 @@ describe("getTspPageDescription", () => {
   });
 });
 
+describe("getTspPageDescription — library detail page", () => {
+  it("returns the episode detail description for /library/:slug paths", () => {
+    const result = getTspPageDescription("/library/some-episode-slug");
+    assert.equal(
+      result,
+      "Episode detail page in the Library — full episode info, chapters, and related content"
+    );
+  });
+
+  it("returns the library listing description for /library exactly", () => {
+    const result = getTspPageDescription("/library");
+    assert.equal(
+      result,
+      "Library page — full episode archive with search and filter by source, zone, and transformation"
+    );
+  });
+});
+
+describe("buildGordContextDescription — library detail page", () => {
+  it("includes 'Currently viewing' with the episode title when pageTitle is set", () => {
+    const path = "/library/some-episode-slug";
+    const pageTitle = "How to Build a Root Cellar";
+    const result = buildGordContextDescription(path, pageTitle);
+
+    assert.ok(
+      result.includes("Currently viewing"),
+      `Expected "Currently viewing" in context description, got: ${result}`
+    );
+    assert.ok(
+      result.includes("How to Build a Root Cellar"),
+      `Expected episode title in context description, got: ${result}`
+    );
+    assert.ok(
+      result.includes("Episode detail page in the Library"),
+      `Expected base page description in context, got: ${result}`
+    );
+  });
+
+  it("does not include 'Currently viewing' when pageTitle is null", () => {
+    const path = "/library/some-episode-slug";
+    const result = buildGordContextDescription(path, null);
+
+    assert.ok(
+      !result.includes("Currently viewing"),
+      `Expected no "Currently viewing" when pageTitle is null, got: ${result}`
+    );
+    assert.equal(
+      result,
+      "Episode detail page in the Library — full episode info, chapters, and related content"
+    );
+  });
+
+  it("formats the full context description correctly", () => {
+    const result = buildGordContextDescription(
+      "/library/root-cellar-build",
+      "How to Build a Root Cellar"
+    );
+    assert.equal(
+      result,
+      'Episode detail page in the Library — full episode info, chapters, and related content Currently viewing: "How to Build a Root Cellar".'
+    );
+  });
+});
+
 describe("buildGordContextDescription — zone detail page", () => {
   it("includes 'Currently viewing' with the zone name when pageTitle is set", () => {
     const path = "/zones/zone-1";
