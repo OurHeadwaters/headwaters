@@ -13,7 +13,7 @@ import {
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
-import { sendKitWelcomeEmail } from "./lib/email";
+import { sendKitWelcomeEmail, sendGordTipNotificationEmail } from "./lib/email";
 import { kitBySlug } from "./lib/kits";
 import type Stripe from "stripe";
 
@@ -428,6 +428,14 @@ export class WebhookHandlers {
       logger.info(
         { sessionId: session.id, amountPaid, tipperEmail },
         "webhookHandlers: Gord tip recorded",
+      );
+
+      sendGordTipNotificationEmail({
+        tipperName: tipperName,
+        tipperEmail: tipperEmail,
+        amountCents: amountPaid,
+      }).catch((err) =>
+        logger.warn({ err }, "webhookHandlers: Gord tip notification email failed (non-fatal)"),
       );
     } else {
       logger.info(

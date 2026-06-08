@@ -574,6 +574,110 @@ export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise
   }
 }
 
+export interface GordTipNotificationOptions {
+  tipperName: string | null;
+  tipperEmail: string | null;
+  amountCents: number;
+}
+
+function buildGordTipNotificationHtml(opts: GordTipNotificationOptions): string {
+  const displayName = opts.tipperName ?? opts.tipperEmail ?? "Someone";
+  const dollars = (opts.amountCents / 100).toFixed(2);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Tip from ${displayName}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f0eb;font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#2d4a2d;padding:28px 40px;">
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <h1 style="margin:8px 0 0;font-size:22px;color:#ffffff;font-weight:normal;font-family:'Georgia',serif;">Someone just sent you a tip 🎉</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 24px;font-size:16px;color:#333333;line-height:1.6;">
+                Hi Gord — a listener just tipped you. Here are the details:
+              </p>
+
+              <!-- Tip info box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;border-left:4px solid #2d4a2d;border-radius:4px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">From</p>
+                    <p style="margin:0 0 16px;font-size:17px;color:#1a2e1a;font-weight:bold;">${displayName}</p>
+                    ${opts.tipperEmail ? `<p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Email</p>
+                    <p style="margin:0 0 16px;font-size:15px;color:#1a2e1a;"><a href="mailto:${opts.tipperEmail}" style="color:#2d4a2d;text-decoration:none;">${opts.tipperEmail}</a></p>` : ""}
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Amount</p>
+                    <p style="margin:0;font-size:22px;color:#1a2e1a;font-weight:bold;">$${dollars}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:15px;color:#444444;line-height:1.6;">
+                Consider sending ${opts.tipperName ?? "them"} a quick thank-you${opts.tipperEmail ? ` at <a href="mailto:${opts.tipperEmail}" style="color:#2d4a2d;text-decoration:none;">${opts.tipperEmail}</a>` : ""} — a personal note goes a long way.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
+              <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
+                Sent by The Survival Podcast &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendGordTipNotificationEmail(opts: GordTipNotificationOptions): Promise<void> {
+  const client = getResendClient();
+  if (!client) {
+    logger.warn("RESEND_API_KEY not set — skipping Gord tip notification email");
+    return;
+  }
+
+  const to = process.env.GORD_TIP_EMAIL ?? "jack@thesurvivalpodcast.com";
+  const displayName = opts.tipperName ?? opts.tipperEmail ?? "Someone";
+  const dollars = (opts.amountCents / 100).toFixed(2);
+
+  try {
+    const { error } = await client.emails.send({
+      from: "The Survival Podcast <tips@thesurvivalpodcast.com>",
+      to: [to],
+      subject: `New tip from ${displayName} — $${dollars}`,
+      html: buildGordTipNotificationHtml(opts),
+    });
+
+    if (error) {
+      logger.error({ error, to }, "email: Gord tip notification failed");
+    } else {
+      logger.info({ to, amountCents: opts.amountCents, tipperEmail: opts.tipperEmail }, "email: Gord tip notification sent");
+    }
+  } catch (err) {
+    logger.error({ err }, "email: Gord tip notification threw unexpectedly");
+  }
+}
+
 export async function sendRsvpNotification(opts: RsvpNotificationOptions): Promise<void> {
   const client = getResendClient();
   if (!client) {
