@@ -449,6 +449,12 @@ export default function KeepersKitSection() {
 
         {showDeclaration && (
           <div className="kk-declaration-wrapper">
+            <div className="kk-print-note no-print">
+              <button onClick={() => navigate("/declaration")} className="kk-print-btn">
+                Print this declaration
+              </button>
+              <span>Complete the blanks by hand after printing. File one copy, give one to each keeper.</span>
+            </div>
             <div className="kk-declaration">
               <div className="kk-declaration-header">
                 <div className="kk-declaration-title">Standing Protective Declaration</div>
