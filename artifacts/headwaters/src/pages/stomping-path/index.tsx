@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { Footprints, ArrowLeft } from "lucide-react";
 
 export default function StompingPathIndex() {
   return (
@@ -127,26 +128,30 @@ export default function StompingPathIndex() {
             </Link>
           </div>
 
-          {/* Bench — midway view */}
+          {/* Trail markers */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 1 }}
-            className="mt-16 pt-10 border-t"
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="mt-16 pt-10 border-t flex items-center justify-between"
             style={{ borderColor: "#2a2a20" }}
           >
-            <p
-              className="text-sm mb-2"
-              style={{ color: "#4a4830", lineHeight: 1.7 }}
+            <Link href="/">
+              <span
+                className="inline-flex items-center gap-2 text-xs cursor-pointer"
+                style={{ color: "#7a7055", letterSpacing: "0.15em" }}
+              >
+                <ArrowLeft size={11} />
+                <Footprints size={13} />
+                <span className="uppercase font-medium">Trail marker — Zone 1: Headwaters</span>
+              </span>
+            </Link>
+            <span
+              className="text-xs uppercase font-medium"
+              style={{ color: "#4a4830", letterSpacing: "0.15em" }}
             >
-              ← The Lodge, where practitioners map their clients' terrain.
-            </p>
-            <p
-              className="text-sm"
-              style={{ color: "#4a4830", lineHeight: 1.7 }}
-            >
-              Beyond Zone 2, the path descends to still water. →
-            </p>
+              Zone 3 — not yet mapped
+            </span>
           </motion.div>
 
           {/* Creator trail marker */}
