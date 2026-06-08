@@ -92,6 +92,7 @@ export default function DamDays() {
   const [draft, setDraft] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +127,12 @@ export default function DamDays() {
       e.preventDefault();
       saveEntry();
     }
+  }
+
+  function deleteEntry(id: string) {
+    const updated = entries.filter((e) => e.id !== id);
+    setEntries(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
 
   function clearEntries() {
@@ -297,9 +304,33 @@ export default function DamDays() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.35 }}
-                      className="py-5 border-b"
+                      className="py-5 border-b relative"
                       style={{ borderColor: "#2a2a1c" }}
+                      onMouseEnter={() => setHoveredId(entry.id)}
+                      onMouseLeave={() => setHoveredId(null)}
                     >
+                      <button
+                        onClick={() => deleteEntry(entry.id)}
+                        aria-label="Delete entry"
+                        style={{
+                          position: "absolute",
+                          top: "1.25rem",
+                          right: 0,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#4a4830",
+                          fontSize: "1rem",
+                          lineHeight: 1,
+                          padding: "0 2px",
+                          opacity: hoveredId === entry.id ? 1 : 0,
+                          transition: "opacity 0.2s, color 0.2s",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#8a5a4a")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#4a4830")}
+                      >
+                        ×
+                      </button>
                       <p
                         className="text-sm mb-3"
                         style={{ color: "#a89e7e", lineHeight: 1.75, whiteSpace: "pre-wrap" }}
