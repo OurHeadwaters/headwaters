@@ -37,11 +37,63 @@ function exportEntries(entries: DamEntry[]) {
   URL.revokeObjectURL(url);
 }
 
+function importEntries(
+  file: File,
+  existing: DamEntry[],
+  onDone: (merged: DamEntry[], added: number) => void
+) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const raw = (e.target?.result as string) ?? "";
+    const blocks = raw.split(/\n\n---\n\n/);
+    const existingTexts = new Set(existing.map((en) => en.text.trim()));
+    const newEntries: DamEntry[] = [];
+
+    for (const block of blocks) {
+      const trimmed = block.trim();
+      if (!trimmed) continue;
+      const firstNewline = trimmed.indexOf("\n");
+      if (firstNewline === -1) continue;
+
+      const headerLine = trimmed.slice(0, firstNewline).trim();
+      const bodyText = trimmed.slice(firstNewline + 1).trim();
+      if (!bodyText) continue;
+
+      // headerLine is like "[Nov 15, 2024, 3:45 PM]"
+      const dateMatch = headerLine.match(/^\[(.+)\]$/);
+      let ts = new Date().toISOString();
+      if (dateMatch) {
+        const parsed = new Date(dateMatch[1]);
+        if (!isNaN(parsed.getTime())) ts = parsed.toISOString();
+      }
+
+      if (existingTexts.has(bodyText.trim())) continue;
+
+      existingTexts.add(bodyText.trim());
+      newEntries.push({
+        id: crypto.randomUUID(),
+        text: bodyText,
+        timestamp: ts,
+      });
+    }
+
+    // Merge: new entries first (they'll appear newest-first after sort)
+    // but preserve the original order by timestamp
+    const merged = [...existing, ...newEntries].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    onDone(merged, newEntries.length);
+  };
+  reader.readAsText(file);
+}
+
 export default function DamDays() {
   const [entries, setEntries] = useState<DamEntry[]>([]);
   const [draft, setDraft] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -82,6 +134,26 @@ export default function DamDays() {
     setConfirmClear(false);
   }
 
+  function handleImportClick() {
+    importInputRef.current?.click();
+  }
+
+  function handleImportChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    importEntries(file, entries, (merged, added) => {
+      setEntries(merged);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      if (added === 0) {
+        setImportFeedback("no new entries found");
+      } else {
+        setImportFeedback(`${added} ${added === 1 ? "entry" : "entries"} restored`);
+      }
+      setTimeout(() => setImportFeedback(null), 3500);
+    });
+    e.target.value = "";
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -91,6 +163,13 @@ export default function DamDays() {
         fontFamily: "'Georgia', serif",
       }}
     >
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".txt"
+        style={{ display: "none" }}
+        onChange={handleImportChange}
+      />
       {/* Nav */}
       <div className="px-6 pt-6 flex items-center justify-between">
         <Link href="/stomping-path">
@@ -183,12 +262,30 @@ export default function DamDays() {
 
           {/* Entries */}
           {entries.length === 0 ? (
-            <p
-              className="text-sm text-center py-10"
-              style={{ color: "#4a4830", lineHeight: 1.7 }}
-            >
-              Nothing here yet. The groove starts with one mark.
-            </p>
+            <div className="flex flex-col items-center gap-4 py-10">
+              <p
+                className="text-sm text-center"
+                style={{ color: "#4a4830", lineHeight: 1.7 }}
+              >
+                Nothing here yet. The groove starts with one mark.
+              </p>
+              <button
+                onClick={handleImportClick}
+                className="text-xs tracking-widest"
+                style={{
+                  color: "#3a3828",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  letterSpacing: "0.12em",
+                  padding: 0,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#7a7055")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#3a3828")}
+              >
+                RESTORE FROM FILE
+              </button>
+            </div>
           ) : (
             <>
               <div className="flex flex-col gap-1">
@@ -222,22 +319,61 @@ export default function DamDays() {
 
               {/* Footer actions */}
               <div className="mt-12 pt-6 flex items-center justify-between" style={{ borderTop: "1px solid #1e1e14" }}>
-                <button
-                  onClick={() => exportEntries(entries)}
-                  className="text-xs tracking-widest"
-                  style={{
-                    color: "#5a5640",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    letterSpacing: "0.12em",
-                    padding: 0,
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#a89e7e")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#5a5640")}
-                >
-                  EXPORT ENTRIES
-                </button>
+                <div className="flex items-center gap-5">
+                  <button
+                    onClick={() => exportEntries(entries)}
+                    className="text-xs tracking-widest"
+                    style={{
+                      color: "#5a5640",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      letterSpacing: "0.12em",
+                      padding: 0,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#a89e7e")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#5a5640")}
+                  >
+                    EXPORT
+                  </button>
+                  <AnimatePresence mode="wait">
+                    {importFeedback ? (
+                      <motion.span
+                        key="feedback"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-xs"
+                        style={{ color: "#7a7055", letterSpacing: "0.08em" }}
+                      >
+                        {importFeedback}
+                      </motion.span>
+                    ) : (
+                      <motion.button
+                        key="import-btn"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        onClick={handleImportClick}
+                        className="text-xs tracking-widest"
+                        style={{
+                          color: "#3a3828",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          letterSpacing: "0.12em",
+                          padding: 0,
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#7a7055")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#3a3828")}
+                      >
+                        IMPORT
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <AnimatePresence mode="wait">
                   {confirmClear ? (
