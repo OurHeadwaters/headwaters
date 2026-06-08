@@ -1,8 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const FABRIC_LOG_KEY = "sandbox-handbook-fabric-stamp-log";
+
+interface FabricEntry {
+  id: string;
+  date: string;
+  location: string;
+  agesPresent: string;
+  activity: string;
+  wordMeaning: string;
+  present: string;
+  keeperStatement: string;
+}
+
+function loadFabricLog(): FabricEntry[] {
+  try {
+    const raw = localStorage.getItem(FABRIC_LOG_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function saveFabricLog(entries: FabricEntry[]) {
+  localStorage.setItem(FABRIC_LOG_KEY, JSON.stringify(entries));
+}
+
+const EMPTY_FORM: Omit<FabricEntry, "id"> = {
+  date: "",
+  location: "",
+  agesPresent: "",
+  activity: "",
+  wordMeaning: "",
+  present: "",
+  keeperStatement: "",
+};
 
 export default function KeepersKitSection() {
   const [showDeclaration, setShowDeclaration] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+  const [entries, setEntries] = useState<FabricEntry[]>([]);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [showForm, setShowForm] = useState(false);
+  const [errors, setErrors] = useState<Partial<typeof EMPTY_FORM>>({});
+
   const today = new Date().toLocaleDateString("en-CA");
+
+  useEffect(() => {
+    setEntries(loadFabricLog());
+  }, []);
+
+  function handleFormChange(field: keyof typeof EMPTY_FORM, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
+  }
+
+  function validate(): boolean {
+    const e: Partial<typeof EMPTY_FORM> = {};
+    if (!form.date.trim()) e.date = "Required";
+    if (!form.location.trim()) e.location = "Required";
+    if (!form.activity.trim()) e.activity = "Required";
+    if (!form.keeperStatement.trim()) e.keeperStatement = "Required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleAddEntry() {
+    if (!validate()) return;
+    const next: FabricEntry[] = [
+      { ...form, id: crypto.randomUUID() },
+      ...entries,
+    ];
+    setEntries(next);
+    saveFabricLog(next);
+    setForm(EMPTY_FORM);
+    setShowForm(false);
+  }
+
+  function handleDeleteEntry(id: string) {
+    const next = entries.filter((e) => e.id !== id);
+    setEntries(next);
+    saveFabricLog(next);
+  }
 
   return (
     <section id="keepers-kit" className="trail-section">
@@ -76,6 +157,236 @@ export default function KeepersKitSection() {
               The discipline is the date and the witness — those two things together establish
               context that cannot be retroactively reassigned.
             </p>
+
+            <div className="cfs-log-panel" style={{ marginTop: "1.25rem" }}>
+              <div className="cfs-log-header">
+                <div className="cfs-log-meta">
+                  <span className="cfs-log-count">
+                    {entries.length === 0
+                      ? "No entries yet"
+                      : `${entries.length} entr${entries.length === 1 ? "y" : "ies"}`}
+                  </span>
+                </div>
+                <button
+                  className="kk-toggle-btn no-print"
+                  onClick={() => setShowLog((v) => !v)}
+                >
+                  {showLog ? "Collapse log" : "Start a log"}
+                </button>
+              </div>
+
+              {showLog && (
+                <div className="no-print">
+                  {!showForm ? (
+                    <button
+                      className="cfs-add-btn"
+                      onClick={() => setShowForm(true)}
+                    >
+                      + Add entry
+                    </button>
+                  ) : (
+                    <div className="cfs-form">
+                      <div className="cfs-form-title">New occasion entry</div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-date">
+                          Date <span className="cfs-required">*</span>
+                        </label>
+                        <input
+                          id="cfs-date"
+                          className={`cfs-input${errors.date ? " cfs-input-error" : ""}`}
+                          type="date"
+                          value={form.date}
+                          onChange={(e) => handleFormChange("date", e.target.value)}
+                        />
+                        {errors.date && <span className="cfs-error">{errors.date}</span>}
+                      </div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-location">
+                          Location <span className="cfs-required">*</span>
+                        </label>
+                        <input
+                          id="cfs-location"
+                          className={`cfs-input${errors.location ? " cfs-input-error" : ""}`}
+                          type="text"
+                          placeholder="e.g. Brohm Lake, north shore"
+                          value={form.location}
+                          onChange={(e) => handleFormChange("location", e.target.value)}
+                        />
+                        {errors.location && <span className="cfs-error">{errors.location}</span>}
+                      </div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-ages">
+                          Ages present
+                        </label>
+                        <input
+                          id="cfs-ages"
+                          className="cfs-input"
+                          type="text"
+                          placeholder="e.g. Elias age 4, Nora age 7"
+                          value={form.agesPresent}
+                          onChange={(e) => handleFormChange("agesPresent", e.target.value)}
+                        />
+                      </div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-activity">
+                          What children were doing (specific) <span className="cfs-required">*</span>
+                        </label>
+                        <textarea
+                          id="cfs-activity"
+                          className={`cfs-textarea${errors.activity ? " cfs-input-error" : ""}`}
+                          rows={3}
+                          placeholder="e.g. Elias (4) and Nora (7) were building a dam with rocks along the shoreline. Nora asked to be splashed and Elias obliged."
+                          value={form.activity}
+                          onChange={(e) => handleFormChange("activity", e.target.value)}
+                        />
+                        {errors.activity && <span className="cfs-error">{errors.activity}</span>}
+                      </div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-word-meaning">
+                          What words meant at that age
+                        </label>
+                        <textarea
+                          id="cfs-word-meaning"
+                          className="cfs-textarea"
+                          rows={2}
+                          placeholder="e.g. 'Splash me' meant play between siblings. 'More water' meant fill the bucket. No adult connotation present or possible."
+                          value={form.wordMeaning}
+                          onChange={(e) => handleFormChange("wordMeaning", e.target.value)}
+                        />
+                      </div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-present">
+                          Who was present
+                        </label>
+                        <input
+                          id="cfs-present"
+                          className="cfs-input"
+                          type="text"
+                          placeholder="e.g. Both parents, grandmother, two neighbour families"
+                          value={form.present}
+                          onChange={(e) => handleFormChange("present", e.target.value)}
+                        />
+                      </div>
+
+                      <div className="cfs-form-row">
+                        <label className="cfs-label" htmlFor="cfs-statement">
+                          Keeper witness statement (one sentence) <span className="cfs-required">*</span>
+                        </label>
+                        <textarea
+                          id="cfs-statement"
+                          className={`cfs-textarea${errors.keeperStatement ? " cfs-input-error" : ""}`}
+                          rows={2}
+                          placeholder="e.g. I, the undersigned Keeper, witnessed this occasion and attest that all activity was ordinary childhood play in a family context."
+                          value={form.keeperStatement}
+                          onChange={(e) => handleFormChange("keeperStatement", e.target.value)}
+                        />
+                        {errors.keeperStatement && <span className="cfs-error">{errors.keeperStatement}</span>}
+                      </div>
+
+                      <div className="cfs-form-actions">
+                        <button className="cfs-save-btn" onClick={handleAddEntry}>
+                          Save entry
+                        </button>
+                        <button
+                          className="cfs-cancel-btn"
+                          onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setErrors({}); }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Entries — always in DOM so they print regardless of collapsed state */}
+              <div className={showLog ? "cfs-log-body" : "cfs-log-body cfs-log-body-collapsed"}>
+                {entries.length === 0 ? (
+                  <p className="cfs-empty-state">
+                    No entries yet. Each occasion you log becomes a dated, contextual record
+                    that cannot be retroactively reassigned.
+                  </p>
+                ) : (
+                  <div className="cfs-entries">
+                    {entries.map((entry, i) => (
+                      <div key={entry.id} className="cfs-entry">
+                        <div className="cfs-entry-header">
+                          <div className="cfs-entry-meta">
+                            <span className="cfs-entry-date">
+                              {new Date(entry.date + "T12:00:00").toLocaleDateString("en-CA", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </span>
+                            {entry.location && (
+                              <span className="cfs-entry-location">— {entry.location}</span>
+                            )}
+                          </div>
+                          <button
+                            className="cfs-delete-btn no-print"
+                            aria-label="Delete entry"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            title="Remove this entry"
+                          >
+                            ×
+                          </button>
+                        </div>
+
+                        <div className="cfs-entry-body">
+                          {entry.agesPresent && (
+                            <div className="cfs-entry-field">
+                              <span className="cfs-entry-label">Ages present</span>
+                              <span className="cfs-entry-value">{entry.agesPresent}</span>
+                            </div>
+                          )}
+                          {entry.activity && (
+                            <div className="cfs-entry-field">
+                              <span className="cfs-entry-label">Activity</span>
+                              <span className="cfs-entry-value">{entry.activity}</span>
+                            </div>
+                          )}
+                          {entry.wordMeaning && (
+                            <div className="cfs-entry-field">
+                              <span className="cfs-entry-label">Words at this age</span>
+                              <span className="cfs-entry-value">{entry.wordMeaning}</span>
+                            </div>
+                          )}
+                          {entry.present && (
+                            <div className="cfs-entry-field">
+                              <span className="cfs-entry-label">Present</span>
+                              <span className="cfs-entry-value">{entry.present}</span>
+                            </div>
+                          )}
+                          {entry.keeperStatement && (
+                            <div className="cfs-entry-statement">
+                              <span className="cfs-statement-quill" aria-hidden="true">✍</span>
+                              <em>{entry.keeperStatement}</em>
+                            </div>
+                          )}
+                        </div>
+
+                        {i < entries.length - 1 && (
+                          <div className="cfs-entry-divider" aria-hidden="true" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {entries.length > 0 && !showLog && (
+                <p className="cfs-collapsed-hint no-print">
+                  {entries.length} saved entr{entries.length === 1 ? "y" : "ies"} — expand to view or add.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

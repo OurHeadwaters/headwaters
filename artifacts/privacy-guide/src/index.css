@@ -1341,6 +1341,272 @@ html, body {
   color: white;
 }
 
+/* ── Contextual Fabric Stamp log ── */
+.cfs-log-panel {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+.cfs-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.cfs-log-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cfs-log-count {
+  font-family: 'Fraunces', serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--forest-bright);
+  letter-spacing: 0.03em;
+}
+.cfs-log-body {
+  margin-top: 0.75rem;
+}
+.cfs-log-body-collapsed {
+  display: none;
+}
+.cfs-collapsed-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+.cfs-add-btn {
+  background: none;
+  border: 1.5px dashed var(--forest-bright);
+  color: var(--forest-bright);
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+.cfs-add-btn:hover {
+  background: var(--tint-moss);
+  color: var(--forest-deep);
+}
+.cfs-form {
+  background: rgba(74, 103, 65, 0.04);
+  border: 1px solid rgba(74, 103, 65, 0.2);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 1rem;
+}
+.cfs-form-title {
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--forest-deep);
+  margin-bottom: 14px;
+  letter-spacing: 0.01em;
+}
+.cfs-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.cfs-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cfs-required {
+  color: var(--terracotta);
+}
+.cfs-input {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--charcoal);
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.cfs-input:focus {
+  border-color: var(--forest-bright);
+}
+.cfs-textarea {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--charcoal);
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  line-height: 1.55;
+  transition: border-color 0.15s;
+}
+.cfs-textarea:focus {
+  border-color: var(--forest-bright);
+}
+.cfs-input-error {
+  border-color: var(--terracotta) !important;
+}
+.cfs-error {
+  font-size: 11px;
+  color: var(--terracotta);
+  font-style: italic;
+}
+.cfs-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.cfs-save-btn {
+  background: var(--forest-bright);
+  color: var(--cream);
+  border: none;
+  border-radius: 5px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cfs-save-btn:hover {
+  background: var(--forest-deep);
+}
+.cfs-cancel-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cfs-cancel-btn:hover {
+  border-color: var(--muted);
+  color: var(--charcoal);
+}
+.cfs-empty-state {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.6;
+  padding: 8px 0;
+}
+.cfs-entries {
+  display: flex;
+  flex-direction: column;
+}
+.cfs-entry {
+  padding: 12px 0;
+}
+.cfs-entry-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cfs-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.cfs-entry-date {
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-deep);
+}
+.cfs-entry-location {
+  font-size: 13px;
+  color: var(--muted);
+}
+.cfs-delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s, color 0.15s;
+}
+.cfs-delete-btn:hover {
+  opacity: 1;
+  color: var(--terracotta);
+}
+.cfs-entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cfs-entry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cfs-entry-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--forest-bright);
+  opacity: 0.75;
+}
+.cfs-entry-value {
+  font-size: 13px;
+  color: var(--charcoal);
+  line-height: 1.55;
+}
+.cfs-entry-statement {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 4px;
+  background: linear-gradient(135deg, rgba(217, 160, 102, 0.10) 0%, rgba(74, 103, 65, 0.05) 100%);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 5px 5px 0;
+  padding: 7px 10px;
+}
+.cfs-statement-quill {
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--amber);
+}
+.cfs-entry-statement em {
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  color: #4A3520;
+  line-height: 1.55;
+}
+.cfs-entry-divider {
+  height: 1px;
+  background: var(--border);
+  opacity: 0.5;
+  margin-top: 12px;
+}
+
 /* ── Battered Kit / Duck Song section ── */
 .bk-signal-card-intro {
   text-align: center;
@@ -1638,6 +1904,75 @@ html, body {
   .checklist-box {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  .cfs-log-panel {
+    border-top: 1px solid #ccc;
+    padding-top: 8pt;
+  }
+
+  .cfs-log-body-collapsed {
+    display: block !important;
+  }
+
+  .cfs-log-header {
+    margin-bottom: 6pt;
+  }
+
+  .cfs-log-count {
+    font-size: 10pt;
+    color: #4A6741;
+  }
+
+  .cfs-empty-state {
+    font-size: 9pt;
+    color: #888;
+  }
+
+  .cfs-entries {
+    break-inside: avoid;
+  }
+
+  .cfs-entry {
+    padding: 8pt 0;
+  }
+
+  .cfs-entry-date {
+    font-size: 11pt;
+    color: #1C3020;
+  }
+
+  .cfs-entry-location {
+    font-size: 10pt;
+    color: #555;
+  }
+
+  .cfs-entry-label {
+    font-size: 7.5pt;
+    color: #4A6741;
+  }
+
+  .cfs-entry-value {
+    font-size: 9pt;
+    color: black;
+    line-height: 1.5;
+  }
+
+  .cfs-entry-statement {
+    border-left: 2pt solid #D9A066;
+    padding: 4pt 7pt;
+    background: none;
+  }
+
+  .cfs-entry-statement em {
+    font-size: 9pt;
+    color: #4A3520;
+  }
+
+  .cfs-entry-divider {
+    background: #ddd;
+    opacity: 1;
+    margin-top: 8pt;
   }
 
   .site-footer {
