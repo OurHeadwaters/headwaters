@@ -1226,6 +1226,17 @@ html, body {
 .kk-toggle-btn:hover {
   background: var(--forest-deep);
 }
+.kk-print-link {
+  font-size: 12px;
+  color: var(--forest-bright);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.kk-print-link:hover {
+  color: var(--forest-deep);
+  text-decoration: underline;
+}
 .kk-declaration-wrapper {
   margin-top: 1.5rem;
   border-top: 1px solid var(--border);

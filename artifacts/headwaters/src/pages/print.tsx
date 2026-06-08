@@ -726,6 +726,7 @@ pnpm --filter @workspace/db run db:push`}</pre>
 
         {/* Appendix A: Keeper's Kit Declaration */}
         <div className="pb" />
+        <div id="keepers-kit-declaration">
         <h2 style={S.h2}>Appendix A — Keeper's Kit: Standing Protective Declaration</h2>
         <p style={S.p}>
           A standing protective declaration for parents placing a record on behalf of their
@@ -859,6 +860,7 @@ pnpm --filter @workspace/db run db:push`}</pre>
           Complete all blanks by hand after printing. File one copy; give one copy to each keeper named above.
           A fence built before the trespass is a boundary. A fence built after is a patch.
         </p>
+        </div>
 
         <hr style={S.hr} />
         <p style={{ ...S.p, color: "#777", fontSize: "11px", textAlign: "center" }}>

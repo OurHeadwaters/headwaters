@@ -428,12 +428,22 @@ export default function KeepersKitSection() {
               transfers to the child at majority — the keeper names the handoff.
             </p>
           </div>
-          <button
-            className="kk-toggle-btn no-print"
-            onClick={() => setShowDeclaration(!showDeclaration)}
-          >
-            {showDeclaration ? "Collapse" : "Show declaration template"}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
+            <button
+              className="kk-toggle-btn no-print"
+              onClick={() => setShowDeclaration(!showDeclaration)}
+            >
+              {showDeclaration ? "Collapse" : "Show declaration template"}
+            </button>
+            <a
+              href="/headwaters/print#keepers-kit-declaration"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="kk-print-link no-print"
+            >
+              Standalone filing copy →
+            </a>
+          </div>
         </div>
 
         {showDeclaration && (
