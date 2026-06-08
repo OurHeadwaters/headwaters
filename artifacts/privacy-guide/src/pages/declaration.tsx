@@ -212,6 +212,10 @@ export default function DeclarationPage() {
 
   useEffect(() => {
     document.title = "Standing Protective Declaration — Keeper's Kit";
+    document.documentElement.setAttribute("data-route", "declaration");
+    return () => {
+      document.documentElement.removeAttribute("data-route");
+    };
   }, []);
 
   function handleSaveAsPdf() {
@@ -228,8 +232,17 @@ export default function DeclarationPage() {
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { margin: 0; padding: 0; }
-          @page { margin: 18mm 18mm 22mm; }
+          html, body {
+            background: white !important;
+            margin: 0;
+            padding: 0;
+            overflow: visible;
+          }
+          #root { background: white !important; }
+          @page {
+            size: letter portrait;
+            margin: 18mm 18mm 22mm;
+          }
           .prefilled-date {
             color: #555 !important;
             -webkit-print-color-adjust: exact;

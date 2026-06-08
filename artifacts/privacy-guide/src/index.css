@@ -2012,4 +2012,24 @@ html, body {
     size: letter portrait;
     margin: 0.75in;
   }
+
+  /* ── Declaration standalone print ── */
+  html[data-route="declaration"] .site-header,
+  html[data-route="declaration"] .site-footer,
+  html[data-route="declaration"] .trail-nav,
+  html[data-route="declaration"] .gord-tip,
+  html[data-route="declaration"] .no-print {
+    display: none !important;
+  }
+
+  html[data-route="declaration"] body,
+  html[data-route="declaration"] #root {
+    background: white !important;
+    overflow: visible;
+  }
+
+  html[data-route="declaration"] body {
+    margin: 0;
+    padding: 0;
+  }
 }
