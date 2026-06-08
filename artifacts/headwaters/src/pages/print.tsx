@@ -545,7 +545,7 @@ export default function Print() {
         </T>
 
         <h3 style={S.h3}>Privacy Guide — prefix: /privacy-guide/</h3>
-        <p style={S.p}>Single-page React app. Sections: Core Principles · Family & Lodge (Clearing/Lodge distinction) · Threat Clearing · Tools & Workshop · Resources. Checklist state in localStorage. Zone 0 stewardship framing. Print/PDF supported.</p>
+        <p style={S.p}>Single-page React app. Sections: Core Principles · Family & Lodge (Clearing/Lodge distinction) · Threat Clearing · Satellite & Drone · Keeper's Kit · Duck Song Signal · Tools & Workshop · Resources. Checklist state in localStorage. Zone 0 stewardship framing. Print/PDF supported. The Keeper's Kit Standing Protective Declaration is reproduced in full in <strong>Appendix A</strong> of this document for standalone filing.</p>
 
         <h3 style={S.h3}>TSP Mobile (Expo)</h3>
         <T>
@@ -719,6 +719,147 @@ pnpm --filter @workspace/db run db:push`}</pre>
         </ol>
 
         {/* Footer */}
+        <hr style={S.hr} />
+        <p style={{ ...S.p, color: "#777", fontSize: "11px", textAlign: "center" }}>
+          Headwaters Watershed · 807 Food Co-operative Inc. · Dryden, Ontario · May 30, 2026
+        </p>
+
+        {/* Appendix A: Keeper's Kit Declaration */}
+        <div className="pb" />
+        <h2 style={S.h2}>Appendix A — Keeper's Kit: Standing Protective Declaration</h2>
+        <p style={S.p}>
+          A standing protective declaration for parents placing a record on behalf of their
+          children's likeness, voice, and words — specifically against future manufactured-consent
+          attacks using reconstructive AI or deepfake technology. Print, complete by hand, witness,
+          and file. Give one copy to each keeper. The declaration transfers to the child at majority.
+        </p>
+
+        <h3 style={S.h3}>The Five Instruments</h3>
+        <T>
+          <thead><tr><TH>#</TH><TH>Instrument</TH><TH>What it does</TH></tr></thead>
+          <tbody>
+            <tr><TD>1</TD><TD>The Standing Declaration</TD><TD>Dated, witnessed statement that the child's likeness, voice, image, body, and words in any medium during their minority cannot constitute consent of any kind for adult, sexual, or exploitative content. No public domain argument, open space claim, or reconstructed context supersedes it.</TD></tr>
+            <tr><TD>2</TD><TD>The Refused Shelf Entry</TD><TD>Permanent declaration that the child's play language — water language, touch language, physical play requests — is refused as source material for any adult or exploitative mapping. The refusal is not conditional on where the capture happened.</TD></tr>
+            <tr><TD>3</TD><TD>The Contextual Fabric Stamp</TD><TD>Dated log for occasions where public-domain capture is likely. Each entry: date and location, ages present, what the children were doing, what words meant in the child's vocabulary at that age, who was present, one-sentence keeper witness statement.</TD></tr>
+            <tr><TD>4</TD><TD>The Age Anchor</TD><TD>Standing record stating the child's date of birth and that they were a minor at the time of every relevant recording. Minority is structural, not moral — it cannot be argued away in court or content moderation.</TD></tr>
+            <tr><TD>5</TD><TD>The Keeper Chain</TD><TD>Name two or more people who hold the same record independently. An attacker must contradict every keeper simultaneously. Resilience through multiplication.</TD></tr>
+          </tbody>
+        </T>
+
+        <div style={{
+          border: "1.5px solid #bbb",
+          borderRadius: "4px",
+          padding: "28px 32px 24px",
+          marginTop: "28px",
+          marginBottom: "10px",
+          pageBreakInside: "avoid" as const,
+        }}>
+          <div style={{ textAlign: "center", marginBottom: "18px" }}>
+            <div style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "4px", letterSpacing: "0.01em" }}>
+              Standing Protective Declaration
+            </div>
+            <div style={{ fontSize: "12px", color: "#555" }}>
+              Child Likeness, Voice, and Words — Minor's Record
+            </div>
+          </div>
+
+          <p style={{ ...S.p, marginBottom: "18px" }}>
+            I, the undersigned Keeper, place this declaration on behalf of the child named
+            below. This declaration is standing, permanent, and not conditional on
+            jurisdiction, platform, or the legal status of any technology at the time of
+            any future use.
+          </p>
+
+          <div style={{ marginBottom: "18px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Child's full name</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Date of birth</span>
+              <span style={{ width: "120px", borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", marginLeft: "24px" }}>Date of majority</span>
+              <span style={{ width: "120px", borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+          </div>
+
+          <div style={{ background: "#f8f8f8", borderLeft: "3px solid #bbb", padding: "10px 14px", marginBottom: "12px", fontSize: "12px", lineHeight: "1.6" }}>
+            <strong>Standing Declaration —</strong> The child named above was a minor at
+            the time of every recording, capture, and publication covered by this
+            declaration. Their likeness, voice, image, body, and words in any medium during
+            their minority cannot constitute consent of any kind for adult, sexual, or
+            exploitative content or context. No public domain argument, open space claim,
+            reconstructed context, AI-generated derivation, or synthetic media supersedes
+            this declaration.
+          </div>
+
+          <div style={{ background: "#f8f8f8", borderLeft: "3px solid #bbb", padding: "10px 14px", marginBottom: "12px", fontSize: "12px", lineHeight: "1.6" }}>
+            <strong>Refused Shelf Entry —</strong> The child's play language — including
+            but not limited to water language, touch language, and physical play requests —
+            is permanently refused as source material for any adult or exploitative mapping,
+            regardless of the medium of original capture or the technology used for
+            derivation.
+          </div>
+
+          <div style={{ background: "#f8f8f8", borderLeft: "3px solid #bbb", padding: "10px 14px", marginBottom: "18px", fontSize: "12px", lineHeight: "1.6" }}>
+            <strong>Age Anchor —</strong> The child's date of birth is recorded above. They
+            were a minor at the time of all recordings covered by this declaration. This is
+            a matter of verifiable record.
+          </div>
+
+          <div style={{ marginBottom: "18px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Keeper's full name</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Keeper's signature</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", marginLeft: "24px" }}>Date</span>
+              <span style={{ width: "100px", borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Witness name</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Witness signature</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", marginLeft: "24px" }}>Date</span>
+              <span style={{ width: "100px", borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Secondary keeper</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>Filing location</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "4px" }}>
+              <span style={{ fontSize: "12px", whiteSpace: "nowrap", minWidth: "130px" }}>On-chain anchor</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #555", display: "block", height: "18px" }} />
+            </div>
+            <div style={{ fontSize: "10px", color: "#777", marginLeft: "138px" }}>XRPL transaction hash, when available</div>
+          </div>
+
+          <div style={{ background: "#f8f8f8", borderLeft: "3px solid #bbb", padding: "10px 14px", marginBottom: "18px", fontSize: "12px", lineHeight: "1.6", fontStyle: "italic" }}>
+            <strong style={{ fontStyle: "normal" }}>Handoff at majority —</strong> This declaration transfers to the child
+            at the date of majority listed above. The Keeper will perform a named handoff:{" "}
+            <em>"I held this on your behalf. Here is what I witnessed. This is yours now."</em>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#777", borderTop: "1px solid #e0e0e0", paddingTop: "10px" }}>
+            <span>Clearing &amp; Lodge Family Privacy Guide — Keeper's Kit</span>
+            <span>Headwaters Watershed · 807 Food Co-operative Inc. · Dryden, Ontario</span>
+          </div>
+        </div>
+
+        <p style={{ ...S.p, fontSize: "11px", color: "#777", fontStyle: "italic" }}>
+          Complete all blanks by hand after printing. File one copy; give one copy to each keeper named above.
+          A fence built before the trespass is a boundary. A fence built after is a patch.
+        </p>
+
         <hr style={S.hr} />
         <p style={{ ...S.p, color: "#777", fontSize: "11px", textAlign: "center" }}>
           Headwaters Watershed · 807 Food Co-operative Inc. · Dryden, Ontario · May 30, 2026
