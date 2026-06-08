@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "wouter";
 import { motion, type Variants } from "framer-motion";
 import { GordBird } from "@/components/GordBird";
+import { TAGLINE } from "@workspace/tsp-constants";
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -102,7 +103,7 @@ export default function ForgeHero({ onEnterForge }: { onEnterForge: () => void }
           variants={fadeInUp}
           className="text-lg md:text-xl text-[#C4B49A] max-w-2xl mx-auto leading-relaxed"
         >
-          We always knew how to fix it; Now we can.
+          {TAGLINE}
         </motion.p>
         <motion.p
           variants={fadeInUp}

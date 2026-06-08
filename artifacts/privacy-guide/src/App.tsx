@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { TAGLINE } from "@workspace/tsp-constants";
 import { motion, AnimatePresence } from "framer-motion";
 import { GordBird } from "./components/gord-bird";
 import SatelliteDroneSection from "./sections/satellite-drone";
@@ -934,7 +935,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.7, ease: "easeOut" }}
           >
-            We always knew how to fix it; Now we can.
+            {TAGLINE}
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}

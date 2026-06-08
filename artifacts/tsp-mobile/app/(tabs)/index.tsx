@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useGetFeaturedEpisodes, useGetFeed, useListEpisodes, useGetThisDayEpisodes } from "@workspace/api-client-react";
+import { TAGLINE } from "@workspace/tsp-constants";
 import type { Episode, ThisDayEpisode } from "@workspace/api-client-react";
 import React, { useState, useRef, useEffect } from "react";
 import { useHistory } from "@/context/HistoryContext";
@@ -433,7 +434,7 @@ export default function HomeScreen() {
               Mobile on the{"\n"}Stomping Path
             </Text>
             <Text style={[styles.heroTagline, { color: "rgba(255,255,255,0.8)", fontFamily: "DMSans_400Regular" }]}>
-              We always knew how to fix it; Now we can.
+              {TAGLINE}
             </Text>
           </View>
         </View>

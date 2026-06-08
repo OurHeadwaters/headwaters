@@ -1,10 +1,16 @@
 import { useGetFeed } from "@workspace/api-client-react";
 import { ExternalLink, Coffee, Heart } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
+import { TAGLINE } from "@workspace/tsp-constants";
+
+const TAGLINE_REGEX = new RegExp(
+  `^[\\s"'\\u201C\\u201D]*${TAGLINE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s"'\\u201C\\u201D]*`,
+  "i"
+);
 
 function stripTagline(html: string): string {
   const stripped = html
-    .replace(/^[\s"'\u201C\u201D]*We always knew how to fix it; Now we can\.[\s"'\u201C\u201D]*/i, "")
+    .replace(TAGLINE_REGEX, "")
     .replace(/^(<br\s*\/?>)+/, "")
     .trim();
   return stripped;
@@ -30,7 +36,7 @@ export function About() {
             {feed?.title || "The Stomping Path"}
           </h1>
           <p className="text-xl text-muted-foreground font-medium max-w-xl text-balance">
-            "We always knew how to fix it; Now we can."
+            {`"${TAGLINE}"`}
           </p>
         </div>
 
