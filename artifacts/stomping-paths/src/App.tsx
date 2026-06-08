@@ -58,6 +58,7 @@ import KitDetailPage from "@/pages/kit-detail";
 import KitFinderPage from "@/pages/kit-finder";
 import KitWelcomePage from "@/pages/kit-welcome";
 import { AdminKitPurchases } from "@/pages/admin-kit-purchases";
+import { AdminGordTips } from "@/pages/admin-gord-tips";
 import PractitionersPage from "@/pages/practitioners";
 
 const queryClient = new QueryClient();
@@ -127,6 +128,7 @@ function Router() {
         <Route path="/cohorts/:id" component={CohortDetailPage} />
         <Route path="/admin/cohorts" component={AdminCohorts} />
         <Route path="/admin/kit-purchases" component={AdminKitPurchases} />
+        <Route path="/admin/gord-tips" component={AdminGordTips} />
         <Route path="/headwaters" component={HeadwatersPage} />
         <Route path="/kits" component={KitsPage} />
         <Route path="/kits/find" component={KitFinderPage} />

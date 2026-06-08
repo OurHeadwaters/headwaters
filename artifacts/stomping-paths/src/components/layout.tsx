@@ -37,6 +37,7 @@ const landmarkItems = [
 
 const adminItems = [
   { href: "/admin/brigade", label: "The Headwaters", desc: "Membership stats: members, MRR, renewals" },
+  { href: "/admin/gord-tips", label: "Gord Tips", desc: "Tip history: tipper names and amounts" },
   { href: "/admin/ground-events", label: "Workshop Board", desc: "Manage ground events and workshops" },
   { href: "/admin/kit-purchases", label: "Kit Commerce", desc: "Kit purchases, revenue, and inquiries" },
   { href: "/admin/categories", label: "Category Descriptions", desc: "Edit category descriptions" },
