@@ -70,7 +70,7 @@ router.get("/admin/gaps", requireEditor, async (_req, res) => {
  */
 router.patch("/admin/gaps/:queryText/resolve", requireEditor, async (req, res) => {
   try {
-    const queryText = decodeURIComponent(req.params.queryText).trim().toLowerCase();
+    const queryText = decodeURIComponent(req.params.queryText as string).trim().toLowerCase();
     const body = req.body as Record<string, unknown>;
     const resolved = body.resolved === true || body.resolved === "true";
 

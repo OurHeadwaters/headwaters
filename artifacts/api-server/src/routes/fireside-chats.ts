@@ -157,7 +157,7 @@ router.post("/fireside-flames", async (req, res) => {
  */
 router.post("/fireside-flames/:id/fan", async (req, res) => {
   try {
-    const flameId = parseInt(req.params.id, 10);
+    const flameId = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(flameId)) {
       res.status(400).json({ error: "Invalid flame id" });
       return;
@@ -215,7 +215,7 @@ router.post("/fireside-flames/:id/fan", async (req, res) => {
  */
 router.delete("/admin/fireside-flames/:id", requireEditor, async (req, res) => {
   try {
-    const flameId = parseInt(req.params.id, 10);
+    const flameId = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(flameId)) {
       res.status(400).json({ error: "Invalid id" });
       return;

@@ -17,10 +17,10 @@ export default function Shallows() {
     if (stored) {
       setSavedName(stored);
       setPhase("resting");
-    } else {
-      const timer = setTimeout(() => setShowInput(true), 2400);
-      return () => clearTimeout(timer);
+      return;
     }
+    const timer = setTimeout(() => setShowInput(true), 2400);
+    return () => clearTimeout(timer);
   }, []);
 
   function leaveName() {

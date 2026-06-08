@@ -80,7 +80,7 @@ router.get("/admin/cohorts", requireEditor, async (_req, res) => {
  */
 router.get("/admin/cohorts/:id/enrollments", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid cohort id" });
       return;
@@ -209,7 +209,7 @@ router.post("/admin/cohorts", requireEditor, async (req, res) => {
  */
 router.patch("/admin/cohorts/:id", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid cohort id" });
       return;
@@ -245,7 +245,7 @@ router.patch("/admin/cohorts/:id", requireEditor, async (req, res) => {
  */
 router.delete("/admin/cohorts/:id", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid cohort id" });
       return;

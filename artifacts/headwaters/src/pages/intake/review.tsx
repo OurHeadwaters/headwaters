@@ -35,7 +35,7 @@ export default function IntakeReview() {
   const [landRationale, setLandRationale] = useState("");
   const [harmonyNote, setHarmonyNote] = useState("");
 
-  const hasLand = !!(interpretResult?.landZone || landDump?.trim());
+  const hasLand = !!((interpretResult as any)?.landZone || landDump?.trim());
 
   useEffect(() => {
     if (interpretResult) {
@@ -43,10 +43,10 @@ export default function IntakeReview() {
       setSecondaryZone(interpretResult.secondaryZone);
       setRiskProfile(interpretResult.riskProfile);
       setClientRationale(interpretResult.clientRationale);
-      setLandZone(interpretResult.landZone ?? "");
-      setLandSecondaryZone(interpretResult.landSecondaryZone ?? "");
-      setLandRationale(interpretResult.landRationale ?? "");
-      setHarmonyNote(interpretResult.harmonyNote ?? "");
+      setLandZone((interpretResult as any).landZone ?? "");
+      setLandSecondaryZone((interpretResult as any).landSecondaryZone ?? "");
+      setLandRationale((interpretResult as any).landRationale ?? "");
+      setHarmonyNote((interpretResult as any).harmonyNote ?? "");
     } else if (!dump) {
       setLocation(`/intake/${clientId}`);
     }
@@ -68,10 +68,10 @@ export default function IntakeReview() {
           practitionerNotes,
           practitionerName: practitionerName || undefined,
           dump,
-          landZone: landZone || undefined,
-          landSecondaryZone: landSecondaryZone || undefined,
-          landRationale: landRationale || undefined,
-          harmonyNote: harmonyNote || undefined,
+          ...(landZone ? { landZone } : {}),
+          ...(landSecondaryZone ? { landSecondaryZone } : {}),
+          ...(landRationale ? { landRationale } : {}),
+          ...(harmonyNote ? { harmonyNote } : {}),
         },
       },
       {

@@ -7,13 +7,23 @@ import {
   useListLibraryTags,
   useListSeries,
   SearchLibrarySort,
-  type FieldNote
 } from "@workspace/api-client-react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { LibraryItemCard } from "@/components/library-item-card";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Search, ChevronLeft, ChevronRight, Tag, RefreshCw, Users, ExternalLink, MapPin, ChevronRight as ChevRight, Radio, Mic, Clock, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 import { formatDistanceToNow, parseISO, format } from "date-fns";
+
+type FieldNote = {
+  id: string;
+  sourceType: string;
+  rawContent: string;
+  published: boolean;
+  tags: string[];
+  contextUrl?: string | null;
+  createdAt?: string;
+  metaTitle?: string | null;
+};
 
 type ExpertResult = {
   id: string;
@@ -65,7 +75,7 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
   const isLong = note.rawContent.length > 240;
   const preview = isLong && !expanded ? note.rawContent.slice(0, 240) + "…" : note.rawContent;
 
-  const zoneTags = note.tags.filter((t) => t.startsWith("zone-"));
+  const zoneTags = note.tags.filter((t: string) => t.startsWith("zone-"));
 
   return (
     <div className="flex flex-col gap-2.5 p-4 rounded-lg border border-border hover:border-primary/30 hover:shadow-sm transition-all bg-background">
@@ -81,7 +91,7 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
         )}
         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
-          {format(new Date(note.createdAt), "MMM d, yyyy")}
+          {note.createdAt ? format(new Date(note.createdAt), "MMM d, yyyy") : ""}
         </span>
       </div>
 
@@ -102,7 +112,7 @@ function FieldNoteCard({ note }: { note: FieldNote }) {
 
       {(zoneTags.length > 0 || note.contextUrl) && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/50 mt-auto">
-          {zoneTags.slice(0, 2).map((z) => (
+          {zoneTags.slice(0, 2).map((z: string) => (
             <Link
               key={z}
               href={`/zones/${z}`}
@@ -601,8 +611,8 @@ export function Library() {
           {debouncedSearch && <PeopleAndBusinesses q={debouncedSearch} />}
 
           {/* Field Notes — shown when results include matching field notes */}
-          {libraryPage?.fieldNotes && libraryPage.fieldNotes.length > 0 && (
-            <FieldNotesSection notes={libraryPage.fieldNotes} />
+          {(libraryPage as any)?.fieldNotes && (libraryPage as any).fieldNotes.length > 0 && (
+            <FieldNotesSection notes={(libraryPage as any).fieldNotes} />
           )}
 
           {isLoading ? (

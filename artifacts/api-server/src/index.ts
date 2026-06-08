@@ -34,7 +34,7 @@ async function initStripe(): Promise<void> {
     if (!databaseUrl) throw new Error("DATABASE_URL is required");
 
     logger.info("stripe: running schema migrations…");
-    await runMigrations({ databaseUrl, schema: "stripe" });
+    await runMigrations({ databaseUrl } as Parameters<typeof runMigrations>[0]);
     logger.info("stripe: schema ready");
 
     const stripeSync = await getStripeSync();
@@ -65,10 +65,11 @@ const server = app.listen(port, (err) => {
   // Both handlers must be behind a single "upgrade" listener with URL routing —
   // stacking two independent .upgrade handlers causes the first to intercept
   // all upgrades, breaking HMR for the second app.
-  if (hwDevProxy) {
+  const devProxy = hwDevProxy;
+  if (devProxy) {
     server.on("upgrade", (req, socket, head) => {
       if (req.url?.startsWith("/headwaters")) {
-        hwDevProxy.upgrade(req, socket, head);
+        devProxy.upgrade(req, socket as import("net").Socket, head);
       }
     });
     logger.info("headwaters: WebSocket HMR proxy attached");

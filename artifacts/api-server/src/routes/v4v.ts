@@ -24,7 +24,7 @@ async function ensureSeeded() {
 router.get("/v4v/episode-splits/:slug", async (req: Request, res: Response) => {
   try {
     await ensureSeeded();
-    const slug = req.params.slug;
+    const slug = req.params.slug as string;
 
     // Look for episode-specific splits
     const splits = await db

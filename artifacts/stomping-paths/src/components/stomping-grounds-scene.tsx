@@ -910,12 +910,13 @@ function WaterWheelPanel() {
 
   // Drop tick animation
   useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
     if (state.drops !== prevDropsRef.current) {
       prevDropsRef.current = state.drops;
       setDropTick(true);
-      const t = setTimeout(() => setDropTick(false), 450);
-      return () => clearTimeout(t);
+      t = setTimeout(() => setDropTick(false), 450);
     }
+    return () => { if (t !== undefined) clearTimeout(t); };
   }, [state.drops]);
 
   const toggleRunning = () => persist({ ...state, running: !state.running });

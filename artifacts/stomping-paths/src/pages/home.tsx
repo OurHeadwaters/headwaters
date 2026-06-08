@@ -988,11 +988,11 @@ function CommunitySection() {
             <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
               {zones.slice(0, 6).map((z, i) => (
                 <Link
-                  key={z.id ?? `zone-${i}`}
-                  href={`/zones/${z.id}`}
+                  key={z.slug ?? `zone-${i}`}
+                  href={`/zones/${z.slug}`}
                   className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-[#D9A066]/20 text-[#FDFBF7]/70 hover:text-[#D9A066] hover:border-[#D9A066]/50 transition-colors"
                 >
-                  {z.label ?? z.id}
+                  {z.name ?? z.slug}
                 </Link>
               ))}
             </div>

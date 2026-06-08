@@ -38,7 +38,7 @@ export default function IntakeDump() {
     }
 
     interpret.mutate(
-      { data: { dump, clientId, landDump: landDump.trim() || undefined } },
+      { data: { dump, clientId, landDump: landDump.trim() || undefined } as any },
       {
         onSuccess: (result) => {
           setInterpretResult(result);

@@ -101,7 +101,7 @@ router.patch("/admin/practitioners/:slug", async (req: Request, res: Response) =
     return;
   }
 
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const updates = req.body as Partial<{
     name: string;
     location: string;

@@ -269,7 +269,8 @@ router.post("/cohorts/waitlist", async (req, res) => {
   try {
     const { email, cohortSlug = "founding" } = req.body as { email?: string; cohortSlug?: string };
     if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ error: "A valid email address is required" });
+      res.status(400).json({ error: "A valid email address is required" });
+      return;
     }
     const trimmed = email.trim().toLowerCase();
     await db

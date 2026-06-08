@@ -88,7 +88,7 @@ router.post("/admin/nuggets", requireEditor, async (req, res) => {
  */
 router.patch("/admin/nuggets/:id", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid nugget id" });
       return;
@@ -169,7 +169,7 @@ router.patch("/admin/nuggets/:id", requireEditor, async (req, res) => {
  */
 router.delete("/admin/nuggets/:id", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid nugget id" });
       return;

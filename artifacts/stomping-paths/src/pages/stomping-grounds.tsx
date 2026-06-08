@@ -31,12 +31,13 @@ function WoodenTab({
   const prevRef = useRef(isActive);
 
   useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
     if (isActive && !prevRef.current) {
       setSwing(true);
-      const t = setTimeout(() => setSwing(false), 450);
-      return () => clearTimeout(t);
+      t = setTimeout(() => setSwing(false), 450);
     }
     prevRef.current = isActive;
+    return () => { if (t !== undefined) clearTimeout(t); };
   }, [isActive]);
 
   return (

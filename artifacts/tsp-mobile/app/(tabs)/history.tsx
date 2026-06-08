@@ -113,7 +113,7 @@ export default function HistoryScreen() {
         ListHeaderComponent={
           <View style={[styles.header, { paddingTop: topPadding + 16, borderBottomColor: colors.woodBorder, borderBottomWidth: 1.5 }]}>
             <View style={styles.headerRow}>
-              <Ionicons name="clock" size={18} color={colors.woodBrown} />
+              <Ionicons name="time-outline" size={18} color={colors.woodBrown} />
               <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Fraunces_700Bold" }]}>
                 History
               </Text>

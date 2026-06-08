@@ -19,7 +19,7 @@ export default function Dashboard() {
   });
 
   const { data: finData } = useGetHeadwatersBusinessSection("financials");
-  const { data: oeData } = useGetHeadwatersBusinessSection("online-engine");
+  const { data: oeData } = useGetHeadwatersBusinessSection("online-engine" as "financials");
 
   const finRows = Array.isArray(finData?.value) ? (finData.value as { monthlyLow?: number; monthlyHigh?: number }[]) : [];
   const finLow = finRows.reduce((s, r) => s + (r.monthlyLow || 0), 0);

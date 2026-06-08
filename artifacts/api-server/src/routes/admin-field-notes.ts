@@ -122,7 +122,7 @@ router.post(
 
     const filename = req.file.originalname;
 
-    let openai: import("openai").default | null = null;
+    let openai: import("@workspace/integrations-openai-ai-server").OpenAI | null = null;
     try {
       const mod = await import("@workspace/integrations-openai-ai-server");
       openai = mod.openai;

@@ -166,7 +166,7 @@ async function syncCouncilFeed(slug: string, feedUrl: string, zones: string[]): 
       link: ep.link,
       summary: ep.summary,
       bodyHtml: ep.descriptionHtml,
-      bodyText: null,
+      bodyText: undefined,
       publishedAt: ep.pubDate ? new Date(ep.pubDate) : new Date(0),
       durationSeconds: ep.durationSeconds,
       audioUrl: ep.audioUrl,

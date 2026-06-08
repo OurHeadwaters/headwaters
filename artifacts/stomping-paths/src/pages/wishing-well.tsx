@@ -809,12 +809,13 @@ export function WishingWell() {
   useEffect(() => {
     const prev = prevTodayWinnerRef.current;
     const curr = board?.todayWinner ?? null;
+    let t: ReturnType<typeof setTimeout> | undefined;
     if (prev !== undefined && prev === null && curr !== null) {
       setNewWinnerBanner(true);
-      const t = setTimeout(() => setNewWinnerBanner(false), 8_000);
-      return () => clearTimeout(t);
+      t = setTimeout(() => setNewWinnerBanner(false), 8_000);
     }
     prevTodayWinnerRef.current = curr;
+    return () => { if (t !== undefined) clearTimeout(t); };
   }, [board?.todayWinner]);
 
   const refresh = () => {

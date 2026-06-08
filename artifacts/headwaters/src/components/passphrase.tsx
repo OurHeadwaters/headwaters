@@ -8,8 +8,8 @@ type Mode = "fork" | "passphrase";
 
 const fade = {
   hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.25, ease: "easeIn" } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" as const } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.25, ease: "easeIn" as const } },
 };
 
 const stagger = {

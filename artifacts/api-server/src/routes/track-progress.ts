@@ -11,7 +11,7 @@ router.get("/track-progress/:slug", requireBrigade, async (req: Request, res: Re
     return;
   }
 
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const userId = req.user.id;
 
   const rows = await db
@@ -33,7 +33,7 @@ router.patch("/track-progress/:slug", requireBrigade, async (req: Request, res: 
     return;
   }
 
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const userId = req.user.id;
   const { episodeId, done } = req.body as { episodeId: number; done: boolean };
 
@@ -68,7 +68,7 @@ router.post("/track-progress/:slug/merge", requireBrigade, async (req: Request, 
     return;
   }
 
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const userId = req.user.id;
   const { episodeIds } = req.body as { episodeIds: number[] };
 

@@ -60,12 +60,12 @@ export default function Compass() {
 
   // Show crossing invitation after terrain is visible
   useEffect(() => {
-    if (phase === "terrain") {
-      const timer = setTimeout(() => setCrossingVisible(true), 1800);
-      return () => clearTimeout(timer);
-    } else {
+    if (phase !== "terrain") {
       setCrossingVisible(false);
+      return;
     }
+    const timer = setTimeout(() => setCrossingVisible(true), 1800);
+    return () => clearTimeout(timer);
   }, [phase]);
 
   function addTeacher() {

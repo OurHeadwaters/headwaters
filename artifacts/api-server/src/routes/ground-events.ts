@@ -541,7 +541,7 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
             .where(
               and(
                 eq(groundEventRsvpsTable.eventId, id),
-                eq(groundEventRsvpsTable.attendeeEmail, attendeeEmail),
+                eq(groundEventRsvpsTable.attendeeEmail, attendeeEmail as string),
               ),
             )
             .limit(1),
@@ -581,7 +581,7 @@ router.post("/ground-events/:id/rsvp", async (req, res) => {
         eventTitle: event.title,
         eventDate: event.eventDate,
         attendeeName,
-        attendeeEmail,
+        attendeeEmail: attendeeEmail as string,
       });
     }
 

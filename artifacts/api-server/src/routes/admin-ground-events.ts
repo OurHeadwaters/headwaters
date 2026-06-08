@@ -59,7 +59,7 @@ router.get("/admin/ground-events", requireEditor, async (_req, res) => {
  */
 router.get("/admin/ground-events/:id/rsvps", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid event id" });
       return;
@@ -84,7 +84,7 @@ router.get("/admin/ground-events/:id/rsvps", requireEditor, async (req, res) => 
  */
 router.get("/admin/ground-events/:id/rsvps.csv", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid event id" });
       return;
@@ -161,7 +161,7 @@ router.get("/admin/ground-events/:id/rsvps.csv", requireEditor, async (req, res)
  */
 router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid event id" });
       return;
@@ -279,7 +279,7 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
  */
 router.post("/admin/ground-events/:id/resend-confirmation", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid event id" });
       return;
@@ -342,7 +342,7 @@ router.post("/admin/ground-events/:id/resend-confirmation", requireEditor, async
  */
 router.delete("/admin/ground-events/:id", requireEditor, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id as string, 10);
     if (!Number.isFinite(id)) {
       res.status(400).json({ error: "Invalid event id" });
       return;

@@ -304,7 +304,7 @@ export function EpisodeDetail() {
             </div>
           )}
 
-          {episode.historySegment && (
+          {(episode as any).historySegment && (
             <HistoryLessonCard
               episode={{
                 slug: episode.slug,
@@ -314,7 +314,7 @@ export function EpisodeDetail() {
                 episodeNumber: episode.episodeNumber,
                 durationSeconds: episode.durationSeconds,
               }}
-              historySegment={episode.historySegment as HistorySegment}
+              historySegment={(episode as any).historySegment as HistorySegment}
             />
           )}
 

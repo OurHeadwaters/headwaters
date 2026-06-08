@@ -18,7 +18,7 @@ import {
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 const stagger = {
   hidden: { opacity: 0 },
@@ -569,77 +569,6 @@ export default function Workbench() {
     </div>
   );
 
-  function BucketRow({
-    label,
-    sublabel,
-    pctKey,
-    color,
-    locked,
-  }: {
-    label: string;
-    sublabel: string;
-    pctKey: keyof Pick<MachineState, "costBasis" | "reserve" | "reinvestment" | "eaveFlow">;
-    color: string;
-    locked?: boolean;
-  }) {
-    const val = machine[pctKey] as number;
-    return (
-      <div
-        className={`rounded-xl border px-5 py-4 transition-all duration-300 ${
-          locked ? "opacity-40 border-white/8" : "border-white/12"
-        }`}
-        style={{ background: locked ? "transparent" : "rgba(255,255,255,0.03)" }}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              {locked ? (
-                <Lock className="w-3.5 h-3.5 shrink-0 text-white/20" />
-              ) : (
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-              )}
-              <span className="text-sm font-semibold text-white/80">{label}</span>
-              {locked && (
-                <span className="text-[9px] uppercase tracking-widest font-bold ml-1"
-                  style={{ color: "#D9A066" }}>
-                  Locked
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-white/35 ml-4">{sublabel}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={val}
-              disabled={locked}
-              onChange={(e) =>
-                setMachine((m) => ({ ...m, [pctKey]: Math.max(0, Math.min(100, +e.target.value)) }))
-              }
-              className="w-14 text-right bg-white/6 border border-white/12 rounded-md px-2 py-1 text-sm text-white/85 disabled:opacity-30 focus:outline-none focus:border-white/25"
-            />
-            <span className="text-xs text-white/35 w-3">%</span>
-          </div>
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex-1 h-1.5 rounded-full bg-white/8 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: locked ? "#333" : color }}
-              animate={{ width: `${Math.min(100, val)}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-          <span className="text-sm font-mono font-medium w-16 text-right"
-            style={{ color: locked ? "#444" : color }}>
-            {pct(incomeNum, val)}
-          </span>
-        </div>
-      </div>
-    );
-  }
 }
 
 function KeyCeremony({

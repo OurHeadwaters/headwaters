@@ -109,7 +109,8 @@ if (process.env.NODE_ENV !== "production") {
   // before forwarding — Vite's base is /headwaters/ and needs the full path.
   app.use((req, res, next) => {
     if (req.url?.startsWith("/headwaters")) {
-      return (hwDevProxy as express.RequestHandler)(req, res, next);
+      (hwDevProxy as express.RequestHandler)(req, res, next);
+      return;
     }
     next();
   });

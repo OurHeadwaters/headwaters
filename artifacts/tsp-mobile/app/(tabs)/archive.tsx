@@ -86,7 +86,7 @@ export default function ArchiveScreen() {
     : Platform.OS === "web" ? 84 + 16 : 49 + insets.bottom + 16;
 
   const { data: categories } = useListCategories();
-  const { data: seriesList } = useListSeries({
+  const { data: seriesList } = useListSeries(undefined, {
     query: { queryKey: getListSeriesQueryKey() },
   });
 

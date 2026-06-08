@@ -4,7 +4,8 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { Alert, Platform } from "react-native";
 
 const STORAGE_KEY = "@tsp_downloads_v1";
-const DOWNLOAD_DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}tsp_episodes/` : null;
+const _legacyFS = FileSystem as unknown as { documentDirectory: string | null };
+const DOWNLOAD_DIR = _legacyFS.documentDirectory ? `${_legacyFS.documentDirectory}tsp_episodes/` : null;
 
 const BITRATE_BYTES_PER_SEC = 16_000;
 const LARGE_FILE_WARN_BYTES = 150 * 1024 * 1024;
@@ -75,7 +76,7 @@ function computeTotalStorage(downloads: Record<string, DownloadedEpisode>): numb
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [downloads, setDownloads] = useState<Record<string, DownloadedEpisode>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
-  const downloadTasksRef = useRef<Record<string, FileSystem.DownloadResumable>>({});
+  const downloadTasksRef = useRef<Record<string, ReturnType<typeof FileSystem.createDownloadResumable>>>({});
 
   const totalStorageBytes = computeTotalStorage(downloads);
 
@@ -165,7 +166,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
       setProgress(prev => ({ ...prev, [episode.slug]: 0 }));
 
-      const callback = (downloadProgress: FileSystem.DownloadProgressData) => {
+      const callback = (downloadProgress: { totalBytesWritten: number; totalBytesExpectedToWrite: number }) => {
         const ratio =
           downloadProgress.totalBytesExpectedToWrite > 0
             ? downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite

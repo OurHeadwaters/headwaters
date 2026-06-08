@@ -91,7 +91,7 @@ function DonutChart({ segments }: { segments: DonutSegment[] }) {
     startAngle = endAngle + gap;
   }
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>, seg: DonutSegment) => {
+  const handleMouseMove = (e: React.MouseEvent<SVGElement>, seg: DonutSegment) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     setTooltip({
@@ -179,7 +179,7 @@ export default function BusinessFinancials() {
   const { toast } = useToast();
 
   const { data, isLoading, error } = useGetHeadwatersBusinessSection("financials");
-  const { data: oeData } = useGetHeadwatersBusinessSection("online-engine");
+  const { data: oeData } = useGetHeadwatersBusinessSection("online-engine" as "financials");
   const patch = usePatchHeadwatersBusinessSection();
 
   const [rows, setRows] = useState<FinancialRow[]>([]);
@@ -188,7 +188,7 @@ export default function BusinessFinancials() {
   useEffect(() => {
     if (data && !initialized.current) {
       const loaded = Array.isArray(data.value) ? (data.value as FinancialRow[]) : [];
-      setRows(loaded.map((r) => ({ requiresTime: true, bottleneckType: "none" as BottleneckType, ...r })));
+      setRows(loaded.map((r) => ({ ...r, requiresTime: r.requiresTime ?? true, bottleneckType: r.bottleneckType ?? ("none" as BottleneckType) })));
       initialized.current = true;
     }
   }, [data]);

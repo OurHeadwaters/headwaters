@@ -372,7 +372,7 @@ export function AdminFieldNotes() {
   const youtubeStatus = syncStatus?.bySource?.["youtube"];
   const youtubeCount = youtubeStatus?.total ?? 0;
   const youtubeLastAt = youtubeStatus?.lastIngestedAt ?? null;
-  const firesideStatus = syncStatus?.["fireside-freedom"];
+  const firesideStatus = syncStatus?.bySource?.["fireside-freedom"];
   const firesideCount = firesideStatus?.total ?? 0;
   const firesideLastAt = firesideStatus?.lastIngestedAt ?? null;
   const publishedCount = notes?.filter((n) => n.published).length ?? 0;

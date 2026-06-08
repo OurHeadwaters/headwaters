@@ -54,6 +54,7 @@ type GateDef = {
   eaveOptions?: { open: string; clear: string };
   gatekeeperModel?: "personal" | "workbench-only";
   gatekeeperResolution?: string;
+  gatekeeperTension?: string;
   giraffeNote?: string;
   rationale?: string;
   cx: number;

@@ -91,7 +91,7 @@ function DonutChart({ segments }: { segments: DonutSegment[] }) {
     startAngle = endAngle + gap;
   }
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>, seg: DonutSegment) => {
+  const handleMouseMove = (e: React.MouseEvent<SVGElement>, seg: DonutSegment) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     setTooltip({ segment: seg, x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -155,7 +155,7 @@ function streamMeta(type: StreamType) {
 export default function OnlineEngine() {
   const { toast } = useToast();
 
-  const { data, isLoading, error } = useGetHeadwatersBusinessSection("online-engine");
+  const { data, isLoading, error } = useGetHeadwatersBusinessSection("online-engine" as "financials");
   const { data: finData } = useGetHeadwatersBusinessSection("financials");
   const patch = usePatchHeadwatersBusinessSection();
 
@@ -176,9 +176,9 @@ export default function OnlineEngine() {
         loadedTarget = typeof raw.monthlyTarget === "number" ? raw.monthlyTarget : 0;
       }
       setRows(loadedRows.map((r) => ({
-        streamType: "content" as StreamType,
-        lifestyleOverlap: false,
         ...r,
+        streamType: r.streamType ?? ("content" as StreamType),
+        lifestyleOverlap: r.lifestyleOverlap ?? false,
       })));
       setMonthlyTarget(loadedTarget);
       setTargetInput(loadedTarget > 0 ? String(loadedTarget) : "");
@@ -189,7 +189,7 @@ export default function OnlineEngine() {
   const persist = useCallback(
     (nextRows: OnlineEngineRow[], nextTarget: number) => {
       patch.mutate(
-        { section: "online-engine", data: { value: { rows: nextRows, monthlyTarget: nextTarget } } },
+        { section: "online-engine" as "financials", data: { value: { rows: nextRows, monthlyTarget: nextTarget } } },
         { onError: () => toast({ title: "Save failed", variant: "destructive" }) }
       );
     },

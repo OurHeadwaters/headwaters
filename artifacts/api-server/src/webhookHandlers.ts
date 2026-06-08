@@ -42,8 +42,9 @@ export class WebhookHandlers {
     try {
       // If the sync library returns the event object, use it directly.
       // Otherwise fall back to parsing the raw payload (already verified above).
-      if (syncResult && typeof syncResult === "object" && "type" in syncResult) {
-        event = syncResult as Stripe.Event;
+      const syncResultRaw: unknown = syncResult;
+      if (syncResultRaw && typeof syncResultRaw === "object" && "type" in syncResultRaw) {
+        event = syncResultRaw as Stripe.Event;
       } else {
         event = JSON.parse(payload.toString()) as Stripe.Event;
       }
@@ -522,7 +523,7 @@ export class WebhookHandlers {
       const { getUncachableStripeClient } = await import("./stripeClient");
       const stripe = await getUncachableStripeClient();
       const sub = await stripe.subscriptions.retrieve(subscriptionId);
-      periodEnd = new Date(sub.current_period_end * 1000);
+      periodEnd = new Date((sub as unknown as { current_period_end: number }).current_period_end * 1000);
     } catch (err) {
       logger.warn(
         { err, subscriptionId },
@@ -574,7 +575,7 @@ export class WebhookHandlers {
       ? "cancelled"
       : sub.status;
 
-    const periodEnd = new Date(sub.current_period_end * 1000);
+    const periodEnd = new Date((sub as unknown as { current_period_end: number }).current_period_end * 1000);
 
     const plan =
       sub.metadata?.brigade_plan === "monthly" || sub.metadata?.brigade_plan === "annual"
