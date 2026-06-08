@@ -446,6 +446,7 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
       const data = await res.json();
       if (data.hasAccess) {
         setHasAccess(true);
+        AsyncStorage.removeItem(KIT_FINDER_REC_KEY).catch(() => {});
       } else {
         setError("No purchase found for that email. If you just paid, try again in a moment.");
       }
