@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const S = {
   page: {
@@ -128,6 +128,69 @@ const S = {
     paddingTop: "10px",
   } as React.CSSProperties,
 
+  pdfBtn: {
+    display: "inline-block",
+    padding: "10px 24px",
+    background: "#fff",
+    color: "#111",
+    border: "1.5px solid #111",
+    borderRadius: "6px",
+    fontSize: "13px",
+    cursor: "pointer",
+    fontFamily: "Georgia, serif",
+    marginLeft: "10px",
+  } as React.CSSProperties,
+
+  pdfTip: {
+    position: "fixed" as const,
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    background: "#fff",
+    border: "1.5px solid #111",
+    borderRadius: "10px",
+    padding: "28px 36px",
+    zIndex: 9999,
+    maxWidth: "420px",
+    width: "90vw",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+    fontFamily: "Georgia, serif",
+    textAlign: "center" as const,
+  } as React.CSSProperties,
+
+  pdfTipOverlay: {
+    position: "fixed" as const,
+    inset: 0,
+    background: "rgba(0,0,0,0.35)",
+    zIndex: 9998,
+  } as React.CSSProperties,
+
+  pdfTipTitle: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    marginBottom: "12px",
+    color: "#111",
+  } as React.CSSProperties,
+
+  pdfTipBody: {
+    fontSize: "13px",
+    color: "#333",
+    lineHeight: "1.65",
+    marginBottom: "20px",
+  } as React.CSSProperties,
+
+  pdfTipBtn: {
+    display: "inline-block",
+    padding: "10px 28px",
+    background: "#111",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    cursor: "pointer",
+    fontFamily: "Georgia, serif",
+  } as React.CSSProperties,
+
   printNote: {
     marginTop: "32px",
     display: "flex",
@@ -141,10 +204,20 @@ const S = {
 
 export default function DeclarationPage() {
   const today = new Date().toLocaleDateString("en-CA");
+  const [showPdfTip, setShowPdfTip] = useState(false);
 
   useEffect(() => {
     document.title = "Standing Protective Declaration — Keeper's Kit";
   }, []);
+
+  function handleSaveAsPdf() {
+    setShowPdfTip(true);
+  }
+
+  function confirmPrint() {
+    setShowPdfTip(false);
+    setTimeout(() => window.print(), 80);
+  }
 
   return (
     <>
@@ -156,11 +229,32 @@ export default function DeclarationPage() {
         }
       `}</style>
 
+      {showPdfTip && (
+        <>
+          <div style={S.pdfTipOverlay} onClick={() => setShowPdfTip(false)} />
+          <div style={S.pdfTip} role="dialog" aria-modal="true">
+            <div style={S.pdfTipTitle}>Save as PDF</div>
+            <p style={S.pdfTipBody}>
+              When the print dialog opens, set the <strong>Destination</strong> (or
+              Printer) to <strong>"Save as PDF"</strong>, then click{" "}
+              <strong>Save</strong>. The file will match exactly what you see on
+              screen — white page, Georgia text, all fill-in lines included.
+            </p>
+            <button style={S.pdfTipBtn} onClick={confirmPrint}>
+              Open print dialog →
+            </button>
+          </div>
+        </>
+      )}
+
       <div style={S.page}>
 
-        <div className="no-print" style={{ marginBottom: "32px", display: "flex", alignItems: "center" }}>
+        <div className="no-print" style={{ marginBottom: "32px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
           <button style={S.printBtn} onClick={() => window.print()}>
             Print this declaration
+          </button>
+          <button style={S.pdfBtn} onClick={handleSaveAsPdf}>
+            Save as PDF
           </button>
           <button
             style={S.backLink}
