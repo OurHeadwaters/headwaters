@@ -23,7 +23,7 @@ function buildOgHtml(opts: {
   url: string;
   siteName?: string;
 }): string {
-  const { title, description, image, url, siteName = "The Survival Podcast" } = opts;
+  const { title, description, image, url, siteName = "The Stomping Paths" } = opts;
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeImage = image ? escapeHtml(image) : "";

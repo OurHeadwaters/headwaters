@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "The Survival Podcast — Redesign"
+title = "The Stomping Paths"
 version = "1.0.0"
 id = "artifacts/survival-podcast"
 router = "path"
@@ -15,11 +15,11 @@ paths = [ "/" ]
 localPort = 21015
 
 [services.development]
-run = "pnpm --filter @workspace/survival-podcast run dev"
+run = "pnpm --filter @workspace/stomping-paths run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/survival-podcast", "run", "build" ]
-publicDir = "artifacts/survival-podcast/dist/public"
+build = [ "pnpm", "--filter", "@workspace/stomping-paths", "run", "build" ]
+publicDir = "artifacts/stomping-paths/dist/public"
 serve = "static"
 
 [[services.production.rewrites]]

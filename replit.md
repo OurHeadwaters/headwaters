@@ -34,7 +34,7 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 
 | Artifact | Zone | Role |
 |---|---|---|
-| `artifacts/survival-podcast` | Zone 2 | The Stomping Path — fan redesign / transition platform |
+| `artifacts/stomping-paths` | Zone 2 | The Stomping Paths — multi-producer media platform |
 | `artifacts/codetry` | Zone 2 | Codetry — digital sovereignty workbench |
 | `artifacts/privacy-guide` | Zone 2 | Privacy Kit — Clearing & Lodge family guide |
 | `artifacts/headwaters` | Zone 4 | Practitioner Intake Tool (Headwaters Core) |
@@ -46,7 +46,7 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — API server (port 8080)
-- `pnpm --filter @workspace/survival-podcast run dev` — The Stomping Path web frontend
+- `pnpm --filter @workspace/stomping-paths run dev` — The Stomping Paths web frontend
 - `pnpm --filter @workspace/codetry run dev` — Codetry web frontend
 - `pnpm --filter @workspace/privacy-guide run dev` — Privacy Guide
 - `pnpm --filter @workspace/headwaters run dev` — Headwaters Intake Tool
@@ -78,9 +78,9 @@ Help make Headwaters feel like one coherent, living watershed where Zone 0 stays
 - `lib/db/src/schema/` — Drizzle schemas (content, gatekeeper, gord_tips, etc.)
 - `artifacts/api-server/src/routes/` — all API routes (gord, trailblazer, library, episodes, etc.)
 - `artifacts/api-server/src/lib/` — RSS, WordPress, YouTube sources, library orchestrator
-- `artifacts/survival-podcast/src/pages/` — TSP pages (home, episodes, library, etc.)
-- `artifacts/survival-podcast/src/components/gord-guide.tsx` — Gord AI chat widget
-- `artifacts/survival-podcast/src/components/trailblazer-chat.tsx` — Trailblazer AI chat
+- `artifacts/stomping-paths/src/pages/` — TSP pages (home, episodes, library, etc.)
+- `artifacts/stomping-paths/src/components/gord-guide.tsx` — Gord AI chat widget
+- `artifacts/stomping-paths/src/components/trailblazer-chat.tsx` — Trailblazer AI chat
 - `artifacts/codetry/src/components/ForgeHero.tsx` — Codetry hero
 - `artifacts/codetry/src/components/GordWidget.tsx` — Gord on Codetry
 - `artifacts/privacy-guide/src/App.tsx` — Privacy Guide single-page app

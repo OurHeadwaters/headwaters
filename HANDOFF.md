@@ -52,7 +52,7 @@ Warm northern. Practitioner. Quiet competence. Grounded poetry. No hype. No corp
 ### Artifacts
 | Artifact | Zone | Framework | Auth | Path |
 |---|---|---|---|---|
-| `artifacts/survival-podcast` | 2 | React + Vite, wouter, TanStack Query, Tailwind v4, shadcn | Replit Auth | `/` |
+| `artifacts/stomping-paths` | 2 | React + Vite, wouter, TanStack Query, Tailwind v4, shadcn | Replit Auth | `/` |
 | `artifacts/codetry` | 2 | React + Vite, Tailwind v4 | None | `/codetry/` |
 | `artifacts/privacy-guide` | 2 | React + Vite, single-page | None (localStorage checklists) | `/privacy-guide/` |
 | `artifacts/headwaters` | 1 | React + Vite, wouter | PIN/passphrase (`HEADWATERS_PASSPHRASE`) | `/headwaters/` |
@@ -84,8 +84,8 @@ Two purchase paths per direct kit: Stripe (card) → `kit_purchases` row → wel
 25 members seeded. Static registry: `artifacts/api-server/src/lib/expert-council-static.ts`. Core names: Jack Spirko, Steven Harris, Marjory Wildcraft, Paul Wheaton, Joel Salatin, Ben Falk, Dr. Ken Berry, Chris Martenson, John Lovell, Dave Ramsey, Dr. Joseph Mercola, and the Fireside Freedom crew (Brian Aleksivich, Lettie Loo, Tim 'Toolman' Cook, Ken Eash, Nate & Erin Lamaster, Amy, Hawkins J). Four members + two ULG businesses are `comingSoon: true`. Not seeded: Doc Bones & Nurse Amy, The Sauce, Michael Pugliano.
 
 ### AI Guides
-- **Gord the Partridge** — Zone 2 AI guide. SSE streaming. Widget: `artifacts/survival-podcast/src/components/gord-guide.tsx`. Context: `shared/stomping-path-system-prompt.txt`.
-- **Trailblazer** — separate chat context for the Stomping Path transformation flow. `artifacts/survival-podcast/src/components/trailblazer-chat.tsx`.
+- **Gord the Partridge** — Zone 2 AI guide. SSE streaming. Widget: `artifacts/stomping-paths/src/components/gord-guide.tsx`. Context: `shared/stomping-path-system-prompt.txt`.
+- **Trailblazer** — separate chat context for the Stomping Path transformation flow. `artifacts/stomping-paths/src/components/trailblazer-chat.tsx`.
 - Both use OpenAI gpt-4.1.
 
 ---
@@ -93,7 +93,7 @@ Two purchase paths per direct kit: Stripe (card) → `kit_purchases` row → wel
 ## What Is Missing (Build Here Next)
 
 ### High priority — ethos gaps
-1. **`/mill` framing page** — No public explanation of The Mill's cross-zone substrate role exists. Every zone links to it eventually. Build it as a standalone route on survival-podcast: `src/pages/mill.tsx`. Tone: old northern mill, water table, hidden work. Circuit paragraph anchors it.
+1. **`/mill` framing page** — No public explanation of The Mill's cross-zone substrate role exists. Every zone links to it eventually. Build it as a standalone route on stomping-paths: `src/pages/mill.tsx`. Tone: old northern mill, water table, hidden work. Circuit paragraph anchors it.
 2. **"Zone X of 5" wayfinding** — Present in some hero badges, absent from most interior pages. Every artifact should carry this. Add it consistently before new features.
 3. **Kit content gating** — `/api/kits/:slug/access` exists and works. The UI never calls it. Kit episodes and gear are publicly visible. Decision for Bobbie: should content require purchase? If yes, wire the access check to the episode/gear sections in `kit-detail.tsx`.
 
@@ -155,7 +155,7 @@ Northern Ontario constraints are real. Lazy-load, paginate, degrade gracefully. 
 | `lib/db/src/schema/` | All Drizzle table definitions |
 | `artifacts/api-server/src/lib/kits.ts` | All 8 kit definitions — slugs, copy, prices, Zaprite URLs, user manuals |
 | `artifacts/api-server/src/lib/expert-council-static.ts` | All 25 Expert Council members + 12 ULG businesses |
-| `artifacts/survival-podcast/src/App.tsx` | All frontend routes for The Stomping Path |
+| `artifacts/stomping-paths/src/App.tsx` | All frontend routes for The Stomping Path |
 | `shared/stomping-path.md` | Three-stage trail doc (Doom Crowd → Ron Paul → Kitchen Table) |
 | `shared/watershed-compact.md` | Full watershed compact + On-Ramp section |
 

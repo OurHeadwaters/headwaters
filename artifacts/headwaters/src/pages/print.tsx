@@ -245,7 +245,7 @@ export default function Print() {
             <tr><TH>Artifact</TH><TH>Zone</TH><TH>URL Prefix</TH><TH>Role</TH></tr>
           </thead>
           <tbody>
-            <tr><TD>survival-podcast</TD><TD>2 — Bench/Trail</TD><TD>/</TD><TD>The Stomping Path fan redesign</TD></tr>
+            <tr><TD>stomping-paths</TD><TD>2 — Bench/Trail</TD><TD>/</TD><TD>The Stomping Paths — multi-producer media platform</TD></tr>
             <tr><TD>codetry</TD><TD>2 — Bench/Trail</TD><TD>/codetry/</TD><TD>Digital sovereignty workbench</TD></tr>
             <tr><TD>privacy-guide</TD><TD>2 — Bench/Trail</TD><TD>/privacy-guide/</TD><TD>Clearing & Lodge family guide</TD></tr>
             <tr><TD>headwaters</TD><TD>1 — Lodge</TD><TD>/headwaters/</TD><TD>Practitioner intake tool (Bobbie Parr)</TD></tr>
@@ -445,7 +445,7 @@ export default function Print() {
         <div className="pb" />
         <h2 style={S.h2}>9. Frontend Page Routes</h2>
 
-        <h3 style={S.h3}>The Stomping Path (survival-podcast) — prefix: /</h3>
+        <h3 style={S.h3}>The Stomping Paths (stomping-paths) — prefix: /</h3>
         <T>
           <thead><tr><TH>Route</TH><TH>What it does</TH></tr></thead>
           <tbody>
@@ -671,7 +671,7 @@ export default function Print() {
         <h2 style={S.h2}>14. Workflow Commands</h2>
         <pre style={S.pre}>{`# Dev servers
 pnpm --filter @workspace/api-server run dev        # API (port 8080)
-pnpm --filter @workspace/survival-podcast run dev  # TSP web
+pnpm --filter @workspace/stomping-paths run dev    # TSP web
 pnpm --filter @workspace/codetry run dev           # Codetry
 pnpm --filter @workspace/privacy-guide run dev     # Privacy Guide
 pnpm --filter @workspace/headwaters run dev        # Headwaters (port 21502)
