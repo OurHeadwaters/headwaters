@@ -90,18 +90,32 @@ function TransformationCard({ t }: { t: Transformation }) {
           </div>
         )}
 
-        <Link
-          href={buildEpisodesUrl(t)}
-          className="self-start inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px mt-auto"
-          style={{
-            color: t.color,
-            background: t.color + "15",
-            border: `1px solid ${t.color}33`,
-          }}
-        >
-          Find Episodes
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+        <div className="flex items-center gap-2 mt-auto flex-wrap">
+          <Link
+            href={`/transform/${t.slug}`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+            style={{
+              color: t.color,
+              background: t.color + "15",
+              border: `1px solid ${t.color}33`,
+            }}
+          >
+            Explore Path
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link
+            href={buildEpisodesUrl(t)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+            style={{
+              color: t.color + "99",
+              background: t.color + "08",
+              border: `1px solid ${t.color}22`,
+            }}
+          >
+            All Episodes
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -21,6 +21,7 @@ import TracksPage from "@/pages/tracks";
 import TrackDetailPage from "@/pages/track-detail";
 import StartPage from "@/pages/start";
 import TransformPage from "@/pages/transform";
+import TransformDetailPage from "@/pages/transform-detail";
 import { AdminCategories } from "@/pages/admin-categories";
 import { AdminCouncil } from "@/pages/admin-council";
 import { UlgPage } from "@/pages/ulg";
@@ -89,6 +90,7 @@ function Router() {
         <Route path="/tracks/:slug" component={TrackDetailPage} />
         <Route path="/start" component={StartPage} />
         <Route path="/transform" component={TransformPage} />
+        <Route path="/transform/:slug" component={TransformDetailPage} />
         <Route path="/ulg" component={UlgPage} />
         <Route path="/categories" component={Categories} />
         <Route path="/about" component={About} />
