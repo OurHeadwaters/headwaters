@@ -79,6 +79,12 @@ function DropdownMenu({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [close]);
 
+  function handleContainerBlur(e: React.FocusEvent<HTMLDivElement>) {
+    if (!ref.current?.contains(e.relatedTarget as Node | null)) {
+      close();
+    }
+  }
+
   function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -89,11 +95,16 @@ function DropdownMenu({
         return !v;
       });
     } else if (e.key === "Escape") {
+      e.preventDefault();
       close();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setOpen(true);
       setTimeout(() => itemRefs.current[0]?.focus(), 0);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setOpen(true);
+      setTimeout(() => itemRefs.current[items.length - 1]?.focus(), 0);
     }
   }
 
@@ -119,15 +130,7 @@ function DropdownMenu({
       e.preventDefault();
       itemRefs.current[items.length - 1]?.focus();
     } else if (e.key === "Tab") {
-      e.preventDefault();
-      const lastIdx = items.length - 1;
-      if (e.shiftKey) {
-        const prev = idx <= 0 ? lastIdx : idx - 1;
-        itemRefs.current[prev]?.focus();
-      } else {
-        const next = idx >= lastIdx ? 0 : idx + 1;
-        itemRefs.current[next]?.focus();
-      }
+      close();
     }
   }
 
@@ -137,6 +140,7 @@ function DropdownMenu({
       className="relative"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
+      onBlur={handleContainerBlur}
     >
       <button
         ref={triggerRef}
@@ -144,7 +148,8 @@ function DropdownMenu({
         onKeyDown={handleTriggerKeyDown}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
+        aria-controls={open ? `${label}-menu` : undefined}
+        className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A066] rounded-sm ${
           isActive
             ? "text-white border-b-2 border-[#D9A066]"
             : "text-white/65 hover:text-white"
@@ -158,6 +163,7 @@ function DropdownMenu({
 
       {open && (
         <div
+          id={`${label}-menu`}
           role="menu"
           aria-label={label}
           onKeyDown={handleMenuKeyDown}
@@ -172,9 +178,10 @@ function DropdownMenu({
                 target="_blank"
                 rel="noopener noreferrer"
                 role="menuitem"
+                tabIndex={0}
                 ref={(el) => { itemRefs.current[i] = el as HTMLAnchorElement | null; }}
                 onClick={() => close()}
-                className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10"
+                className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#D9A066]"
               >
                 <span className="text-sm font-semibold text-white">{item.label} ↗</span>
                 <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
@@ -184,9 +191,10 @@ function DropdownMenu({
                 key={item.href}
                 href={item.href}
                 role="menuitem"
+                tabIndex={0}
                 ref={(el) => { itemRefs.current[i] = el as HTMLAnchorElement | null; }}
                 onClick={() => close()}
-                className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10"
+                className="flex flex-col px-4 py-2.5 hover:bg-white/5 transition-colors focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#D9A066]"
               >
                 <span className="text-sm font-semibold text-white">{item.label}</span>
                 <span className="text-xs text-white/50 mt-0.5 leading-snug">{item.desc}</span>
