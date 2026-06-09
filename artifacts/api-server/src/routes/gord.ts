@@ -54,7 +54,7 @@ async function gordHandler(req: import("express").Request, res: import("express"
 
     const { messages, context } = req.body as {
       messages: Array<{ role: "user" | "assistant"; content: string }>;
-      context?: { path?: string; description?: string };
+      context?: { path?: string; description?: string; site?: string };
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -97,8 +97,9 @@ async function gordHandler(req: import("express").Request, res: import("express"
       { role: "system", content: GORD_SYSTEM_PROMPT },
     ];
 
-    if (context?.path || context?.description) {
+    if (context?.path || context?.description || context?.site) {
       const contextParts: string[] = ["[Current page context]"];
+      if (context.site) contextParts.push(`Site: ${context.site}`);
       if (context.path) contextParts.push(`Path: ${context.path}`);
       if (context.description) contextParts.push(`Page: ${context.description}`);
       contextParts.push("Use this to give specific, relevant answers — point people to the right section of the site when it makes sense.");
@@ -137,6 +138,15 @@ async function gordHandler(req: import("express").Request, res: import("express"
 
 router.post("/gord", gordHandler);
 router.post("/gord/chat", gordHandler);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/guardian/chat
+//
+// Alias used by GordChat.tsx (TSP & Codetry) which targets the deployed
+// Headwaters URL.  Accepts { messages, context: { path, site } } — same body
+// shape as /gord/chat, streamed SSE in identical format.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/guardian/chat", gordHandler);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/gord/tips/recent
@@ -231,6 +241,25 @@ router.post("/gord/tip", async (req, res) => {
     console.error("Gord tip error:", err);
     res.status(500).json({ error: "Failed to create tip session" });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/feedback
+//
+// Best-effort feedback collection used by GordChat.tsx thumbs-up / thumbs-down
+// buttons.  Logs the payload and returns 200 — no auth required.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/feedback", (req, res) => {
+  const { source, site, rating, assistantMessage, userMessage, path: pagePath } = req.body as {
+    source?: string;
+    site?: string;
+    rating?: string;
+    assistantMessage?: string;
+    userMessage?: string;
+    path?: string;
+  };
+  console.info("[feedback]", { source, site, rating, pagePath, userMessage: userMessage?.slice(0, 120), assistantMessage: assistantMessage?.slice(0, 120) });
+  res.status(200).json({ ok: true });
 });
 
 export default router;
