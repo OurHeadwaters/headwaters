@@ -106,7 +106,7 @@ async function gordHandler(req: import("express").Request, res: import("express"
     }
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-4.1",
+      model: "gpt-5",
       max_completion_tokens: 512,
       messages: [
         ...systemMessages,

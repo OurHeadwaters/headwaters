@@ -129,7 +129,7 @@ router.post("/trailblazer/chat", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-4.1",
+      model: "gpt-5",
       max_completion_tokens: 768,
       messages: [
         { role: "system", content: TRAILBLAZER_SYSTEM_PROMPT },

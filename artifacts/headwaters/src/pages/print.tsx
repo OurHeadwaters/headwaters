@@ -265,7 +265,7 @@ export default function Print() {
         <h3 style={S.h3}>All Web Frontends</h3>
         <p style={S.p}>React 19 · Vite 7 · wouter 3 · TanStack Query 5 · Tailwind v4 · shadcn/ui + Radix UI · Framer Motion 12 · Lucide React</p>
         <h3 style={S.h3}>Backend (api-server)</h3>
-        <p style={S.p}>Express 5 · Drizzle ORM · Zod v4 · Pino logging · fast-xml-parser (RSS) · OpenAI gpt-4.1 (streaming SSE for Gord and Trailblazer) · Stripe (test mode only) · Zaprite (real Bitcoin/Lightning payments)</p>
+        <p style={S.p}>Express 5 · Drizzle ORM · Zod v4 · Pino logging · fast-xml-parser (RSS) · OpenAI gpt-5 (streaming SSE for Gord and Trailblazer) · Stripe (test mode only) · Zaprite (real Bitcoin/Lightning payments)</p>
         <h3 style={S.h3}>Mobile</h3>
         <p style={S.p}>Expo (React Native) · Expo Router (file-based navigation) · Replit Auth OAuth</p>
         <h3 style={S.h3}>Database</h3>
@@ -627,7 +627,7 @@ export default function Print() {
           <tbody>
             <tr><TD>Bobbie Parr</TD><TD>Practitioner, project author</TD><TD>Owns Headwaters intake tool. Zone 1 practitioner.</TD></tr>
             <tr><TD>Jack Spirko</TD><TD>The Survival Podcast host</TD><TD>Bitcoin-only. XRP = "shit coin." Keep XRPL off TSP pages unless explicitly asked.</TD></tr>
-            <tr><TD>Gord</TD><TD>AI mascot — owl/partridge</TD><TD>Deadpan. Zone 2 guide. Present on TSP and Codetry. Powered by gpt-4.1.</TD></tr>
+            <tr><TD>Gord</TD><TD>AI mascot — owl/partridge</TD><TD>Deadpan. Zone 2 guide. Present on TSP and Codetry. Powered by gpt-5.</TD></tr>
           </tbody>
         </T>
 
