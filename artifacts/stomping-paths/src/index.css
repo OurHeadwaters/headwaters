@@ -332,6 +332,13 @@
   }
 }
 
+/* ─── Crypto Castle / Forge palette tokens ──────────────────────────────── */
+:root {
+  --torch-orange: #D4621A;
+  --xrpl-cyan: #00BFDF;
+  --surface-dark: #111C15;
+}
+
 @layer utilities {
   .card-lift {
     @apply transition-all duration-200;
@@ -343,6 +350,65 @@
   .card-lift-warm:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(217, 160, 102, 0.2), 0 2px 8px rgba(44, 74, 54, 0.1);
+  }
+}
+
+/* ─── Ember glow pulse (Grounds hotspot hover) ──────────────────────────── */
+@keyframes ember-pulse-orange {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.85);
+    box-shadow: 0 0 0 0 rgba(212, 98, 26, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+    box-shadow: 0 0 28px 8px rgba(212, 98, 26, 0.35), 0 0 60px 20px rgba(212, 98, 26, 0.12);
+  }
+}
+@keyframes ember-pulse-cyan {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.85);
+    box-shadow: 0 0 0 0 rgba(0, 191, 223, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+    box-shadow: 0 0 28px 8px rgba(0, 191, 223, 0.35), 0 0 60px 20px rgba(0, 191, 223, 0.12);
+  }
+}
+.ember-pulse-orange { animation: ember-pulse-orange 1.6s ease-in-out infinite; }
+.ember-pulse-cyan   { animation: ember-pulse-cyan   1.6s ease-in-out infinite; }
+
+/* ─── Boot-stomp scroll particle ────────────────────────────────────────── */
+@keyframes boot-stomp-in {
+  0%   { opacity: 0; transform: scale(0.3) rotate(var(--stomp-rot, -15deg)); }
+  45%  { opacity: var(--stomp-max-opacity, 0.55); transform: scale(1.18) rotate(var(--stomp-rot, -15deg)); }
+  100% { opacity: var(--stomp-max-opacity, 0.45); transform: scale(1) rotate(var(--stomp-rot, -15deg)); }
+}
+.boot-stomp-particle {
+  animation: boot-stomp-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Watershed Ribbon ───────────────────────────────────────────────────── */
+@keyframes ribbon-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.watershed-ribbon-enter {
+  animation: ribbon-slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Reduced-motion safety ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ember-pulse-orange,
+  .ember-pulse-cyan,
+  .boot-stomp-particle,
+  .watershed-ribbon-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

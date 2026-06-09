@@ -403,6 +403,8 @@ export interface StationConfig {
   mobileOrder: number;
 }
 
+const FORGE_STATION_IDS = new Set(["water-wheel"]);
+
 function ThematicHotspot({
   station,
   isOpen,
@@ -416,8 +418,11 @@ function ThematicHotspot({
   parallax: { x: number; y: number };
   spinning?: boolean;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
   const translateX = `calc(-50% + ${parallax.x}px)`;
   const translateY = `calc(-50% + ${parallax.y}px)`;
+  const isForge = FORGE_STATION_IDS.has(station.id);
+  const emberClass = isForge ? "ember-pulse-cyan" : "ember-pulse-orange";
 
   const markerSize =
     station.id === "water-wheel" ? { w: "w-14 h-14" } : { w: "w-14 h-[4.5rem]" };
@@ -425,6 +430,8 @@ function ThematicHotspot({
   return (
     <button
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="absolute flex flex-col items-center gap-1 group transition-all duration-200 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
       style={{
         top: station.position.top,
@@ -446,6 +453,22 @@ function ThematicHotspot({
           transition: "filter 0.3s ease",
         }}
       >
+        {/* Ember glow pulse on hover */}
+        {(isHovered || isOpen) && (
+          <div
+            aria-hidden="true"
+            className={`absolute pointer-events-none rounded-full ${isOpen ? "" : emberClass}`}
+            style={{
+              inset: "-14px",
+              background: `radial-gradient(ellipse at center, ${
+                isForge ? "rgba(0,191,223,0.18)" : "rgba(212,98,26,0.18)"
+              } 0%, transparent 70%)`,
+              boxShadow: isOpen
+                ? `0 0 30px 10px ${isForge ? "rgba(0,191,223,0.25)" : "rgba(212,98,26,0.25)"}`
+                : undefined,
+            }}
+          />
+        )}
         {station.id === "wisdom-dig" && <LanternMarker isOpen={isOpen} />}
         {station.id === "wishing-well" && <WellMarker isOpen={isOpen} />}
         {station.id === "transform" && <SignPostMarker isOpen={isOpen} />}

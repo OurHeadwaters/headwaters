@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
+import { WatershedRibbon } from "./watershed-ribbon";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
 import { TAGLINE } from "@workspace/tsp-constants";
@@ -580,6 +581,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </footer>
 
       <MiniPlayer />
+      <WatershedRibbon />
     </div>
   );
 }

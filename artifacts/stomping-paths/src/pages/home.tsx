@@ -258,6 +258,66 @@ function DailyStompOrb() {
   );
 }
 
+// ─── Scroll-triggered boot-stomp particles ─────────────────────────────────────
+
+const SCROLL_FOOTPRINTS = [
+  { x: 492, y: 374, rot: -15, opacity: 0.50, threshold: 80  },
+  { x: 460, y: 346, rot:  12, opacity: 0.45, threshold: 150 },
+  { x: 486, y: 308, rot: -10, opacity: 0.55, threshold: 220 },
+  { x: 518, y: 278, rot:  15, opacity: 0.40, threshold: 290 },
+  { x: 487, y: 238, rot: -12, opacity: 0.50, threshold: 360 },
+  { x: 460, y: 198, rot:  10, opacity: 0.45, threshold: 420 },
+  { x: 498, y: 158, rot: -15, opacity: 0.55, threshold: 480 },
+  { x: 518, y: 118, rot:  12, opacity: 0.40, threshold: 540 },
+  { x: 505, y:  78, rot:  -8, opacity: 0.50, threshold: 600 },
+];
+
+function ScrollStompParticles() {
+  const { scrollY } = useScroll();
+  const [active, setActive] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const unsub = scrollY.on("change", (y) => {
+      setActive((prev) => {
+        let changed = false;
+        const next = new Set(prev);
+        SCROLL_FOOTPRINTS.forEach((fp, i) => {
+          if (y >= fp.threshold && !next.has(i)) { next.add(i); changed = true; }
+        });
+        return changed ? next : prev;
+      });
+    });
+    return unsub;
+  }, [scrollY]);
+
+  if (active.size === 0) return null;
+
+  return (
+    <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none z-[4]">
+      <svg viewBox="0 0 1000 400" preserveAspectRatio="xMidYMax slice" className="w-full h-full">
+        {SCROLL_FOOTPRINTS.map((fp, i) =>
+          active.has(i) ? (
+            <ellipse
+              key={i}
+              cx={fp.x}
+              cy={fp.y}
+              rx={6}
+              ry={9}
+              fill="#D4621A"
+              className="scroll-stomp-particle"
+              style={{
+                "--stomp-rot": `${fp.rot}deg`,
+                "--stomp-max-opacity": String(fp.opacity),
+                filter: "drop-shadow(0 0 6px rgba(212,98,26,0.7))",
+              } as React.CSSProperties}
+            />
+          ) : null
+        )}
+      </svg>
+    </div>
+  );
+}
+
 // ─── HERO — The Path Entrance ──────────────────────────────────────────────────
 
 function HeroEntrance() {
@@ -350,6 +410,135 @@ function HeroEntrance() {
         })}
       </motion.svg>
 
+      {/* Crypto Castle SVG silhouette — torchlit fortress */}
+      <motion.div
+        className="absolute inset-x-0 bottom-[18%] flex justify-center pointer-events-none"
+        style={{ y: yMid, x: treesX }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.4, delay: 0.3, ease: "easeOut" }}
+      >
+        <svg
+          viewBox="0 0 800 260"
+          className="w-full max-w-3xl h-auto"
+          aria-hidden="true"
+          style={{ filter: "drop-shadow(0 0 24px rgba(212,98,26,0.22))" }}
+        >
+          <defs>
+            <linearGradient id="castle-body" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#1a2c20" />
+              <stop offset="100%" stopColor="#0c1611" />
+            </linearGradient>
+            <radialGradient id="torch-glow-L" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#D4621A" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#D4621A" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="torch-glow-R" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#D4621A" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#D4621A" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="xrpl-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#00BFDF" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#00BFDF" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {/* Ambient glow pools behind castle */}
+          <ellipse cx="400" cy="200" rx="280" ry="60" fill="url(#torch-glow-L)" opacity="0.5" />
+
+          {/* === Left flanking tower === */}
+          <rect x="120" y="120" width="70" height="140" fill="url(#castle-body)" />
+          {/* Crenellations left tower */}
+          {[120, 140, 160, 180].map((x, i) => (
+            <rect key={i} x={x} y={100} width={14} height={24} fill="url(#castle-body)" />
+          ))}
+          {/* Left tower window */}
+          <rect x="147" y="150" width="16" height="22" rx="2" fill="#0c1611" />
+          <ellipse cx="155" cy="150" rx="8" ry="3" fill="#0c1611" />
+
+          {/* === Right flanking tower === */}
+          <rect x="610" y="120" width="70" height="140" fill="url(#castle-body)" />
+          {/* Crenellations right tower */}
+          {[610, 630, 650, 670].map((x, i) => (
+            <rect key={i} x={x} y={100} width={14} height={24} fill="url(#castle-body)" />
+          ))}
+          {/* Right tower window */}
+          <rect x="637" y="150" width="16" height="22" rx="2" fill="#0c1611" />
+          <ellipse cx="645" cy="150" rx="8" ry="3" fill="#0c1611" />
+
+          {/* === Curtain walls === */}
+          <rect x="190" y="155" width="170" height="105" fill="url(#castle-body)" />
+          <rect x="440" y="155" width="170" height="105" fill="url(#castle-body)" />
+          {/* Wall crenellations */}
+          {[190, 215, 240, 265, 290, 315, 340].map((x, i) => (
+            <rect key={i} x={x} y={138} width={18} height={20} fill="url(#castle-body)" />
+          ))}
+          {[440, 465, 490, 515, 540, 565, 590].map((x, i) => (
+            <rect key={i} x={x} y={138} width={18} height={20} fill="url(#castle-body)" />
+          ))}
+
+          {/* === Central keep — tallest === */}
+          <rect x="270" y="60" width="260" height="200" fill="url(#castle-body)" />
+          {/* Keep crenellations */}
+          {[270, 300, 330, 360, 390, 420, 450, 480].map((x, i) => (
+            <rect key={i} x={x} y={38} width={22} height={26} fill="url(#castle-body)" />
+          ))}
+
+          {/* Gate arch */}
+          <rect x="362" y="178" width="76" height="82" fill="#0c1611" />
+          <ellipse cx="400" cy="178" rx="38" ry="18" fill="#0c1611" />
+
+          {/* Keep windows */}
+          <rect x="310" y="110" width="22" height="32" rx="3" fill="#0c1611" />
+          <ellipse cx="321" cy="110" rx="11" ry="5" fill="#0c1611" />
+          <rect x="468" y="110" width="22" height="32" rx="3" fill="#0c1611" />
+          <ellipse cx="479" cy="110" rx="11" ry="5" fill="#0c1611" />
+
+          {/* Center window with XRPL glow */}
+          <rect x="382" y="85" width="36" height="52" rx="4" fill="#0a120e" />
+          <ellipse cx="400" cy="85" rx="18" ry="7" fill="#0a120e" />
+          <ellipse cx="400" cy="100" rx="14" ry="18" fill="url(#xrpl-glow)" />
+
+          {/* === Torch brackets — left === */}
+          {/* torch glow halo */}
+          <ellipse cx="226" cy="148" rx="22" ry="22" fill="url(#torch-glow-L)" />
+          {/* torch post */}
+          <rect x="222" y="150" width="4" height="16" rx="2" fill="#5A3A1A" />
+          {/* torch flame — animated */}
+          <path
+            d="M224,150 Q220,143 224,136 Q228,143 224,150"
+            fill="#D4621A"
+            opacity="0.95"
+            style={{ animation: "campfire-sway 2.4s ease-in-out infinite" }}
+          />
+          <path
+            d="M224,150 Q222,145 224,140 Q226,145 224,150"
+            fill="#FFD580"
+            opacity="0.8"
+            style={{ animation: "campfire-sway 2.4s ease-in-out 0.4s infinite" }}
+          />
+
+          {/* === Torch brackets — right === */}
+          <ellipse cx="574" cy="148" rx="22" ry="22" fill="url(#torch-glow-R)" />
+          <rect x="570" y="150" width="4" height="16" rx="2" fill="#5A3A1A" />
+          <path
+            d="M572,150 Q568,143 572,136 Q576,143 572,150"
+            fill="#D4621A"
+            opacity="0.95"
+            style={{ animation: "campfire-sway 2.4s ease-in-out 0.6s infinite" }}
+          />
+          <path
+            d="M572,150 Q570,145 572,140 Q574,145 572,150"
+            fill="#FFD580"
+            opacity="0.8"
+            style={{ animation: "campfire-sway 2.4s ease-in-out 1s infinite" }}
+          />
+
+          {/* Ground line */}
+          <rect x="0" y="258" width="800" height="4" fill="#0c1611" opacity="0.8" rx="2" />
+        </svg>
+      </motion.div>
+
       {/* Fog band */}
       <motion.div
         className="absolute inset-x-0 bottom-1/4 h-32 pointer-events-none"
@@ -424,6 +613,10 @@ function HeroEntrance() {
       {/* Particles */}
       <ParticleField count={28} />
       <ParticleField count={10} color="#FDFBF7" />
+      <ParticleField count={8} color="#00BFDF" />
+
+      {/* Scroll-triggered boot-stomp footprints along path */}
+      <ScrollStompParticles />
 
       {/* Vignette */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.55)_100%)]" />
@@ -467,20 +660,27 @@ function HeroEntrance() {
           transition={{ duration: 1, delay: 0.7 }}
           className="flex flex-col sm:flex-row items-center gap-3"
         >
+          {/* Primary Forge CTA — torch-orange */}
           <a
-            href="#problems"
-            className="group relative inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#2C4A36] bg-gradient-to-r from-[#D9A066] to-[#e8b06b] shadow-[0_10px_40px_rgba(217,160,102,0.45)] hover:shadow-[0_14px_50px_rgba(217,160,102,0.65)] hover:-translate-y-0.5 transition-all"
+            href="/codetry/"
+            className="group relative inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-white shadow-[0_10px_40px_rgba(212,98,26,0.5)] hover:shadow-[0_14px_50px_rgba(212,98,26,0.7)] hover:-translate-y-0.5 transition-all"
+            style={{
+              background: "linear-gradient(135deg, #D4621A 0%, #E87A38 55%, #C4521A 100%)",
+              border: "1.5px solid rgba(232,122,56,0.5)",
+            }}
           >
-            <Footprints className="w-4 h-4" />
-            Begin Your Stomp
+            <Flame className="w-4 h-4" />
+            Enter the Forge
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </a>
+          {/* Secondary — ghost/outline style */}
           <a
-            href="#daily"
-            className="inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/25 backdrop-blur-sm hover:bg-[#FDFBF7]/10 transition-all"
+            href="#problems"
+            className="group inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/25 backdrop-blur-sm hover:bg-[#FDFBF7]/10 transition-all"
           >
             <Footprints className="w-4 h-4 text-[#D9A066]" />
-            Today's trail
+            Begin Your Stomp
+            <ArrowRight className="w-4 h-4 text-[#D9A066]/60 group-hover:translate-x-0.5 transition-transform" />
           </a>
         </motion.div>
 
@@ -1031,6 +1231,18 @@ function GlobalStompStyles() {
         50% { opacity: 1; transform: scale(1.1); }
       }
       .animate-tsp-footprint { animation: tsp-footprint 3s ease-in-out infinite; }
+
+      @keyframes scroll-stomp-in {
+        0%   { opacity: 0; transform: scale(0.2) rotate(var(--stomp-rot, -12deg)); }
+        45%  { opacity: var(--stomp-max-opacity, 0.55); transform: scale(1.2) rotate(var(--stomp-rot, -12deg)); }
+        100% { opacity: var(--stomp-max-opacity, 0.45); transform: scale(1) rotate(var(--stomp-rot, -12deg)); }
+      }
+      .scroll-stomp-particle {
+        animation: scroll-stomp-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .scroll-stomp-particle { animation: none !important; opacity: 0.4 !important; }
+      }
 
       html { scroll-behavior: smooth; }
     `}</style>
