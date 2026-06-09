@@ -11,7 +11,6 @@ import { EpisodeCard } from "@/components/episode-card";
 import { formatDuration } from "@/components/episode-card";
 import { getMostRecentSlugAmong, getProgress, isCompleted } from "@/lib/playback-progress";
 import { getSeriesTheme, type SeriesTheme } from "@/lib/seriesTheme";
-import { useGordPageTitle } from "@/context/gord-context";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 
 const LIMIT = 20;
@@ -177,7 +176,6 @@ export function SeriesDetail() {
   const continueSlug = useContinueSlug(episodes);
   const theme = getSeriesTheme(slug);
 
-  useGordPageTitle(series?.title ?? null);
 
   if (isLoading) {
     return (

@@ -80,7 +80,25 @@ app.use(
     },
   }),
 );
-app.use(cors({ credentials: true, origin: true }));
+const CORS_ORIGINS = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /\.replit\.app$/,
+  /\.replit\.dev$/,
+  /\.repl\.co$/,
+  "https://thestompingpaths.com",
+  "https://www.thestompingpaths.com",
+  "https://our-headwaters.replit.app",
+];
+app.use(cors({
+  credentials: true,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = CORS_ORIGINS.some((o) =>
+      typeof o === "string" ? o === origin : o.test(origin),
+    );
+    callback(null, allowed ? origin : false);
+  },
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

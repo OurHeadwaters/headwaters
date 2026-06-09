@@ -5,7 +5,7 @@ import { Link, useLocation } from "wouter";
 import { ArrowRight, Droplets, Pause, Play, RefreshCw, Anchor, Coins, Layers } from "lucide-react";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 import { useAuth } from "@workspace/replit-auth-web";
-import { GordBird } from "@/components/gord-bird";
+const GORD_IMG = `${import.meta.env.BASE_URL}gord.png`;
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -1696,7 +1696,7 @@ function GordIdlePerch({ mapContainerRef }: { mapContainerRef: React.RefObject<H
               animation: phase === "perching" ? "grounds-float 2.5s ease-in-out infinite" : undefined,
             }}
           >
-            <GordBird size={52} variant="full" />
+            <img src={GORD_IMG} alt="Gord" style={{ width: 52, height: 52, objectFit: "contain" }} />
           </div>
         </motion.div>
       )}
@@ -2089,7 +2089,7 @@ export function StompingGroundsScene({ compact = false }: { compact?: boolean })
         {/* Gord on mobile — small perch below active card */}
         <div className="flex justify-center mt-4">
           <div style={{ animation: "grounds-float 3.5s ease-in-out infinite", opacity: 0.7 }}>
-            <GordBird size={36} variant="head" />
+            <img src={GORD_IMG} alt="Gord" style={{ width: 36, height: 36, objectFit: "contain" }} />
           </div>
         </div>
       </div>

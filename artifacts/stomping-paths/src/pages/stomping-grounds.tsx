@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSearch, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
-import { GordBird } from "@/components/gord-bird";
 import { WisdomDig } from "@/pages/wisdom-dig";
 import { WishingWell } from "@/pages/wishing-well";
 import { WorkshopBoard } from "@/pages/workshop";
@@ -308,7 +307,7 @@ export default function StompingGroundsPage() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 2.9, ease: [0.22, 0.1, 0.36, 1] }}
                 >
-                  <GordBird size={46} variant="full" className="[transform:scaleX(-1)] opacity-90" />
+                  <img src={`${import.meta.env.BASE_URL}gord.png`} alt="Gord" style={{ width: 46, height: 46, objectFit: "contain", transform: "scaleX(-1)", opacity: 0.9 }} />
                 </motion.div>
               )}
             </AnimatePresence>

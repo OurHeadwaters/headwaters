@@ -1,5 +1,4 @@
 import { Link, useRoute } from "wouter";
-import { useGordPageTitle } from "@/context/gord-context";
 import { useQuery } from "@tanstack/react-query";
 import { useGetTrackEpisodes, fetchAllTrackEpisodes, type TrackNugget } from "@/hooks/use-tracks";
 import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
@@ -31,6 +30,15 @@ import {
 import { formatDuration } from "@/components/episode-card";
 
 const PAGE_SIZE = 24;
+
+const ZONE_ACCENT_COLORS = [
+  "#E8853D",
+  "#5C9E5C",
+  "#C89B3C",
+  "#8B6BB1",
+  "#7FAF7F",
+  "#5BA3C9",
+];
 
 function matchTransformations(
   episodeCategories: string[],
@@ -603,7 +611,6 @@ export default function TrackDetailPage() {
 
   const track = data?.track;
 
-  useGordPageTitle(track?.title ?? null);
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
   const topTags = data?.topTags ?? [];
@@ -770,7 +777,10 @@ export default function TrackDetailPage() {
       {/* Hero */}
       <div
         className="border-b border-border relative overflow-hidden"
-        style={{ backgroundColor: track.color + "14" }}
+        style={{
+          backgroundColor: track.color + "14",
+          borderTop: `4px solid ${ZONE_ACCENT_COLORS[track.zoneNumber] ?? track.color}`,
+        }}
       >
         <div
           className="absolute inset-0 opacity-[0.04]"

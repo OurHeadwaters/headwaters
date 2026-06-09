@@ -71,7 +71,16 @@ export default function HistoryPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="h-56 bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-56 bg-card border border-border rounded-xl animate-pulse overflow-hidden">
+              <div className="h-1.5 bg-amber-500/20 w-full" />
+              <div className="p-4 flex flex-col gap-2.5">
+                <div className="h-2.5 bg-muted rounded w-1/4" />
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-2.5 bg-muted rounded w-full" />
+                <div className="h-2.5 bg-muted rounded w-5/6" />
+                <div className="mt-3 h-7 bg-muted rounded-lg w-24" />
+              </div>
+            </div>
           ))}
         </div>
       ) : isError ? (

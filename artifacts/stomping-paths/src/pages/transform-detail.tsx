@@ -1,7 +1,7 @@
 import { Link, useRoute } from "wouter";
 import { ArrowLeft, ArrowRight, Compass, Loader2, PlayCircle } from "lucide-react";
+
 import { format, parseISO } from "date-fns";
-import { useGordPageTitle } from "@/context/gord-context";
 import { useTransformations } from "@/hooks/use-transformations";
 import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
@@ -11,7 +11,6 @@ function TransformDetailContent({ slug }: { slug: string }) {
   const t = transformations?.find((x) => x.slug === slug) ?? null;
 
   const gordTitle = t ? `${t.from} → ${t.to}` : null;
-  useGordPageTitle(gordTitle);
 
   const queryTags = t ? [...new Set([...t.tags, ...t.categories].map((s) => s.toLowerCase()))] : [];
   const params = { limit: 20, offset: 0, tags: queryTags, sort: "popular" as const };
@@ -52,6 +51,7 @@ function TransformDetailContent({ slug }: { slug: string }) {
         className="border-b border-border relative overflow-hidden"
         style={{
           background: "linear-gradient(160deg, #0F1A28 0%, #14222E 60%, #1A2C30 100%)",
+          borderTop: `4px solid ${t.color}`,
         }}
       >
         <div

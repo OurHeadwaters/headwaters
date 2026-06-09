@@ -618,7 +618,16 @@ export function Library() {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-[300px] bg-muted rounded-xl animate-pulse" />
+                <div key={i} className="h-[300px] bg-card border border-border rounded-xl animate-pulse overflow-hidden">
+                  <div className="h-2 bg-muted w-full" />
+                  <div className="p-5 flex flex-col gap-3">
+                    <div className="h-3 bg-muted rounded w-1/3" />
+                    <div className="h-5 bg-muted rounded w-4/5" />
+                    <div className="h-3 bg-muted rounded w-full" />
+                    <div className="h-3 bg-muted rounded w-2/3" />
+                    <div className="mt-auto h-3 bg-muted rounded w-1/4" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : isError ? (

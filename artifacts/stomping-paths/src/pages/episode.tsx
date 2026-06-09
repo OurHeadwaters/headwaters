@@ -1,5 +1,4 @@
 import { useRoute } from "wouter";
-import { useGordPageTitle } from "@/context/gord-context";
 import { useQuery } from "@tanstack/react-query";
 import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
@@ -127,7 +126,6 @@ export function EpisodeDetail() {
     query: { enabled: !!slug, queryKey: getGetEpisodeQueryKey(slug) }
   });
 
-  useGordPageTitle(episode?.title ?? null);
 
   const primaryCategory = episode?.categories?.[0] || "";
 

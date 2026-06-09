@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
 import { MiniPlayer } from "./mini-player";
-import { GordGuide } from "./gord-guide";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
 import { TAGLINE } from "@workspace/tsp-constants";
@@ -31,9 +30,9 @@ function useBrigadeStatus(isAuthenticated: boolean) {
 const landmarkItems = [
   { href: "/codetry/", label: "The Arch", desc: "Digital sovereignty — Codetry", external: true },
   { href: "/headwaters", label: "The Well", desc: "The spring — Zone 1 source" },
-  { href: "https://ourheadwaters.ca/headwaters-learning/forge", label: "The Kiln", desc: "The Forge — maker space", external: true },
   { href: "/library", label: "The Granary", desc: "6,000+ episodes — accumulated knowledge" },
   { href: "/zones", label: "The Path", desc: "Zone map — navigate the terrain" },
+  { href: "/council", label: "The Council", desc: "Expert practitioners and advisors" },
 ];
 
 const adminItems = [
@@ -249,32 +248,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Home
             </Link>
 
-            {/* Hempcrete Landmark direct links */}
-            {landmarkItems.map((item) =>
-              (item as { external?: boolean }).external ? (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative text-sm font-medium transition-colors pb-0.5 text-white/65 hover:text-white"
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`relative text-sm font-medium transition-colors pb-0.5 ${
-                    location === item.href || location.startsWith(item.href + "/")
-                      ? "text-white border-b-2 border-[#D9A066]"
-                      : "text-white/65 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
+            {/* Explore dropdown — consolidated landmark links */}
+            <DropdownMenu
+              label="Explore"
+              items={landmarkItems}
+              isActive={isLandmarkActive}
+            />
 
             {/* Grounds */}
             <Link
@@ -399,8 +378,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Home
             </Link>
 
-            {/* Landmarks — mobile flat list */}
+            {/* Explore — mobile flat list */}
             <div className="ml-1 border-l border-white/10 pl-3 flex flex-col gap-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-2 pt-1 pb-0.5">Explore</p>
               {landmarkItems.map((item) =>
                 (item as { external?: boolean }).external ? (
                   <a
@@ -592,7 +572,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </footer>
 
       <MiniPlayer />
-      <GordGuide path={location} />
     </div>
   );
 }

@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { useGordPageTitle } from "@/context/gord-context";
+
 import { useQuery } from "@tanstack/react-query";
+
+const ZONE_ACCENT_COLORS = [
+  "#E8853D",
+  "#5C9E5C",
+  "#C89B3C",
+  "#8B6BB1",
+  "#7FAF7F",
+  "#5BA3C9",
+];
 import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { ProductShelfSection, type ReviewedProduct } from "@/components/product-shelf";
@@ -454,7 +463,6 @@ export default function ZoneDetailPage() {
   const { data, isLoading, isError } = useZoneResources(slug, apiSource);
 
   const zoneName = data?.zone ? `Zone ${data.zone.number}: ${data.zone.name}` : null;
-  useGordPageTitle(zoneName);
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const { data: gearProducts = [] } = useQuery<ReviewedProduct[]>({
@@ -497,13 +505,14 @@ export default function ZoneDetailPage() {
   const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
   const textColor = ZONE_TEXT_COLORS[idx] ?? "text-foreground";
   const badgeColor = ZONE_BADGE_BG[idx] ?? "bg-muted border-border text-foreground";
+  const accentColor = ZONE_ACCENT_COLORS[idx] ?? "#D9A066";
 
   const isZone0 = zone.slug === "zone-0";
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <div className={`border-b border-border ${bgColor}`}>
+      <div className={`border-b border-border ${bgColor}`} style={{ borderTop: `4px solid ${accentColor}` }}>
         <div className="max-w-5xl mx-auto px-6 py-12">
           <Link
             href="/zones"
