@@ -2,6 +2,15 @@ import { Link, useLocation } from "wouter";
 import { useListZones, ZoneSummary, ZoneSeriesSummary } from "@workspace/api-client-react";
 import { Sprout, Loader2, Headphones, Users, Building2 } from "lucide-react";
 
+const ZONE_ACCENT_COLORS = [
+  "#E8853D",
+  "#5C9E5C",
+  "#C89B3C",
+  "#8B6BB1",
+  "#7FAF7F",
+  "#5BA3C9",
+];
+
 const ZONE_RING_COLORS = [
   "border-amber-600",
   "border-yellow-600",
@@ -108,7 +117,7 @@ export default function ZonesPage() {
 
 function ZoneCard({ zone }: { zone: ZoneSummaryExtended }) {
   const idx = zone.number;
-  const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
+  const accentColor = ZONE_ACCENT_COLORS[idx] ?? "#E8853D";
   const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
   const textColor = ZONE_TEXT_COLORS[idx] ?? "text-foreground";
   const [, navigate] = useLocation();
@@ -116,7 +125,8 @@ function ZoneCard({ zone }: { zone: ZoneSummaryExtended }) {
   return (
     <div
       onClick={() => navigate(`/zones/${zone.slug}`)}
-      className={`rounded-xl border-l-4 ${ringColor} border border-border bg-card overflow-hidden group hover:shadow-md transition-shadow cursor-pointer`}
+      className="rounded-xl border border-border bg-card overflow-hidden group hover:shadow-md transition-shadow cursor-pointer"
+      style={{ borderTop: `4px solid ${accentColor}` }}
     >
         <div className="flex flex-col md:flex-row">
           {/* Left: zone number + name */}

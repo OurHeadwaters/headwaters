@@ -23,6 +23,7 @@ function TrackCard({
     <Link
       href={`/tracks/${track.slug}`}
       className="group flex flex-col bg-card border border-border rounded-xl overflow-hidden hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 transition-all duration-200"
+      style={track.color ? { borderTop: `4px solid ${track.color}` } : undefined}
     >
       {/* Top bar */}
       <div
