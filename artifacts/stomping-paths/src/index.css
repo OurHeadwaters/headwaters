@@ -540,3 +540,24 @@
     inset: -1px;
   }
 }
+
+/* ── ZoneBubbleMap animations ─────────────────────────────────────────────── */
+
+@keyframes zbm-z0-pulse {
+  0%, 100% { opacity: 0.10; }
+  50%       { opacity: 0.50; }
+}
+
+@keyframes zbm-primary-breathe {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.52; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .zbm-z0-pulse {
+    animation: zbm-z0-pulse 3s ease-in-out infinite;
+  }
+  .zbm-primary-breathe {
+    animation: zbm-primary-breathe 4s ease-in-out infinite;
+  }
+}

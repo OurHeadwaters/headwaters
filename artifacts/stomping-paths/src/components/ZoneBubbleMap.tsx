@@ -311,6 +311,32 @@ export default function ZoneBubbleMap({
                 style={{ cursor: "pointer" }}
                 aria-label={`Zone ${zone.number}: ${zone.name}`}
               >
+                {/* Z0 amber pulse glow — always present on The Self */}
+                {zone.number === 0 && (
+                  <ellipse
+                    cx={zone.cx} cy={zone.cy} rx={zone.rx + 10} ry={zone.ry + 10}
+                    fill="none"
+                    stroke="#B5853A"
+                    strokeWidth={6}
+                    className="zbm-z0-pulse"
+                    style={{ pointerEvents: "none" }}
+                    filter="url(#zbm-eave-glow)"
+                  />
+                )}
+
+                {/* Primary zone breathing stroke glow */}
+                {isPrimary && (
+                  <ellipse
+                    cx={zone.cx} cy={zone.cy} rx={zone.rx + 8} ry={zone.ry + 8}
+                    fill="none"
+                    stroke={zone.color}
+                    strokeWidth={5}
+                    className="zbm-primary-breathe"
+                    style={{ pointerEvents: "none" }}
+                    filter="url(#zbm-flash-glow)"
+                  />
+                )}
+
                 {/* Flash highlight ring */}
                 {isFlashing && (
                   <ellipse
