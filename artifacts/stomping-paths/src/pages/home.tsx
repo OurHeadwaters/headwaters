@@ -509,13 +509,13 @@ function HeroEntrance() {
             d="M224,150 Q220,143 224,136 Q228,143 224,150"
             fill="#D4621A"
             opacity="0.95"
-            style={{ animation: "campfire-sway 2.4s ease-in-out infinite" }}
+            className="animate-tsp-torch"
           />
           <path
             d="M224,150 Q222,145 224,140 Q226,145 224,150"
             fill="#FFD580"
             opacity="0.8"
-            style={{ animation: "campfire-sway 2.4s ease-in-out 0.4s infinite" }}
+            className="animate-tsp-torch-d1"
           />
 
           {/* === Torch brackets — right === */}
@@ -525,13 +525,13 @@ function HeroEntrance() {
             d="M572,150 Q568,143 572,136 Q576,143 572,150"
             fill="#D4621A"
             opacity="0.95"
-            style={{ animation: "campfire-sway 2.4s ease-in-out 0.6s infinite" }}
+            className="animate-tsp-torch-d2"
           />
           <path
             d="M572,150 Q570,145 572,140 Q574,145 572,150"
             fill="#FFD580"
             opacity="0.8"
-            style={{ animation: "campfire-sway 2.4s ease-in-out 1s infinite" }}
+            className="animate-tsp-torch-d3"
           />
 
           {/* Ground line */}
