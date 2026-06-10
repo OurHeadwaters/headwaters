@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Flame, Droplets, Map, X, ChevronDown } from "lucide-react";
+import { Flame, Droplets, Map, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "wouter";
 
 const RIBBON_DISMISSED_KEY = "tsp-ribbon-dismissed-v1";
@@ -55,7 +55,41 @@ export function WatershedRibbon() {
     localStorage.setItem(RIBBON_DISMISSED_KEY, "true");
   }
 
-  if (!mounted || dismissed) return null;
+  function reopen() {
+    setDismissed(false);
+    setMinimized(false);
+    localStorage.removeItem(RIBBON_DISMISSED_KEY);
+  }
+
+  if (!mounted) return null;
+
+  if (dismissed) {
+    return (
+      <button
+        onClick={reopen}
+        className="fixed bottom-0 right-4 z-[45] flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-t-md transition-all duration-200 select-none"
+        style={{
+          background: "var(--surface-dark, #111C15)",
+          border: "1px solid rgba(0,191,223,0.18)",
+          borderBottom: "none",
+          color: "rgba(0,191,223,0.55)",
+          boxShadow: "0 -2px 12px rgba(0,0,0,0.35)",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "rgba(0,191,223,0.9)";
+          (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,191,223,0.38)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "rgba(0,191,223,0.55)";
+          (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,191,223,0.18)";
+        }}
+        aria-label="Re-open Watershed Ribbon"
+      >
+        <ChevronUp className="w-3 h-3" />
+        Watershed
+      </button>
+    );
+  }
 
   return (
     <div
