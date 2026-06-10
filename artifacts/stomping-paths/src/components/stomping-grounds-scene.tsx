@@ -419,6 +419,7 @@ function ThematicHotspot({
   spinning?: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const touchGlowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const translateX = `calc(-50% + ${parallax.x}px)`;
   const translateY = `calc(-50% + ${parallax.y}px)`;
   const isForge = FORGE_STATION_IDS.has(station.id);
@@ -427,11 +428,22 @@ function ThematicHotspot({
   const markerSize =
     station.id === "water-wheel" ? { w: "w-14 h-14" } : { w: "w-14 h-[4.5rem]" };
 
+  const handleTouchStart = () => {
+    if (touchGlowTimer.current) clearTimeout(touchGlowTimer.current);
+    setIsHovered(true);
+  };
+
+  const handleTouchEnd = () => {
+    touchGlowTimer.current = setTimeout(() => setIsHovered(false), 1200);
+  };
+
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className="absolute flex flex-col items-center gap-1 group transition-all duration-200 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
       style={{
         top: station.position.top,
