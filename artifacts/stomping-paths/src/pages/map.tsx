@@ -103,32 +103,117 @@ const QUESTIONNAIRE_STEPS = [
   },
 ];
 
-function LoginGate() {
+function MapTeaser() {
   const { login } = useAuth();
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6">
-      <div className="max-w-md text-center">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-          style={{ background: "#4A7A3A18", border: "1px solid #4A7A3A44" }}
-        >
-          <Map className="w-7 h-7" style={{ color: "#4A7A3A" }} />
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-6 pt-10 pb-16">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div
+            className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest mb-5 px-3 py-1.5 rounded-full"
+            style={{ color: "#4A7A3A", background: "#4A7A3A18", border: "1px solid #4A7A3A33" }}
+          >
+            <Map className="w-3 h-3" />
+            The Zone Framework
+          </div>
+          <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-3">
+            The TSP Self-Reliance Territory
+          </h1>
+          <p className="text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+            Six concentric zones — from the self outward. Each zone is a layer of resilience
+            you build in order. Log in to find where you stand and get a personalized starting point.
+          </p>
         </div>
-        <h1 className="font-serif text-3xl font-bold text-foreground mb-4">
-          Your Lifestyle Map
-        </h1>
-        <p className="text-base text-muted-foreground leading-relaxed mb-8">
-          The Lifestyle Map is a private tool that places you in the territory based on your
-          actual life context — so you start in the right zone, not just the first one.
-          Log in to access your map.
-        </p>
-        <button
-          onClick={login}
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-sm transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md"
+
+        {/* Map + CTA overlay */}
+        <div className="relative rounded-2xl overflow-hidden mb-8">
+          <ZoneBubbleMap
+            primaryZone={null}
+            visitedZones={[]}
+            onZoneClick={() => login()}
+          />
+          {/* Bottom-fade CTA overlay */}
+          <div
+            className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-3 px-6 pb-7 pt-20 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent 0%, rgba(4,11,5,0.72) 45%, rgba(4,11,5,0.95) 100%)",
+            }}
+          >
+            <p className="text-sm font-medium" style={{ color: "rgba(200,212,192,0.85)" }}>
+              Where do you stand in the territory?
+            </p>
+            <button
+              onClick={login}
+              className="pointer-events-auto inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-sm transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+            >
+              Log in to get your placement
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Zone legend cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[
+            { slug: "zone-0", num: 0, name: "The Self",      color: "#B5853A", desc: "Mindset, money, and personal sovereignty" },
+            { slug: "zone-1", num: 1, name: "The Home",      color: "#C4A05A", desc: "Home preparedness and basic resilience" },
+            { slug: "zone-2", num: 2, name: "The Garden",    color: "#6B8F47", desc: "Gardening, permaculture, food production" },
+            { slug: "zone-3", num: 3, name: "The Homestead", color: "#4A7A3A", desc: "Homesteading, livestock, off-grid systems" },
+            { slug: "zone-4", num: 4, name: "The Forest",    color: "#2C5F2E", desc: "Hunting, foraging, and bushcraft skills" },
+            { slug: "zone-5", num: 5, name: "The Wild",      color: "#1A3A1C", desc: "Grid-down contingency and wilderness survival" },
+          ].map((zone) => (
+            <div
+              key={zone.slug}
+              className="rounded-xl border p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: zone.color + "10",
+                borderColor: zone.color + "33",
+              }}
+              onClick={login}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && login()}
+              aria-label={`Zone ${zone.num}: ${zone.name} — log in to explore`}
+            >
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest block mb-1"
+                style={{ color: zone.color + "aa" }}
+              >
+                Zone {zone.num}
+              </span>
+              <p className="font-serif text-sm font-bold text-foreground mb-1">{zone.name}</p>
+              <p className="text-[11px] leading-snug text-muted-foreground">{zone.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom CTA strip */}
+        <div
+          className="mt-8 rounded-2xl border px-6 py-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left"
+          style={{ background: "#0D1A10", borderColor: "#4A7A3A33" }}
         >
-          Log in to continue
-          <ChevronRight className="w-4 h-4" />
-        </button>
+          <div className="flex-1 min-w-0">
+            <p className="font-serif text-base font-bold text-foreground mb-1">
+              Find your ground floor.
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              The Lifestyle Map places you in the territory based on your actual life
+              context — so you start in the right zone, not just the first one.
+            </p>
+          </div>
+          <button
+            onClick={login}
+            className="shrink-0 inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+            style={{ background: "#4A7A3A", color: "#FDFBF7" }}
+          >
+            Log in to continue
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1219,7 +1304,7 @@ export default function MapPage() {
   }
 
   if (!isAuthenticated) {
-    return <LoginGate />;
+    return <MapTeaser />;
   }
 
   if (phase === "gate") {
@@ -1271,7 +1356,7 @@ export default function MapPage() {
   }
 
   if (!map) {
-    return <LoginGate />;
+    return <MapTeaser />;
   }
 
   return (
