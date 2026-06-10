@@ -2,6 +2,7 @@ import { useGetFeed } from "@workspace/api-client-react";
 import { ExternalLink, Coffee, Heart } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { TAGLINE } from "@workspace/tsp-constants";
+import { useDocumentMeta } from "@/hooks/use-document-meta";
 
 const TAGLINE_REGEX = new RegExp(
   `^[\\s"'\\u201C\\u201D]*${TAGLINE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s"'\\u201C\\u201D]*`,
@@ -17,6 +18,13 @@ function stripTagline(html: string): string {
 }
 
 export function About() {
+  useDocumentMeta({
+    title: "About Jack Spirko & The Survival Podcast | The Stomping Path",
+    description:
+      "Jack Spirko has been hosting The Survival Podcast since 2008. Practical self-reliance, permaculture, homesteading, financial independence — 6,000+ episodes and counting.",
+    ogTitle: "About Jack Spirko — The Stomping Path",
+    ogDescription: "The Survival Podcast host since 2008. 6,000+ episodes on practical self-reliance, homesteading, and permaculture.",
+  });
   const { data: feed, isLoading } = useGetFeed();
   const descriptionHtml = feed?.description
     ? stripTagline(feed.description.replace(/\n/g, "<br/>"))

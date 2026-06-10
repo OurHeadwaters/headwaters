@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch, Link } from "wouter";
+import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { 
   useSearchLibrary, 
   getSearchLibraryQueryKey, 
@@ -291,6 +292,13 @@ function PeopleAndBusinesses({ q }: { q: string }) {
 }
 
 export function Library() {
+  useDocumentMeta({
+    title: "The Library — 6,000+ TSP Episodes | The Stomping Path",
+    description:
+      "Search Jack Spirko's entire Survival Podcast archive: 6,000+ episodes, articles, and videos on homesteading, permaculture, financial independence, and self-reliance. 2008 to today.",
+    ogTitle: "The Library — The Stomping Path",
+    ogDescription: "Search 6,000+ episodes on homesteading, permaculture, financial independence, and self-reliance.",
+  });
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);

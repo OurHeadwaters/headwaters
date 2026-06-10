@@ -642,7 +642,7 @@ function HeroEntrance() {
           style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
         >
           <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">A podcast for people building a life worth defending</span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">Since 2008 · 6,000+ episodes · 16 years of practical self-reliance</span>
         </motion.div>
 
         <motion.h1
@@ -651,7 +651,7 @@ function HeroEntrance() {
           transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
           className="relative font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FDFBF7] leading-[1.05] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)] max-w-3xl"
         >
-          The clearing is where your <span className="italic text-[#D9A066]">Edgy ideas</span> get neighbours.
+          Practical self-reliance for a <span className="italic text-[#D9A066]">fragile world.</span>
         </motion.h1>
 
         <motion.p
@@ -660,7 +660,7 @@ function HeroEntrance() {
           transition={{ duration: 0.9, delay: 0.5 }}
           className="relative text-base md:text-lg text-[#FDFBF7]/88 max-w-lg mb-7 md:mb-10 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
         >
-          The worn path between the Lodge and the Clearing. Walk it.
+          Jack Spirko's Survival Podcast archive — homesteading, food production, financial independence, and bushcraft. Curated paths to take you from curious to capable.
         </motion.p>
 
         <motion.div
@@ -669,28 +669,28 @@ function HeroEntrance() {
           transition={{ duration: 1, delay: 0.7 }}
           className="flex flex-col sm:flex-row items-center gap-3"
         >
-          {/* Primary Forge CTA — torch-orange */}
-          <a
-            href="/codetry/"
+          {/* Primary CTA — Find Your Path */}
+          <Link
+            href="/start"
             className="group relative inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-white shadow-[0_10px_40px_rgba(212,98,26,0.5)] hover:shadow-[0_14px_50px_rgba(212,98,26,0.7)] hover:-translate-y-0.5 transition-all"
             style={{
               background: "linear-gradient(135deg, #D4621A 0%, #E87A38 55%, #C4521A 100%)",
               border: "1.5px solid rgba(232,122,56,0.5)",
             }}
           >
-            <Flame className="w-4 h-4" />
-            Enter the Forge
+            <Compass className="w-4 h-4" />
+            Find Your Path
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </a>
-          {/* Secondary — ghost/outline style */}
-          <a
-            href="#problems"
+          </Link>
+          {/* Secondary — browse archive */}
+          <Link
+            href="/library"
             className="group inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/25 backdrop-blur-sm hover:bg-[#FDFBF7]/10 transition-all"
           >
-            <Footprints className="w-4 h-4 text-[#D9A066]" />
-            Begin Your Stomp
+            <Search className="w-4 h-4 text-[#D9A066]" />
+            Search the Archive
             <ArrowRight className="w-4 h-4 text-[#D9A066]/60 group-hover:translate-x-0.5 transition-transform" />
-          </a>
+          </Link>
         </motion.div>
 
         <motion.div
@@ -1095,6 +1095,57 @@ function StoriesSection() {
   );
 }
 
+// ─── About Jack blurb ──────────────────────────────────────────────────────────
+
+function AboutJackSection() {
+  return (
+    <section className="relative bg-[#15241b] py-20 overflow-hidden border-t border-white/5">
+      <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+        <div className="grid md:grid-cols-[auto_1fr] gap-10 items-center">
+          {/* Headshot placeholder */}
+          <div className="flex-shrink-0 flex justify-center md:justify-start">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#2C4A36] border-4 border-[#D9A066]/30 overflow-hidden flex items-center justify-center shadow-xl shadow-black/30">
+              <Mic className="w-14 h-14 text-[#D9A066]/50" />
+            </div>
+          </div>
+          {/* Bio */}
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#D9A066]/20 bg-[#D9A066]/8 mb-4">
+              <Mic className="w-3 h-3 text-[#D9A066]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">About Jack</span>
+            </div>
+            <h2 className="font-serif text-3xl md:text-4xl text-[#FDFBF7] font-bold leading-tight mb-4">
+              Jack Spirko has been doing this since 2008.
+            </h2>
+            <p className="text-[#FDFBF7]/65 leading-relaxed max-w-2xl mb-3">
+              Jack Spirko started The Survival Podcast to challenge the bunker-and-canned-beans stereotype of preparedness. His argument: resilience and abundance aren't opposites. You can build a genuinely good life — food security, financial independence, real skills — and be prepared for the hard parts at the same time.
+            </p>
+            <p className="text-[#FDFBF7]/50 leading-relaxed max-w-2xl mb-6">
+              Sixteen years, 6,000+ episodes, and one organizing framework: the permaculture zone model, adapted for modern life. The result is the most practical self-reliance archive on the internet.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="https://thesurvivalpodcast.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[#FDFBF7] border border-[#FDFBF7]/20 hover:bg-[#FDFBF7]/8 transition-colors"
+              >
+                TSP Website ↗
+              </a>
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[#D9A066] border border-[#D9A066]/30 hover:bg-[#D9A066]/8 transition-colors"
+              >
+                Full About page
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Community & Next Steps ────────────────────────────────────────────────────
 
 function CommunitySection() {
@@ -1261,6 +1312,14 @@ function GlobalStompStyles() {
 // ─── Page export ───────────────────────────────────────────────────────────────
 
 export function Home() {
+  useEffect(() => {
+    document.title = "The Stomping Path — Practical Self-Reliance Podcast | Jack Spirko";
+    const desc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (desc) desc.content = "Jack Spirko's Survival Podcast archive — 6,000+ episodes on homesteading, permaculture, food production, financial independence, and bushcraft. Curated paths to take you from curious to capable.";
+    return () => {
+      document.title = "The Stomping Path";
+    };
+  }, []);
 
   // Tiny GSAP smoothness ping (no ScrollTrigger plugin — keeps deps tiny)
   useEffect(() => {
@@ -1291,6 +1350,7 @@ export function Home() {
       <CuratedPathsSection />
       <div id="daily" />
       <StoriesSection />
+      <AboutJackSection />
       <CommunitySection />
     </div>
   );

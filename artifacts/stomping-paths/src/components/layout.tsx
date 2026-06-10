@@ -29,11 +29,12 @@ function useBrigadeStatus(isAuthenticated: boolean) {
 }
 
 const landmarkItems = [
+  { href: "/start", label: "Find Your Path", desc: "New here? 5 questions → recommendation" },
+  { href: "/tracks", label: "Learning Tracks", desc: "7 structured paths by permaculture zone" },
+  { href: "/zones", label: "Browse by Zone", desc: "Zone map — navigate the archive" },
+  { href: "/library", label: "The Archive", desc: "6,000+ episodes — search everything" },
+  { href: "/council", label: "Expert Council", desc: "Practitioners and advisors" },
   { href: "/codetry/", label: "The Arch", desc: "Digital sovereignty — Codetry", external: true },
-  { href: "/headwaters", label: "The Well", desc: "The spring — Zone 1 source" },
-  { href: "/library", label: "The Granary", desc: "6,000+ episodes — accumulated knowledge" },
-  { href: "/zones", label: "The Path", desc: "Zone map — navigate the terrain" },
-  { href: "/council", label: "The Council", desc: "Expert practitioners and advisors" },
 ];
 
 const adminItems = [

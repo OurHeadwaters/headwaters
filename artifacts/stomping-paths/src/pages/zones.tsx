@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useListZones, ZoneSummary, ZoneSeriesSummary } from "@workspace/api-client-react";
 import { Sprout, Loader2, Headphones, Users, Building2 } from "lucide-react";
+import { useDocumentMeta } from "@/hooks/use-document-meta";
 
 const ZONE_ACCENT_COLORS = [
   "#E8853D",
@@ -53,6 +54,13 @@ type ZoneSummaryExtended = ZoneSummary & {
 };
 
 export default function ZonesPage() {
+  useDocumentMeta({
+    title: "Browse by Zone — Permaculture Zones 0–5 | The Stomping Path",
+    description:
+      "Jack Spirko's entire archive organized by permaculture zone — from Zone 0 (self, mindset, money) to Zone 5 (wilderness contingency). Find the right episodes, experts, and businesses for each zone.",
+    ogTitle: "Browse by Zone — The Stomping Path",
+    ogDescription: "TSP archive organized by permaculture zone: self, home, garden, homestead, forest, and wild.",
+  });
   const { data: zones, isLoading, isError } = useListZones();
 
   return (

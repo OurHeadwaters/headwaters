@@ -514,13 +514,14 @@ export default function ZoneDetailPage() {
       {/* Hero */}
       <div className={`border-b border-border ${bgColor}`} style={{ borderTop: `4px solid ${accentColor}` }}>
         <div className="max-w-5xl mx-auto px-6 py-12">
-          <Link
-            href="/zones"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            All Zones
-          </Link>
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6" aria-label="Breadcrumb">
+            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+            <ChevronRight className="w-3 h-3 opacity-40" />
+            <Link href="/zones" className="hover:text-foreground transition-colors">Zones</Link>
+            <ChevronRight className="w-3 h-3 opacity-40" />
+            <span className="text-foreground font-semibold truncate max-w-[160px]">{zone.name}</span>
+          </nav>
 
           <div className="flex items-start gap-5">
             {/* Zone number badge */}

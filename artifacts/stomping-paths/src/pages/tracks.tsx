@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { useListTracks, TrackSummary } from "@/hooks/use-tracks";
 import { useAllTracksProgress } from "@/hooks/use-track-progress";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -140,6 +141,13 @@ function TrackCard({
 }
 
 export default function TracksPage() {
+  useDocumentMeta({
+    title: "Learning Tracks — Structured Self-Reliance Paths | The Stomping Path",
+    description:
+      "Seven structured learning paths built from TSP's 16-year archive. Follow the permaculture zone framework — from Zone 0 (mindset & money) to Zone 5 (grid-down contingency). Build real skills, not just a playlist.",
+    ogTitle: "Learning Tracks — The Stomping Path",
+    ogDescription: "Seven structured paths: permaculture zones 0–5, homesteading podcast episodes curated for skill-building.",
+  });
   const { data: tracks, isLoading, isError } = useListTracks();
   const slugs = tracks?.map((t) => t.slug) ?? [];
   const progressSummary = useAllTracksProgress(slugs);
