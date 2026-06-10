@@ -352,7 +352,7 @@ function HeroEntrance() {
     <section
       ref={ref}
       onMouseMove={handleMouseMove}
-      className="relative h-[78vh] min-h-[560px] w-full overflow-hidden bg-[#0c1611]"
+      className="relative h-[90vh] min-h-[680px] sm:h-[78vh] sm:min-h-[560px] w-full overflow-hidden bg-[#0c1611]"
       style={{ background: "radial-gradient(ellipse at 50% 100%, #2C4A36 0%, #15241b 55%, #0c1611 100%)" }}
     >
       {/* Sky gradient + sun */}
@@ -623,7 +623,7 @@ function HeroEntrance() {
 
       {/* HEADLINE */}
       <motion.div
-        className="relative h-full flex flex-col items-center justify-center text-center px-6"
+        className="relative h-full flex flex-col items-center justify-center text-center px-6 pb-[35%] sm:pb-0"
         style={{ y: headlineY, opacity: headlineOpacity }}
       >
         {/* Scrim — warm dark wash behind all headline text for legibility */}
