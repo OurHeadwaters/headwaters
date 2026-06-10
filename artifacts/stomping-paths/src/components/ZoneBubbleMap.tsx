@@ -219,8 +219,12 @@ export default function ZoneBubbleMap({
     <div
       className="rounded-2xl overflow-hidden"
       style={{
-        background: "#080F08",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: "linear-gradient(160deg, #0D1A10 0%, #09130B 45%, #060E08 75%, #040B06 100%)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        backgroundImage: [
+          "linear-gradient(160deg, #0D1A10 0%, #09130B 45%, #060E08 75%, #040B06 100%)",
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E\")",
+        ].join(", "),
       }}
     >
       {/* ── SVG diagram ── */}
@@ -259,6 +263,38 @@ export default function ZoneBubbleMap({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+
+            {/* Per-zone radial gradients: dark core → zone color glow at rim */}
+            <radialGradient id="zbm-fill-z0" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#100B02" />
+              <stop offset="70%"  stopColor="#1A1205" />
+              <stop offset="100%" stopColor="#B5853A" stopOpacity="0.45" />
+            </radialGradient>
+            <radialGradient id="zbm-fill-z1" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#0E0C04" />
+              <stop offset="65%"  stopColor="#18140A" />
+              <stop offset="100%" stopColor="#C4A05A" stopOpacity="0.38" />
+            </radialGradient>
+            <radialGradient id="zbm-fill-z2" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#080E04" />
+              <stop offset="65%"  stopColor="#0E1808" />
+              <stop offset="100%" stopColor="#6B8F47" stopOpacity="0.35" />
+            </radialGradient>
+            <radialGradient id="zbm-fill-z3" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#050D04" />
+              <stop offset="65%"  stopColor="#091208" />
+              <stop offset="100%" stopColor="#4A7A3A" stopOpacity="0.32" />
+            </radialGradient>
+            <radialGradient id="zbm-fill-z4" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#030A03" />
+              <stop offset="65%"  stopColor="#060E06" />
+              <stop offset="100%" stopColor="#2C5F2E" stopOpacity="0.30" />
+            </radialGradient>
+            <radialGradient id="zbm-fill-z5" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stopColor="#020703" />
+              <stop offset="65%"  stopColor="#030803" />
+              <stop offset="100%" stopColor="#1A3A1C" stopOpacity="0.28" />
+            </radialGradient>
           </defs>
 
           {/* Zone ellipses — outermost first */}
@@ -266,6 +302,7 @@ export default function ZoneBubbleMap({
             const isPrimary = zone.slug === primaryZone;
             const isVisited = visitedZones.includes(zone.slug);
             const isFlashing = zone.slug === flashedSlug;
+            const gradId = `zbm-fill-z${zone.number}`;
 
             return (
               <g
@@ -288,13 +325,40 @@ export default function ZoneBubbleMap({
 
                 <ellipse
                   cx={zone.cx} cy={zone.cy} rx={zone.rx} ry={zone.ry}
-                  fill={zone.fillColor}
+                  fill={`url(#${gradId})`}
                   stroke={zone.color}
                   strokeWidth={isPrimary ? 2.5 : isVisited ? 2 : 1.5}
                   opacity={0.97}
                 />
 
-                {/* Zone number — bottom-left inside */}
+                {/* Zone number + name — centered inside each ellipse (small, non-competing) */}
+                <text
+                  x={zone.cx}
+                  y={zone.cy - 4}
+                  textAnchor="middle"
+                  fill={zone.color}
+                  fontSize={zone.number >= 4 ? 9 : 8}
+                  fontWeight="700"
+                  letterSpacing="0.08em"
+                  opacity={0.65}
+                  style={{ fontFamily: "Georgia, serif", userSelect: "none" }}
+                >
+                  Z{zone.number}
+                </text>
+                <text
+                  x={zone.cx}
+                  y={zone.cy + 7}
+                  textAnchor="middle"
+                  fill={zone.color}
+                  fontSize={7}
+                  letterSpacing="0.04em"
+                  opacity={0.45}
+                  style={{ fontFamily: "system-ui, sans-serif", userSelect: "none" }}
+                >
+                  {zone.name}
+                </text>
+
+                {/* Zone number — bottom-left corner label (larger, easier to scan) */}
                 <text
                   x={zone.cx - zone.rx * 0.55}
                   y={zone.cy + zone.ry - 18}

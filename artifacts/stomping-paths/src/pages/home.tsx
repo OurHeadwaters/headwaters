@@ -626,11 +626,20 @@ function HeroEntrance() {
         className="relative h-full flex flex-col items-center justify-center text-center px-6"
         style={{ y: headlineY, opacity: headlineOpacity }}
       >
+        {/* Scrim — warm dark wash behind all headline text for legibility */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 80% 70% at 50% 52%, rgba(6,14,8,0.78) 0%, rgba(6,14,8,0.52) 50%, transparent 80%)",
+          }}
+        />
+
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-black/30 backdrop-blur-sm mb-4 md:mb-6"
+          className="relative flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/40 bg-black/50 backdrop-blur-md mb-4 md:mb-6"
+          style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
         >
           <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
           <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">A podcast for people building a life worth defending</span>
@@ -640,7 +649,7 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-          className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FDFBF7] leading-[1.05] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)] max-w-3xl"
+          className="relative font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FDFBF7] leading-[1.05] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)] max-w-3xl"
         >
           The clearing is where your <span className="italic text-[#D9A066]">Edgy ideas</span> get neighbours.
         </motion.h1>
@@ -649,7 +658,7 @@ function HeroEntrance() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.5 }}
-          className="text-base md:text-lg text-[#FDFBF7]/65 max-w-lg mb-7 md:mb-10 leading-relaxed"
+          className="relative text-base md:text-lg text-[#FDFBF7]/88 max-w-lg mb-7 md:mb-10 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
         >
           The worn path between the Lodge and the Clearing. Walk it.
         </motion.p>
