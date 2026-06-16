@@ -150,6 +150,31 @@ No table, no foreign key, no join, no query path, and no stored reference may ev
 
 ---
 
+## Before Going Live — Payment Environment Checklist
+
+All five secrets must be set in Replit Secrets before real money can flow. Missing any one of them produces a specific failure mode described below.
+
+| Secret | Where to find it | Missing = |
+|---|---|---|
+| `ZAPRITE_WEBHOOK_SECRET` | Zaprite dashboard → Webhooks → Secret | All Bitcoin/Lightning webhooks return **400** and are rejected |
+| `ZAPRITE_API_KEY` | Zaprite dashboard → API Keys | Zaprite API calls fail (rate lookups, order status) |
+| `STRIPE_SECRET_KEY` *(live)* | Set via Replit Integrations tab → Stripe → production environment | Stripe charges go to test mode; no real money moves |
+| `STRIPE_WEBHOOK_SECRET` *(live)* | Stripe dashboard → Webhooks → signing secret (live endpoint) | Stripe webhook signature verification fails; purchases not recorded |
+| `KIT_STRIPE_PRICE_IDS` | Copy the JSON printed in API server logs after first boot (`kit-products: set KIT_STRIPE_PRICE_IDS…`) | API auto-creates kit products on every cold start — idempotent but slow |
+
+**How to pin kit price IDs (one-time setup):**
+1. Start the API server once with Stripe connected.
+2. In the logs, find the line `kit-products: set KIT_STRIPE_PRICE_IDS in Replit Secrets…`.
+3. Copy the `KIT_STRIPE_PRICE_IDS` JSON value from that log line.
+4. Set it as a Replit Secret. From then on, no Stripe API calls happen at cold start.
+
+**Stripe live vs test mode** is controlled by the Replit Stripe integration:
+- In development (`REPLIT_DEPLOYMENT` unset): uses the **development** Stripe connection (test keys).
+- In production (`REPLIT_DEPLOYMENT=1`): uses the **production** Stripe connection (live keys).
+- Switch to live keys by connecting a live Stripe account via the Integrations tab → Stripe → production environment.
+
+---
+
 ## Gotchas
 
 - RSS has duplicate-cased categories ("friday flashbacks" vs "Friday Flashbacks"). Upstream data; surfaced as-is.

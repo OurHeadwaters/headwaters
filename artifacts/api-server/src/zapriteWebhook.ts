@@ -92,18 +92,27 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
   const signature = req.headers["x-zaprite-signature"] as string | undefined;
   const secret = process.env.ZAPRITE_WEBHOOK_SECRET;
 
-  if (secret && signature) {
-    if (!verifySignature(rawBody, signature, secret)) {
-      logger.warn("zaprite webhook: invalid signature — rejecting");
-      res.status(401).json({ error: "Invalid signature" });
-      return;
-    }
-  } else if (secret && !signature) {
+  if (!secret) {
+    logger.error(
+      "zaprite webhook: ZAPRITE_WEBHOOK_SECRET is not set — rejecting all webhook calls. " +
+        "Set this secret in Replit Secrets (copy from the Zaprite dashboard → Webhooks → Secret).",
+    );
+    res.status(400).json({
+      error: "Webhook endpoint not configured — ZAPRITE_WEBHOOK_SECRET missing on server.",
+    });
+    return;
+  }
+
+  if (!signature) {
     logger.warn("zaprite webhook: missing X-Zaprite-Signature header");
     res.status(401).json({ error: "Missing signature" });
     return;
-  } else {
-    logger.warn("zaprite webhook: ZAPRITE_WEBHOOK_SECRET not set — skipping signature check");
+  }
+
+  if (!verifySignature(rawBody, signature, secret)) {
+    logger.warn("zaprite webhook: invalid signature — rejecting");
+    res.status(401).json({ error: "Invalid signature" });
+    return;
   }
 
   let payload: ZapriteOrderPayload;

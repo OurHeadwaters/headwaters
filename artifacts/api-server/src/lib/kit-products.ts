@@ -63,6 +63,7 @@ export async function ensureKitProducts(): Promise<void> {
 
       if (existingPrice) {
         kit.stripePriceId = existingPrice.id;
+        logger.info({ slug: kit.slug, priceId: kit.stripePriceId }, "kit-products: using existing Stripe price");
       } else {
         const created = await stripe.prices.create({
           product: productId,
@@ -73,11 +74,39 @@ export async function ensureKitProducts(): Promise<void> {
         kit.stripePriceId = created.id;
         logger.info(
           { slug: kit.slug, priceId: kit.stripePriceId },
-          "kit-products: created Stripe price — add KIT_STRIPE_PRICE_IDS to env to skip this check",
+          "kit-products: created NEW Stripe price",
         );
       }
     } catch (err) {
       logger.warn({ err, slug: kit.slug }, "kit-products: failed to ensure product (non-fatal)");
     }
+  }
+
+  // ── Startup summary — copy this JSON into KIT_STRIPE_PRICE_IDS secret ──────
+  // Once set, the server skips all Stripe API calls at startup and uses these
+  // pinned IDs directly. No more auto-creation of duplicate products/prices.
+  const priceMap: Record<string, string> = {};
+  for (const kit of directKits) {
+    if (kit.stripePriceId) priceMap[kit.slug] = kit.stripePriceId;
+  }
+
+  const coveredCount = Object.keys(priceMap).length;
+  const totalCount = directKits.length;
+  const allFromEnv = directKits.every((k) => Boolean(envOverrides[k.slug]));
+
+  if (allFromEnv) {
+    logger.info(
+      { coveredCount, totalCount },
+      "kit-products: all price IDs loaded from KIT_STRIPE_PRICE_IDS env — no Stripe API calls needed at startup",
+    );
+  } else {
+    logger.info(
+      {
+        coveredCount,
+        totalCount,
+        KIT_STRIPE_PRICE_IDS: JSON.stringify(priceMap),
+      },
+      "kit-products: set KIT_STRIPE_PRICE_IDS in Replit Secrets to pin these price IDs and skip Stripe lookups on cold start",
+    );
   }
 }
