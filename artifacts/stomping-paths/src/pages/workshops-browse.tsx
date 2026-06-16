@@ -333,7 +333,7 @@ export default function WorkshopsBrowsePage() {
   const [filterTransformation, setFilterTransformation] = useState(params.get("path") ?? "");
   const [filterFormat, setFilterFormat] = useState<"all" | "online" | "local">("all");
   const [filterZone, setFilterZone] = useState(params.get("zone") ?? "");
-  const [filterFamilyFriendly, setFilterFamilyFriendly] = useState(false);
+  const [filterFamilyFriendly, setFilterFamilyFriendly] = useState(params.get("family") === "1");
   const [rsvpModal, setRsvpModal] = useState<{ eventId: number } | null>(null);
   const [rsvpError, setRsvpError] = useState<string | null>(null);
 
@@ -352,12 +352,23 @@ export default function WorkshopsBrowsePage() {
     }
   }, [search, qc]);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (filterFamilyFriendly) {
+      url.searchParams.set("family", "1");
+    } else {
+      url.searchParams.delete("family");
+    }
+    window.history.replaceState({}, "", url.toString());
+  }, [filterFamilyFriendly]);
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["workshops-browse", filterTransformation, filterZone],
+    queryKey: ["workshops-browse", filterTransformation, filterZone, filterFamilyFriendly],
     queryFn: async () => {
       const qs = new URLSearchParams({ status: "upcoming", limit: "50" });
       if (filterTransformation) qs.set("transformation", filterTransformation);
       if (filterZone) qs.set("zone", filterZone);
+      if (filterFamilyFriendly) qs.set("familyFriendly", "true");
       const res = await fetch(apiUrl(`/ground-events?${qs}`));
       if (!res.ok) throw new Error("Failed to load");
       return res.json() as Promise<{ events: GroundEvent[]; total: number }>;
@@ -388,7 +399,6 @@ export default function WorkshopsBrowsePage() {
   let events = data?.events ?? [];
   if (filterFormat === "online") events = events.filter((e) => e.isOnline);
   if (filterFormat === "local") events = events.filter((e) => !e.isOnline);
-  if (filterFamilyFriendly) events = events.filter((e) => e.familyFriendly);
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #1C3020 0%, #1A2820 100%)" }}>
