@@ -27,6 +27,7 @@ import {
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
+import { useShareCount } from "@/hooks/use-share-count";
 import { ProductShelf } from "@/components/product-shelf";
 import { formatDuration } from "@/components/episode-card";
 
@@ -494,6 +495,7 @@ export default function KitDetailPage() {
   const isFamilyKit = slug === "family-kit";
   const manual = KIT_MANUALS[slug];
   const { creators } = useKitCreators(slug);
+  const kitShareCount = useShareCount("kit", slug);
 
   const displayName =
     isFamilyKit
@@ -754,18 +756,32 @@ export default function KitDetailPage() {
             )}
 
             {/* Share button */}
-            <button
-              onClick={() => setShareOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all hover:-translate-y-px mt-2"
-              style={{
-                color: meta.color,
-                borderColor: meta.color + "44",
-                background: meta.color + "12",
-              }}
-            >
-              <Share2 className="w-4 h-4" />
-              Share this kit
-            </button>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <button
+                onClick={() => setShareOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all hover:-translate-y-px"
+                style={{
+                  color: meta.color,
+                  borderColor: meta.color + "44",
+                  background: meta.color + "12",
+                }}
+              >
+                <Share2 className="w-4 h-4" />
+                Share this kit
+              </button>
+              {kitShareCount !== null && kitShareCount > 3 && (
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    color: meta.color,
+                    background: meta.color + "18",
+                    border: `1px solid ${meta.color}33`,
+                  }}
+                >
+                  {kitShareCount.toLocaleString()} {kitShareCount === 1 ? "share" : "shares"}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

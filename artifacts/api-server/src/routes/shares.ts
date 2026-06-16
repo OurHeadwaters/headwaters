@@ -67,6 +67,34 @@ router.post("/shares", async (req, res) => {
   }
 });
 
+/* ─── GET /api/shares ─── (public — count only) */
+
+router.get("/shares", async (req, res) => {
+  const { surface, slug } = req.query as Record<string, string>;
+
+  if (typeof surface !== "string" || !VALID_SURFACES.has(surface)) {
+    res.status(400).json({ error: "Invalid surface. Must be kit, track, or transform." });
+    return;
+  }
+  if (typeof slug !== "string" || !slug.trim()) {
+    res.status(400).json({ error: "slug is required." });
+    return;
+  }
+
+  try {
+    const result = await withTable(async () => {
+      return db.execute(
+        sql`SELECT COUNT(*)::int AS share_count FROM share_events WHERE surface = ${surface} AND slug = ${slug.trim()}`,
+      );
+    });
+    const count = ((result as any).rows ?? result)[0]?.share_count ?? 0;
+    res.json({ count });
+  } catch (err) {
+    logger.error({ err }, "shares: GET failed");
+    res.status(500).json({ error: "Failed to load share count." });
+  }
+});
+
 /* ─── GET /api/admin/shares ─── */
 
 router.get("/admin/shares", requireEditor, async (_req, res) => {

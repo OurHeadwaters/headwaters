@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { formatDuration } from "@/components/episode-card";
+import { useShareCount } from "@/hooks/use-share-count";
 
 const PAGE_SIZE = 24;
 
@@ -625,6 +626,7 @@ export default function TrackDetailPage() {
   });
 
   const { data: transformations } = useTransformations();
+  const trackShareCount = useShareCount("track", slug);
 
   const track = data?.track;
 
@@ -926,18 +928,32 @@ export default function TrackDetailPage() {
               </div>
             )}
 
-            <button
-              onClick={() => setShareOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all duration-200"
-              style={{
-                color: track.color,
-                borderColor: track.color + "44",
-                background: track.color + "12",
-              }}
-            >
-              <Share2 className="w-4 h-4" />
-              Share this track
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setShareOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all duration-200"
+                style={{
+                  color: track.color,
+                  borderColor: track.color + "44",
+                  background: track.color + "12",
+                }}
+              >
+                <Share2 className="w-4 h-4" />
+                Share this track
+              </button>
+              {trackShareCount !== null && trackShareCount > 3 && (
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    color: track.color,
+                    background: track.color + "18",
+                    border: `1px solid ${track.color}33`,
+                  }}
+                >
+                  {trackShareCount.toLocaleString()} {trackShareCount === 1 ? "share" : "shares"}
+                </span>
+              )}
+            </div>
 
             <button
               onClick={handleCopySummary}

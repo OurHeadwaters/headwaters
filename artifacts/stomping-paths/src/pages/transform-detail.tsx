@@ -2,6 +2,7 @@ import { Link, useRoute } from "wouter";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Compass, Loader2, PlayCircle, ExternalLink, Package, Share2 } from "lucide-react";
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
+import { useShareCount } from "@/hooks/use-share-count";
 
 import { format, parseISO } from "date-fns";
 import { useTransformations } from "@/hooks/use-transformations";
@@ -166,6 +167,7 @@ function KitEasyButton({ kit }: { kit: SuiteKit }) {
 function TransformDetailContent({ slug }: { slug: string }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
+  const transformShareCount = useShareCount("transform", slug);
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : "",
   );
@@ -287,18 +289,32 @@ function TransformDetailContent({ slug }: { slug: string }) {
           )}
 
           {/* Share button */}
-          <button
-            onClick={() => setShareOpen(true)}
-            className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all hover:-translate-y-px"
-            style={{
-              color: t.color,
-              borderColor: t.color + "44",
-              background: t.color + "18",
-            }}
-          >
-            <Share2 className="w-4 h-4" />
-            Share this path
-          </button>
+          <div className="mt-6 flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShareOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all hover:-translate-y-px"
+              style={{
+                color: t.color,
+                borderColor: t.color + "44",
+                background: t.color + "18",
+              }}
+            >
+              <Share2 className="w-4 h-4" />
+              Share this path
+            </button>
+            {transformShareCount !== null && transformShareCount > 3 && (
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{
+                  color: t.color,
+                  background: t.color + "18",
+                  border: `1px solid ${t.color}33`,
+                }}
+              >
+                {transformShareCount.toLocaleString()} {transformShareCount === 1 ? "share" : "shares"}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
