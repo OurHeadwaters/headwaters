@@ -597,10 +597,10 @@ function StormToBloomSection() {
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#7FA77F]">The Zones</span>
           </div>
           <h2 className="font-serif text-4xl md:text-6xl text-[#FDFBF7] font-bold leading-tight mb-4">
-            Start close. <span className="italic text-[#D9A066]">Work outward.</span>
+            Start where you are.<br /><span className="italic text-[#D9A066]">Use what you have.</span>
           </h2>
           <p className="text-[#FDFBF7]/60 max-w-2xl mx-auto text-lg">
-            Six zones. Zone 0 is you — your body, your mind, your daily habits. Zone 5 is the wider world. Everything in between is territory you can actually change.
+            Do what you can. Six zones — from your own body and daily habits out to the wider world. Everything in between is territory you can actually change.
           </p>
         </motion.div>
 
