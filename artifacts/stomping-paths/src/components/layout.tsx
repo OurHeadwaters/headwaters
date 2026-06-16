@@ -42,6 +42,7 @@ const adminItems = [
   { href: "/admin/gord-tips", label: "Gord Tips", desc: "Tip history: tipper names and amounts" },
   { href: "/admin/ground-events", label: "Workshop Board", desc: "Manage ground events and workshops" },
   { href: "/admin/kit-purchases", label: "Kit Commerce", desc: "Kit purchases, revenue, and inquiries" },
+  { href: "/admin/shares", label: "Share Analytics", desc: "Track episode share activity by surface" },
   { href: "/admin/categories", label: "Category Descriptions", desc: "Edit category descriptions" },
   { href: "/admin/content-gaps", label: "Content Gaps", desc: "Identify content gaps" },
   { href: "/admin/gear", label: "Gear Catalog", desc: "Manage the gear catalog" },
