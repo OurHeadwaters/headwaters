@@ -1,5 +1,5 @@
 import { Link, useRoute, useSearch } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import {
   ArrowLeft,
@@ -18,6 +18,10 @@ import {
   Send,
   CheckCircle2,
   Zap,
+  Users,
+  BookOpen,
+  Video,
+  Headphones,
 } from "lucide-react";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
@@ -120,6 +124,55 @@ const KIT_MANUALS: Record<
       "Run yourself through the intake tool as if you were a client. Understanding the client experience is the most important preparation for using it professionally.",
   },
 };
+
+type CuratedLink = {
+  title: string;
+  url: string;
+  type: "podcast" | "video" | "article" | "book";
+};
+
+type Creator = {
+  slug: string;
+  name: string;
+  bio: string;
+  avatarUrl: string;
+  websiteUrl: string;
+  podcastUrl?: string;
+  status: "live" | "coming-soon";
+  transformationSlugs: string[];
+  kitSlugs: string[];
+  curatedLinks: CuratedLink[];
+};
+
+function useLinkIcon(type: CuratedLink["type"]) {
+  if (type === "podcast") return Headphones;
+  if (type === "video") return Video;
+  if (type === "book") return BookOpen;
+  return ExternalLink;
+}
+
+function CreatorLinkIcon({ type }: { type: CuratedLink["type"] }) {
+  const Icon = useLinkIcon(type);
+  return <Icon className="w-3 h-3" />;
+}
+
+function useKitCreators(kitSlug: string) {
+  const [creators, setCreators] = useState<Creator[]>([]);
+
+  useEffect(() => {
+    if (!kitSlug) return;
+    const base = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+    fetch(`${base}/api/suite/creators?kit=${encodeURIComponent(kitSlug)}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`creators fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data: Creator[]) => setCreators(data))
+      .catch(() => setCreators([]));
+  }, [kitSlug]);
+
+  return { creators };
+}
 
 function KindIcon({ kind }: { kind: string }) {
   if (kind === "audio") return <Mic className="w-3.5 h-3.5" />;
@@ -410,6 +463,7 @@ export default function KitDetailPage() {
   const isLinkOut = LINK_OUT_KITS.has(slug);
   const isFamilyKit = slug === "family-kit";
   const manual = KIT_MANUALS[slug];
+  const { creators } = useKitCreators(slug);
 
   const displayName =
     isFamilyKit
@@ -939,6 +993,97 @@ export default function KitDetailPage() {
               Jack-reviewed gear matched to this kit's content.
             </p>
             <ProductShelf products={kit.gear} compact />
+          </section>
+        )}
+
+        {/* ── Creator Cards ─────────────────────────────────────────── */}
+        {!isLinkOut && creators.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="w-4 h-4 shrink-0" style={{ color: meta.color }} />
+              <h2 className="font-serif text-xl font-bold text-foreground">
+                Learn from these voices
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">
+              Trusted creators whose work deepens this kit's transformation.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {creators.slice(0, 4).map((creator) => (
+                <div
+                  key={creator.slug}
+                  className="flex flex-col gap-3 p-5 rounded-xl border bg-card"
+                  style={{
+                    borderColor: meta.color + "33",
+                    background: meta.color + "06",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    {creator.avatarUrl ? (
+                      <img
+                        src={creator.avatarUrl}
+                        alt={creator.name}
+                        className="w-10 h-10 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
+                        style={{
+                          background: meta.color + "20",
+                          color: meta.color,
+                          border: `1px solid ${meta.color}44`,
+                        }}
+                      >
+                        {creator.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={creator.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-serif font-bold text-sm text-foreground hover:underline inline-flex items-center gap-1 group"
+                        style={{ color: "#FDFBF7" }}
+                      >
+                        {creator.name}
+                        <ExternalLink
+                          className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity"
+                          style={{ color: meta.color }}
+                        />
+                      </a>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-3">
+                        {creator.bio}
+                      </p>
+                    </div>
+                  </div>
+
+                  {creator.curatedLinks.length > 0 && (
+                    <div className="flex flex-col gap-1.5 border-t pt-3" style={{ borderColor: meta.color + "22" }}>
+                      {creator.curatedLinks.slice(0, 2).map((link) => (
+                        <a
+                          key={link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+                        >
+                          <span
+                            className="shrink-0 flex items-center justify-center w-5 h-5 rounded"
+                            style={{
+                              background: meta.color + "18",
+                              color: meta.color,
+                            }}
+                          >
+                            <CreatorLinkIcon type={link.type} />
+                          </span>
+                          <span className="line-clamp-1 group-hover:underline">{link.title}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </section>
         )}
 

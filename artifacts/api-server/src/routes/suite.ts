@@ -81,8 +81,12 @@ router.get("/suite/docs/:slug", (req, res) => {
 
 /* ─────────────────── GET /api/suite/creators ─────────────────── */
 
-router.get("/suite/creators", (_req, res) => {
-  res.json(CREATORS);
+router.get("/suite/creators", (req, res) => {
+  const { kit } = req.query as { kit?: string };
+  const creators = kit
+    ? CREATORS.filter((c) => c.kitSlugs.includes(kit))
+    : CREATORS;
+  res.json(creators);
 });
 
 /* ─────────────────── GET /api/suite/creators/:slug ─────────────────── */
