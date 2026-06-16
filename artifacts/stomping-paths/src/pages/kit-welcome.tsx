@@ -41,6 +41,16 @@ const KIT_FIRST_STEPS: Record<string, { what: string; first: string; next: strin
     first: "Listen to the Mind & Money track's early episodes on financial philosophy, then set up your first budget buckets.",
     next: "Once you have your budget structure, explore the X-Buckets tool for non-custodial stablecoin budgeting.",
   },
+  "pregnancy-kit": {
+    what: "Filter the health sovereignty episodes by earliest publish date — the philosophical foundation matters most before you dive into protocols.",
+    first: "Start with Jack's foundational health episodes on food quality and the limits of conventional medicine. Get the framework right before the specifics.",
+    next: "Layer in the pregnancy-specific content: herbalism safety, birth prep, early infant decisions. Each decision is easier once the frame is solid.",
+  },
+  "baby-health-kit": {
+    what: "Start with the foundational child health and real-food episodes mapped to your child's age. The framework applies at every stage.",
+    first: "Build one home-health practice at a time — real food first, then basic herbalism, then illness decision frameworks.",
+    next: "Mastery compounds. What you do in year one sets the trajectory. Return to this kit as your kids grow and new challenges arise.",
+  },
 };
 
 const DEFAULT_STEPS = {

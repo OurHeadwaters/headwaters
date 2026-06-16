@@ -46,6 +46,15 @@ export type KitDef = {
    * Populated from env vars for kits whose content lives outside this repo.
    */
   accessUrl?: string;
+  /**
+   * Additional keyword overrides for episode curation.
+   * When set, these tags are used INSTEAD of (not in addition to) the
+   * transformation/track tags to build the kit's curated episode list.
+   * Use this when a kit needs distinct episode curation from its parent
+   * transformation (e.g. two kits sharing a transformation but targeting
+   * different topics).
+   */
+  contentKeywords?: string[];
 };
 
 export const KITS: KitDef[] = [
@@ -204,6 +213,79 @@ export const KITS: KitDef[] = [
       what: "Ten recorded sessions on food preservation from Bobbie Parr's kitchen in Dryden, Ontario. Canning, fermenting, and pantry stocking for real northern winters.",
       first: "Watch Session 1 before you buy anything. The philosophy of stocking a real pantry matters more than which lids you use.",
       next: "Work through the sessions in order. Each one builds on the last. By Session 5 you will have more preserved food than most families buy in a month.",
+    },
+  },
+  {
+    slug: "pregnancy-kit",
+    name: "Expecting Different",
+    tagline: "Natural birth prep and building a health-sovereign home before baby arrives",
+    description:
+      "For expecting parents who want to build a health-sovereign environment before their baby arrives. Covers natural birth preparation, what goes in your body during pregnancy, early infant decisions (cord blood, delayed clamping, first foods), herbalism safety in pregnancy, and the foundational steps to a resilient family health practice.",
+    transformationSlugs: ["outsourced-health-to-health-sovereign"],
+    trackSlugs: [],
+    gearCategoryTags: ["herbalism", "pregnancy", "baby", "home"],
+    externalLinks: [],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Pregnancy Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=pregnancy-kit",
+    contentKeywords: [
+      "pregnancy",
+      "birth",
+      "prenatal",
+      "midwife",
+      "midwifery",
+      "infant",
+      "newborn",
+      "cord blood",
+      "breastfeeding",
+      "natural birth",
+      "herbalism",
+      "herbal medicine",
+      "nutrition",
+      "natural health",
+    ],
+    userManual: {
+      what: "Filter the health sovereignty episodes by earliest publish date — the philosophical foundation matters most before you dive into protocols.",
+      first: "Start with Jack's foundational health episodes on food quality, the limits of conventional medicine, and what it means to take back ownership of your family's health.",
+      next: "Layer in the specific pregnancy and infant decision content — herbalism safety, birth prep, cord blood, first foods. Each decision is easier once the philosophical frame is solid.",
+    },
+  },
+  {
+    slug: "baby-health-kit",
+    name: "Raising Health-Sovereign Kids",
+    tagline: "Infant nutrition, home herbalism, and breaking the pharmacy cycle for your family",
+    description:
+      "For new parents who want to raise kids outside the sick-care cycle. Covers real-food weaning and infant nutrition, home treatment of common childhood illnesses, fever and illness decision frameworks, herbalism for children, building a Zone 1 home for a growing family, and the first-decade health philosophy that sets your kids up for lifelong resilience.",
+    transformationSlugs: ["outsourced-health-to-health-sovereign"],
+    trackSlugs: [],
+    gearCategoryTags: ["herbalism", "baby", "kids-health", "home"],
+    externalLinks: [],
+    priceType: "direct",
+    priceCents: 9700,
+    ctaLabel: "Get the Baby Health Kit",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=baby-health-kit",
+    contentKeywords: [
+      "children",
+      "child",
+      "kids",
+      "infant",
+      "baby",
+      "fever",
+      "pediatric",
+      "childhood",
+      "toddler",
+      "weaning",
+      "herbalism",
+      "herbal medicine",
+      "natural health",
+      "nutrition",
+      "first aid",
+    ],
+    userManual: {
+      what: "Start with Jack's foundational child health and real-food episodes before adding herbalism protocols or supplement frameworks.",
+      first: "Begin with the earliest health sovereignty episodes and map them to your child's current age and situation. The framework applies at every stage.",
+      next: "Build one home-health practice at a time — real food first, then basic herbalism, then illness decision frameworks. Mastery compounds. Add the gear shelf items as you need them.",
     },
   },
   {

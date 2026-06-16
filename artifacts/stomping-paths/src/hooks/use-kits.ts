@@ -89,6 +89,8 @@ export const KIT_META: Record<string, { icon: string; color: string }> = {
   "budget-kit":       { icon: "🪣", color: "#7A6A3A" },
   "digital-kit":      { icon: "🔐", color: "#3A5A8A" },
   "physical-kit":     { icon: "⚡", color: "#8A5A3A" },
+  "pregnancy-kit":    { icon: "🌸", color: "#A86A8A" },
+  "baby-health-kit":  { icon: "🧸", color: "#6A8A5A" },
 };
 
 export const LINK_OUT_KITS = new Set(["practitioner-kit", "council-kit"]);

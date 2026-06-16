@@ -123,6 +123,30 @@ const KIT_MANUALS: Record<
     next:
       "Run yourself through the intake tool as if you were a client. Understanding the client experience is the most important preparation for using it professionally.",
   },
+  "pregnancy-kit": {
+    what: [
+      "Natural birth preparation: what the conventional model gets wrong, and how to build a birth plan rooted in your own values.",
+      "What goes in your body during pregnancy — nutrition, supplementation, herbalism safety, and what to avoid.",
+      "Early infant decisions: cord blood banking, delayed clamping, vitamin K, first foods, and the choices that compound over time.",
+      "Building a health-sovereign home environment before baby arrives — the Zone 1 reset every expecting family should make.",
+    ],
+    first:
+      "Start with Jack's foundational health episodes on food quality and the limits of conventional medicine. The philosophical frame matters more than the protocols — get it right first.",
+    next:
+      "Layer in the pregnancy-specific content: herbalism safety, birth prep, early infant decisions. Each decision is easier once the framework is solid. Use the gear shelf for the books and herbal resources Jack has reviewed.",
+  },
+  "baby-health-kit": {
+    what: [
+      "Real-food weaning and infant nutrition — when to start, what to offer, and why the standard guidance often fails families.",
+      "Home treatment for common childhood illnesses: fever decision frameworks, ear infections, respiratory illness, and when to escalate.",
+      "Home herbalism for children — safe herbs, dosing principles, and building a home apothecary that handles 80% of what your kids will face.",
+      "The first-decade health philosophy: resilience, immune development, and what health-sovereign parenting actually looks like in practice.",
+    ],
+    first:
+      "Start with Jack's foundational child health and real-food episodes, mapped to your child's current age. The framework applies at every stage — don't skip the philosophy for the protocols.",
+    next:
+      "Build one practice at a time: real food first, then basic herbalism, then illness decision frameworks. Add the gear shelf items as you need them. This compounds — what you do in year one sets the trajectory.",
+  },
 };
 
 type CuratedLink = {
@@ -978,6 +1002,68 @@ export default function KitDetailPage() {
                   </Link>
                 );
               })}
+            </div>
+          </section>
+        )}
+
+        {/* ── Care Kit sibling-kit callout ─────────────────────────── */}
+        {slug === "care-kit" && (
+          <section>
+            <div
+              className="rounded-xl border p-6"
+              style={{
+                borderColor: "#A86A8A44",
+                background: "linear-gradient(135deg, #A86A8A10 0%, #6A8A5A08 100%)",
+              }}
+            >
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest mb-3"
+                style={{ color: "#A86A8A" }}
+              >
+                Also in the Care family
+              </div>
+              <h3 className="font-serif text-lg font-bold text-foreground mb-2">
+                Expecting or have young kids?
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                The Care Kit covers health sovereignty for the whole household — but if you're
+                expecting or raising little ones, two dedicated kits go deeper on exactly what
+                matters at that stage.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Link
+                  href="/kits/pregnancy-kit"
+                  className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 group"
+                  style={{ borderColor: "#A86A8A33", background: "#A86A8A06" }}
+                >
+                  <span className="text-2xl leading-none shrink-0">🌸</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                      Expecting Different
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      Natural birth prep and building a health-sovereign home before baby arrives
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground/30 group-hover:text-primary transition-colors mt-0.5" />
+                </Link>
+                <Link
+                  href="/kits/baby-health-kit"
+                  className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-200 group"
+                  style={{ borderColor: "#6A8A5A33", background: "#6A8A5A06" }}
+                >
+                  <span className="text-2xl leading-none shrink-0">🧸</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                      Raising Health-Sovereign Kids
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      Infant nutrition, home herbalism, and breaking the pharmacy cycle
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground/30 group-hover:text-primary transition-colors mt-0.5" />
+                </Link>
+              </div>
             </div>
           </section>
         )}

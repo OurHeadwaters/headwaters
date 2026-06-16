@@ -66,24 +66,36 @@ router.get("/kits/:slug", async (req, res) => {
       .map(trackBySlug)
       .filter(Boolean);
 
-    const allTags: string[] = [];
-    const allCategories: string[] = [];
+    // If the kit specifies contentKeywords, use those directly instead of
+    // deriving tags/categories from transformations and tracks. This gives kits
+    // that share a transformation (e.g. pregnancy-kit and baby-health-kit both
+    // pointing at outsourced-health-to-health-sovereign) distinct episode pools.
+    let uniqueTags: string[];
+    let uniqueCategories: string[];
 
-    for (const t of transformations) {
-      if (t) {
-        allTags.push(...t.tags);
-        allCategories.push(...t.categories);
-      }
-    }
-    for (const t of tracks) {
-      if (t) {
-        allTags.push(...t.tags);
-        allCategories.push(...t.categories);
-      }
-    }
+    if (kit.contentKeywords && kit.contentKeywords.length > 0) {
+      uniqueTags = [...new Set(kit.contentKeywords.map((k) => k.toLowerCase()))];
+      uniqueCategories = [];
+    } else {
+      const allTags: string[] = [];
+      const allCategories: string[] = [];
 
-    const uniqueTags = [...new Set(allTags)];
-    const uniqueCategories = [...new Set(allCategories)];
+      for (const t of transformations) {
+        if (t) {
+          allTags.push(...t.tags);
+          allCategories.push(...t.categories);
+        }
+      }
+      for (const t of tracks) {
+        if (t) {
+          allTags.push(...t.tags);
+          allCategories.push(...t.categories);
+        }
+      }
+
+      uniqueTags = [...new Set(allTags)];
+      uniqueCategories = [...new Set(allCategories)];
+    }
 
     let episodes: unknown[] = [];
 
