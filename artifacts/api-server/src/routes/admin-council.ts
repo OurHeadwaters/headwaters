@@ -3,8 +3,11 @@ import { db, expertCouncilTable, ulgBusinessesTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { seedExpertCouncil, seedUlgBusinesses } from "../lib/seed-expert-council";
+import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
+
+router.use("/admin/council", requireEditor);
 
 let seeded = false;
 
