@@ -12,6 +12,18 @@ const RETRY_BASE_MS = 1000;
 
 type WPRendered = { rendered?: string } | string | undefined | null;
 
+type WPEmbeddedMedia = {
+  source_url?: string;
+  media_details?: {
+    sizes?: {
+      full?: { source_url?: string };
+      large?: { source_url?: string };
+      medium_large?: { source_url?: string };
+      medium?: { source_url?: string };
+    };
+  };
+};
+
 type WPPost = {
   id: number;
   date_gmt: string;
@@ -23,6 +35,9 @@ type WPPost = {
   content: WPRendered;
   categories?: number[];
   tags?: number[];
+  _embedded?: {
+    "wp:featuredmedia"?: WPEmbeddedMedia[];
+  };
 };
 
 type WPTerm = { id: number; name: string; slug: string };
@@ -236,6 +251,20 @@ async function fetchAllTerms(
   return map;
 }
 
+function extractFeaturedImageUrl(post: WPPost): string | null {
+  const media = post._embedded?.["wp:featuredmedia"]?.[0];
+  if (!media) return null;
+  const sizes = media.media_details?.sizes;
+  return (
+    sizes?.large?.source_url ||
+    sizes?.medium_large?.source_url ||
+    sizes?.full?.source_url ||
+    sizes?.medium?.source_url ||
+    media.source_url ||
+    null
+  ) ?? null;
+}
+
 function postToInsert(
   post: WPPost,
   categories: Map<number, string>,
@@ -257,6 +286,9 @@ function postToInsert(
     .map((id) => tags.get(id))
     .filter((c): c is string => !!c);
   const publishedAt = new Date(post.date_gmt + "Z");
+
+  // Prefer the WordPress featured image (from _embed); fall back to HTML extraction
+  const artworkUrl = extractFeaturedImageUrl(post) || media.artworkUrl;
 
   // Run history-segment detection at ingest time so tile loads are instant.
   const historySegment = sanitized ? extractHistorySegment(sanitized) : null;
@@ -285,7 +317,7 @@ function postToInsert(
     audioType: media.audioType,
     videoUrl: media.videoUrl,
     videoId: media.videoId,
-    artworkUrl: media.artworkUrl,
+    artworkUrl,
     episodeNumber,
     categories: cats,
     tags: tagNames,
@@ -350,6 +382,37 @@ export type WordPressSyncResult = {
   failedPages: number[];
 };
 
+// ---------------------------------------------------------------------------
+// Lightweight per-slug featured-image lookup (for RSS-sourced episodes)
+// ---------------------------------------------------------------------------
+
+const slugImageCache = new Map<string, string | null>();
+
+/**
+ * Fetch the WordPress featured image URL for a single post slug.
+ * Results are cached in-memory for the process lifetime so repeated calls
+ * (e.g. on every RSS feed refresh) never hit the WP API twice for the same slug.
+ *
+ * Returns `null` if WordPress has no featured image for this post.
+ */
+export async function fetchFeaturedImageBySlug(slug: string): Promise<string | null> {
+  if (slugImageCache.has(slug)) {
+    return slugImageCache.get(slug) ?? null;
+  }
+
+  try {
+    const url = `${WP_BASE}/posts?slug=${encodeURIComponent(slug)}&_embed&_fields=id,slug&per_page=1`;
+    const { data } = await fetchJson<WPPost[]>(url);
+    const post = data[0];
+    const imageUrl = post ? extractFeaturedImageUrl(post) : null;
+    slugImageCache.set(slug, imageUrl);
+    return imageUrl;
+  } catch (err) {
+    logger.debug({ err, slug }, "fetchFeaturedImageBySlug: WP lookup failed");
+    return null;
+  }
+}
+
 /**
  * Page through the entire WordPress archive, upserting per-page so partial
  * progress is preserved if his shaky WordPress instance 500s deep in the
@@ -382,7 +445,7 @@ export async function syncWordPressArchive(options: {
   const fields = ["id", "date", "date_gmt", "slug", "link", "title", "excerpt", "content", "categories", "tags"].join(",");
 
   while (true) {
-    const url = `${WP_BASE}/posts?per_page=${PAGE_SIZE}&page=${page}&_fields=${fields}&orderby=date&order=desc`;
+    const url = `${WP_BASE}/posts?per_page=${PAGE_SIZE}&page=${page}&_fields=${fields}&_embed&orderby=date&order=desc`;
     try {
       const { data, headers } = await fetchJson<WPPost[]>(url, signal);
       totalPages = Number(headers.get("x-wp-totalpages") ?? totalPages.toString());

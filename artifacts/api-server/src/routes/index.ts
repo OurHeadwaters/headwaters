@@ -48,6 +48,7 @@ import stompingPathRouter from "./stomping-path";
 import suggestionsRouter from "./suggestions";
 import sharesRouter from "./shares";
 import storageFilesRouter from "./storage-files";
+import adminArtworkBackfillRouter from "./admin-artwork-backfill";
 
 const router: IRouter = Router();
 
@@ -100,5 +101,6 @@ router.use(stompingPathRouter);
 router.use(suggestionsRouter);
 router.use(sharesRouter);
 router.use(storageFilesRouter);
+router.use(adminArtworkBackfillRouter);
 
 export default router;
