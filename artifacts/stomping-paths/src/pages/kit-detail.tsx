@@ -217,7 +217,22 @@ type GroundEvent = {
   seats: number | null;
   rsvpCount: number;
   isFeatured: boolean;
+  ticketPriceCents: number | null;
+  hasRsvped?: boolean;
 };
+
+function getOrCreateRsvpSessionId(): string {
+  try {
+    let id = localStorage.getItem("rsvp_session_id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("rsvp_session_id", id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 function useFamilyWorkshops(enabled: boolean) {
   const [workshops, setWorkshops] = useState<GroundEvent[]>([]);
@@ -227,7 +242,8 @@ function useFamilyWorkshops(enabled: boolean) {
     if (!enabled) return;
     setLoading(true);
     const base = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
-    fetch(`${base}/api/ground-events?familyFriendly=true&status=upcoming&limit=3`)
+    const sessionId = getOrCreateRsvpSessionId();
+    fetch(`${base}/api/ground-events?familyFriendly=true&status=upcoming&limit=3&sessionId=${encodeURIComponent(sessionId)}`)
       .then((r) => {
         if (!r.ok) throw new Error(`workshops fetch failed: ${r.status}`);
         return r.json();
@@ -545,6 +561,55 @@ export default function KitDetailPage() {
   const [kitShareCount, incrementKitShareCount] = useShareCount("kit", slug);
   const showFamilyWorkshops = FAMILY_HOUSEHOLD_VALUES.has(household);
   const { workshops, loading: workshopsLoading } = useFamilyWorkshops(showFamilyWorkshops);
+
+  type RsvpState = { loading: boolean; confirmed: boolean; rsvpCount: number };
+  const [rsvpStates, setRsvpStates] = useState<Record<number, RsvpState>>({});
+
+  useEffect(() => {
+    if (workshops.length === 0) return;
+    setRsvpStates((prev) => {
+      const next = { ...prev };
+      for (const w of workshops) {
+        if (!(w.id in next)) {
+          next[w.id] = { loading: false, confirmed: !!w.hasRsvped, rsvpCount: w.rsvpCount };
+        }
+      }
+      return next;
+    });
+  }, [workshops]);
+
+  async function handleWorkshopRsvp(workshopId: number) {
+    setRsvpStates((prev) => ({
+      ...prev,
+      [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0 }), loading: true },
+    }));
+    try {
+      const base = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+      const sessionId = getOrCreateRsvpSessionId();
+      const res = await fetch(`${base}/api/ground-events/${workshopId}/rsvp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRsvpStates((prev) => ({
+          ...prev,
+          [workshopId]: { loading: false, confirmed: true, rsvpCount: data.rsvpCount ?? (prev[workshopId]?.rsvpCount ?? 0) + 1 },
+        }));
+      } else {
+        setRsvpStates((prev) => ({
+          ...prev,
+          [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0 }), loading: false },
+        }));
+      }
+    } catch {
+      setRsvpStates((prev) => ({
+        ...prev,
+        [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0 }), loading: false },
+      }));
+    }
+  }
 
   const displayName =
     isFamilyKit
@@ -1245,20 +1310,73 @@ export default function KitDetailPage() {
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
                       {w.description}
                     </p>
-                    <a
-                      href={w.externalUrl ?? `/workshops/${w.id}`}
-                      target={w.externalUrl ? "_blank" : undefined}
-                      rel={w.externalUrl ? "noopener noreferrer" : undefined}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-px"
-                      style={{
-                        color: "#fff",
-                        background: "#8FA883",
-                        boxShadow: "0 2px 12px #8FA88340",
-                      }}
-                    >
-                      View workshop
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {!w.ticketPriceCents ? (
+                        (() => {
+                          const rs = rsvpStates[w.id];
+                          const confirmed = rs?.confirmed ?? false;
+                          const rsvpLoading = rs?.loading ?? false;
+                          const rsvpCount = rs?.rsvpCount ?? w.rsvpCount;
+                          return confirmed ? (
+                            <div className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg"
+                              style={{ color: "#8FA883", background: "#8FA88320", border: "1px solid #8FA88344" }}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              You're coming!
+                              {rsvpCount > 0 && (
+                                <span className="opacity-70">· {rsvpCount} going</span>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleWorkshopRsvp(w.id)}
+                              disabled={rsvpLoading}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                              style={{
+                                color: "#fff",
+                                background: "#8FA883",
+                                boxShadow: "0 2px 12px #8FA88340",
+                              }}
+                            >
+                              {rsvpLoading ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              )}
+                              {rsvpLoading ? "Saving…" : "I'm coming"}
+                              {!rsvpLoading && rsvpCount > 0 && (
+                                <span className="opacity-80">· {rsvpCount} going</span>
+                              )}
+                            </button>
+                          );
+                        })()
+                      ) : (
+                        <a
+                          href={w.externalUrl ?? `/workshops/${w.id}`}
+                          target={w.externalUrl ? "_blank" : undefined}
+                          rel={w.externalUrl ? "noopener noreferrer" : undefined}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-px"
+                          style={{
+                            color: "#fff",
+                            background: "#8FA883",
+                            boxShadow: "0 2px 12px #8FA88340",
+                          }}
+                        >
+                          Get tickets
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      <a
+                        href={w.externalUrl ?? `/workshops/${w.id}`}
+                        target={w.externalUrl ? "_blank" : undefined}
+                        rel={w.externalUrl ? "noopener noreferrer" : undefined}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                        style={{ color: "#8FA88399" }}
+                      >
+                        View details
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
                 ))}
                 <a
