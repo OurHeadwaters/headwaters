@@ -34,6 +34,8 @@ const landmarkItems = [
   { href: "/zones", label: "Browse by Zone", desc: "Zone map — navigate the archive" },
   { href: "/library", label: "The Archive", desc: "6,000+ episodes — search everything" },
   { href: "/council", label: "Expert Council", desc: "Practitioners and advisors" },
+  { href: "/headwaters", label: "The Headwaters", desc: "Member area — community and resources" },
+  { href: "/privacy-guide/", label: "Family Kit", desc: "Privacy guide for families", external: true },
   { href: "/codetry/", label: "The Arch", desc: "Digital sovereignty — Codetry", external: true },
 ];
 
@@ -214,6 +216,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const { episode } = usePlayer();
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const { data: brigadeData } = useBrigadeStatus(isAuthenticated);
@@ -240,10 +244,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <img src={tspLogo} alt="TSP Logo" className="w-10 h-10" />
-            <div className="flex flex-col">
-              <span className="font-serif font-bold text-lg leading-tight tracking-tight text-white">The Stomping Path</span>
-              <span className="text-[10px] uppercase tracking-wider text-white/50 font-semibold leading-none">TSP Community</span>
-            </div>
+            <span className="font-serif font-bold text-lg leading-tight tracking-tight text-white whitespace-nowrap">The Stomping Path</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -278,27 +279,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Grounds
             </Link>
 
-            {/* Family Kit */}
-            <a
-              href="/privacy-guide/"
-              className="relative text-sm font-medium transition-colors pb-0.5 text-white/65 hover:text-white"
-            >
-              Family Kit
-            </a>
-
-            {/* The Headwaters */}
-            <Link
-              href="/headwaters"
-              className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
-                location === "/headwaters"
-                  ? "text-white border-b-2 border-[#D9A066]"
-                  : "text-white/65 hover:text-white"
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              The Headwaters
-            </Link>
-
             {/* Admin dropdown */}
             <DropdownMenu
               label="Admin"
@@ -306,66 +286,58 @@ export function Layout({ children }: { children: React.ReactNode }) {
               isActive={isAdminActive}
             />
 
-            {/* Suggest a Creator — auth-gated */}
-            {isAuthenticated && !authLoading && (
-              <Link
-                href="/suggest-creator"
-                className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
-                  location === "/suggest-creator"
-                    ? "text-white border-b-2 border-[#D9A066]"
-                    : "text-white/65 hover:text-white"
-                }`}
-              >
-                Suggest a Creator
-              </Link>
-            )}
-
-            {/* My Map — auth-gated */}
-            {isAuthenticated && !authLoading && (
-              <Link
-                href="/map"
-                className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
-                  location === "/map"
-                    ? "text-white border-b-2 border-[#D9A066]"
-                    : "text-white/65 hover:text-white"
-                }`}
-              >
-                <Map className="w-3.5 h-3.5" />
-                My Map
-              </Link>
-            )}
-
-            {/* Auth button */}
+            {/* Auth */}
             {!authLoading && (
               isAuthenticated ? (
-                <div className="flex items-center gap-2 ml-1">
-                  {isBrigadeMember && (
-                    <Link
-                      href="/brigade"
-                      className="flex items-center gap-1 bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D9A066]/40 hover:bg-[#D9A066]/30 transition-colors uppercase tracking-wider"
-                      title="Headwaters Member"
-                    >
-                      <Shield className="w-2.5 h-2.5" />
-                      Headwaters
-                    </Link>
-                  )}
-                  {user?.profileImageUrl ? (
-                    <img
-                      src={user.profileImageUrl}
-                      alt="Profile"
-                      className="w-7 h-7 rounded-full border border-white/30 object-cover"
-                    />
-                  ) : (
-                    <User className="w-4 h-4 text-white/70" />
-                  )}
+                <div
+                  ref={userMenuRef}
+                  className="relative ml-1"
+                  onMouseEnter={() => setUserMenuOpen(true)}
+                  onMouseLeave={() => setUserMenuOpen(false)}
+                >
                   <button
-                    onClick={logout}
-                    className="flex items-center gap-1 text-sm text-white/65 hover:text-white transition-colors"
-                    title="Log out"
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                    className="flex items-center gap-1.5 text-white/65 hover:text-white transition-colors"
+                    aria-haspopup="menu"
+                    aria-expanded={userMenuOpen}
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span className="text-xs">Log out</span>
+                    {isBrigadeMember && (
+                      <span className="flex items-center bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-[#D9A066]/40 uppercase tracking-wider">
+                        <Shield className="w-2.5 h-2.5" />
+                      </span>
+                    )}
+                    {user?.profileImageUrl ? (
+                      <img src={user.profileImageUrl} alt="Profile" className="w-7 h-7 rounded-full border border-white/30 object-cover" />
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
+                    <ChevronDown className={`w-3 h-3 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
                   </button>
+                  {userMenuOpen && (
+                    <div role="menu" className="absolute top-full right-0 mt-0 w-52 bg-[#1e3428] border border-white/10 rounded-xl shadow-2xl pt-2 pb-2 z-50">
+                      <div className="absolute -top-1.5 right-3 w-3 h-3 bg-[#1e3428] border-l border-t border-white/10 rotate-45" />
+                      {isBrigadeMember && (
+                        <Link href="/brigade" onClick={() => setUserMenuOpen(false)} className="flex flex-col px-4 py-2 hover:bg-white/5 transition-colors">
+                          <span className="text-sm font-semibold text-[#D9A066]">Headwaters Member</span>
+                          <span className="text-xs text-white/50 mt-0.5">Your member area</span>
+                        </Link>
+                      )}
+                      <Link href="/map" onClick={() => setUserMenuOpen(false)} className="flex flex-col px-4 py-2 hover:bg-white/5 transition-colors">
+                        <span className="text-sm font-semibold text-white">My Map</span>
+                        <span className="text-xs text-white/50 mt-0.5">Your practitioner journey</span>
+                      </Link>
+                      <Link href="/suggest-creator" onClick={() => setUserMenuOpen(false)} className="flex flex-col px-4 py-2 hover:bg-white/5 transition-colors">
+                        <span className="text-sm font-semibold text-white">Suggest a Creator</span>
+                        <span className="text-xs text-white/50 mt-0.5">Recommend for the Kitchen Table</span>
+                      </Link>
+                      <div className="border-t border-white/10 mt-1 pt-1">
+                        <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-white/65 hover:text-white hover:bg-white/5 transition-colors rounded-lg">
+                          <LogOut className="w-3.5 h-3.5" />
+                          Log out
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -446,34 +418,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               onClick={() => setMenuOpen(false)}
             >
               Grounds
-            </Link>
-
-            {/* Family Kit */}
-            <a
-              href="/privacy-guide/"
-              className="text-base font-medium px-3 py-2.5 rounded-md text-white/70 hover:text-white hover:bg-white/5"
-              onClick={() => setMenuOpen(false)}
-            >
-              Family Kit
-            </a>
-
-            {/* The Headwaters */}
-            <Link
-              href="/headwaters"
-              className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
-                location === "/headwaters"
-                  ? "bg-white/10 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/5"
-              }`}
-              onClick={() => setMenuOpen(false)}
-            >
-              <Shield className="w-4 h-4" />
-              The Headwaters
-              {isBrigadeMember && (
-                <span className="ml-auto bg-[#D9A066]/20 text-[#D9A066] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#D9A066]/40 uppercase tracking-wider">
-                  Member
-                </span>
-              )}
             </Link>
 
             {/* Admin accordion */}
