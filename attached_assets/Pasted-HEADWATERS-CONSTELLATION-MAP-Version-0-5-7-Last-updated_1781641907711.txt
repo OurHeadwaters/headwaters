@@ -1,0 +1,59 @@
+HEADWATERS CONSTELLATION MAP
+Version 0.5.7 — Last updated 2026-05-05
+
+ZONES
+─────────────────────────────────────────────────────────
+
+Pre-Zone  Brainstorm Library
+          Seed bank — ideas before they're sorted into a zone
+          Status: pending
+
+Zone 0    Saltbox
+          Decentralized homes — homeschool day companion, local-first per family
+          URL: salt-box.replit.app
+
+Zone 1    Kitchen Table
+          Non-custodial XRPL stablecoin envelope-budgeting PWA
+          Tagline: Channel every drop. Nothing from nowhere.
+          Former names: xBuckets, Watershed, Headwaters, Eave
+          URL: x-buckets-vision.replit.app
+
+Zone 2    Workbench
+          Business / operating workbench — deal-flow, weekly steps, cost review
+          URL: northern-store-plan.replit.app/codetry-handbook/
+
+Zone 3    Greenhouse
+          Community production for NWO food systems — multi-tenant member portal
+          Member-facing brand: 807 Benefits
+          URL: community-knowledge-hub.replit.app
+
+Zone 4    Clearing
+          Conventional → regenerative track for industries
+          Current sector: regen beef in NWO
+          URL: regen-revolution-zone-4.replit.app
+
+Zone 5    Edge  (formerly: The Margin)
+          Wild / observation — private capture (takes) with opt-in float to the Shallows
+          URL: conversation-log.replit.app
+
+CONSTELLATION-WIDE PRIMITIVES
+─────────────────────────────────────────────────────────
+
+The Standby  (hosted Z3, read by all zones)
+  Always-on emergency prep + active-event system for centralized disruptions
+  (drought, fire, flood, power, freight, payment systems, pandemic, evacuation)
+  Rungs: advisory → standby → active → standdown
+  Sub-shelves: The Common Pantry (food/supply), The Watch (active monitoring)
+
+The Gate  (hosted Z3, read by all zones)
+  Calm passage between the bright side (codetry dialect) and the systems
+  (regulators, bankers, funders, lawyers)
+  Rungs: draft → under-review → cleared → refused
+  Sub-shelves: Mappings, Substitutions, Categories
+
+GRAMMAR
+─────────────────────────────────────────────────────────
+Practice:    codetry — naming IS architecture
+Zone system: permaculture 0–5
+Thunder:     there is no shortage of problems, but when we look for solutions
+             it all becomes a little easier
