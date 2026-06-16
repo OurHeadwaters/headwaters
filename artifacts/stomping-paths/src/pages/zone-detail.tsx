@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useRoute } from "wouter";
 
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@workspace/replit-auth-web";
 
 const ZONE_ACCENT_COLORS = [
   "#E8853D",
@@ -17,7 +18,7 @@ import { ProductShelfSection, type ReviewedProduct } from "@/components/product-
 import { DebtFreedomCoachPanel } from "@/components/debt-freedom-coach";
 import {
   Loader2, Headphones, Users, Building2, ExternalLink,
-  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare, Bot, Radio,
+  ArrowLeft, ChevronRight, Play, Mic, FileText, PlaySquare, Bot, Radio, LogIn,
 } from "lucide-react";
 
 type SourceFilter = "all" | "tsp" | "ulg" | "fireside-freedom";
@@ -454,10 +455,218 @@ function FieldNotesShelf({
   );
 }
 
+function TeaserEpisodeRow({ ep, onLogin }: { ep: ZoneResourceEpisode; onLogin: () => void }) {
+  return (
+    <button
+      onClick={onLogin}
+      className="group w-full flex items-start gap-3 py-3 px-3 rounded-lg hover:bg-muted/60 transition-colors text-left"
+    >
+      {ep.artworkUrl ? (
+        <img
+          src={ep.artworkUrl}
+          alt=""
+          className="w-12 h-12 rounded object-cover shrink-0 mt-0.5"
+        />
+      ) : (
+        <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0 mt-0.5">
+          <Play className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
+          {ep.title}
+        </p>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+          <span>{new Date(ep.publishedAt).getFullYear()}</span>
+          {ep.durationSeconds && <span>{formatDuration(ep.durationSeconds)}</span>}
+          {kindIcon(ep.kind)}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function ZoneTeaserPage({
+  data,
+  onLogin,
+}: {
+  data: import("@/hooks/use-zone-resources").ZoneResources;
+  onLogin: () => void;
+}) {
+  const { zone, episodes, episodeTotal, experts } = data;
+  const idx = zone.number;
+  const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
+  const bgColor = ZONE_BG_COLORS[idx] ?? "bg-muted";
+  const textColor = ZONE_TEXT_COLORS[idx] ?? "text-foreground";
+  const badgeColor = ZONE_BADGE_BG[idx] ?? "bg-muted border-border text-foreground";
+  const accentColor = ZONE_ACCENT_COLORS[idx] ?? "#D9A066";
+
+  const sampleEpisodes = (episodes.filter((ep) => ep.source === "tsp").length >= 3
+    ? episodes.filter((ep) => ep.source === "tsp")
+    : episodes
+  ).slice(0, 4);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <div className={`border-b border-border ${bgColor}`} style={{ borderTop: `4px solid ${accentColor}` }}>
+        <div className="max-w-5xl mx-auto px-6 py-12">
+          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6" aria-label="Breadcrumb">
+            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+            <ChevronRight className="w-3 h-3 opacity-40" />
+            <Link href="/zones" className="hover:text-foreground transition-colors">Zones</Link>
+            <ChevronRight className="w-3 h-3 opacity-40" />
+            <span className="text-foreground font-semibold truncate max-w-[160px]">{zone.name}</span>
+          </nav>
+
+          <div className="flex items-start gap-5">
+            <div
+              className={`shrink-0 w-16 h-16 rounded-2xl border-2 ${ringColor} ${bgColor} flex flex-col items-center justify-center`}
+            >
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${textColor} opacity-60`}>
+                Zone
+              </span>
+              <span className={`text-2xl font-serif font-bold ${textColor}`}>{zone.number}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badgeColor}`}>
+                  Zone {zone.number}
+                </span>
+                {episodeTotal > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {episodeTotal.toLocaleString()} episodes
+                  </span>
+                )}
+                {experts.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    · {experts.length} expert{experts.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+              <h1 className={`font-serif text-3xl md:text-4xl font-bold ${textColor} mb-2`}>
+                {zone.name}
+              </h1>
+              <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+                {zone.description}
+              </p>
+              <blockquote className="mt-3 border-l-2 border-primary/30 pl-3 text-sm italic text-muted-foreground max-w-xl">
+                {zone.philosophy}
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Login CTA banner */}
+      <div className="border-b border-border bg-amber-50 dark:bg-amber-950/20">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-foreground text-sm">
+              Log in to track your progress and explore all {episodeTotal.toLocaleString()} episodes
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Free account — save where you are, build your personal path through the archive.
+            </p>
+          </div>
+          <button
+            onClick={onLogin}
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            Log in
+          </button>
+        </div>
+      </div>
+
+      {/* Teaser content */}
+      <div className="max-w-5xl mx-auto px-6 py-12 space-y-14">
+
+        {/* Sample episodes */}
+        {sampleEpisodes.length > 0 && (
+          <section>
+            <ShelfHeader
+              icon={<Headphones className="w-4 h-4" />}
+              title="Sample Episodes"
+              count={episodeTotal}
+              zoneColor={zone.color}
+            />
+            <p className="text-sm text-muted-foreground mb-4 ml-11">
+              A taste of what's in this zone.{" "}
+              <button onClick={onLogin} className="font-semibold text-primary hover:underline">
+                Log in to browse all {episodeTotal.toLocaleString()} episodes →
+              </button>
+            </p>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {sampleEpisodes.map((ep) => (
+                <TeaserEpisodeRow key={ep.id} ep={ep} onLogin={onLogin} />
+              ))}
+            </div>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              <button onClick={onLogin} className="font-semibold text-primary hover:underline">
+                Log in to see all {episodeTotal.toLocaleString()} episodes in this zone
+              </button>
+            </p>
+          </section>
+        )}
+
+        {/* Expert teasers */}
+        {experts.length > 0 && (
+          <section>
+            <ShelfHeader
+              icon={<Users className="w-4 h-4" />}
+              title="Learn From"
+              count={experts.length}
+              zoneColor={zone.color}
+            />
+            <p className="text-sm text-muted-foreground mb-5 ml-11">
+              Expert Council members whose work lives in {zone.name.toLowerCase()}.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {experts.slice(0, 4).map((expert) => (
+                <ExpertCard key={expert.id} expert={expert} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Bottom CTA */}
+        <div className="rounded-2xl border border-border bg-card p-8 flex flex-col items-center text-center gap-4">
+          <div
+            className={`w-14 h-14 rounded-2xl border-2 ${ringColor} ${bgColor} flex flex-col items-center justify-center`}
+          >
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${textColor} opacity-60`}>
+              Zone
+            </span>
+            <span className={`text-xl font-serif font-bold ${textColor}`}>{zone.number}</span>
+          </div>
+          <div>
+            <p className="font-serif font-bold text-xl text-foreground mb-1">
+              Ready to explore {zone.name}?
+            </p>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Log in to track your progress, browse all episodes, and build your personal path through the archive.
+            </p>
+          </div>
+          <button
+            onClick={onLogin}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            Log in to track your progress
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 export default function ZoneDetailPage() {
   const [, params] = useRoute("/zones/:slug");
   const slug = params?.slug ?? "";
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
 
   const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
   const { data, isLoading, isError } = useZoneResources(slug, apiSource);
@@ -476,7 +685,7 @@ export default function ZoneDetailPage() {
     enabled: !!slug,
   });
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -496,6 +705,10 @@ export default function ZoneDetailPage() {
         </Link>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return <ZoneTeaserPage data={data} onLogin={login} />;
   }
 
   const { zone, episodes, episodeTotal, experts, businesses, councilEpisodes = [] } = data;
