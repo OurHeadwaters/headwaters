@@ -92,19 +92,24 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
   const signature = req.headers["x-zaprite-signature"] as string | undefined;
   const secret = process.env.ZAPRITE_WEBHOOK_SECRET;
 
+  // Signature verification is required. Without ZAPRITE_WEBHOOK_SECRET any caller
+  // could forge a purchase event — we fail closed so no fraudulent inserts occur.
+  // To obtain the secret: contact Zaprite support and ask for the signing secret
+  // for your webhook endpoint. Set it as ZAPRITE_WEBHOOK_SECRET in Replit Secrets.
   if (!secret) {
     logger.error(
       "zaprite webhook: ZAPRITE_WEBHOOK_SECRET is not set — rejecting all webhook calls. " +
-        "Set this secret in Replit Secrets (copy from the Zaprite dashboard → Webhooks → Secret).",
+        "Contact Zaprite support to obtain the signing secret for your webhook endpoint, " +
+        "then set it in Replit Secrets as ZAPRITE_WEBHOOK_SECRET.",
     );
-    res.status(400).json({
-      error: "Webhook endpoint not configured — ZAPRITE_WEBHOOK_SECRET missing on server.",
+    res.status(503).json({
+      error: "Webhook endpoint not yet configured — ZAPRITE_WEBHOOK_SECRET missing.",
     });
     return;
   }
 
   if (!signature) {
-    logger.warn("zaprite webhook: missing X-Zaprite-Signature header");
+    logger.warn("zaprite webhook: missing X-Zaprite-Signature header — rejecting");
     res.status(401).json({ error: "Missing signature" });
     return;
   }
@@ -142,11 +147,28 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
     return;
   }
 
+  // Validate that the slug resolves to a real kit — rejects spoofed payloads
+  // that reference non-existent kits (defense-in-depth when no signing secret).
+  const kit = kitBySlug(kitSlug);
+  if (!kit) {
+    logger.warn({ orderId: order.id, kitSlug }, "zaprite webhook: unknown kit_slug — rejecting");
+    res.status(400).json({ error: "Unknown kit" });
+    return;
+  }
+
   const buyerEmail = order.customerEmail ?? null;
   const buyerName = order.customerName ?? null;
 
   if (!buyerEmail) {
     logger.warn({ orderId: order.id, kitSlug }, "zaprite webhook: no customer email — skipping");
+    res.status(200).json({ received: true, skipped: true });
+    return;
+  }
+
+  // Basic email format check — rejects obviously malformed payloads.
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(buyerEmail)) {
+    logger.warn({ orderId: order.id, kitSlug, buyerEmail }, "zaprite webhook: invalid buyer email format — skipping");
     res.status(200).json({ received: true, skipped: true });
     return;
   }

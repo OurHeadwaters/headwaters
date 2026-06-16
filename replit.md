@@ -156,7 +156,7 @@ All five secrets must be set in Replit Secrets before real money can flow. Missi
 
 | Secret | Where to find it | Missing = |
 |---|---|---|
-| `ZAPRITE_WEBHOOK_SECRET` | Zaprite dashboard → Webhooks → Secret | All Bitcoin/Lightning webhooks return **400** and are rejected |
+| `ZAPRITE_WEBHOOK_SECRET` | Contact Zaprite support — secret not shown in dashboard UI | All Bitcoin/Lightning webhooks return **503** and are rejected — purchases not recorded |
 | `ZAPRITE_API_KEY` | Zaprite dashboard → API Keys | Zaprite API calls fail (rate lookups, order status) |
 | `STRIPE_SECRET_KEY` *(live)* | Set via Replit Integrations tab → Stripe → production environment | Stripe charges go to test mode; no real money moves |
 | `STRIPE_WEBHOOK_SECRET` *(live)* | Stripe dashboard → Webhooks → signing secret (live endpoint) | Stripe webhook signature verification fails; purchases not recorded |

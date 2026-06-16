@@ -134,12 +134,19 @@ export default function KitWelcomePage() {
               >
                 Welcome to the {kitName}
               </h1>
-              {sessionVerified && (
+              {sessionVerified ? (
                 <p
                   className="text-base font-semibold mt-2"
                   style={{ color: meta.color }}
                 >
                   Purchase confirmed — you're in.
+                </p>
+              ) : (
+                <p
+                  className="text-base font-semibold mt-2"
+                  style={{ color: meta.color + "bb" }}
+                >
+                  Paid with Bitcoin or Lightning? Your access may take a moment to confirm — sit tight.
                 </p>
               )}
             </div>

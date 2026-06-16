@@ -533,6 +533,150 @@ function KitPricingBlock({
   );
 }
 
+function UnauthenticatedAccessGate({
+  kit,
+  meta,
+  displayName,
+  children,
+}: {
+  kit: NonNullable<ReturnType<typeof useKitDetail>["data"]>;
+  meta: { icon: string; color: string };
+  displayName: string;
+  children: React.ReactNode;
+}) {
+  const loginUrl = apiUrl(`/login?returnTo=${encodeURIComponent(window.location.pathname)}`);
+  const [email, setEmail] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailGranted, setEmailGranted] = useState(false);
+
+  async function handleEmailCheck(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setChecking(true);
+    setEmailError(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/access?email=${encodeURIComponent(email.trim())}`));
+      const data = await res.json();
+      if (data.hasAccess) {
+        setEmailGranted(true);
+      } else {
+        setEmailError("No purchase found for that email. Check the address or purchase below.");
+      }
+    } catch {
+      setEmailError("Could not verify — please try again.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  // Email verified — render gated content directly without page reload
+  if (emailGranted) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div
+      className="rounded-2xl border p-8 flex flex-col items-center text-center gap-6"
+      style={{
+        borderColor: meta.color + "44",
+        background: `linear-gradient(135deg, ${meta.color}10 0%, ${meta.color}06 100%)`,
+      }}
+    >
+      <div
+        className="w-12 h-12 rounded-full flex items-center justify-center"
+        style={{ background: meta.color + "18", border: `1px solid ${meta.color}44` }}
+      >
+        <Package className="w-6 h-6" style={{ color: meta.color }} />
+      </div>
+
+      <div>
+        <div
+          className="text-[10px] font-bold uppercase tracking-widest mb-2"
+          style={{ color: meta.color }}
+        >
+          Kit Content — Members Only
+        </div>
+        <h3 className="font-serif text-xl font-bold text-foreground mb-2">
+          Access your {displayName}
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+          Already purchased? Log in or enter your purchase email to unlock. New here? Purchase below.
+        </p>
+      </div>
+
+      <div className="w-full max-w-sm flex flex-col gap-3">
+        <a
+          href={loginUrl}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+          style={{
+            color: "#fff",
+            background: meta.color,
+            boxShadow: `0 4px 20px ${meta.color}40`,
+          }}
+        >
+          Log in to access
+        </a>
+
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex-1 h-px bg-border" />
+          <span>or</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        <form onSubmit={handleEmailCheck} className="flex flex-col gap-2">
+          <label className="text-xs font-semibold text-muted-foreground text-left uppercase tracking-wide">
+            Enter your purchase email
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="jane@example.com"
+              className="flex-1 px-3 py-2.5 rounded-lg border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 transition-all"
+              style={{ borderColor: meta.color + "44" }}
+              onFocus={(e) => (e.target.style.borderColor = meta.color)}
+              onBlur={(e) => (e.target.style.borderColor = meta.color + "44")}
+            />
+            <button
+              type="submit"
+              disabled={checking}
+              className="px-4 py-2.5 rounded-lg text-sm font-bold border transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                color: meta.color,
+                borderColor: meta.color + "55",
+                background: meta.color + "0D",
+              }}
+            >
+              {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Unlock"}
+            </button>
+          </div>
+          {emailError && (
+            <p className="text-xs text-red-500 text-left">{emailError}</p>
+          )}
+          <p className="text-xs text-muted-foreground text-left">
+            Paid with Bitcoin? Use the email you entered at checkout.
+          </p>
+        </form>
+
+        <a
+          href="#get-access"
+          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-semibold border transition-all hover:-translate-y-px"
+          style={{
+            color: meta.color,
+            borderColor: meta.color + "33",
+            background: "transparent",
+          }}
+        >
+          Purchase this kit
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function KitAccessGate({
   hasAccess,
   isAuthenticated,
@@ -571,63 +715,10 @@ function KitAccessGate({
   }
 
   if (!isAuthenticated) {
-    const loginUrl = apiUrl(`/login?returnTo=${encodeURIComponent(window.location.pathname)}`);
     return (
-      <div
-        className="rounded-2xl border p-8 flex flex-col items-center text-center gap-5"
-        style={{
-          borderColor: meta.color + "44",
-          background: `linear-gradient(135deg, ${meta.color}10 0%, ${meta.color}06 100%)`,
-        }}
-      >
-        <div
-          className="w-12 h-12 rounded-full flex items-center justify-center"
-          style={{ background: meta.color + "18", border: `1px solid ${meta.color}44` }}
-        >
-          <Package className="w-6 h-6" style={{ color: meta.color }} />
-        </div>
-
-        <div>
-          <div
-            className="text-[10px] font-bold uppercase tracking-widest mb-2"
-            style={{ color: meta.color }}
-          >
-            Kit Content — Members Only
-          </div>
-          <h3 className="font-serif text-xl font-bold text-foreground mb-2">
-            Log in to access your kit
-          </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
-            Already purchased the {displayName}? Log in and your content will unlock automatically.
-            New here? Purchase below and get immediate access after checkout.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <a
-            href={loginUrl}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
-            style={{
-              color: "#fff",
-              background: meta.color,
-              boxShadow: `0 4px 20px ${meta.color}40`,
-            }}
-          >
-            Log in to access
-          </a>
-          <a
-            href="#get-access"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold border transition-all hover:-translate-y-px"
-            style={{
-              color: meta.color,
-              borderColor: meta.color + "55",
-              background: meta.color + "0D",
-            }}
-          >
-            Purchase this kit
-          </a>
-        </div>
-      </div>
+      <UnauthenticatedAccessGate kit={kit} meta={meta} displayName={displayName}>
+        {children}
+      </UnauthenticatedAccessGate>
     );
   }
 
