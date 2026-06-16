@@ -1098,3 +1098,93 @@ export const StompingPathGetCreatorShareResponse = zod.object({
 })
 
 
+/**
+ * Returns all kits with symbol field. Use ?access=paid to filter to paid direct-purchase kits only.
+ * @summary List all kits in the suite registry
+ */
+export const ListSuiteKitsQueryParams = zod.object({
+  "access": zod.enum(['paid']).optional().describe('Filter: \'paid\' returns only direct-purchase kits with a priceCents value')
+})
+
+export const ListSuiteKitsResponseItem = zod.object({
+  "slug": zod.string(),
+  "name": zod.string(),
+  "tagline": zod.string(),
+  "description": zod.string(),
+  "transformationSlugs": zod.array(zod.string()),
+  "trackSlugs": zod.array(zod.string()),
+  "gearCategoryTags": zod.array(zod.string()),
+  "externalLinks": zod.array(zod.object({
+  "label": zod.string(),
+  "url": zod.string()
+})),
+  "priceType": zod.enum(['direct', 'consultative']),
+  "priceCents": zod.number().nullish(),
+  "ctaLabel": zod.string(),
+  "symbol": zod.string().describe('Emoji or icon identifier for this kit'),
+  "zapriteUrl": zod.string().nullish(),
+  "accessUrl": zod.string().nullish()
+})
+export const ListSuiteKitsResponse = zod.array(ListSuiteKitsResponseItem)
+
+
+/**
+ * @summary Get full doctrine markdown for a kit
+ */
+export const GetSuiteKitDocParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetSuiteKitDocResponse = zod.object({
+  "title": zod.string(),
+  "content": zod.string().describe('Full doctrine markdown for the kit')
+})
+
+
+/**
+ * @summary List the full creator registry
+ */
+export const ListSuiteCreatorsResponseItem = zod.object({
+  "slug": zod.string(),
+  "name": zod.string(),
+  "bio": zod.string(),
+  "avatarUrl": zod.string(),
+  "websiteUrl": zod.string(),
+  "podcastUrl": zod.string().nullish(),
+  "status": zod.enum(['live', 'coming-soon']),
+  "transformationSlugs": zod.array(zod.string()),
+  "kitSlugs": zod.array(zod.string()),
+  "curatedLinks": zod.array(zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "type": zod.enum(['podcast', 'video', 'article', 'book'])
+}))
+})
+export const ListSuiteCreatorsResponse = zod.array(ListSuiteCreatorsResponseItem)
+
+
+/**
+ * @summary Get a single creator with curated links and paired slugs
+ */
+export const GetSuiteCreatorParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetSuiteCreatorResponse = zod.object({
+  "slug": zod.string(),
+  "name": zod.string(),
+  "bio": zod.string(),
+  "avatarUrl": zod.string(),
+  "websiteUrl": zod.string(),
+  "podcastUrl": zod.string().nullish(),
+  "status": zod.enum(['live', 'coming-soon']),
+  "transformationSlugs": zod.array(zod.string()),
+  "kitSlugs": zod.array(zod.string()),
+  "curatedLinks": zod.array(zod.object({
+  "title": zod.string(),
+  "url": zod.string(),
+  "type": zod.enum(['podcast', 'video', 'article', 'book'])
+}))
+})
+
+

@@ -63,6 +63,7 @@ import type {
   ListFiresideFreedomEpisodes200,
   ListLibraryTagsParams,
   ListSeriesParams,
+  ListSuiteKitsParams,
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
@@ -73,6 +74,9 @@ import type {
   SearchLibraryParams,
   SeriesEpisodePage,
   SeriesSummary,
+  SuiteCreator,
+  SuiteKit,
+  SuiteKitDoc,
   ThisDayEpisode,
   TrackProgressResponse,
   TrackProgressUpdate,
@@ -3474,6 +3478,322 @@ export function useStompingPathGetCreatorShare<TData = Awaited<ReturnType<typeof
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getStompingPathGetCreatorShareQueryOptions(shareId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListSuiteKitsUrl = (params?: ListSuiteKitsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/suite/kits?${stringifiedParams}` : `/api/suite/kits`
+}
+
+/**
+ * Returns all kits with symbol field. Use ?access=paid to filter to paid direct-purchase kits only.
+ * @summary List all kits in the suite registry
+ */
+export const listSuiteKits = async (params?: ListSuiteKitsParams, options?: RequestInit): Promise<SuiteKit[]> => {
+
+  return customFetch<SuiteKit[]>(getListSuiteKitsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSuiteKitsQueryKey = (params?: ListSuiteKitsParams,) => {
+    return [
+    `/api/suite/kits`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSuiteKitsQueryOptions = <TData = Awaited<ReturnType<typeof listSuiteKits>>, TError = ErrorType<unknown>>(params?: ListSuiteKitsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSuiteKits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSuiteKitsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSuiteKits>>> = ({ signal }) => listSuiteKits(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSuiteKits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSuiteKitsQueryResult = NonNullable<Awaited<ReturnType<typeof listSuiteKits>>>
+export type ListSuiteKitsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all kits in the suite registry
+ */
+
+export function useListSuiteKits<TData = Awaited<ReturnType<typeof listSuiteKits>>, TError = ErrorType<unknown>>(
+ params?: ListSuiteKitsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSuiteKits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSuiteKitsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSuiteKitDocUrl = (slug: string,) => {
+
+
+
+
+  return `/api/suite/docs/${slug}`
+}
+
+/**
+ * @summary Get full doctrine markdown for a kit
+ */
+export const getSuiteKitDoc = async (slug: string, options?: RequestInit): Promise<SuiteKitDoc> => {
+
+  return customFetch<SuiteKitDoc>(getGetSuiteKitDocUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuiteKitDocQueryKey = (slug: string,) => {
+    return [
+    `/api/suite/docs/${slug}`
+    ] as const;
+    }
+
+
+export const getGetSuiteKitDocQueryOptions = <TData = Awaited<ReturnType<typeof getSuiteKitDoc>>, TError = ErrorType<ApiError>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSuiteKitDoc>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuiteKitDocQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuiteKitDoc>>> = ({ signal }) => getSuiteKitDoc(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuiteKitDoc>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSuiteKitDocQueryResult = NonNullable<Awaited<ReturnType<typeof getSuiteKitDoc>>>
+export type GetSuiteKitDocQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get full doctrine markdown for a kit
+ */
+
+export function useGetSuiteKitDoc<TData = Awaited<ReturnType<typeof getSuiteKitDoc>>, TError = ErrorType<ApiError>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSuiteKitDoc>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSuiteKitDocQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListSuiteCreatorsUrl = () => {
+
+
+
+
+  return `/api/suite/creators`
+}
+
+/**
+ * @summary List the full creator registry
+ */
+export const listSuiteCreators = async ( options?: RequestInit): Promise<SuiteCreator[]> => {
+
+  return customFetch<SuiteCreator[]>(getListSuiteCreatorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSuiteCreatorsQueryKey = () => {
+    return [
+    `/api/suite/creators`
+    ] as const;
+    }
+
+
+export const getListSuiteCreatorsQueryOptions = <TData = Awaited<ReturnType<typeof listSuiteCreators>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSuiteCreators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSuiteCreatorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSuiteCreators>>> = ({ signal }) => listSuiteCreators({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSuiteCreators>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSuiteCreatorsQueryResult = NonNullable<Awaited<ReturnType<typeof listSuiteCreators>>>
+export type ListSuiteCreatorsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the full creator registry
+ */
+
+export function useListSuiteCreators<TData = Awaited<ReturnType<typeof listSuiteCreators>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSuiteCreators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSuiteCreatorsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSuiteCreatorUrl = (slug: string,) => {
+
+
+
+
+  return `/api/suite/creators/${slug}`
+}
+
+/**
+ * @summary Get a single creator with curated links and paired slugs
+ */
+export const getSuiteCreator = async (slug: string, options?: RequestInit): Promise<SuiteCreator> => {
+
+  return customFetch<SuiteCreator>(getGetSuiteCreatorUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuiteCreatorQueryKey = (slug: string,) => {
+    return [
+    `/api/suite/creators/${slug}`
+    ] as const;
+    }
+
+
+export const getGetSuiteCreatorQueryOptions = <TData = Awaited<ReturnType<typeof getSuiteCreator>>, TError = ErrorType<ApiError>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSuiteCreator>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuiteCreatorQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuiteCreator>>> = ({ signal }) => getSuiteCreator(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuiteCreator>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSuiteCreatorQueryResult = NonNullable<Awaited<ReturnType<typeof getSuiteCreator>>>
+export type GetSuiteCreatorQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get a single creator with curated links and paired slugs
+ */
+
+export function useGetSuiteCreator<TData = Awaited<ReturnType<typeof getSuiteCreator>>, TError = ErrorType<ApiError>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSuiteCreator>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSuiteCreatorQueryOptions(slug,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

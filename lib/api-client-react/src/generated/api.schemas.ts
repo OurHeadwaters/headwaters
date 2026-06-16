@@ -542,6 +542,84 @@ export interface CreatorOverlapResult {
   createdAt?: string;
 }
 
+export type SuiteKitExternalLinksItem = {
+  label: string;
+  url: string;
+};
+
+export type SuiteKitPriceType = typeof SuiteKitPriceType[keyof typeof SuiteKitPriceType];
+
+
+export const SuiteKitPriceType = {
+  direct: 'direct',
+  consultative: 'consultative',
+} as const;
+
+export interface SuiteKit {
+  slug: string;
+  name: string;
+  tagline: string;
+  description: string;
+  transformationSlugs: string[];
+  trackSlugs: string[];
+  gearCategoryTags: string[];
+  externalLinks: SuiteKitExternalLinksItem[];
+  priceType: SuiteKitPriceType;
+  /** @nullable */
+  priceCents?: number | null;
+  ctaLabel: string;
+  /** Emoji or icon identifier for this kit */
+  symbol: string;
+  /** @nullable */
+  zapriteUrl?: string | null;
+  /** @nullable */
+  accessUrl?: string | null;
+}
+
+export interface SuiteKitDoc {
+  title: string;
+  /** Full doctrine markdown for the kit */
+  content: string;
+}
+
+export type CuratedLinkType = typeof CuratedLinkType[keyof typeof CuratedLinkType];
+
+
+export const CuratedLinkType = {
+  podcast: 'podcast',
+  video: 'video',
+  article: 'article',
+  book: 'book',
+} as const;
+
+export interface CuratedLink {
+  title: string;
+  url: string;
+  type: CuratedLinkType;
+}
+
+export type SuiteCreatorStatus = typeof SuiteCreatorStatus[keyof typeof SuiteCreatorStatus];
+
+
+export const SuiteCreatorStatus = {
+  live: 'live',
+  'coming-soon': 'coming-soon',
+} as const;
+
+export interface SuiteCreator {
+  slug: string;
+  name: string;
+  bio: string;
+  avatarUrl: string;
+  websiteUrl: string;
+  /** @nullable */
+  podcastUrl?: string | null;
+  status: SuiteCreatorStatus;
+  transformationSlugs: string[];
+  kitSlugs: string[];
+  curatedLinks: CuratedLink[];
+}
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */
@@ -751,4 +829,18 @@ export type FanFiresideFlame200 = {
 export type AdminDeleteFiresideFlame200 = {
   ok: boolean;
 };
+
+export type ListSuiteKitsParams = {
+/**
+ * Filter: 'paid' returns only direct-purchase kits with a priceCents value
+ */
+access?: ListSuiteKitsAccess;
+};
+
+export type ListSuiteKitsAccess = typeof ListSuiteKitsAccess[keyof typeof ListSuiteKitsAccess];
+
+
+export const ListSuiteKitsAccess = {
+  paid: 'paid',
+} as const;
 

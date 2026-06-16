@@ -1,2 +1,2 @@
 export * from "./generated/api";
-export type { AuthUser } from "./generated/types";
+export type { AuthUser, AuthUserEnvelope } from "./types";
