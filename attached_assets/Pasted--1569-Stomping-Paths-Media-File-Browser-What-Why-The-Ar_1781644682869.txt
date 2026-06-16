@@ -1,0 +1,28 @@
+#1569 - Stomping Paths Media File Browser
+What & Why
+The Arc's Media Library already stores and serves uploaded files at GET /api/storage/files. The Stomping Paths (Zone 4, /stomping) has no way to browse or link to those files. Practitioners and market-facing builders need to be able to surface uploaded PDFs and videos directly from the Zone 4 surface without going into the Arc.
+
+Done looks like
+A "Resources" or "Source Files" section is accessible from the Stomping Paths surface (either as a tab on the kits area or a dedicated route at /stomping/resources)
+Files from the Media Library are listed — name, type, size, upload date — with a view/open link for each
+The list can be filtered by file type (PDF vs video)
+No upload control is present (read-only; upload stays in the Arc)
+The section matches the Stomping Paths dark-northern aesthetic (deep browns, orange accents, glassmorphism cards)
+Out of scope
+Upload from the Stomping Paths surface
+File management (rename, delete) from Zone 4
+Any auth gate on reading (same public-read stance as the existing list endpoint)
+Steps
+Verify the storage list endpoint is publicly accessible — Confirm GET /api/storage/files does not require requireAuth, or add a read-only public variant if it currently does. No schema or route changes needed if it's already open.
+
+Add a Resources route to the Stomping Paths — Add /stomping/resources as a new route inside the headwaters artifact's router. Register it alongside the existing /stomping/kits routes in Root.tsx.
+
+Build the Resources page component — Create artifacts/headwaters/src/stomping-pages/Resources.tsx. Fetch from GET /api/storage/files, render a filterable card/list grid with file name, type badge (PDF / Video), size, date, and an "Open" link. Style with the existing glassmorphism card pattern from KitsGrid.tsx.
+
+Wire navigation — Add a "Resources" link into the Stomping Paths navigation so it sits alongside Kits. Update any existing tab bar or nav strip component.
+
+Relevant files
+artifacts/headwaters/src/stomping-pages/KitsGrid.tsx
+artifacts/headwaters/src/Root.tsx
+artifacts/headwaters/src/App.tsx
+artifacts/api-server/src/routes/
