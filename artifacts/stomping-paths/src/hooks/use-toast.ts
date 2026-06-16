@@ -90,8 +90,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -137,9 +135,60 @@ function dispatch(action: Action) {
   })
 }
 
+// Matches Radix UI's default toast duration
+const DEFAULT_TOAST_DURATION = 5000
+
+// --- Hover/focus-aware dismiss timer ---
+
+interface DismissTimer {
+  timeoutId: ReturnType<typeof setTimeout>
+  startedAt: number
+  remaining: number
+}
+
+const dismissTimers = new Map<string, DismissTimer>()
+
+function startDismissTimer(toastId: string, duration: number) {
+  clearDismissTimer(toastId)
+  const timeoutId = setTimeout(() => {
+    dismissTimers.delete(toastId)
+    dispatch({ type: "DISMISS_TOAST", toastId })
+  }, duration)
+  dismissTimers.set(toastId, { timeoutId, startedAt: Date.now(), remaining: duration })
+}
+
+function clearDismissTimer(toastId: string) {
+  const timer = dismissTimers.get(toastId)
+  if (timer) {
+    clearTimeout(timer.timeoutId)
+    dismissTimers.delete(toastId)
+  }
+}
+
+export function pauseToast(toastId: string) {
+  const timer = dismissTimers.get(toastId)
+  if (!timer) return
+  clearTimeout(timer.timeoutId)
+  const elapsed = Date.now() - timer.startedAt
+  const remaining = Math.max(0, timer.remaining - elapsed)
+  dismissTimers.set(toastId, { timeoutId: -1 as unknown as ReturnType<typeof setTimeout>, startedAt: timer.startedAt, remaining })
+}
+
+export function resumeToast(toastId: string) {
+  const timer = dismissTimers.get(toastId)
+  if (!timer) return
+  const timeoutId = setTimeout(() => {
+    dismissTimers.delete(toastId)
+    dispatch({ type: "DISMISS_TOAST", toastId })
+  }, timer.remaining)
+  dismissTimers.set(toastId, { timeoutId, startedAt: Date.now(), remaining: timer.remaining })
+}
+
+// --- End hover/focus-aware dismiss timer ---
+
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toast({ duration, ...props }: Toast & { duration?: number }) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -155,11 +204,17 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
+      duration: Infinity,
       onOpenChange: (open) => {
-        if (!open) dismiss()
+        if (!open) {
+          clearDismissTimer(id)
+          dismiss()
+        }
       },
     },
   })
+
+  startDismissTimer(id, duration != null && isFinite(duration) ? duration : DEFAULT_TOAST_DURATION)
 
   return {
     id: id,
