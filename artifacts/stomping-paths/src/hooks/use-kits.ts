@@ -81,6 +81,19 @@ export function useKitDetail(slug: string) {
   });
 }
 
+export function useKitAccess(slug: string) {
+  return useQuery<{ hasAccess: boolean; isAuthenticated: boolean }>({
+    queryKey: ["kit-access", slug],
+    queryFn: async () => {
+      const res = await fetch(apiUrl(`/kits/${slug}/access`));
+      if (!res.ok) throw new Error("Failed to check access");
+      return res.json();
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: !!slug,
+  });
+}
+
 export const KIT_META: Record<string, { icon: string; color: string }> = {
   "family-kit":       { icon: "🏡", color: "#D9A066" },
   "producer-kit":     { icon: "💼", color: "#4A7A3A" },

@@ -332,10 +332,11 @@ router.get("/kits/:slug/access", async (req, res) => {
   }
 
   const userId = (req as any).user?.id ?? null;
+  const isAuthenticated = userId !== null;
   const email = (req.query.email as string) ?? null;
 
   if (!userId && !email) {
-    res.json({ hasAccess: false });
+    res.json({ hasAccess: false, isAuthenticated: false });
     return;
   }
 
@@ -355,7 +356,7 @@ router.get("/kits/:slug/access", async (req, res) => {
       )
       .limit(1);
 
-    res.json({ hasAccess: rows.length > 0 });
+    res.json({ hasAccess: rows.length > 0, isAuthenticated });
   } catch (err) {
     logger.error({ err, slug: kit.slug }, "kits: GET /access failed");
     res.status(500).json({ error: "Failed to check access" });

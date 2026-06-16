@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
-import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
+import { useKitDetail, useKitAccess, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 import { useShareCount } from "@/hooks/use-share-count";
 import { ProductShelf } from "@/components/product-shelf";
 import { formatDuration } from "@/components/episode-card";
@@ -533,10 +533,226 @@ function KitPricingBlock({
   );
 }
 
+function KitAccessGate({
+  hasAccess,
+  isAuthenticated,
+  isLoading,
+  kit,
+  meta,
+  displayName,
+  children,
+}: {
+  hasAccess: boolean;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  kit: NonNullable<ReturnType<typeof useKitDetail>["data"]>;
+  meta: { icon: string; color: string };
+  displayName: string;
+  children: React.ReactNode;
+}) {
+  const [cardLoading, setCardLoading] = useState(false);
+  const [btcLoading, setBtcLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div
+        className="rounded-xl border p-8 flex items-center justify-center gap-2 text-muted-foreground text-sm"
+        style={{ borderColor: meta.color + "22", background: meta.color + "06" }}
+      >
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span>Checking access…</span>
+      </div>
+    );
+  }
+
+  if (hasAccess) {
+    return <>{children}</>;
+  }
+
+  if (!isAuthenticated) {
+    const loginUrl = apiUrl(`/login?returnTo=${encodeURIComponent(window.location.pathname)}`);
+    return (
+      <div
+        className="rounded-2xl border p-8 flex flex-col items-center text-center gap-5"
+        style={{
+          borderColor: meta.color + "44",
+          background: `linear-gradient(135deg, ${meta.color}10 0%, ${meta.color}06 100%)`,
+        }}
+      >
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ background: meta.color + "18", border: `1px solid ${meta.color}44` }}
+        >
+          <Package className="w-6 h-6" style={{ color: meta.color }} />
+        </div>
+
+        <div>
+          <div
+            className="text-[10px] font-bold uppercase tracking-widest mb-2"
+            style={{ color: meta.color }}
+          >
+            Kit Content — Members Only
+          </div>
+          <h3 className="font-serif text-xl font-bold text-foreground mb-2">
+            Log in to access your kit
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+            Already purchased the {displayName}? Log in and your content will unlock automatically.
+            New here? Purchase below and get immediate access after checkout.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a
+            href={loginUrl}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+            style={{
+              color: "#fff",
+              background: meta.color,
+              boxShadow: `0 4px 20px ${meta.color}40`,
+            }}
+          >
+            Log in to access
+          </a>
+          <a
+            href="#get-access"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold border transition-all hover:-translate-y-px"
+            style={{
+              color: meta.color,
+              borderColor: meta.color + "55",
+              background: meta.color + "0D",
+            }}
+          >
+            Purchase this kit
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  async function handleCardCheckout() {
+    setCardLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/checkout`), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      if (data.url) window.location.href = data.url;
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+      setCardLoading(false);
+    }
+  }
+
+  async function handleBtcCheckout() {
+    setBtcLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/zaprite-checkout`), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Crypto checkout not yet available");
+      if (data.url) window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong. Please try again.");
+    } finally {
+      setBtcLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="rounded-2xl border p-8 flex flex-col items-center text-center gap-5"
+      style={{
+        borderColor: meta.color + "44",
+        background: `linear-gradient(135deg, ${meta.color}10 0%, ${meta.color}06 100%)`,
+      }}
+    >
+      <div
+        className="w-12 h-12 rounded-full flex items-center justify-center"
+        style={{ background: meta.color + "18", border: `1px solid ${meta.color}44` }}
+      >
+        <Package className="w-6 h-6" style={{ color: meta.color }} />
+      </div>
+
+      <div>
+        <div
+          className="text-[10px] font-bold uppercase tracking-widest mb-2"
+          style={{ color: meta.color }}
+        >
+          Kit Content — Members Only
+        </div>
+        <h3 className="font-serif text-xl font-bold text-foreground mb-2">
+          Purchase the {displayName} to unlock this section
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+          {kit.priceCents ? (
+            <>
+              One-time payment of{" "}
+              <span className="font-semibold text-foreground">{formatPrice(kit.priceCents)}</span>
+              {" "}unlocks episodes, gear, and resources — organized for your transformation.
+            </>
+          ) : (
+            "Purchase unlocks curated episodes, gear recommendations, and resources for your transformation."
+          )}
+        </p>
+      </div>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+        <button
+          onClick={handleCardCheckout}
+          disabled={cardLoading || btcLoading}
+          className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-bold transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          style={{
+            color: "#fff",
+            background: meta.color,
+            boxShadow: `0 4px 20px ${meta.color}40`,
+          }}
+        >
+          {cardLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <CreditCard className="w-4 h-4" />
+          )}
+          {cardLoading ? "Redirecting…" : "Pay by Card"}
+        </button>
+
+        {(kit as any).zapriteUrl && (
+          <button
+            onClick={handleBtcCheckout}
+            disabled={cardLoading || btcLoading}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-bold border transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            style={{
+              color: "#F7931A",
+              borderColor: "#F7931A44",
+              background: "#F7931A0D",
+            }}
+          >
+            {btcLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4" />
+            )}
+            {btcLoading ? "Opening…" : "Pay with Bitcoin"}
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Card checkout via Stripe.{(kit as any).zapriteUrl ? " Bitcoin / Lightning / XRP via Zaprite." : ""}{" "}
+        One-time payment, no subscription.
+      </p>
+    </div>
+  );
+}
+
 export default function KitDetailPage() {
   const [, params] = useRoute("/kits/:slug");
   const slug = params?.slug ?? "";
   const { data: kit, isLoading, isError } = useKitDetail(slug);
+  const { data: accessData, isLoading: accessLoading } = useKitAccess(slug);
   const [edition, setEdition] = useState<"general" | "homeschool">("general");
   const [shareOpen, setShareOpen] = useState(false);
   const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
@@ -556,6 +772,8 @@ export default function KitDetailPage() {
   const meta = KIT_META[slug] ?? { icon: "📦", color: "#6B7280" };
   const isLinkOut = LINK_OUT_KITS.has(slug);
   const isFamilyKit = slug === "family-kit";
+  const hasAccess = accessData?.hasAccess ?? false;
+  const isAuthenticated = accessData?.isAuthenticated ?? false;
   const manual = KIT_MANUALS[slug];
   const { creators } = useKitCreators(slug);
   const [kitShareCount, incrementKitShareCount] = useShareCount("kit", slug);
@@ -1096,6 +1314,14 @@ export default function KitDetailPage() {
 
         {/* ── Curated Episodes ─────────────────────────────────────── */}
         {!isLinkOut && kit.episodes.length > 0 && (
+          <KitAccessGate
+            hasAccess={kit.priceType !== "direct" || hasAccess}
+            isAuthenticated={kit.priceType !== "direct" || isAuthenticated}
+            isLoading={kit.priceType === "direct" && accessLoading}
+            kit={kit}
+            meta={meta}
+            displayName={displayName}
+          >
           <section>
             <h2 className="font-serif text-xl font-bold text-foreground mb-1">
               Curated Episodes
@@ -1164,6 +1390,7 @@ export default function KitDetailPage() {
               })}
             </div>
           </section>
+          </KitAccessGate>
         )}
 
         {/* ── Care Kit sibling-kit callout ─────────────────────────── */}
@@ -1421,6 +1648,14 @@ export default function KitDetailPage() {
 
         {/* ── Gear Shelf ───────────────────────────────────────────── */}
         {!isLinkOut && kit.gear.length > 0 && (
+          <KitAccessGate
+            hasAccess={kit.priceType !== "direct" || hasAccess}
+            isAuthenticated={kit.priceType !== "direct" || isAuthenticated}
+            isLoading={kit.priceType === "direct" && accessLoading}
+            kit={kit}
+            meta={meta}
+            displayName={displayName}
+          >
           <section>
             <div className="flex items-center gap-2 mb-1">
               <ShoppingBag className="w-4 h-4 shrink-0" style={{ color: meta.color }} />
@@ -1431,6 +1666,7 @@ export default function KitDetailPage() {
             </p>
             <ProductShelf products={kit.gear} compact />
           </section>
+          </KitAccessGate>
         )}
 
         {/* ── Creator Cards ─────────────────────────────────────────── */}
@@ -1526,6 +1762,14 @@ export default function KitDetailPage() {
 
         {/* ── Resource Links ───────────────────────────────────────── */}
         {kit.externalLinks.length > 0 && (
+          <KitAccessGate
+            hasAccess={isLinkOut || kit.priceType !== "direct" || hasAccess}
+            isAuthenticated={isLinkOut || kit.priceType !== "direct" || isAuthenticated}
+            isLoading={!isLinkOut && kit.priceType === "direct" && accessLoading}
+            kit={kit}
+            meta={meta}
+            displayName={displayName}
+          >
           <section>
             <h2 className="font-serif text-xl font-bold text-foreground mb-4">
               Related Resources
@@ -1561,6 +1805,7 @@ export default function KitDetailPage() {
               ))}
             </div>
           </section>
+          </KitAccessGate>
         )}
 
         {/* ── Back nav ─────────────────────────────────────────────── */}
