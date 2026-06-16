@@ -16,6 +16,9 @@ import {
   X,
   Zap,
   RotateCcw,
+  Send,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 
 const STORAGE_KEY = "codetry:assessment";
@@ -460,6 +463,210 @@ function ServiceCard({
   );
 }
 
+function InquiryBlock({ assessment }: { assessment: Assessment }) {
+  const isLowStage = assessment.stage <= 3;
+  const ctaLabel = isLowStage ? "Book a Zone Assessment" : "Let's build your Hub";
+  const priceRange = isLowStage ? "$1,500 – $3,000" : "$4,000 – $12,000";
+  const stageTag = `Stage ${assessment.stage} (${assessment.stageName})`;
+
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [situation, setSituation] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("submitting");
+    setErrorMsg("");
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/headwaters/intake`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          primaryGoals: situation.trim() || undefined,
+          additionalNotes: `Codetry Assessment — ${stageTag} (score: ${assessment.stage}/6), recommended engagement: ${assessment.primaryService}`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? `Error ${res.status}`);
+      }
+      setStatus("success");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong — please try again.");
+      setStatus("error");
+    }
+  }
+
+  const accentColor = isLowStage ? "#D9A066" : "#4A8C5C";
+
+  return (
+    <div
+      className="rounded-2xl border-2 p-6 md:p-8"
+      style={{ background: "#0E1E0E", borderColor: accentColor + "44" }}
+    >
+      {status === "success" ? (
+        <div className="flex flex-col items-center text-center py-4 gap-4">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ background: accentColor + "18", border: `1px solid ${accentColor}44` }}
+          >
+            <CheckCircle2 className="w-6 h-6" style={{ color: accentColor }} />
+          </div>
+          <div>
+            <h3 className="font-serif text-xl font-bold text-white mb-2">Inquiry received.</h3>
+            <p className="text-sm leading-relaxed" style={{ color: "#8FA882" }}>
+              Bobbie will review your situation and follow up directly. No commitment required at this stage.
+            </p>
+          </div>
+          <Link href="/services">
+            <span
+              className="text-sm font-medium transition-colors cursor-pointer hover:opacity-80"
+              style={{ color: accentColor + "cc" }}
+            >
+              See what each engagement includes →
+            </span>
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <div
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest mb-2 px-2.5 py-1 rounded-full"
+                style={{ color: accentColor, background: accentColor + "18", border: `1px solid ${accentColor}30` }}
+              >
+                {isLowStage ? <Map className="w-3 h-3" /> : <Hammer className="w-3 h-3" />}
+                {stageTag}
+              </div>
+              <h3 className="font-serif text-xl font-bold text-white mb-1">{ctaLabel}</h3>
+              <p className="text-sm" style={{ color: "#8FA882" }}>
+                {priceRange} &middot;{" "}
+                {isLowStage ? "3–5 weeks" : "6–14 weeks"}
+              </p>
+            </div>
+            {!open && (
+              <button
+                onClick={() => setOpen(true)}
+                className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap shadow-sm"
+                style={{ background: accentColor, color: isLowStage ? "#2B2825" : "#FDFBF7" }}
+              >
+                Start your inquiry
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {open && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#6B8060" }}>
+                    Your name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="e.g. Mikayla Fontaine"
+                    className="w-full rounded-lg border px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 transition-all"
+                    style={{ background: "#0A180A", borderColor: "#2A3A2A", fontFamily: "inherit" }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#6B8060" }}>
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="e.g. mikayla@ourhub.coop"
+                    className="w-full rounded-lg border px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 transition-all"
+                    style={{ background: "#0A180A", borderColor: "#2A3A2A", fontFamily: "inherit" }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#6B8060" }}>
+                  One sentence about your community's situation
+                </label>
+                <textarea
+                  value={situation}
+                  onChange={e => setSituation(e.target.value)}
+                  placeholder="e.g. We run a 200-member food co-op on Facebook and Mailchimp and we're losing data every time someone leaves…"
+                  rows={2}
+                  className="w-full rounded-lg border px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 transition-all resize-none"
+                  style={{ background: "#0A180A", borderColor: "#2A3A2A", fontFamily: "inherit" }}
+                />
+              </div>
+
+              <div
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
+                style={{ background: accentColor + "0d", border: `1px solid ${accentColor}22` }}
+              >
+                <span style={{ color: accentColor + "99" }}>
+                  Stage {assessment.stage} · {assessment.primaryService}
+                </span>
+                <span style={{ color: "#6B806050" }}>— pre-filled from your assessment</span>
+              </div>
+
+              {status === "error" && (
+                <p className="text-xs font-medium" style={{ color: "#F87171" }}>
+                  {errorMsg}
+                </p>
+              )}
+
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-xs font-medium transition-colors"
+                  style={{ color: "#6B8060" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={status === "submitting"}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+                  style={{ background: accentColor, color: isLowStage ? "#2B2825" : "#FDFBF7" }}
+                >
+                  {status === "submitting" ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                  ) : (
+                    <><Send className="w-4 h-4" /> Send inquiry</>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {!open && (
+            <div className="mt-2">
+              <Link href="/services">
+                <span
+                  className="text-sm font-medium transition-colors cursor-pointer hover:opacity-80"
+                  style={{ color: "#6B8060" }}
+                >
+                  See what each engagement includes →
+                </span>
+              </Link>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function ResultsView({
   assessment,
   onRetake,
@@ -550,11 +757,12 @@ function ResultsView({
                   )}
                 </p>
                 <a
-                  href="mailto:codetry@gmail.com?subject=Community Readiness Conversation"
+                  href="#inquiry"
+                  onClick={e => { e.preventDefault(); document.getElementById("inquiry-block")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
                   className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
                   style={{ color: stage.color }}
                 >
-                  Start a conversation
+                  Start your inquiry
                   <ChevronRight className="w-4 h-4" />
                 </a>
               </div>
@@ -574,32 +782,8 @@ function ResultsView({
           ))}
         </div>
 
-        <div
-          className="rounded-2xl border p-6 flex flex-col md:flex-row items-start md:items-center gap-4 justify-between"
-          style={{ background: "#0E1E0E", borderColor: "#2A3A2A" }}
-        >
-          <div>
-            <h3 className="font-serif text-lg font-bold text-white mb-1">Want to talk it through?</h3>
-            <p className="text-sm leading-relaxed" style={{ color: "#8FA882" }}>
-              Every community is different. If your situation doesn't fit neatly into a stage, reach out — we'll tell you straight what makes sense.
-            </p>
-          </div>
-          <a
-            href="mailto:codetry@gmail.com?subject=Community Readiness Conversation"
-            className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap"
-            style={{ background: "#D9A066", color: "#2B2825" }}
-          >
-            Get in touch
-            <ChevronRight className="w-4 h-4" />
-          </a>
-        </div>
-
-        <div className="mt-6 text-center">
-          <Link href="/services">
-            <span className="text-sm font-medium transition-colors cursor-pointer" style={{ color: "#6B8060" }}>
-              View full service details →
-            </span>
-          </Link>
+        <div id="inquiry-block">
+          <InquiryBlock assessment={assessment} />
         </div>
       </div>
     </div>
