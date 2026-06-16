@@ -5,11 +5,13 @@ import { KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 
 interface KitCardProps {
   kit: KitSummary;
+  shareCount?: number;
 }
 
-export function KitCard({ kit }: KitCardProps) {
+export function KitCard({ kit, shareCount = 0 }: KitCardProps) {
   const meta = KIT_META[kit.slug] ?? { icon: "📦", color: "#6B7280" };
   const isLinkOut = LINK_OUT_KITS.has(kit.slug);
+  const isPopular = shareCount > 3;
 
   return (
     <Link
@@ -37,12 +39,21 @@ export function KitCard({ kit }: KitCardProps) {
             </h2>
           </div>
         </div>
-        {isLinkOut && (
-          <ExternalLink
-            className="w-4 h-4 mt-1 shrink-0 opacity-40 group-hover:opacity-70 transition-opacity"
-            style={{ color: meta.color }}
-          />
-        )}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {isPopular && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: "#D9A06618", color: "#D9A066", border: "1px solid #D9A06633" }}
+            >
+              🔥 {shareCount} shares
+            </span>
+          )}
+          {isLinkOut && (
+            <ExternalLink
+              className="w-4 h-4 opacity-40 group-hover:opacity-70 transition-opacity"
+              style={{ color: meta.color }}
+            />
+          )}
+        </div>
       </div>
 
       <div className="px-6 py-5 flex flex-col flex-1">

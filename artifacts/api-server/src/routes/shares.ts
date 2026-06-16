@@ -95,6 +95,53 @@ router.get("/shares", async (req, res) => {
   }
 });
 
+/* ─── GET /api/shares/bulk ─── (public — counts for multiple slugs) */
+
+router.get("/shares/bulk", async (req, res) => {
+  const { surface, slugs } = req.query as Record<string, string>;
+
+  if (typeof surface !== "string" || !VALID_SURFACES.has(surface)) {
+    res.status(400).json({ error: "Invalid surface. Must be kit, track, or transform." });
+    return;
+  }
+  if (typeof slugs !== "string" || !slugs.trim()) {
+    res.status(400).json({ error: "slugs is required (comma-separated)." });
+    return;
+  }
+
+  const slugList = slugs
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 100);
+
+  if (slugList.length === 0) {
+    res.json({ counts: {} });
+    return;
+  }
+
+  try {
+    const rows = await withTable(async () => {
+      return db.execute(sql`
+        SELECT slug, COUNT(*)::int AS share_count
+        FROM share_events
+        WHERE surface = ${surface}
+          AND slug = ANY(ARRAY[${sql.join(slugList.map((s) => sql`${s}`), sql`, `)}])
+        GROUP BY slug
+      `);
+    });
+
+    const counts: Record<string, number> = {};
+    for (const row of (rows as any).rows ?? (rows as any)) {
+      counts[row.slug] = row.share_count;
+    }
+    res.json({ counts });
+  } catch (err) {
+    logger.error({ err }, "shares: GET /bulk failed");
+    res.status(500).json({ error: "Failed to load share counts." });
+  }
+});
+
 /* ─── GET /api/admin/shares ─── */
 
 router.get("/admin/shares", requireEditor, async (_req, res) => {

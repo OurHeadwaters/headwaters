@@ -1,11 +1,27 @@
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { Package, Loader2, Compass } from "lucide-react";
+import { Package, Loader2, Compass, Flame, ArrowUpDown } from "lucide-react";
 import { useListKits } from "@/hooks/use-kits";
+import { useShareCounts } from "@/hooks/use-share-counts";
 import { KitCard } from "@/components/kit-card";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 
+type SortMode = "default" | "popular";
+
 export default function KitsPage() {
   const { data: kits, isLoading, isError } = useListKits();
+  const [sort, setSort] = useState<SortMode>("default");
+
+  const slugs = useMemo(() => kits?.map((k) => k.slug) ?? [], [kits]);
+  const shareCounts = useShareCounts("kit", slugs);
+
+  const sortedKits = useMemo(() => {
+    if (!kits) return kits;
+    if (sort === "popular") {
+      return [...kits].sort((a, b) => (shareCounts[b.slug] ?? 0) - (shareCounts[a.slug] ?? 0));
+    }
+    return kits;
+  }, [kits, sort, shareCounts]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,7 +115,7 @@ export default function KitsPage() {
 
       {/* Kit grid */}
       <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
           <div>
             <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
               The kits
@@ -108,14 +124,43 @@ export default function KitsPage() {
               Find the bundle that matches your transformation.
             </p>
           </div>
-          <Link
-            href="/kits/find"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors whitespace-nowrap"
-            style={{ color: "#8FA883" }}
-          >
-            <Compass className="w-3.5 h-3.5" />
-            Not sure? Find yours →
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* Sort toggle */}
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1 bg-card">
+              <button
+                onClick={() => setSort("default")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                style={
+                  sort === "default"
+                    ? { background: "#8FA883", color: "#fff" }
+                    : { color: "var(--muted-foreground)" }
+                }
+              >
+                <ArrowUpDown className="w-3 h-3" />
+                Default
+              </button>
+              <button
+                onClick={() => setSort("popular")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                style={
+                  sort === "popular"
+                    ? { background: "#D9A066", color: "#fff" }
+                    : { color: "var(--muted-foreground)" }
+                }
+              >
+                <Flame className="w-3 h-3" />
+                Popular
+              </button>
+            </div>
+            <Link
+              href="/kits/find"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold transition-colors whitespace-nowrap"
+              style={{ color: "#8FA883" }}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              Not sure? Find yours →
+            </Link>
+          </div>
         </div>
 
         {isLoading && (
@@ -131,10 +176,14 @@ export default function KitsPage() {
           </div>
         )}
 
-        {kits && (
+        {sortedKits && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {kits.map((kit) => (
-              <KitCard key={kit.slug} kit={kit} />
+            {sortedKits.map((kit) => (
+              <KitCard
+                key={kit.slug}
+                kit={kit}
+                shareCount={shareCounts[kit.slug] ?? 0}
+              />
             ))}
           </div>
         )}

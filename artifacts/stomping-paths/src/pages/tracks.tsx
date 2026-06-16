@@ -1,24 +1,31 @@
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { useListTracks, TrackSummary } from "@/hooks/use-tracks";
 import { useAllTracksProgress } from "@/hooks/use-track-progress";
+import { useShareCounts } from "@/hooks/use-share-counts";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
-import { BookOpen, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { BookOpen, ChevronRight, Loader2, CheckCircle2, Flame, ArrowUpDown } from "lucide-react";
 
 const ZONE_LABELS = ["Zone 0", "Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5"];
+
+type SortMode = "default" | "popular";
 
 function TrackCard({
   track,
   doneCount,
+  shareCount,
 }: {
   track: TrackSummary;
   doneCount: number;
+  shareCount: number;
 }) {
   const [, navigate] = useLocation();
   const pct =
     track.episodeCount > 0 ? Math.min(100, (doneCount / track.episodeCount) * 100) : 0;
   const isStarted = doneCount > 0;
   const isComplete = isStarted && doneCount >= track.episodeCount;
+  const isPopular = shareCount > 3;
 
   return (
     <Link
@@ -45,25 +52,35 @@ function TrackCard({
             </h2>
           </div>
         </div>
-        {track.episodeCount > 0 && (
-          <span
-            className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full border"
-            style={{
-              color: isComplete ? "#22c55e" : track.color,
-              borderColor: isComplete ? "#22c55e44" : track.color + "44",
-              background: isComplete ? "#22c55e15" : track.color + "15",
-            }}
-          >
-            {isComplete ? (
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Complete
-              </span>
-            ) : (
-              `${track.episodeCount.toLocaleString()} episodes`
-            )}
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {isPopular && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: "#C4622D18", color: "#C4622D", border: "1px solid #C4622D33" }}
+            >
+              🔥 {shareCount} shares
+            </span>
+          )}
+          {track.episodeCount > 0 && (
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-full border"
+              style={{
+                color: isComplete ? "#22c55e" : track.color,
+                borderColor: isComplete ? "#22c55e44" : track.color + "44",
+                background: isComplete ? "#22c55e15" : track.color + "15",
+              }}
+            >
+              {isComplete ? (
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Complete
+                </span>
+              ) : (
+                `${track.episodeCount.toLocaleString()} episodes`
+              )}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Body */}
@@ -148,12 +165,24 @@ export default function TracksPage() {
     ogTitle: "Learning Tracks — The Stomping Path",
     ogDescription: "Seven structured paths: permaculture zones 0–5, homesteading podcast episodes curated for skill-building.",
   });
+
+  const [sort, setSort] = useState<SortMode>("default");
+
   const { data: tracks, isLoading, isError } = useListTracks();
-  const slugs = tracks?.map((t) => t.slug) ?? [];
+  const slugs = useMemo(() => tracks?.map((t) => t.slug) ?? [], [tracks]);
   const progressSummary = useAllTracksProgress(slugs);
+  const shareCounts = useShareCounts("track", slugs);
 
   const totalDone = Object.values(progressSummary).reduce((a, b) => a + b, 0);
   const hasAnyProgress = totalDone > 0;
+
+  const sortedTracks = useMemo(() => {
+    if (!tracks) return tracks;
+    if (sort === "popular") {
+      return [...tracks].sort((a, b) => (shareCounts[b.slug] ?? 0) - (shareCounts[a.slug] ?? 0));
+    }
+    return tracks;
+  }, [tracks, sort, shareCounts]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -225,19 +254,48 @@ export default function TracksPage() {
 
       {/* Track grid */}
       <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
           <div>
             <h2 className="font-serif text-2xl font-bold text-foreground mb-1">The seven tracks</h2>
             <p className="text-sm text-muted-foreground">
               Zone-informed paths — from self-sovereignty to wilderness contingency.
             </p>
           </div>
-          <Link
-            href="/zones"
-            className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            Browse by zone <ChevronRight className="w-4 h-4" />
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* Sort toggle */}
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1 bg-card">
+              <button
+                onClick={() => setSort("default")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                style={
+                  sort === "default"
+                    ? { background: "#C4622D", color: "#fff" }
+                    : { color: "var(--muted-foreground)" }
+                }
+              >
+                <ArrowUpDown className="w-3 h-3" />
+                Default
+              </button>
+              <button
+                onClick={() => setSort("popular")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                style={
+                  sort === "popular"
+                    ? { background: "#C4622D", color: "#fff" }
+                    : { color: "var(--muted-foreground)" }
+                }
+              >
+                <Flame className="w-3 h-3" />
+                Popular
+              </button>
+            </div>
+            <Link
+              href="/zones"
+              className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              Browse by zone <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
 
         {isLoading && (
@@ -251,13 +309,14 @@ export default function TracksPage() {
             Could not load tracks. Try refreshing.
           </div>
         )}
-        {tracks && (
+        {sortedTracks && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {tracks.map((track) => (
+            {sortedTracks.map((track) => (
               <TrackCard
                 key={track.slug}
                 track={track}
                 doneCount={progressSummary[track.slug] ?? 0}
+                shareCount={shareCounts[track.slug] ?? 0}
               />
             ))}
           </div>
