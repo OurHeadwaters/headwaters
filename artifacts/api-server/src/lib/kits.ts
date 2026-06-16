@@ -36,6 +36,7 @@ export type KitDef = {
   priceType: "direct" | "consultative";
   priceCents?: number;
   ctaLabel: string;
+  featured?: boolean;
   stripePriceId?: string;
   /** Zaprite-hosted payment page URL for Bitcoin / Lightning / XRP / RLUSD checkout */
   zapriteUrl?: string;
@@ -196,6 +197,7 @@ export const KITS: KitDef[] = [
     slug: "parrs-jars",
     name: "Parr's Jars — Food Preservation Course",
     tagline: "Ten sessions on canning, preserving, and stocking your pantry from the North",
+    featured: true,
     description:
       "Bobbie Parr's ten-session food preservation course from Dryden, Ontario. Canning, fermenting, and stocking a real northern pantry — taught from a kitchen that has been doing this since 2020. Practitioner-grade skills, no fluff.",
     transformationSlugs: [],

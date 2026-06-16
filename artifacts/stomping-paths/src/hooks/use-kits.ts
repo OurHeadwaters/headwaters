@@ -14,6 +14,7 @@ export type KitSummary = {
   priceType: "direct" | "consultative";
   priceCents?: number;
   ctaLabel: string;
+  featured?: boolean;
 };
 
 export type KitTrack = {
@@ -91,6 +92,7 @@ export const KIT_META: Record<string, { icon: string; color: string }> = {
   "physical-kit":     { icon: "⚡", color: "#8A5A3A" },
   "pregnancy-kit":    { icon: "🌸", color: "#A86A8A" },
   "baby-health-kit":  { icon: "🧸", color: "#6A8A5A" },
+  "parrs-jars":       { icon: "🫙", color: "#7A5A2A" },
 };
 
 export const LINK_OUT_KITS = new Set(["practitioner-kit", "council-kit"]);

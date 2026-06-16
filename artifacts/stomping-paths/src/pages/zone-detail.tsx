@@ -1125,6 +1125,54 @@ export default function ZoneDetailPage() {
           />
         )}
 
+        {/* Parr's Jars featured callout — Zone 2 only */}
+        {zone.slug === "zone-2" && (
+          <section>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="flex-1 h-px" style={{ background: `${accentColor}30` }} />
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border"
+                style={{ color: accentColor, borderColor: `${accentColor}40`, background: `${accentColor}08` }}
+              >
+                Featured Course
+              </div>
+              <div className="flex-1 h-px" style={{ background: `${accentColor}30` }} />
+            </div>
+            <div
+              className="rounded-xl border p-6 flex flex-col sm:flex-row gap-5 items-start"
+              style={{
+                borderColor: `${accentColor}44`,
+                background: `linear-gradient(135deg, ${accentColor}10 0%, ${accentColor}04 100%)`,
+              }}
+            >
+              <div className="text-4xl leading-none shrink-0">🫙</div>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                  style={{ color: accentColor }}
+                >
+                  Highest-conviction buy for Zone 2
+                </div>
+                <h3 className="font-serif text-xl font-bold text-foreground mb-2 leading-snug">
+                  Parr's Jars — Food Preservation Course
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  Ten sessions on canning, fermenting, and stocking a real northern pantry — taught from Bobbie Parr's kitchen in Dryden, Ontario. Practitioner-grade food preservation skills, no fluff. This is the first course to buy if your Zone 2 work is serious.
+                </p>
+                <Link
+                  href="/kits/parrs-jars"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm text-white transition-all hover:-translate-y-px"
+                  style={{ background: accentColor, boxShadow: `0 4px 16px ${accentColor}35` }}
+                >
+                  <Package className="w-4 h-4" />
+                  View the Course
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Voices + Kit — creators and easy button for this zone */}
         <ZoneCreatorsAndKit zoneSlug={zone.slug} accentColor={accentColor} />
 

@@ -38,6 +38,7 @@ const publicEventColumns = {
   // hostToken intentionally omitted — auth credential
   transformationSlug: groundEventsTable.transformationSlug,
   zoneSlug: groundEventsTable.zoneSlug,
+  familyFriendly: groundEventsTable.familyFriendly,
   createdAt: groundEventsTable.createdAt,
   updatedAt: groundEventsTable.updatedAt,
 } as const;
@@ -276,6 +277,9 @@ router.post("/ground-events", async (req, res) => {
         ? body.zoneSlug.trim().slice(0, 30)
         : null;
 
+    // Family-friendly flag
+    const familyFriendly = body.familyFriendly === true || body.familyFriendly === "true";
+
     // Paid events use platform Stripe Checkout — external URL is not permitted.
     const externalUrl = ticketPriceCents ? null : rawExternalUrl;
 
@@ -303,6 +307,7 @@ router.post("/ground-events", async (req, res) => {
         platformSharePct,
         transformationSlug,
         zoneSlug,
+        familyFriendly,
         hostToken,
         isApproved,
         isFeatured: false,
@@ -856,6 +861,9 @@ router.patch("/ground-events/:id/manage", async (req, res) => {
     if (typeof body.transformationSlug === "string") {
       const slug = body.transformationSlug.trim();
       updates.transformationSlug = slug.length > 0 ? slug.slice(0, 120) : null;
+    }
+    if (typeof body.familyFriendly === "boolean") {
+      updates.familyFriendly = body.familyFriendly;
     }
 
     const [updated] = await db

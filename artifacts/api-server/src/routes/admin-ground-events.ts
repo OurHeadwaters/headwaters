@@ -187,9 +187,13 @@ router.patch("/admin/ground-events/:id", requireEditor, async (req, res) => {
         updates.isRejected = true;
       } else if (action === "unfeature") {
         updates.isFeatured = false;
+      } else if (action === "family") {
+        updates.familyFriendly = true;
+      } else if (action === "unfamily") {
+        updates.familyFriendly = false;
       } else {
         res.status(400).json({
-          error: "Unknown action. Valid: approve, feature, reject, unfeature",
+          error: "Unknown action. Valid: approve, feature, reject, unfeature, family, unfamily",
         });
         return;
       }

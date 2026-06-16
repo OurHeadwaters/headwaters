@@ -20,7 +20,7 @@ export default function KitsPage() {
     if (sort === "popular") {
       return [...kits].sort((a, b) => (shareCounts[b.slug] ?? 0) - (shareCounts[a.slug] ?? 0));
     }
-    return kits;
+    return [...kits].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
   }, [kits, sort, shareCounts]);
 
   return (

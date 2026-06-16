@@ -534,12 +534,20 @@ function HeroEntrance() {
           <span className="italic text-[#D9A066]">Own your life.</span>
         </motion.h1>
         <motion.p
-          className="text-[#FDFBF7]/65 text-lg max-w-xl mb-8"
+          className="text-[#FDFBF7]/65 text-lg max-w-xl mb-3"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.65 }}
         >
           6,000+ episodes. Seven transformation arcs. One archive built for people who decide their own terms.
+        </motion.p>
+        <motion.p
+          className="text-[#8FA883]/80 text-sm max-w-xl mb-8"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.75 }}
+        >
+          Built by and for families doing it differently.
         </motion.p>
         <motion.div
           className="flex flex-col sm:flex-row gap-3 pointer-events-auto"

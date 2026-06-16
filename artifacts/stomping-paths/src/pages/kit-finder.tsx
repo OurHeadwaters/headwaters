@@ -37,6 +37,7 @@ export default function KitFinderPage() {
       const params = new URLSearchParams({
         from_finder: "1",
         situation: full.situation,
+        household: full.household,
         goal: full.goal,
         companions: full.companions,
         entry: full.entry,

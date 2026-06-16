@@ -53,6 +53,7 @@ export const groundEventsTable = pgTable(
     stripeChargesEnabled: boolean("stripe_charges_enabled").notNull().default(false),
     transformationSlug: text("transformation_slug"),
     zoneSlug: text("zone_slug"),
+    familyFriendly: boolean("family_friendly").notNull().default(false),
     confirmationEmailSent: boolean("confirmation_email_sent").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

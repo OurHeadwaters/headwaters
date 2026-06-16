@@ -162,6 +162,62 @@ function KitEasyButton({ kit }: { kit: SuiteKit }) {
   );
 }
 
+// ─── Sibling-path bridge callout ────────────────────────────────────────────────
+
+const SIBLING_PATHS: Record<string, { slug: string; icon: string; from: string; to: string; copy: string }> = {
+  "employee-to-owner": {
+    slug: "outsourced-health-to-health-sovereign",
+    icon: "🌿",
+    from: "Outsourced Health",
+    to: "Health Sovereign",
+    copy: "Most people doing this work find the health path runs in parallel — the energy to build something new comes from the body working.",
+  },
+  "outsourced-health-to-health-sovereign": {
+    slug: "employee-to-owner",
+    icon: "🔑",
+    from: "Employee",
+    to: "Owner",
+    copy: "Most people reclaiming their health find the income path runs in parallel — financial sovereignty removes the system's leverage over your health decisions.",
+  },
+};
+
+function SiblingPathCallout({ currentSlug, accentColor }: { currentSlug: string; accentColor: string }) {
+  const sibling = SIBLING_PATHS[currentSlug];
+  if (!sibling) return null;
+
+  return (
+    <div
+      className="rounded-xl border p-5 flex flex-col gap-3 mt-10"
+      style={{
+        borderColor: `${accentColor}33`,
+        background: `${accentColor}08`,
+      }}
+    >
+      <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: accentColor }}>
+        Many people on this path are also doing…
+      </div>
+      <div className="flex items-start gap-3">
+        <span className="text-2xl leading-none shrink-0">{sibling.icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <span className="font-bold text-sm text-foreground">{sibling.from}</span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+            <span className="font-bold text-sm" style={{ color: accentColor }}>{sibling.to}</span>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">{sibling.copy}</p>
+        </div>
+      </div>
+      <Link
+        href={`/transform/${sibling.slug}`}
+        className="self-start inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
+        style={{ color: accentColor }}
+      >
+        Explore that path <ArrowRight className="w-3 h-3" />
+      </Link>
+    </div>
+  );
+}
+
 // ─── Main content ───────────────────────────────────────────────────────────────
 
 function TransformDetailContent({ slug }: { slug: string }) {
@@ -428,6 +484,9 @@ function TransformDetailContent({ slug }: { slug: string }) {
                 </div>
               </div>
             )}
+
+            {/* Sibling path bridge */}
+            <SiblingPathCallout currentSlug={slug} accentColor={t.color} />
 
             {/* Kit easy button — directly below voices, only when a kit is paired to this path */}
             {matchedKit && (

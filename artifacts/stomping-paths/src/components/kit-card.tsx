@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink, Star } from "lucide-react";
 import type { KitSummary } from "@/hooks/use-kits";
 import { KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 
@@ -26,11 +26,26 @@ export function KitCard({ kit, shareCount = 0 }: KitCardProps) {
         }}
       >
         <div>
-          <div
-            className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
-            style={{ color: meta.color }}
-          >
-            {isLinkOut ? "Preview + External Link" : "TSP Content Kit"}
+          <div className="flex items-center gap-2 mb-1.5">
+            <div
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: meta.color }}
+            >
+              {isLinkOut ? "Preview + External Link" : "TSP Content Kit"}
+            </div>
+            {kit.featured && (
+              <span
+                className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                style={{
+                  background: `${meta.color}22`,
+                  color: meta.color,
+                  border: `1px solid ${meta.color}55`,
+                }}
+              >
+                <Star className="w-2.5 h-2.5" />
+                Featured
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2.5">
             <span className="text-2xl leading-none">{meta.icon}</span>

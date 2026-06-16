@@ -1,5 +1,6 @@
 export type FinderAnswer = {
   situation: "individual" | "family" | "others";
+  household: "expecting" | "new-parent" | "kids-under-10" | "kids-older" | "adult" | "solo";
   goal: "income" | "health" | "privacy" | "physical" | "community";
   companions: "solo" | "partner" | "family" | "community";
   entry: "philosophy" | "action" | "curriculum";
@@ -33,6 +34,43 @@ export const FINDER_QUESTIONS: FinderQuestion[] = [
         value: "others",
         label: "Clients, community, or an organization",
         description: "I work with others — guiding, advising, or coordinating at scale.",
+      },
+    ],
+  },
+  {
+    id: "household",
+    text: "What's your household situation right now?",
+    subtext: "This helps us surface the most relevant kit for your specific moment.",
+    options: [
+      {
+        value: "expecting",
+        label: "Expecting a child",
+        description: "We're preparing for a baby and want to build a health-sovereign home before they arrive.",
+      },
+      {
+        value: "new-parent",
+        label: "New parent (child under 2)",
+        description: "We have a young infant and are building resilient health practices from the start.",
+      },
+      {
+        value: "kids-under-10",
+        label: "Kids at home (under 10)",
+        description: "We have young children and want skills that work alongside our family — including homeschool.",
+      },
+      {
+        value: "kids-older",
+        label: "Kids at home (10+)",
+        description: "Our kids are older and can participate directly in building household resilience.",
+      },
+      {
+        value: "adult",
+        label: "Adult household",
+        description: "No kids at home — just adults making these changes together.",
+      },
+      {
+        value: "solo",
+        label: "Solo",
+        description: "I'm doing this work on my own right now.",
       },
     ],
   },
@@ -175,8 +213,41 @@ export const READINESS_LABELS: Record<string, string> = {
 };
 
 export function resolveKit(answers: FinderAnswer): FinderResult {
-  const { situation, goal, companions, readiness } = answers;
+  const { situation, household, goal, companions, readiness } = answers;
 
+  // ── Household lifecycle routing (highest priority) ───────────────────────────
+  if (household === "expecting") {
+    return {
+      primary: "pregnancy-kit",
+      secondary: "care-kit",
+      reason: "You're expecting — the Pregnancy Kit covers natural birth prep, building a health-sovereign home before baby arrives, and the early infant decisions that shape the first year. The Care Kit is the natural companion for the family's ongoing health practice.",
+    };
+  }
+
+  if (household === "new-parent") {
+    return {
+      primary: "baby-health-kit",
+      secondary: "pregnancy-kit",
+      reason: "With a new baby at home, the Baby Health Kit gives you the infant care protocols, first-foods philosophy, and home treatment skills for the early years. The Pregnancy Kit fills in anything you missed before the birth.",
+    };
+  }
+
+  if (household === "kids-under-10") {
+    if (goal === "health") {
+      return {
+        primary: "care-kit",
+        secondary: "family-kit",
+        reason: "With young kids at home, the Care Kit gives you home treatment protocols, herbalism, and root-cause health practices the whole family can build together — including homeschool-ready content. The Family Kit anchors your physical household preparedness.",
+      };
+    }
+    return {
+      primary: "family-kit",
+      secondary: "care-kit",
+      reason: "The Family Kit is built for households with young children — 90-day food and water security, homeschool-edition content, and whole-home preparedness that fits around life with kids under 10. The Care Kit pairs naturally for the health side.",
+    };
+  }
+
+  // ── Professional / community routing ────────────────────────────────────────
   const communitySignal = companions === "community" || goal === "community";
 
   if (situation === "others") {

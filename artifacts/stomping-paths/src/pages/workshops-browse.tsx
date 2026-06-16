@@ -29,6 +29,7 @@ interface GroundEvent {
   platformSharePct: number | null;
   isStripeReady: boolean;
   transformationSlug: string | null;
+  familyFriendly: boolean;
   hasRsvped?: boolean;
 }
 
@@ -200,6 +201,11 @@ function EventCard({
               <Star className="w-2.5 h-2.5" />Featured
             </span>
           )}
+          {event.familyFriendly && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: "rgba(74,160,100,0.2)", color: "#4AA064", border: "1px solid rgba(74,160,100,0.45)" }}>
+              👨‍👩‍👧 Good with kids
+            </span>
+          )}
           {transformation && (
             <span
               className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -327,6 +333,7 @@ export default function WorkshopsBrowsePage() {
   const [filterTransformation, setFilterTransformation] = useState(params.get("path") ?? "");
   const [filterFormat, setFilterFormat] = useState<"all" | "online" | "local">("all");
   const [filterZone, setFilterZone] = useState(params.get("zone") ?? "");
+  const [filterFamilyFriendly, setFilterFamilyFriendly] = useState(false);
   const [rsvpModal, setRsvpModal] = useState<{ eventId: number } | null>(null);
   const [rsvpError, setRsvpError] = useState<string | null>(null);
 
@@ -381,6 +388,7 @@ export default function WorkshopsBrowsePage() {
   let events = data?.events ?? [];
   if (filterFormat === "online") events = events.filter((e) => e.isOnline);
   if (filterFormat === "local") events = events.filter((e) => !e.isOnline);
+  if (filterFamilyFriendly) events = events.filter((e) => e.familyFriendly);
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #1C3020 0%, #1A2820 100%)" }}>
@@ -464,6 +472,18 @@ export default function WorkshopsBrowsePage() {
                   {z.icon} {z.label}
                 </button>
               ))}
+              <div className="w-px h-4 self-center mx-1" style={{ background: "rgba(58,80,64,0.4)" }} />
+              <button
+                onClick={() => setFilterFamilyFriendly((v) => !v)}
+                className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
+                style={
+                  filterFamilyFriendly
+                    ? { background: "rgba(74,160,100,0.25)", color: "#4AA064", border: "1px solid rgba(74,160,100,0.55)" }
+                    : { background: "transparent", color: "#6A8870", border: "1px solid rgba(58,80,64,0.4)" }
+                }
+              >
+                👨‍👩‍👧 Good with kids
+              </button>
               <div className="w-px h-4 self-center mx-1" style={{ background: "rgba(58,80,64,0.4)" }} />
               {(["all", "online", "local"] as const).map((fmt) => (
                 <button

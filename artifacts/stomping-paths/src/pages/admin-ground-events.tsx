@@ -29,6 +29,7 @@ interface GroundEvent {
   platformSharePct: number | null;
   isStripeReady: boolean;
   transformationSlug: string | null;
+  familyFriendly: boolean;
   confirmationEmailSent: boolean;
 }
 
@@ -349,6 +350,19 @@ function EventRow({ event }: { event: GroundEvent }) {
               Approve
             </button>
           )}
+
+          <button
+            onClick={() => act(event.familyFriendly ? "unfamily" : "family")}
+            disabled={busy}
+            className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50 ${
+              event.familyFriendly
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+            }`}
+            title={event.familyFriendly ? "Remove family-friendly tag" : "Mark as family-friendly / good with kids"}
+          >
+            👨‍👩‍👧 {event.familyFriendly ? "Family ✓" : "Family?"}
+          </button>
 
           {event.isApproved && !event.isFeatured && (
             <button
