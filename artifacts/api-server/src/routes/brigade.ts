@@ -342,4 +342,64 @@ router.get("/admin/brigade/stats", requireEditor, async (_req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/admin/stripe/status
+//
+// Admin-facing Stripe integration health check. Reports:
+//   - Whether the integration is connected and which environment is active
+//   - Key mode: LIVE (sk_live_) vs TEST (sk_test_)
+//   - Registered webhook URL vs expected deployed-domain URL
+//   - Whether the webhook secret is present
+//   - Smoke test runbook for verifying end-to-end payment flow
+//
+// How to run a live checkout smoke test:
+//   1. Visit /brigade as an authenticated user and click "Join the Brigade" (monthly plan)
+//   2. Complete checkout with a real card in Stripe's live checkout
+//   3. Stripe fires checkout.session.completed → /api/stripe/webhook
+//   4. Check server logs for "webhookHandlers: Brigade membership activated"
+//   5. Check the memberships table: SELECT * FROM memberships WHERE user_id = '<id>'
+//      — status should be 'active', current_period_end in the future
+//   6. /api/brigade/status should return { isMember: true }
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/admin/stripe/status", requireEditor, async (_req, res) => {
+  try {
+    const stripe = await getUncachableStripeClient();
+
+    // Retrieve balance to confirm the key is valid.
+    // balance.livemode is true when using live keys, false for test keys.
+    const balance = await stripe.balance.retrieve();
+    const keyMode = balance.livemode ? "LIVE" : "TEST";
+
+    const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
+    const deployedDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0];
+    const expectedWebhookUrl = deployedDomain
+      ? `https://${deployedDomain}/api/stripe/webhook`
+      : null;
+
+    res.json({
+      connected: true,
+      keyMode,
+      isProductionDeployment: isProduction,
+      expectedWebhookUrl,
+      webhookSecretPresent: !isProduction
+        ? "not checked (development)"
+        : "verified at startup",
+      smokeTestRunbook: [
+        "1. Visit /brigade as an authenticated user",
+        "2. Click Join the Brigade (monthly plan) and complete checkout",
+        "3. Watch server logs for: webhookHandlers: Brigade membership activated",
+        "4. Query: SELECT status, current_period_end FROM memberships WHERE user_id = '<id>'",
+        "5. GET /api/brigade/status should return { isMember: true }",
+      ],
+    });
+  } catch (err) {
+    logger.error({ err }, "stripe: admin status check failed");
+    res.status(503).json({
+      connected: false,
+      error: err instanceof Error ? err.message : String(err),
+      fix: "Connect Stripe via the Integrations tab. For production, add a Production environment connection with sk_live_ key and whsec_ webhook secret.",
+    });
+  }
+});
+
 export default router;

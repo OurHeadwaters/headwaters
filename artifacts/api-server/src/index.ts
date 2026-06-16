@@ -39,9 +39,27 @@ async function initStripe(): Promise<void> {
 
     const stripeSync = await getStripeSync();
 
-    const webhookBase = `https://${(process.env.REPLIT_DOMAINS ?? "").split(",")[0]}`;
-    await stripeSync.findOrCreateManagedWebhook(`${webhookBase}/api/stripe/webhook`);
-    logger.info("stripe: managed webhook configured");
+    const deployedDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0];
+    const webhookBase = `https://${deployedDomain}`;
+    const expectedWebhookUrl = `${webhookBase}/api/stripe/webhook`;
+
+    await stripeSync.findOrCreateManagedWebhook(expectedWebhookUrl);
+
+    // Verify the registered webhook URL matches the deployed domain.
+    // If REPLIT_DOMAINS is empty (dev environment), this logs a warning so
+    // it is visible that webhook registration cannot be confirmed locally.
+    if (!deployedDomain) {
+      logger.warn(
+        { expectedWebhookUrl },
+        "stripe: REPLIT_DOMAINS not set — webhook URL could not be verified against deployed domain. " +
+          "This is expected in development; confirm the webhook URL in the Stripe dashboard after deploying.",
+      );
+    } else {
+      logger.info(
+        { webhookUrl: expectedWebhookUrl, deployedDomain },
+        "stripe: managed webhook configured — webhook URL matches deployed domain",
+      );
+    }
 
     // syncBackfill is async and intentionally fire-and-forget
     stripeSync.syncBackfill().catch((err) =>

@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { StripeSync } from "stripe-replit-sync";
+import { logger } from "./lib/logger";
 
 /**
  * Fetches Stripe credentials from the Replit connection API.
@@ -7,6 +8,9 @@ import { StripeSync } from "stripe-replit-sync";
  *
  * Uses the environment parameter to select development vs production credentials
  * based on the REPLIT_DEPLOYMENT env var (set to "1" in deployed environments).
+ *
+ * Production guard: if running deployed and the webhook secret is absent, a hard
+ * error is thrown rather than silently accepting unverified webhooks.
  */
 async function getStripeCredentials(): Promise<{
   secretKey: string;
@@ -49,9 +53,39 @@ async function getStripeCredentials(): Promise<{
   const settings = data.items?.[0]?.settings;
 
   if (!settings?.secret) {
+    if (isProduction) {
+      throw new Error(
+        "STRIPE PRODUCTION ERROR: No secret key found in the production Stripe integration connection. " +
+          "Go to the Integrations tab → Stripe → add a Production environment connection with your live secret key (sk_live_…) " +
+          "and live webhook secret (whsec_…) before deploying.",
+      );
+    }
     throw new Error(
       "Stripe integration not connected or missing secret key. " +
         "Connect Stripe via the Integrations tab first.",
+    );
+  }
+
+  // ── Mode log: always visible in server logs so it's clear which key type is active ──
+  const keyMode = settings.secret.startsWith("sk_live_") ? "LIVE" : "TEST";
+  logger.info(
+    { mode: keyMode, environment: targetEnvironment },
+    `stripe: booted in ${keyMode} mode (${targetEnvironment} credentials)`,
+  );
+
+  if (keyMode === "TEST" && isProduction) {
+    logger.warn(
+      "stripe: WARNING — running in deployed environment with TEST keys (sk_test_). " +
+        "Connect live keys (sk_live_…) via Integrations → Stripe → Production to accept real payments.",
+    );
+  }
+
+  // ── Webhook secret guard: never accept unverified webhooks in production ──
+  if (isProduction && !settings.webhook_secret) {
+    throw new Error(
+      "STRIPE PRODUCTION ERROR: Webhook secret is missing from the production Stripe integration connection. " +
+        "Without it, incoming webhooks cannot be verified and membership/purchase activations will not work. " +
+        "Add the live webhook secret (whsec_…) to Integrations → Stripe → Production environment.",
     );
   }
 
