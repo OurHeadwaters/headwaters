@@ -1248,20 +1248,47 @@ export default function KitDetailPage() {
               </div>
             ) : workshops.length === 0 ? (
               <div
-                className="rounded-xl border p-6 text-center"
+                className="rounded-xl border p-6"
                 style={{ borderColor: "#8FA88333", background: "#8FA88308" }}
               >
-                <p className="text-sm text-muted-foreground mb-3">
-                  No upcoming family workshops right now — but new ones are added regularly.
-                </p>
-                <a
-                  href="/workshops"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
-                  style={{ color: "#8FA883" }}
-                >
-                  Browse all workshops
-                  <ChevronRight className="w-4 h-4" />
-                </a>
+                <div className="flex items-start gap-4">
+                  <div
+                    className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-0.5"
+                    style={{ background: "#8FA88318", border: "1px solid #8FA88340" }}
+                  >
+                    <Users className="w-5 h-5" style={{ color: "#8FA883" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground mb-1">
+                      No workshops near you yet.
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                      Want to bring your community together around family resilience? You could be the one who starts it.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href="/workshops/host"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+                        style={{
+                          color: "#fff",
+                          background: "#8FA883",
+                          boxShadow: "0 4px 16px #8FA88340",
+                        }}
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        Host a Workshop
+                      </a>
+                      <a
+                        href="/workshops"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
+                        style={{ color: "#8FA883" }}
+                      >
+                        Browse all workshops
+                        <ChevronRight className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
