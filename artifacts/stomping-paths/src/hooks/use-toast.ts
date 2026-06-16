@@ -135,8 +135,7 @@ function dispatch(action: Action) {
   })
 }
 
-// Matches Radix UI's default toast duration
-const DEFAULT_TOAST_DURATION = 5000
+const DEFAULT_TOAST_DURATION = 3000
 
 // --- Hover/focus-aware dismiss timer ---
 
@@ -144,6 +143,8 @@ interface DismissTimer {
   timeoutId: ReturnType<typeof setTimeout>
   startedAt: number
   remaining: number
+  totalDuration: number
+  paused: boolean
 }
 
 const dismissTimers = new Map<string, DismissTimer>()
@@ -154,7 +155,7 @@ function startDismissTimer(toastId: string, duration: number) {
     dismissTimers.delete(toastId)
     dispatch({ type: "DISMISS_TOAST", toastId })
   }, duration)
-  dismissTimers.set(toastId, { timeoutId, startedAt: Date.now(), remaining: duration })
+  dismissTimers.set(toastId, { timeoutId, startedAt: Date.now(), remaining: duration, totalDuration: duration, paused: false })
 }
 
 function clearDismissTimer(toastId: string) {
@@ -167,21 +168,32 @@ function clearDismissTimer(toastId: string) {
 
 export function pauseToast(toastId: string) {
   const timer = dismissTimers.get(toastId)
-  if (!timer) return
+  if (!timer || timer.paused) return
   clearTimeout(timer.timeoutId)
   const elapsed = Date.now() - timer.startedAt
   const remaining = Math.max(0, timer.remaining - elapsed)
-  dismissTimers.set(toastId, { timeoutId: -1 as unknown as ReturnType<typeof setTimeout>, startedAt: timer.startedAt, remaining })
+  dismissTimers.set(toastId, { ...timer, timeoutId: -1 as unknown as ReturnType<typeof setTimeout>, remaining, paused: true })
 }
 
 export function resumeToast(toastId: string) {
   const timer = dismissTimers.get(toastId)
-  if (!timer) return
+  if (!timer || !timer.paused) return
   const timeoutId = setTimeout(() => {
     dismissTimers.delete(toastId)
     dispatch({ type: "DISMISS_TOAST", toastId })
   }, timer.remaining)
-  dismissTimers.set(toastId, { timeoutId, startedAt: Date.now(), remaining: timer.remaining })
+  dismissTimers.set(toastId, { ...timer, timeoutId, startedAt: Date.now(), paused: false })
+}
+
+export function getToastProgress(toastId: string): { remaining: number; total: number } | null {
+  const timer = dismissTimers.get(toastId)
+  if (!timer) return null
+  if (timer.paused) {
+    return { remaining: timer.remaining, total: timer.totalDuration }
+  }
+  const elapsed = Date.now() - timer.startedAt
+  const remaining = Math.max(0, timer.remaining - elapsed)
+  return { remaining, total: timer.totalDuration }
 }
 
 // --- End hover/focus-aware dismiss timer ---
