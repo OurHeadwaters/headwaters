@@ -7,6 +7,7 @@ import {
   Mail,
   Share2,
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export type ShareSurface = "kit" | "track" | "transform";
 
@@ -117,6 +118,7 @@ export function ShareModal({
     timerRef.current = setTimeout(() => setCopied(false), 2500);
     void trackShare(surface, slug);
     onShared?.();
+    toast({ title: "Thanks for sharing! 🎉", duration: 3000 });
   }
 
   async function handleSms() {
@@ -127,6 +129,7 @@ export function ShareModal({
         void trackShare(surface, slug);
         onShared?.();
         onClose();
+        toast({ title: "Thanks for sharing! 🎉", duration: 3000 });
         return;
       } catch {
       }
@@ -135,6 +138,7 @@ export function ShareModal({
     void trackShare(surface, slug);
     onShared?.();
     onClose();
+    toast({ title: "Thanks for sharing! 🎉", duration: 3000 });
   }
 
   function handleEmail() {
@@ -142,6 +146,7 @@ export function ShareModal({
     void trackShare(surface, slug);
     onShared?.();
     onClose();
+    toast({ title: "Thanks for sharing! 🎉", duration: 3000 });
   }
 
   return (
