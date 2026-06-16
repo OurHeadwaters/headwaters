@@ -495,7 +495,7 @@ export default function KitDetailPage() {
   const isFamilyKit = slug === "family-kit";
   const manual = KIT_MANUALS[slug];
   const { creators } = useKitCreators(slug);
-  const kitShareCount = useShareCount("kit", slug);
+  const [kitShareCount, incrementKitShareCount] = useShareCount("kit", slug);
 
   const displayName =
     isFamilyKit
@@ -1289,6 +1289,7 @@ export default function KitDetailPage() {
         slug={slug}
         name={displayName}
         accentColor={meta.color}
+        onShared={incrementKitShareCount}
       />
     </div>
   );

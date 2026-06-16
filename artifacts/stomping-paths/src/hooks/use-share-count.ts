@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-export function useShareCount(surface: "kit" | "track" | "transform", slug: string): number | null {
+export function useShareCount(
+  surface: "kit" | "track" | "transform",
+  slug: string
+): [number | null, () => void] {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -14,5 +17,9 @@ export function useShareCount(surface: "kit" | "track" | "transform", slug: stri
       .catch(() => {});
   }, [surface, slug]);
 
-  return count;
+  const increment = useCallback(() => {
+    setCount((prev) => (prev === null ? 1 : prev + 1));
+  }, []);
+
+  return [count, increment];
 }

@@ -167,7 +167,7 @@ function KitEasyButton({ kit }: { kit: SuiteKit }) {
 function TransformDetailContent({ slug }: { slug: string }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
-  const transformShareCount = useShareCount("transform", slug);
+  const [transformShareCount, incrementTransformShareCount] = useShareCount("transform", slug);
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : "",
   );
@@ -454,6 +454,7 @@ function TransformDetailContent({ slug }: { slug: string }) {
         slug={slug}
         name={`${t.from} → ${t.to}`}
         accentColor={t.color}
+        onShared={incrementTransformShareCount}
       />
     </div>
   );

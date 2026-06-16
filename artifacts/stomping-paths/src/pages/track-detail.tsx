@@ -626,7 +626,7 @@ export default function TrackDetailPage() {
   });
 
   const { data: transformations } = useTransformations();
-  const trackShareCount = useShareCount("track", slug);
+  const [trackShareCount, incrementTrackShareCount] = useShareCount("track", slug);
 
   const track = data?.track;
 
@@ -1246,6 +1246,7 @@ export default function TrackDetailPage() {
         slug={slug}
         name={track.title}
         accentColor={track.color}
+        onShared={incrementTrackShareCount}
       />
     </div>
   );

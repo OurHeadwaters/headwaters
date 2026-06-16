@@ -17,6 +17,7 @@ interface ShareModalProps {
   slug: string;
   name: string;
   accentColor: string;
+  onShared?: () => void;
 }
 
 function apiUrl(path: string): string {
@@ -61,6 +62,7 @@ export function ShareModal({
   slug,
   name,
   accentColor,
+  onShared,
 }: ShareModalProps) {
   const [note, setNote] = useState("");
   const [from, setFrom] = useState("");
@@ -114,6 +116,7 @@ export function ShareModal({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setCopied(false), 2500);
     void trackShare(surface, slug);
+    onShared?.();
   }
 
   async function handleSms() {
@@ -122,6 +125,7 @@ export function ShareModal({
       try {
         await navigator.share(shareData);
         void trackShare(surface, slug);
+        onShared?.();
         onClose();
         return;
       } catch {
@@ -129,12 +133,14 @@ export function ShareModal({
     }
     window.location.href = `sms:?body=${encodeURIComponent(smsBody)}`;
     void trackShare(surface, slug);
+    onShared?.();
     onClose();
   }
 
   function handleEmail() {
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
     void trackShare(surface, slug);
+    onShared?.();
     onClose();
   }
 
