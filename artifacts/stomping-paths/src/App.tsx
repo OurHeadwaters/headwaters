@@ -63,6 +63,7 @@ import { AdminGordTips } from "@/pages/admin-gord-tips";
 import { AdminShares } from "@/pages/admin-shares";
 import PractitionersPage from "@/pages/practitioners";
 import { SuggestCreatorPage } from "@/pages/suggest-creator";
+import ResourcesPage from "@/pages/resources";
 
 const queryClient = new QueryClient();
 
@@ -141,6 +142,7 @@ function Router() {
         <Route path="/kits/:slug" component={KitDetailPage} />
         <Route path="/practitioners" component={PractitionersPage} />
         <Route path="/suggest-creator" component={SuggestCreatorPage} />
+        <Route path="/resources" component={ResourcesPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

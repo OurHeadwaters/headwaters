@@ -37,6 +37,7 @@ const landmarkItems = [
   { href: "/headwaters", label: "The Headwaters", desc: "Member area — community and resources" },
   { href: "/privacy-guide/", label: "Family Kit", desc: "Privacy guide for families", external: true },
   { href: "/codetry/", label: "The Arch", desc: "Digital sovereignty — Codetry", external: true },
+  { href: "/resources", label: "Resources", desc: "PDFs, guides, and media files" },
 ];
 
 const adminItems = [

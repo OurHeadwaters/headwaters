@@ -47,6 +47,7 @@ import gordRouter from "./gord";
 import stompingPathRouter from "./stomping-path";
 import suggestionsRouter from "./suggestions";
 import sharesRouter from "./shares";
+import storageFilesRouter from "./storage-files";
 
 const router: IRouter = Router();
 
@@ -98,5 +99,6 @@ router.use(gordRouter);
 router.use(stompingPathRouter);
 router.use(suggestionsRouter);
 router.use(sharesRouter);
+router.use(storageFilesRouter);
 
 export default router;
