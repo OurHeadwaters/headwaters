@@ -319,7 +319,16 @@ router.post("/kits/:slug/zaprite-checkout", async (req, res) => {
     return;
   }
 
-  res.json({ url: kit.zapriteUrl });
+  // Append a return_url so Zaprite redirects buyers back to the welcome page
+  // after payment, where they see a "check your inbox" confirmation message.
+  const siteUrl =
+    process.env.SITE_URL ??
+    (req.headers.origin as string | undefined) ??
+    `https://${req.get("host")}`;
+  const returnUrl = `${siteUrl}/kits/${kit.slug}/welcome?payment=bitcoin`;
+  const zapriteUrlWithReturn = `${kit.zapriteUrl}&return_url=${encodeURIComponent(returnUrl)}`;
+
+  res.json({ url: zapriteUrlWithReturn });
 });
 
 /* ─────────────────── GET /api/kits/:slug/access ─────────────────── */

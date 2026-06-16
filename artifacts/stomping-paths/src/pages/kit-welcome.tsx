@@ -7,6 +7,8 @@ import {
   Package,
   Loader2,
   ExternalLink,
+  Mail,
+  Bitcoin,
 } from "lucide-react";
 import { useKitDetail, KIT_META } from "@/hooks/use-kits";
 
@@ -70,11 +72,15 @@ export default function KitWelcomePage() {
   const steps = KIT_FIRST_STEPS[slug] ?? DEFAULT_STEPS;
 
   const [sessionVerified, setSessionVerified] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1] ?? "");
     if (params.get("session_id")) {
       setSessionVerified(true);
+    }
+    if (params.get("payment")) {
+      setPaymentMethod(params.get("payment"));
     }
   }, [location]);
 
@@ -141,6 +147,13 @@ export default function KitWelcomePage() {
                 >
                   Purchase confirmed — you're in.
                 </p>
+              ) : paymentMethod === "bitcoin" ? (
+                <p
+                  className="text-base font-semibold mt-2"
+                  style={{ color: "#F7931A" }}
+                >
+                  Bitcoin payment received — check your inbox for your confirmation email.
+                </p>
               ) : (
                 <p
                   className="text-base font-semibold mt-2"
@@ -160,6 +173,40 @@ export default function KitWelcomePage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-10">
+
+        {paymentMethod === "bitcoin" && (
+          <section
+            className="rounded-xl border p-6 flex items-start gap-4"
+            style={{
+              borderColor: "#F7931A44",
+              background: "#F7931A0A",
+            }}
+          >
+            <div
+              className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-0.5"
+              style={{ background: "#F7931A18" }}
+            >
+              <Mail className="w-5 h-5" style={{ color: "#F7931A" }} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Bitcoin className="w-4 h-4" style={{ color: "#F7931A" }} />
+                <h3 className="font-serif text-base font-bold text-foreground">
+                  Confirmation email on its way
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your Bitcoin / Lightning payment has been received. A confirmation email with your
+                kit access details has been sent to the address you provided at checkout. Check
+                your inbox (and spam folder if needed) — it should arrive within a few minutes.
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                You can also access your kit directly at any time by returning to this page and
+                entering your email below.
+              </p>
+            </div>
+          </section>
+        )}
 
         <section>
           <div
