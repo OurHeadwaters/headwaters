@@ -1,10 +1,12 @@
 import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey } from "@workspace/api-client-react";
+import { useGetEpisode, getGetEpisodeQueryKey, useListEpisodes, getListEpisodesQueryKey, useListSeries, getListSeriesQueryKey, useGetSeriesEpisodes, getGetSeriesEpisodesQueryKey, useListSuiteCreators, useListSuiteKits } from "@workspace/api-client-react";
+import type { SuiteCreator, SuiteKit } from "@workspace/api-client-react";
 import { format, parseISO } from "date-fns";
 import { formatDuration } from "@/components/episode-card";
 import { AudioPlayer } from "@/components/audio-player";
-import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin, BookOpen, Copy, Check } from "lucide-react";
+import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin, BookOpen, Copy, Check, Package, ArrowRight, ExternalLink } from "lucide-react";
+import { KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 import { Link } from "wouter";
 import { useState } from "react";
 import { ProductShelf, type ReviewedProduct } from "@/components/product-shelf";
@@ -162,6 +164,30 @@ export function EpisodeDetail() {
       ? matchZones(episode.categories ?? [], episode.categories ?? [])
       : [];
 
+  const { data: allCreators = [] } = useListSuiteCreators();
+  const { data: allKits = [] } = useListSuiteKits();
+
+  const EPISODE_ZONE_KIT_MAP: Record<string, string> = {
+    "zone-0": "care-kit", "zone-1": "budget-kit", "zone-2": "family-kit",
+    "zone-3": "council-kit", "zone-4": "producer-kit", "zone-5": "physical-kit",
+  };
+  const tSlugs = matchedTransformations.map((t) => t.slug);
+  const zoneKitSlugs = matchedZones.map((z) => EPISODE_ZONE_KIT_MAP[z.slug]).filter(Boolean);
+  const sidebarCreators: SuiteCreator[] = (() => {
+    const byTransformation = allCreators.filter(
+      (c) => c.transformationSlugs.some((s) => tSlugs.includes(s))
+    );
+    if (byTransformation.length > 0) return byTransformation.slice(0, 2);
+    const byZoneKit = allCreators.filter(
+      (c) => c.kitSlugs.some((k) => zoneKitSlugs.includes(k))
+    );
+    return byZoneKit.slice(0, 2);
+  })();
+  const sidebarKit: SuiteKit | null =
+    allKits.find((k) => k.transformationSlugs.some((s) => tSlugs.includes(s)))
+    ?? allKits.find((k) => zoneKitSlugs.includes(k.slug))
+    ?? null;
+
   const episodeSeriesSlug = episode?.seriesSlug ?? null;
   const episodeSeries = episodeSeriesSlug
     ? seriesList?.find((s) => s.slug === episodeSeriesSlug)
@@ -287,6 +313,28 @@ export function EpisodeDetail() {
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight text-balance">
               {decodeHtml(episode.title)}
             </h1>
+
+            {sidebarCreators[0] && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {sidebarCreators[0].avatarUrl ? (
+                  <img
+                    src={sidebarCreators[0].avatarUrl}
+                    alt={sidebarCreators[0].name}
+                    className={`w-5 h-5 rounded-full object-cover border border-border shrink-0 ${sidebarCreators[0].status === "coming-soon" ? "opacity-50 grayscale" : ""}`}
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground border border-border shrink-0">
+                    {sidebarCreators[0].name.charAt(0)}
+                  </div>
+                )}
+                <span className="font-medium text-foreground/70">{sidebarCreators[0].name}</span>
+                {sidebarCreators[0].status === "coming-soon" && (
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground border border-border rounded-sm px-1 py-px">
+                    coming soon
+                  </span>
+                )}
+              </div>
+            )}
           </header>
 
           {episode.audioUrl && (
@@ -452,6 +500,53 @@ export function EpisodeDetail() {
               </div>
             )}
 
+            {/* Creator chips — voices on this path */}
+            {sidebarCreators.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  <ExternalLink className="w-3 h-3" />
+                  Trusted voices on this path
+                </div>
+                <div className="flex flex-col gap-2">
+                  {sidebarCreators.map((creator) => {
+                    const isComingSoon = creator.status === "coming-soon";
+                    const inner = (
+                      <div className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors group">
+                        {creator.avatarUrl ? (
+                          <img
+                            src={creator.avatarUrl}
+                            alt={creator.name}
+                            className={`w-7 h-7 rounded-full object-cover shrink-0 border border-border ${isComingSoon ? "opacity-50 grayscale" : ""}`}
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-bold text-muted-foreground border border-border">
+                            {creator.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-semibold text-foreground leading-tight block truncate">{creator.name}</span>
+                          {isComingSoon && (
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">coming soon</span>
+                          )}
+                        </div>
+                        {!isComingSoon && (
+                          <ArrowRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
+                        )}
+                      </div>
+                    );
+                    if (!isComingSoon && creator.websiteUrl) {
+                      return (
+                        <a key={creator.slug} href={creator.websiteUrl} target="_blank" rel="noopener noreferrer">
+                          {inner}
+                        </a>
+                      );
+                    }
+                    return <div key={creator.slug}>{inner}</div>;
+                  })}
+                </div>
+              </div>
+            )}
+
             <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" />
               Topics Discussed
@@ -468,6 +563,44 @@ export function EpisodeDetail() {
               ))}
             </div>
           </div>
+
+          {/* Kit easy-button — always at a glance, outside the main card */}
+          {sidebarKit && (() => {
+            const meta = KIT_META[sidebarKit.slug] ?? { icon: "📦", color: "#6B7280" };
+            const isInquiry = LINK_OUT_KITS.has(sidebarKit.slug);
+            return (
+              <div
+                className="rounded-xl border p-4 flex flex-col gap-3"
+                style={{
+                  borderColor: `${meta.color}44`,
+                  background: `linear-gradient(135deg, ${meta.color}12 0%, ${meta.color}05 100%)`,
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl leading-none">{meta.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: meta.color }}>
+                      Easy button
+                    </div>
+                    <p className="font-serif font-bold text-sm text-foreground leading-tight line-clamp-1">{sidebarKit.name}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{sidebarKit.tagline}</p>
+                <Link
+                  href={`/kits/${sidebarKit.slug}`}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs transition-all hover:-translate-y-px"
+                  style={{ color: "#fff", background: meta.color, boxShadow: `0 4px 14px ${meta.color}35` }}
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  {isInquiry ? "Inquire about this kit" : `Get ${sidebarKit.name}`}
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+                <p className="text-[10px] text-muted-foreground text-center -mt-1">
+                  Ready to move faster? This kit packages the path.
+                </p>
+              </div>
+            );
+          })()}
 
           {relatedEpisodes?.items && relatedEpisodes.items.length > 0 && (
             <div className="flex flex-col gap-4">

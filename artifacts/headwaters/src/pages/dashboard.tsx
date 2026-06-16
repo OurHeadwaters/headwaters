@@ -1,4 +1,4 @@
-import { useGetHeadwatersDashboard, useGetHeadwatersBusinessSection } from "@workspace/api-client-react";
+import { useGetHeadwatersDashboard, useGetHeadwatersBusinessSection, useListSuiteKits } from "@workspace/api-client-react";
 import { getHwHeaders, getZoneLabel } from "@/lib/api-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,86 @@ import { Link } from "wouter";
 import { PlusCircle, Users, DollarSign, Rss, ArrowRight, Footprints } from "lucide-react";
 import { format } from "date-fns";
 import { useProfile } from "@/hooks/use-profile";
+
+const HW_KIT_CARDS = [
+  {
+    slug: "practitioner-kit",
+    icon: "🌿",
+    color: "#5B8A60",
+    name: "Practitioner Kit",
+    tagline: "The framework you're already using — packaged for your clients.",
+    href: "/stomping-paths/kits/practitioner-kit",
+    badge: "Your kit",
+    desc: "Intake tools, zone mapping, and the client journey protocol. Everything a practitioner needs to run the model consistently.",
+  },
+  {
+    slug: "council-kit",
+    icon: "🌊",
+    color: "#3A6B7A",
+    name: "Council Kit",
+    tagline: "For practitioners who work at the community or organizational level.",
+    href: "/stomping-paths/kits/council-kit",
+    badge: "Referral path",
+    desc: "When a client is ready to extend beyond the household — governance, land trust, co-op structure. Refer upward with confidence.",
+  },
+];
+
+function KitFrameworkCards() {
+  const { data: allKits = [] } = useListSuiteKits();
+
+  const cards = HW_KIT_CARDS.map((meta) => {
+    const apiKit = allKits.find((k) => k.slug === meta.slug);
+    return { ...meta, apiKit };
+  });
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {cards.map((card) => (
+        <a
+          key={card.slug}
+          href={card.href}
+          className="group block rounded-xl border p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
+          style={{
+            borderColor: `${card.color}44`,
+            background: `linear-gradient(145deg, ${card.color}10 0%, ${card.color}04 100%)`,
+          }}
+        >
+          <div className="flex items-start gap-3 mb-3">
+            <span className="text-2xl leading-none">{card.icon}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                <span className="font-serif font-bold text-sm text-foreground leading-tight">{card.name}</span>
+                <span
+                  className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full border"
+                  style={{ color: card.color, borderColor: `${card.color}50`, background: `${card.color}10` }}
+                >
+                  {card.badge}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">{card.tagline}</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground/80 leading-relaxed mb-3">{card.desc}</p>
+          {card.apiKit?.priceCents && card.apiKit.priceType === "direct" ? (
+            <div className="text-xs text-muted-foreground mb-2">
+              <span className="font-bold text-foreground text-sm">${(card.apiKit.priceCents / 100).toFixed(0)}</span>
+              <span className="ml-1">one-time</span>
+            </div>
+          ) : (
+            <div className="text-xs italic text-muted-foreground mb-2">Consultative — inquiry to start</div>
+          )}
+          <div
+            className="inline-flex items-center gap-1.5 text-xs font-bold transition-colors"
+            style={{ color: card.color }}
+          >
+            View kit details
+            <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
 
 function fmt(n: number) {
   if (!n) return "—";
@@ -112,6 +192,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      <KitFrameworkCards />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">

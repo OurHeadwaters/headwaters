@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import Nav from "@/components/Nav";
 import ForgeHero from "@/components/ForgeHero";
 import ForgeEditor from "@/components/ForgeEditor";
-import { WhyCodeTry, BlueprintGallery, CommunityForge, ForgeFooter, AmbientListeningStrip } from "@/components/ForgeSections";
+import { WhyCodeTry, BlueprintGallery, CommunityForge, SovereigntyVoicesSection, ForgeFooter, AmbientListeningStrip } from "@/components/ForgeSections";
 import EmberBackground from "@/components/EmberBackground";
 import { FlyingGord } from "@/components/GordBird";
 
@@ -29,6 +29,7 @@ export default function Home() {
       <WhyCodeTry />
       <BlueprintGallery />
       <CommunityForge />
+      <SovereigntyVoicesSection />
       <ForgeFooter />
     </div>
   );

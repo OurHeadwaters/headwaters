@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, type Variants } from "framer-motion";
+import { useListSuiteCreators, useListSuiteKits } from "@workspace/api-client-react";
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -78,67 +79,27 @@ const COMMUNITY_MEMBERS = [
   { initials: "TR", name: "Tom R.", note: "Food hub inventory tool — live!", color: "#3A3010" },
   { initials: "SK", name: "Sarah K.", note: "Community skill board for rural ON", color: "#1A1A3A" },
   { initials: "MJ", name: "Mike J.", note: "Water quality tracker prototype", color: "#2C3A20" },
-  { initials: "AL", name: "Anna L.", note: "P2P credit ledger for neighbourhood", color: "#3A1A10" },
+  { initials: "DL", name: "David L.", note: "Barter network ledger, zone 3 ready", color: "#2A3A10" },
+  { initials: "FW", name: "Fiona W.", note: "Privacy-first client onboarding tool", color: "#1A3A3A" },
 ];
 
-export function AmbientListeningStrip() {
-  return (
-    <motion.section
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      variants={fadeInUp}
-      className="bg-[#0D1F0D] border-y border-[#1E3820] px-6 py-10"
-    >
-      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
-        <div className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-[#1A3020] text-[#D9A066]">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-            <path d="M19 10v2a7 7 0 01-14 0v-2" />
-            <line x1="12" y1="19" x2="12" y2="23" />
-            <line x1="8" y1="23" x2="16" y2="23" />
-          </svg>
-        </div>
-        <div className="text-center sm:text-left space-y-2 flex-1">
-          <div className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Signal → Extinguisher</div>
-          <p className="text-[#C4B49A] text-base leading-relaxed font-serif">
-            No new meetings. No pitch deck. Bobbie observes through the channels your community already uses — listening for friction before it becomes a crisis.
-          </p>
-          <p className="text-sm text-[#5A7A5A]">
-            Zero disruption. Problems surface the moment they happen, not when someone finally calls a meeting about it.
-          </p>
-        </div>
-        <a
-          href="/codetry/services"
-          className="shrink-0 inline-flex items-center gap-2 text-sm text-[#D9A066] hover:text-[#F0C07A] transition-colors border border-[#D9A066]/30 hover:border-[#D9A066]/60 px-5 py-2.5 rounded-md whitespace-nowrap"
-        >
-          See the full model
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-    </motion.section>
-  );
-}
+const DIGITAL_ACCENT = "#3A5A8A";
 
 export function WhyCodeTry() {
   return (
-    <section id="why-codetry" className="py-20 px-6 md:px-12 bg-[#0A180A]">
+    <section className="py-20 px-6 md:px-12 bg-[#060E06]">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={stagger}
-          className="space-y-12"
+          className="space-y-10"
         >
           <motion.div variants={fadeInUp} className="text-center space-y-3">
-            <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Why CodeTry Forge?</span>
-            <h2 className="text-3xl md:text-4xl font-serif text-[#FEFDFC]">Built for those who want to own their tools</h2>
-            <p className="text-[#8A9E8A] max-w-xl mx-auto">
-              The same philosophy that drives the homestead — sovereignty, craftsmanship, community — applied to software.
-            </p>
+            <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Why Codetry</span>
+            <h2 className="text-3xl md:text-4xl font-serif text-[#FEFDFC]">Sovereignty is a skill stack</h2>
+            <p className="text-[#8A9E8A] max-w-xl mx-auto">Not a platform. Not a plugin. The ability to build your own systems — owned, local, and lasting.</p>
           </motion.div>
 
           <motion.div variants={stagger} className="grid md:grid-cols-3 gap-6">
@@ -146,15 +107,11 @@ export function WhyCodeTry() {
               <motion.div
                 key={card.title}
                 variants={fadeInUp}
-                className="forge-why-card p-6 rounded-lg space-y-4 relative overflow-hidden"
+                className="forge-card p-6 rounded-lg space-y-4"
               >
-                <div
-                  className="absolute top-0 right-0 w-24 h-24 rounded-full pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${card.accent}18 0%, transparent 70%)` }}
-                />
                 <div style={{ color: card.accent }}>{card.icon}</div>
-                <h3 className="text-lg font-serif font-medium text-[#FEFDFC]">{card.title}</h3>
-                <p className="text-sm text-[#8A9E8A] leading-relaxed">{card.body}</p>
+                <h3 className="font-serif text-lg text-[#FEFDFC]">{card.title}</h3>
+                <p className="text-[#8A9E8A] text-sm leading-relaxed">{card.body}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -166,7 +123,7 @@ export function WhyCodeTry() {
 
 export function BlueprintGallery() {
   return (
-    <section className="py-20 px-6 md:px-12 bg-[#0D1F0D]">
+    <section className="py-20 px-6 md:px-12 bg-[#090F09] border-t border-[#1A3020]">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial="hidden"
@@ -176,58 +133,257 @@ export function BlueprintGallery() {
           className="space-y-12"
         >
           <motion.div variants={fadeInUp} className="text-center space-y-3">
-            <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Project Blueprints</span>
-            <h2 className="text-3xl md:text-4xl font-serif text-[#FEFDFC]">What you can build</h2>
-            <p className="text-[#8A9E8A] max-w-xl mx-auto">Real examples — not demos. Each one solves an actual community need.</p>
+            <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Blueprint Gallery</span>
+            <h2 className="text-3xl md:text-4xl font-serif text-[#FEFDFC]">Start with a map</h2>
+            <p className="text-[#8A9E8A] max-w-xl mx-auto">Each blueprint is a working starting point — a zone-mapped system you can actually run.</p>
           </motion.div>
 
-          <motion.div variants={stagger} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div variants={stagger} className="grid md:grid-cols-3 gap-6">
             {BLUEPRINTS.map((bp) => (
               <motion.div
                 key={bp.title}
                 variants={fadeInUp}
-                className="forge-blueprint-card rounded-lg overflow-hidden group cursor-pointer"
+                className="forge-card rounded-lg overflow-hidden"
               >
-                <div
-                  className="h-32 flex items-center justify-center relative overflow-hidden"
-                  style={{ background: bp.color }}
-                >
-                  <svg
-                    viewBox="0 0 160 112"
-                    className="w-full h-full absolute inset-0 opacity-20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <line x1="20" y1="20" x2="140" y2="20" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="20" y1="40" x2="140" y2="40" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="20" y1="60" x2="140" y2="60" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="20" y1="80" x2="140" y2="80" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="20" y1="20" x2="20" y2="92" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="60" y1="20" x2="60" y2="92" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="100" y1="20" x2="100" y2="92" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                    <line x1="140" y1="20" x2="140" y2="92" stroke="#D9A066" strokeWidth="0.8" strokeDasharray="4 4" />
-                  </svg>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D9A066" strokeWidth="1.5" className="relative z-10 opacity-70">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                  </svg>
-                  <div className="absolute bottom-2 right-3 text-[10px] text-[#D9A066]/60 font-mono">blueprint</div>
-                </div>
-                <div className="p-5 space-y-2 bg-[#111B0F] border border-[#1E3820] border-t-0 rounded-b-lg">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#D9A066]/60">{bp.zone}</div>
-                  <h3 className="text-base font-serif font-medium text-[#D4C9B8] group-hover:text-[#D9A066] transition-colors">{bp.title}</h3>
-                  <p className="text-xs text-[#5A7A5A] leading-relaxed">{bp.desc}</p>
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {bp.tags.map(t => (
-                      <span key={t} className="text-[10px] bg-[#1A2E1A] text-[#6A9A6A] px-2 py-0.5 rounded-full">{t}</span>
+                <div className="h-2 w-full" style={{ background: bp.color }} />
+                <div className="p-6 space-y-3">
+                  <span className="text-xs font-bold tracking-widest uppercase" style={{ color: bp.color === "#2C4A36" ? "#4A8C5C" : bp.color === "#3A3010" ? "#D9A066" : "#5B8AB0" }}>
+                    {bp.zone}
+                  </span>
+                  <h3 className="font-serif text-xl text-[#FEFDFC]">{bp.title}</h3>
+                  <p className="text-[#8A9E8A] text-sm leading-relaxed">{bp.desc}</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {bp.tags.map((t) => (
+                      <span key={t} className="text-[10px] font-bold uppercase tracking-wider border border-white/10 text-white/40 px-2 py-0.5 rounded-full">
+                        {t}
+                      </span>
                     ))}
                   </div>
                 </div>
               </motion.div>
             ))}
           </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+export function AmbientListeningStrip() {
+  return (
+    <section className="py-10 px-6 md:px-12 bg-[#060E06] border-t border-[#1A3020]">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-10 text-center md:text-left">
+        <div className="flex-1 space-y-2">
+          <span className="text-xs font-bold tracking-widest text-[#D9A066] uppercase">Listen while you build</span>
+          <h3 className="font-serif text-xl text-[#FEFDFC]">The Stomping Path podcast runs alongside everything Codetry does.</h3>
+          <p className="text-[#8A9E8A] text-sm">Thousands of episodes on food, finance, community, and digital sovereignty — from the same roots.</p>
+        </div>
+        <a
+          href="/stomping-paths"
+          className="shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-[#D9A066] border border-[#D9A066]/40 hover:border-[#D9A066] px-5 py-2.5 rounded-md transition-colors"
+        >
+          Go to the archive
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </section>
+  );
+}
+
+export function SovereigntyVoicesSection() {
+  const { data: allCreators = [] } = useListSuiteCreators();
+  const { data: allKits = [] } = useListSuiteKits();
+
+  const digitalCreators = allCreators.filter(
+    (c) => c.kitSlugs.includes("digital-kit") || c.transformationSlugs.includes("analog-to-digital-sovereign")
+  );
+  const displayCreators = digitalCreators.length > 0 ? digitalCreators : allCreators.slice(0, 3);
+
+  const digitalKit = allKits.find((k) => k.slug === "digital-kit") ?? null;
+
+  return (
+    <section className="py-20 px-6 md:px-12 bg-[#080F10] border-t border-[#1A2A30]">
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={stagger}
+          className="space-y-10"
+        >
+          <motion.div variants={fadeInUp} className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div className="space-y-3">
+              <span className="text-xs font-bold tracking-widest uppercase" style={{ color: DIGITAL_ACCENT }}>
+                Sovereignty Voices
+              </span>
+              <h2 className="text-3xl md:text-4xl font-serif text-[#FEFDFC]">
+                Follow their path — or take the kit.
+              </h2>
+              <p className="text-[#8A9E8A] max-w-xl">
+                These creators are doing what Codetry teaches. Learn from them at your own pace, free and self-directed.
+                Or use the Digital Kit when you're ready to move faster.
+              </p>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
+            {/* Creators column */}
+            <motion.div variants={stagger} className="space-y-4">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4A6A4A] mb-2">
+                Free · self-directed · go at your own pace
+              </div>
+              {displayCreators.length === 0 ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-20 rounded-lg bg-white/5 animate-pulse border border-white/5" />
+                  ))}
+                </div>
+              ) : (
+                displayCreators.slice(0, 4).map((creator) => {
+                  const isComingSoon = creator.status === "coming-soon";
+                  const linkTypes: Record<string, string> = { podcast: "🎙", video: "▶", article: "📄", book: "📚" };
+
+                  const card = (
+                    <motion.div
+                      variants={fadeInUp}
+                      className="group flex items-start gap-4 p-4 rounded-lg border border-white/8 bg-white/[0.02] hover:border-[#3A5A8A]/50 hover:bg-white/[0.04] transition-all"
+                    >
+                      {creator.avatarUrl ? (
+                        <img
+                          src={creator.avatarUrl}
+                          alt={creator.name}
+                          className={`w-11 h-11 rounded-full object-cover shrink-0 border-2 border-white/15 ${isComingSoon ? "opacity-50 grayscale" : ""}`}
+                        />
+                      ) : (
+                        <div
+                          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 border-2 border-white/15 font-bold text-base"
+                          style={{ background: `${DIGITAL_ACCENT}30`, color: DIGITAL_ACCENT }}
+                        >
+                          {creator.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-semibold text-[#FEFDFC] text-sm">{creator.name}</span>
+                          {isComingSoon && (
+                            <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-white/10 text-white/40 border border-white/10">
+                              coming soon
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#8A9E8A] leading-relaxed line-clamp-1 mb-2">{creator.bio}</p>
+                        {creator.curatedLinks.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {creator.curatedLinks.slice(0, 3).map((link) => (
+                              <span
+                                key={link.url}
+                                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/50 ${isComingSoon ? "opacity-40" : ""}`}
+                              >
+                                {linkTypes[link.type] ?? "🔗"} {link.title}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {!isComingSoon && (
+                        <svg className="w-4 h-4 text-white/20 group-hover:text-[#3A5A8A] transition-colors shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </motion.div>
+                  );
+
+                  if (!isComingSoon && creator.websiteUrl) {
+                    return (
+                      <a key={creator.slug} href={creator.websiteUrl} target="_blank" rel="noopener noreferrer">
+                        {card}
+                      </a>
+                    );
+                  }
+                  return <div key={creator.slug}>{card}</div>;
+                })
+              )}
+            </motion.div>
+
+            {/* Kit CTA column — always visible */}
+            <motion.div variants={fadeInUp} className="lg:sticky lg:top-8">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4A6A4A] mb-3">
+                The easy button — packaged
+              </div>
+              {digitalKit ? (
+                <div
+                  className="rounded-xl border p-5 flex flex-col gap-4"
+                  style={{
+                    borderColor: `${DIGITAL_ACCENT}50`,
+                    background: `linear-gradient(145deg, ${DIGITAL_ACCENT}18 0%, ${DIGITAL_ACCENT}06 100%)`,
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl leading-none">🔐</span>
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: DIGITAL_ACCENT }}>
+                        Digital Kit
+                      </div>
+                      <h3 className="font-serif text-lg font-bold text-[#FEFDFC] leading-tight">{digitalKit.name}</h3>
+                      <p className="text-xs text-[#8A9E8A] mt-1 leading-relaxed">{digitalKit.tagline}</p>
+                    </div>
+                  </div>
+                  {digitalKit.priceCents && (
+                    <div className="text-sm text-white/60">
+                      <span className="text-[#FEFDFC] font-bold text-lg">${(digitalKit.priceCents / 100).toFixed(0)}</span>
+                      <span className="ml-1">one-time</span>
+                    </div>
+                  )}
+                  <a
+                    href="/stomping-paths/kits/digital-kit"
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold text-sm text-white transition-all hover:-translate-y-px"
+                    style={{
+                      background: DIGITAL_ACCENT,
+                      boxShadow: `0 4px 18px ${DIGITAL_ACCENT}50`,
+                    }}
+                  >
+                    <span>Get Digital Kit</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                  <p className="text-[10px] text-white/30 text-center -mt-1">
+                    Skip the deep dive — this is the packaged path
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className="rounded-xl border p-5 flex flex-col gap-3"
+                  style={{ borderColor: `${DIGITAL_ACCENT}30`, background: `${DIGITAL_ACCENT}08` }}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: DIGITAL_ACCENT }}>
+                    Digital Sovereignty Kit
+                  </div>
+                  <p className="text-sm text-[#FEFDFC] font-semibold leading-snug">
+                    Own your digital infrastructure — communication, data, tools.
+                  </p>
+                  <a
+                    href="/stomping-paths/kits/find"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm border transition-colors"
+                    style={{ color: DIGITAL_ACCENT, borderColor: `${DIGITAL_ACCENT}50`, background: `${DIGITAL_ACCENT}10` }}
+                  >
+                    Find my kit →
+                  </a>
+                </div>
+              )}
+
+              <div className="mt-3 text-center">
+                <a
+                  href="/stomping-paths/kits"
+                  className="text-xs text-[#4A6A4A] hover:text-[#8A9E8A] transition-colors"
+                >
+                  Browse all kits →
+                </a>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>

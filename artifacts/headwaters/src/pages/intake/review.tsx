@@ -1,6 +1,6 @@
 import { useRoute, useLocation, Link } from "wouter";
 import { useState, useEffect } from "react";
-import { useGetHeadwatersClient, usePushHeadwatersPlacement } from "@workspace/api-client-react";
+import { useGetHeadwatersClient, usePushHeadwatersPlacement, useListSuiteKits } from "@workspace/api-client-react";
 import { RISK_PROFILES, ZONES } from "@/lib/api-utils";
 import { useIntake } from "@/context/intake";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,16 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, ChevronDown, ChevronUp, TreePine, User, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, ChevronDown, ChevronUp, TreePine, User, Sparkles, Package, ArrowRight } from "lucide-react";
+
+const ZONE_KIT_MAP: Record<string, string> = {
+  "zone-0": "care-kit",
+  "zone-1": "budget-kit",
+  "zone-2": "family-kit",
+  "zone-3": "council-kit",
+  "zone-4": "producer-kit",
+  "zone-5": "physical-kit",
+};
 
 export default function IntakeReview() {
   const [, params] = useRoute("/intake/:clientId/review");
@@ -21,6 +30,7 @@ export default function IntakeReview() {
 
   const { dump, landDump, interpretResult, clear } = useIntake();
   const pushPlacement = usePushHeadwatersPlacement();
+  const { data: allKits = [] } = useListSuiteKits();
 
   const [primaryZone, setPrimaryZone] = useState("");
   const [secondaryZone, setSecondaryZone] = useState("");
@@ -191,6 +201,34 @@ export default function IntakeReview() {
               </div>
             </div>
 
+            {primaryZone && ZONE_KIT_MAP[primaryZone] && (() => {
+              const kitSlug = ZONE_KIT_MAP[primaryZone];
+              const kit = allKits.find((k) => k.slug === kitSlug);
+              if (!kit) return null;
+              return (
+                <div
+                  className="rounded-lg border px-4 py-3 flex items-center gap-3"
+                  style={{ borderColor: "#5B8A6044", background: "#5B8A6010" }}
+                >
+                  <Package size={15} className="shrink-0 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                      Suggested kit for this zone
+                    </p>
+                    <p className="text-sm font-semibold text-foreground leading-tight truncate">{kit.name}</p>
+                  </div>
+                  <a
+                    href={`/stomping-paths/kits/${kit.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                  >
+                    View <ArrowRight size={11} />
+                  </a>
+                </div>
+              );
+            })()}
+
             <div className="space-y-4 pt-2">
               <div className="flex justify-between items-center">
                 <Label>Risk Profile</Label>
@@ -297,6 +335,78 @@ export default function IntakeReview() {
             </CardContent>
           </Card>
         )}
+      </div>
+
+      {/* Practitioner kit frameworks — ready-made structures you can hand to or recommend for clients */}
+      <div className="border-t border-border pt-8 mt-2">
+        <div className="mb-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Ready-made frameworks</p>
+          <h3 className="font-serif text-lg font-bold text-foreground">Kits for your clients</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            The practitioner kit powers your model. The council kit is the referral path when a client is ready to scale beyond the household.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            {
+              slug: "practitioner-kit",
+              icon: "🌿",
+              color: "#5B8A60",
+              name: "Practitioner Kit",
+              badge: "Your kit",
+              desc: "Intake tools, zone mapping, and the client journey protocol — packaged for consistent delivery.",
+              href: "/stomping-paths/kits/practitioner-kit",
+            },
+            {
+              slug: "council-kit",
+              icon: "🌊",
+              color: "#3A6B7A",
+              name: "Council Kit",
+              badge: "Referral path",
+              desc: "When a client is ready to extend beyond the household — governance, land trust, co-op structure.",
+              href: "/stomping-paths/kits/council-kit",
+            },
+          ].map((card) => {
+            const apiKit = allKits.find((k) => k.slug === card.slug);
+            return (
+              <a
+                key={card.slug}
+                href={card.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block rounded-xl border p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{ borderColor: `${card.color}44`, background: `linear-gradient(145deg, ${card.color}10 0%, ${card.color}04 100%)` }}
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <span className="text-2xl leading-none">{card.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <span className="font-serif font-bold text-sm text-foreground leading-tight">{card.name}</span>
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full border"
+                        style={{ color: card.color, borderColor: `${card.color}50`, background: `${card.color}10` }}
+                      >
+                        {card.badge}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground/80 leading-relaxed mb-3">{card.desc}</p>
+                {apiKit?.priceCents && apiKit.priceType === "direct" ? (
+                  <div className="text-xs text-muted-foreground mb-2">
+                    <span className="font-bold text-foreground text-sm">${(apiKit.priceCents / 100).toFixed(0)}</span>
+                    <span className="ml-1">one-time</span>
+                  </div>
+                ) : (
+                  <div className="text-xs italic text-muted-foreground mb-2">Consultative — inquiry to start</div>
+                )}
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold transition-colors" style={{ color: card.color }}>
+                  View kit details <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </a>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

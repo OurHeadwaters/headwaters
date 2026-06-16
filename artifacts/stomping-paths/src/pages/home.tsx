@@ -5,11 +5,13 @@ import { gsap } from "gsap";
 import {
   Compass, Search, ArrowRight, PlayCircle, Footprints,
   Mountain, Sprout, Sun, Cloud, Wind, Flame, Library as LibraryIcon,
-  Mic, ChevronRight, Send, CheckCircle2, X, Map as MapIcon,
+  Mic, ChevronRight, Send, CheckCircle2, X, Map as MapIcon, Package,
 } from "lucide-react";
-import { useGetFeaturedEpisodes, useListZones } from "@workspace/api-client-react";
+import { useGetFeaturedEpisodes, useListZones, useListSuiteCreators, useListSuiteKits } from "@workspace/api-client-react";
+import type { SuiteCreator, SuiteKit } from "@workspace/api-client-react";
 import { useTransformations } from "@/hooks/use-transformations";
 import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
+import { KIT_META } from "@/hooks/use-kits";
 
 // ─── Daily Stomp (Imprint) local state ────────────────────────────────────────
 
@@ -448,28 +450,23 @@ function HeroEntrance() {
 
           {/* === Left flanking tower === */}
           <rect x="120" y="120" width="70" height="140" fill="url(#castle-body)" />
-          {/* Crenellations left tower */}
           {[120, 140, 160, 180].map((x, i) => (
             <rect key={i} x={x} y={100} width={14} height={24} fill="url(#castle-body)" />
           ))}
-          {/* Left tower window */}
           <rect x="147" y="150" width="16" height="22" rx="2" fill="#0c1611" />
           <ellipse cx="155" cy="150" rx="8" ry="3" fill="#0c1611" />
 
           {/* === Right flanking tower === */}
           <rect x="610" y="120" width="70" height="140" fill="url(#castle-body)" />
-          {/* Crenellations right tower */}
           {[610, 630, 650, 670].map((x, i) => (
             <rect key={i} x={x} y={100} width={14} height={24} fill="url(#castle-body)" />
           ))}
-          {/* Right tower window */}
           <rect x="637" y="150" width="16" height="22" rx="2" fill="#0c1611" />
           <ellipse cx="645" cy="150" rx="8" ry="3" fill="#0c1611" />
 
           {/* === Curtain walls === */}
           <rect x="190" y="155" width="170" height="105" fill="url(#castle-body)" />
           <rect x="440" y="155" width="170" height="105" fill="url(#castle-body)" />
-          {/* Wall crenellations */}
           {[190, 215, 240, 265, 290, 315, 340].map((x, i) => (
             <rect key={i} x={x} y={138} width={18} height={20} fill="url(#castle-body)" />
           ))}
@@ -479,7 +476,6 @@ function HeroEntrance() {
 
           {/* === Central keep — tallest === */}
           <rect x="270" y="60" width="260" height="200" fill="url(#castle-body)" />
-          {/* Keep crenellations */}
           {[270, 300, 330, 360, 390, 420, 450, 480].map((x, i) => (
             <rect key={i} x={x} y={38} width={22} height={26} fill="url(#castle-body)" />
           ))}
@@ -498,404 +494,148 @@ function HeroEntrance() {
           <rect x="382" y="85" width="36" height="52" rx="4" fill="#0a120e" />
           <ellipse cx="400" cy="85" rx="18" ry="7" fill="#0a120e" />
           <ellipse cx="400" cy="100" rx="14" ry="18" fill="url(#xrpl-glow)" />
-
-          {/* === Torch brackets — left === */}
-          {/* torch glow halo */}
-          <ellipse cx="226" cy="148" rx="22" ry="22" fill="url(#torch-glow-L)" />
-          {/* torch post */}
-          <rect x="222" y="150" width="4" height="16" rx="2" fill="#5A3A1A" />
-          {/* torch flame — animated */}
-          <path
-            d="M224,150 Q220,143 224,136 Q228,143 224,150"
-            fill="#D4621A"
-            opacity="0.95"
-            className="animate-tsp-torch"
-          />
-          <path
-            d="M224,150 Q222,145 224,140 Q226,145 224,150"
-            fill="#FFD580"
-            opacity="0.8"
-            className="animate-tsp-torch-d1"
-          />
-
-          {/* === Torch brackets — right === */}
-          <ellipse cx="574" cy="148" rx="22" ry="22" fill="url(#torch-glow-R)" />
-          <rect x="570" y="150" width="4" height="16" rx="2" fill="#5A3A1A" />
-          <path
-            d="M572,150 Q568,143 572,136 Q576,143 572,150"
-            fill="#D4621A"
-            opacity="0.95"
-            className="animate-tsp-torch-d2"
-          />
-          <path
-            d="M572,150 Q570,145 572,140 Q574,145 572,150"
-            fill="#FFD580"
-            opacity="0.8"
-            className="animate-tsp-torch-d3"
-          />
-
-          {/* Ground line */}
-          <rect x="0" y="258" width="800" height="4" fill="#0c1611" opacity="0.8" rx="2" />
         </svg>
       </motion.div>
 
-      {/* Fog band */}
+      {/* Fog layer */}
       <motion.div
-        className="absolute inset-x-0 bottom-1/4 h-32 pointer-events-none"
+        className="absolute inset-x-0 bottom-0 h-[30%] pointer-events-none"
         style={{
+          background: "linear-gradient(to top, rgba(12,22,17,0.95) 0%, transparent 100%)",
           y: yFog,
-          background: "linear-gradient(to top, rgba(253,251,247,0.15) 0%, transparent 100%)",
-          filter: "blur(20px)",
         }}
       />
 
-      {/* The Path — winding SVG with glowing footprints */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none">
-        <svg
-          viewBox="0 0 1000 400"
-          preserveAspectRatio="xMidYMax slice"
-          className="w-full h-full"
-        >
-          <defs>
-            <linearGradient id="path-grad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#3d2b1f" stopOpacity="0" />
-              <stop offset="40%" stopColor="#5C3D2E" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#2a1d14" stopOpacity="0.85" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          {/* Trail */}
-          <path
-            d="M500,400 Q420,340 480,280 Q560,220 480,160 Q400,100 510,40 Q580,0 510,-40"
-            stroke="url(#path-grad)"
-            strokeWidth="120"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <path
-            d="M500,400 Q420,340 480,280 Q560,220 480,160 Q400,100 510,40 Q580,0 510,-40"
-            stroke="#D9A066"
-            strokeWidth="1.5"
-            strokeOpacity="0.4"
-            strokeDasharray="3 8"
-            fill="none"
-          />
-          {/* Glowing footprints along the path */}
-          {footprints.map((i) => {
-            const t = 0.05 + (i / footprints.length) * 0.95;
-            // Approximate path positions (matches the Q curves above roughly)
-            const positions = [
-              [500, 380], [468, 350], [478, 310], [510, 280], [495, 240],
-              [468, 200], [490, 160], [510, 120], [505, 80],
-            ];
-            const [cx, cy] = positions[i] ?? [500, 380];
-            const side = i % 2 === 0 ? -8 : 8;
-            return (
-              <g key={i}>
-                <ellipse
-                  cx={cx + side}
-                  cy={cy}
-                  rx={5}
-                  ry={8}
-                  fill="#D9A066"
-                  className="animate-tsp-footprint"
-                  style={{ animationDelay: `${i * 0.35}s`, transformOrigin: `${cx + side}px ${cy}px` } as React.CSSProperties}
-                />
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-
-      {/* Particles */}
-      <ParticleField count={28} />
-      <ParticleField count={10} color="#FDFBF7" />
-      <ParticleField count={8} color="#00BFDF" />
-
-      {/* Scroll-triggered boot-stomp footprints along path */}
+      {/* Glowing footprints SVG */}
       <ScrollStompParticles />
 
-      {/* Vignette */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.55)_100%)]" />
-
-      {/* HEADLINE */}
+      {/* Headline */}
       <motion.div
-        className="relative h-full flex flex-col items-center justify-center text-center px-6 pb-[35%] sm:pb-0"
+        className="absolute inset-x-0 bottom-16 flex flex-col items-center text-center px-6 pointer-events-none"
         style={{ y: headlineY, opacity: headlineOpacity }}
       >
-        {/* Scrim — warm dark wash behind all headline text for legibility */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse 80% 70% at 50% 52%, rgba(6,14,8,0.78) 0%, rgba(6,14,8,0.52) 50%, transparent 80%)",
-          }}
-        />
-
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="relative flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/40 bg-black/50 backdrop-blur-md mb-4 md:mb-6"
-          style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
-        >
-          <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D9A066]">Since 2008 · 6,000+ episodes · 16 years of practical self-reliance</span>
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-          className="relative font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FDFBF7] leading-[1.05] tracking-tight mb-4 md:mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)] max-w-3xl"
-        >
-          Practical self-reliance for a <span className="italic text-[#D9A066]">fragile world.</span>
-        </motion.h1>
-
-        <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.5 }}
-          className="relative text-base md:text-lg text-[#FDFBF7]/88 max-w-lg mb-7 md:mb-10 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+          transition={{ duration: 0.8, delay: 0.4 }}
         >
-          Jack Spirko's Survival Podcast archive — homesteading, food production, financial independence, and bushcraft. Curated paths to take you from curious to capable.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.7 }}
-          className="flex flex-col sm:flex-row items-center gap-3"
-        >
-          {/* Primary CTA — Find Your Path */}
-          <Link
-            href="/start"
-            className="group relative inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-white shadow-[0_10px_40px_rgba(212,98,26,0.5)] hover:shadow-[0_14px_50px_rgba(212,98,26,0.7)] hover:-translate-y-0.5 transition-all"
-            style={{
-              background: "linear-gradient(135deg, #D4621A 0%, #E87A38 55%, #C4521A 100%)",
-              border: "1.5px solid rgba(232,122,56,0.5)",
-            }}
-          >
-            <Compass className="w-4 h-4" />
-            Find Your Path
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-          {/* Secondary — browse archive */}
-          <Link
-            href="/library"
-            className="group inline-flex items-center gap-2 px-7 py-4 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/25 backdrop-blur-sm hover:bg-[#FDFBF7]/10 transition-all"
-          >
-            <Search className="w-4 h-4 text-[#D9A066]" />
-            Search the Archive
-            <ArrowRight className="w-4 h-4 text-[#D9A066]/60 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-[#D9A066]/10 mb-5">
+            <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">Self-Reliance Since 2008</span>
+          </div>
         </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.6, duration: 1 }}
-          className="absolute bottom-8 flex flex-col items-center gap-2 text-[#FDFBF7]/40 text-[10px] font-bold uppercase tracking-widest"
+        <motion.h1
+          className="font-serif text-5xl sm:text-6xl md:text-7xl text-[#FDFBF7] font-bold leading-[1.05] tracking-tight mb-5 max-w-4xl"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span>Scroll the trail</span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="w-px h-8 bg-gradient-to-b from-[#FDFBF7]/50 to-transparent"
-          />
+          Stomp your path.<br />
+          <span className="italic text-[#D9A066]">Own your life.</span>
+        </motion.h1>
+        <motion.p
+          className="text-[#FDFBF7]/65 text-lg max-w-xl mb-8"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.65 }}
+        >
+          6,000+ episodes. Seven transformation arcs. One archive built for people who decide their own terms.
+        </motion.p>
+        <motion.div
+          className="flex flex-col sm:flex-row gap-3 pointer-events-auto"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.8 }}
+        >
+          <Link
+            href="/episodes"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-[#2C4A36] bg-gradient-to-r from-[#D9A066] to-[#e8b06b] hover:from-[#e0a972] hover:to-[#f1bb78] transition-all shadow-lg shadow-[#D9A066]/30 hover:shadow-[#D9A066]/50 hover:-translate-y-0.5"
+          >
+            <PlayCircle className="w-5 h-5" />
+            Browse the archive
+          </Link>
+          <Link
+            href="/kits/find"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/25 hover:border-[#D9A066]/60 hover:text-[#D9A066] transition-all backdrop-blur-sm"
+          >
+            <Compass className="w-5 h-5" />
+            Find my kit
+          </Link>
         </motion.div>
       </motion.div>
+
+      {/* Bottom fog */}
+      <div className="absolute inset-x-0 bottom-0 h-[15%] bg-gradient-to-t from-[#0c1611] to-transparent pointer-events-none" />
     </section>
   );
 }
 
-// ─── Problems → Solutions (Storm to Bloom) ─────────────────────────────────────
-
-const STORM_SOLUTIONS = [
-  {
-    storm: "Squeezed by the grindstone",
-    solutionFrom: "Job-dependent. Burning out. One layoff from chaos.",
-    solutionTo: "Skills nobody can take. Income you control. Time you own.",
-    track: "/tracks/escape-the-grindstone",
-    icon: Flame,
-    accent: "#A64B36",
-  },
-  {
-    storm: "Fragile supply chain",
-    solutionFrom: "One trucker's strike from empty shelves.",
-    solutionTo: "Soil, seeds, jars, and skills. A pantry, not a panic.",
-    track: "/tracks",
-    icon: Sprout,
-    accent: "#7FA77F",
-  },
-  {
-    storm: "Money you don't understand",
-    solutionFrom: "Inflation eating you. Dollars losing 8% a year.",
-    solutionTo: "Bitcoin-only. Real assets. Cash flow you can name.",
-    track: "/tracks",
-    icon: Mountain,
-    accent: "#D9A066",
-  },
-];
+// ─── Storm to Bloom (zone overview) ────────────────────────────────────────────
 
 function StormToBloomSection() {
   return (
-    <section id="problems" className="relative bg-[#0c1611] py-24 md:py-32 overflow-hidden">
-      <ParticleField count={18} />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(166,75,54,0.18)_0%,transparent_60%)]" />
-
-      <div className="relative container mx-auto px-4 md:px-6 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-16"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#A64B36]/30 bg-[#A64B36]/10 mb-5">
-            <Cloud className="w-3.5 h-3.5 text-[#A64B36]" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#A64B36]">The Storms</span>
-          </div>
-          <h2 className="font-serif text-4xl md:text-6xl text-[#FDFBF7] font-bold leading-tight">
-            See the problem.<br />
-            <span className="italic text-[#D9A066]">Then stomp it flat.</span>
-          </h2>
-        </motion.div>
-
-        <div className="space-y-10">
-          {STORM_SOLUTIONS.map((item, idx) => (
-            <StormCard key={idx} item={item} index={idx} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StormCard({ item, index }: { item: typeof STORM_SOLUTIONS[number]; index: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.9", "end 0.4"] });
-  const stormOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.15]);
-  const stormBlur = useTransform(scrollYProgress, [0, 0.5], ["0px", "8px"]);
-  const stormFilter = useTransform(stormBlur, (v) => `blur(${v})`);
-  const bloomScale = useTransform(scrollYProgress, [0.3, 0.7], [0.92, 1]);
-  const bloomOpacity = useTransform(scrollYProgress, [0.3, 0.6], [0, 1]);
-  const arrowProgress = useTransform(scrollYProgress, [0.3, 0.7], [0, 1]);
-  const Icon = item.icon;
-
-  return (
-    <div ref={ref} className="relative grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-10 items-center">
-      {/* STORM side */}
-      <motion.div
-        style={{ opacity: stormOpacity, filter: stormFilter }}
-        className="relative bg-gradient-to-br from-[#1a0f0a] to-[#2a1810] border border-[#A64B36]/20 rounded-2xl p-7 overflow-hidden"
-      >
-        <Cloud className="absolute -top-4 -right-4 w-32 h-32 text-[#A64B36]/8" strokeWidth={1} />
-        <div className="relative">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#A64B36]/80 mb-3">
-            <Wind className="w-3 h-3" /> Storm #{index + 1}
-          </div>
-          <h3 className="font-serif text-2xl md:text-3xl text-[#FDFBF7] font-bold mb-3 leading-tight">
-            {item.storm}
-          </h3>
-          <p className="text-[#FDFBF7]/55 leading-relaxed text-sm md:text-base">{item.solutionFrom}</p>
-        </div>
-      </motion.div>
-
-      {/* Arrow / transformation indicator */}
-      <motion.div className="flex md:flex-col items-center justify-center gap-2 py-2">
-        <motion.div
-          style={{ scaleX: arrowProgress }}
-          className="origin-left h-px md:hidden bg-gradient-to-r from-[#A64B36] to-[#D9A066] w-20"
-        />
-        <motion.div
-          style={{ scaleY: arrowProgress }}
-          className="origin-top w-px hidden md:block bg-gradient-to-b from-[#A64B36] to-[#7FA77F] h-16"
-        />
-        <motion.div
-          initial={{ rotate: 0, scale: 0.5 }}
-          whileInView={{ rotate: 360, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D9A066] to-[#7FA77F] flex items-center justify-center shadow-[0_0_20px_rgba(217,160,102,0.5)]"
-        >
-          <Footprints className="w-4 h-4 text-[#0c1611]" />
-        </motion.div>
-      </motion.div>
-
-      {/* BLOOM side */}
-      <motion.div
-        style={{ opacity: bloomOpacity, scale: bloomScale }}
-        className="relative rounded-2xl p-7 overflow-hidden border"
-      >
-        <div
-          className="absolute inset-0 rounded-2xl"
-          style={{
-            background: `linear-gradient(135deg, ${item.accent}22 0%, ${item.accent}08 50%, transparent 100%)`,
-            border: `1px solid ${item.accent}55`,
-          }}
-        />
-        <Sun className="absolute -top-4 -right-4 w-32 h-32" style={{ color: `${item.accent}15` }} strokeWidth={1} />
-        <div className="relative">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: item.accent }}>
-            <Icon className="w-3 h-3" /> The Stomp
-          </div>
-          <p className="font-serif text-xl md:text-2xl text-[#FDFBF7] font-bold leading-snug mb-4">
-            {item.solutionTo}
-          </p>
-          <Link
-            href={item.track}
-            className="inline-flex items-center gap-1.5 text-sm font-bold transition-all hover:gap-2.5"
-            style={{ color: item.accent }}
-          >
-            Walk this path
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-// ─── Journey Map (wraps existing scene) ────────────────────────────────────────
-
-function JourneyMapSection() {
-  return (
-    <section id="map" className="relative bg-gradient-to-b from-[#0c1611] via-[#15241b] to-[#1a2c20] py-20 md:py-28 overflow-hidden">
-      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-10"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-[#D9A066]/10 mb-5">
-            <MapIcon className="w-3.5 h-3.5 text-[#D9A066]" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">The Journey Map</span>
-          </div>
-          <h2 className="font-serif text-4xl md:text-6xl text-[#FDFBF7] font-bold leading-tight mb-3">
-            Your homestead, <span className="italic text-[#D9A066]">interactive.</span>
-          </h2>
-          <p className="text-[#FDFBF7]/65 max-w-2xl mx-auto">
-            Every station on the grounds opens a different door — wisdom, action, support, or transformation.
-          </p>
-        </motion.div>
-
+    <section className="relative bg-gradient-to-b from-[#0c1611] to-[#15241b] py-20 md:py-28 overflow-hidden">
+      <ParticleField count={10} color="#7FA77F" />
+      <div className="container mx-auto px-4 md:px-6 max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1 }}
-          className="rounded-3xl overflow-hidden border border-[#D9A066]/15 bg-[#0c1611]/40 shadow-2xl"
+          viewport={{ once: true, margin: "-120px" }}
+          transition={{ duration: 0.9 }}
+          className="text-center mb-14"
         >
-          <StompingGroundsScene compact />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#7FA77F]/30 bg-[#7FA77F]/10 mb-5">
+            <Mountain className="w-3.5 h-3.5 text-[#7FA77F]" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#7FA77F]">The Zones</span>
+          </div>
+          <h2 className="font-serif text-4xl md:text-6xl text-[#FDFBF7] font-bold leading-tight mb-4">
+            Start close. <span className="italic text-[#D9A066]">Work outward.</span>
+          </h2>
+          <p className="text-[#FDFBF7]/60 max-w-2xl mx-auto text-lg">
+            Six zones. Zone 0 is you — your body, your mind, your daily habits. Zone 5 is the wider world. Everything in between is territory you can actually change.
+          </p>
         </motion.div>
 
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {[
+            { n: 0, label: "Self", icon: Sun, color: "#D9A066", desc: "Health & mindset" },
+            { n: 1, label: "Home", icon: Flame, color: "#A64B36", desc: "Family & finance" },
+            { n: 2, label: "Homestead", icon: Sprout, color: "#7FA77F", desc: "Food & land" },
+            { n: 3, label: "Community", icon: Wind, color: "#5B8A9A", desc: "Local networks" },
+            { n: 4, label: "Local", icon: Cloud, color: "#8A6B9A", desc: "Market & trade" },
+            { n: 5, label: "Wild", icon: Mountain, color: "#4A7A5A", desc: "Edge & frontier" },
+          ].map((zone, i) => (
+            <motion.div
+              key={zone.n}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.5, delay: i * 0.07 }}
+            >
+              <Link href={`/zones/zone-${zone.n}`}>
+                <div
+                  className="group flex flex-col items-center gap-2 p-4 rounded-2xl border border-white/8 hover:border-white/20 hover:-translate-y-1 transition-all cursor-pointer"
+                  style={{ background: `${zone.color}12` }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold font-serif text-lg shadow-inner"
+                    style={{ background: `${zone.color}25`, color: zone.color }}
+                  >
+                    {zone.n}
+                  </div>
+                  <zone.icon className="w-5 h-5" style={{ color: zone.color }} />
+                  <div className="text-center">
+                    <p className="font-bold text-[#FDFBF7] text-sm">{zone.label}</p>
+                    <p className="text-[10px] text-[#FDFBF7]/45 leading-tight mt-0.5">{zone.desc}</p>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7, delay: 0.2 }}
@@ -913,6 +653,62 @@ function JourneyMapSection() {
             See how the zones fit together — and where you stand.
           </p>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Journey Map Section ────────────────────────────────────────────────────────
+
+function JourneyMapSection() {
+  return (
+    <section className="relative bg-[#15241b] py-20 md:py-28 overflow-hidden border-y border-white/5">
+      <ParticleField count={8} color="#D9A066" />
+      <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-[#D9A066]/10 mb-5">
+              <Compass className="w-3.5 h-3.5 text-[#D9A066]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">Your Map</span>
+            </div>
+            <h2 className="font-serif text-4xl md:text-5xl text-[#FDFBF7] font-bold leading-tight mb-5">
+              The Stomping Grounds are your territory.
+            </h2>
+            <p className="text-[#FDFBF7]/60 leading-relaxed mb-6">
+              Not a curriculum. Not a course. A living map of the archive — organized by zone, by transformation, and by what you're actually trying to change.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/stomping-grounds"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-bold text-[#2C4A36] bg-gradient-to-r from-[#D9A066] to-[#e8b06b] hover:from-[#e0a972] hover:to-[#f1bb78] transition-all"
+              >
+                Open the Grounds
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/tracks"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-bold text-[#FDFBF7] border border-[#FDFBF7]/20 hover:bg-[#FDFBF7]/5 transition-colors"
+              >
+                Browse learning tracks
+              </Link>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="relative"
+          >
+            <StompingGroundsScene />
+          </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -1023,6 +819,214 @@ function CuratedPathsSection() {
           >
             See all seven paths <ArrowRight className="w-4 h-4" />
           </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Your Path, Your Way — Creators + Kit CTA ──────────────────────────────────
+
+function YourPathYourWaySection() {
+  const { data: allCreators = [] } = useListSuiteCreators();
+  const { data: allKits = [] } = useListSuiteKits();
+
+  const spotlightCreators = useMemo(() => {
+    const live = allCreators.filter((c) => c.status === "live");
+    return live.length > 0 ? live.slice(0, 3) : allCreators.slice(0, 3);
+  }, [allCreators]);
+
+  const featuredKit = useMemo(() => {
+    return allKits.find((k) => k.priceType === "direct" && k.priceCents) ?? allKits[0] ?? null;
+  }, [allKits]);
+
+  const featuredKitMeta = featuredKit ? (KIT_META[featuredKit.slug] ?? { icon: "📦", color: "#D9A066" }) : null;
+
+  if (spotlightCreators.length === 0 && !featuredKit) return null;
+
+  return (
+    <section className="relative bg-[#0c1611] py-24 overflow-hidden border-t border-white/5">
+      <ParticleField count={10} color="#8FA883" />
+      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#8FA883]/30 bg-[#8FA883]/10 mb-5">
+            <Compass className="w-3.5 h-3.5 text-[#8FA883]" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8FA883]">Your Path, Your Way</span>
+          </div>
+          <h2 className="font-serif text-4xl md:text-5xl text-[#FDFBF7] font-bold leading-tight mb-3">
+            Self-directed or <span className="italic text-[#D9A066]">packaged.</span>
+          </h2>
+          <p className="text-[#FDFBF7]/60 max-w-2xl">
+            Follow trusted voices at your own pace — or let a kit do the heavy lifting when you're ready to leap.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+
+          {/* Left: spotlight creators */}
+          <div className="flex flex-col gap-4">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#FDFBF7]/35 mb-1">
+              Trusted Voices — free, self-directed
+            </div>
+            {spotlightCreators.length === 0 ? (
+              <div className="flex flex-col gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-24 rounded-xl bg-white/5 animate-pulse border border-white/5" />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {spotlightCreators.map((creator) => {
+                  const isComingSoon = creator.status === "coming-soon";
+                  const linkTypes: Record<string, string> = { podcast: "🎙", video: "▶", article: "📄", book: "📚" };
+
+                  const cardContent = (
+                    <div className="group flex items-start gap-4 p-4 rounded-xl border border-white/8 bg-white/[0.03] hover:border-[#D9A066]/30 hover:bg-white/[0.05] transition-all">
+                      {creator.avatarUrl ? (
+                        <img
+                          src={creator.avatarUrl}
+                          alt={creator.name}
+                          className={`w-12 h-12 rounded-full object-cover shrink-0 border-2 border-white/15 ${isComingSoon ? "opacity-50 grayscale" : ""}`}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-[#2C4A36] border-2 border-white/15 text-[#D9A066] font-bold text-lg">
+                          {creator.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-semibold text-[#FDFBF7] text-sm leading-tight">{creator.name}</span>
+                          {isComingSoon && (
+                            <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-white/10 text-[#FDFBF7]/50 border border-white/15">
+                              coming soon
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#FDFBF7]/50 leading-relaxed line-clamp-1 mb-2">{creator.bio}</p>
+                        {creator.curatedLinks.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {creator.curatedLinks.slice(0, 3).map((link) => (
+                              <span
+                                key={link.url}
+                                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-white/5 text-[#FDFBF7]/60 ${isComingSoon ? "opacity-40" : ""}`}
+                              >
+                                {linkTypes[link.type] ?? "🔗"} {link.title}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {!isComingSoon && (
+                        <ArrowRight className="w-4 h-4 text-[#FDFBF7]/30 group-hover:text-[#D9A066] transition-colors shrink-0 mt-1" />
+                      )}
+                    </div>
+                  );
+
+                  if (!isComingSoon && creator.websiteUrl) {
+                    return (
+                      <a key={creator.slug} href={creator.websiteUrl} target="_blank" rel="noopener noreferrer">
+                        {cardContent}
+                      </a>
+                    );
+                  }
+                  return <div key={creator.slug}>{cardContent}</div>;
+                })}
+              </div>
+            )}
+
+            <div className="mt-1">
+              <Link
+                href="/transform"
+                className="text-xs text-[#FDFBF7]/40 hover:text-[#8FA883] transition-colors inline-flex items-center gap-1"
+              >
+                Browse paths to find more voices <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Right: Kit easy-button — always visible, sticky */}
+          <div className="lg:sticky lg:top-8">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#FDFBF7]/35 mb-3">
+              The easy button — packaged
+            </div>
+
+            {featuredKit && featuredKitMeta ? (
+              <div
+                className="rounded-2xl border p-6 flex flex-col gap-5"
+                style={{
+                  borderColor: `${featuredKitMeta.color}50`,
+                  background: `linear-gradient(145deg, ${featuredKitMeta.color}15 0%, ${featuredKitMeta.color}06 100%)`,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl leading-none">{featuredKitMeta.icon}</span>
+                  <div>
+                    <div
+                      className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                      style={{ color: featuredKitMeta.color }}
+                    >
+                      Featured Kit
+                    </div>
+                    <h3 className="font-serif text-xl font-bold text-[#FDFBF7] leading-tight">
+                      {featuredKit.name}
+                    </h3>
+                    <p className="text-xs text-[#FDFBF7]/55 mt-1 leading-relaxed">{featuredKit.tagline}</p>
+                  </div>
+                </div>
+
+                {featuredKit.priceCents && (
+                  <div className="text-sm text-[#FDFBF7]/70">
+                    <span className="text-[#FDFBF7] font-bold text-xl">${(featuredKit.priceCents / 100).toFixed(0)}</span>
+                    <span className="ml-1">one-time</span>
+                  </div>
+                )}
+
+                <Link
+                  href={`/kits/${featuredKit.slug}`}
+                  className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm transition-all hover:-translate-y-px"
+                  style={{
+                    color: "#fff",
+                    background: featuredKitMeta.color,
+                    boxShadow: `0 6px 24px ${featuredKitMeta.color}45`,
+                  }}
+                >
+                  <Package className="w-4 h-4" />
+                  Get {featuredKit.name}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <div className="text-center -mt-2">
+                  <Link
+                    href="/kits"
+                    className="text-xs text-[#FDFBF7]/35 hover:text-[#FDFBF7]/60 transition-colors"
+                  >
+                    Browse all kits →
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Kit Finder */}
+            <div className="mt-4 rounded-xl border border-[#8FA883]/25 bg-[#8FA883]/8 p-4 flex items-center gap-3">
+              <Compass className="w-5 h-5 text-[#8FA883] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-[#FDFBF7] leading-tight">Not sure where to start?</p>
+                <p className="text-xs text-[#FDFBF7]/45 mt-0.5">5 questions · instant recommendation</p>
+              </div>
+              <Link
+                href="/kits/find"
+                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-[#8FA883]/40 text-[#8FA883] hover:bg-[#8FA883]/15 transition-colors"
+              >
+                Find kit <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1341,7 +1345,6 @@ export function Home() {
     };
   }, []);
 
-  // Tiny GSAP smoothness ping (no ScrollTrigger plugin — keeps deps tiny)
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>("[data-stomp-fade]").forEach((el) => {
@@ -1350,7 +1353,7 @@ export function Home() {
           y: 24,
           duration: 0.8,
           ease: "power2.out",
-          scrollTrigger: undefined, // no plugin registered; fall back to immediate
+          scrollTrigger: undefined,
         });
       });
     });
@@ -1368,6 +1371,7 @@ export function Home() {
       <StormToBloomSection />
       <JourneyMapSection />
       <CuratedPathsSection />
+      <YourPathYourWaySection />
       <div id="daily" />
       <StoriesSection />
       <AboutJackSection />

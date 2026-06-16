@@ -1,16 +1,169 @@
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ArrowRight, Compass, Loader2, PlayCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, Loader2, PlayCircle, ExternalLink, Package } from "lucide-react";
 
 import { format, parseISO } from "date-fns";
 import { useTransformations } from "@/hooks/use-transformations";
-import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
+import { useListEpisodes, getListEpisodesQueryKey, useListSuiteCreators, useListSuiteKits } from "@workspace/api-client-react";
+import type { SuiteCreator, SuiteKit } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
+import { KIT_META } from "@/hooks/use-kits";
+
+// ─── Creator card ───────────────────────────────────────────────────────────────
+
+function CreatorCard({ creator, accentColor }: { creator: SuiteCreator; accentColor: string }) {
+  const isComingSoon = creator.status === "coming-soon";
+  const linkTypes: Record<string, string> = {
+    podcast: "🎙",
+    video: "▶",
+    article: "📄",
+    book: "📚",
+  };
+
+  const cardContent = (
+    <div
+      className="flex flex-col gap-3 p-5 rounded-xl border transition-all h-full"
+      style={{
+        borderColor: `${accentColor}25`,
+        background: `${accentColor}07`,
+      }}
+    >
+      <div className="flex items-start gap-3">
+        {creator.avatarUrl ? (
+          <img
+            src={creator.avatarUrl}
+            alt={creator.name}
+            className={`w-11 h-11 rounded-full object-cover shrink-0 border-2 ${isComingSoon ? "opacity-50 grayscale" : ""}`}
+            style={{ borderColor: `${accentColor}40` }}
+          />
+        ) : (
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-lg font-bold border-2"
+            style={{ background: `${accentColor}20`, borderColor: `${accentColor}40`, color: accentColor }}
+          >
+            {creator.name.charAt(0)}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm text-foreground leading-tight">{creator.name}</span>
+            {isComingSoon && (
+              <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                coming soon
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">{creator.bio}</p>
+        </div>
+      </div>
+
+      {creator.curatedLinks.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {creator.curatedLinks.slice(0, 3).map((link) => (
+            <a
+              key={link.url}
+              href={isComingSoon ? undefined : link.url}
+              target={isComingSoon ? undefined : "_blank"}
+              rel="noopener noreferrer"
+              onClick={(e) => isComingSoon && e.preventDefault()}
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full border transition-colors ${
+                isComingSoon
+                  ? "opacity-40 cursor-default border-border bg-muted text-muted-foreground"
+                  : "border-border bg-background text-foreground hover:border-primary/50 hover:text-primary"
+              }`}
+            >
+              <span>{linkTypes[link.type] ?? "🔗"}</span>
+              {link.title}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isComingSoon && creator.websiteUrl) {
+    return (
+      <a href={creator.websiteUrl} target="_blank" rel="noopener noreferrer" className="block h-full hover:no-underline group">
+        <div className="h-full hover:shadow-md transition-shadow rounded-xl">{cardContent}</div>
+      </a>
+    );
+  }
+
+  return <div className="h-full">{cardContent}</div>;
+}
+
+// ─── Kit easy-button card ───────────────────────────────────────────────────────
+
+function KitEasyButton({ kit }: { kit: SuiteKit }) {
+  const meta = KIT_META[kit.slug] ?? { icon: "📦", color: "#6B7280" };
+  const formatPrice = (cents?: number | null) =>
+    cents ? `$${(cents / 100).toFixed(0)}` : null;
+  const price = kit.priceType === "direct" ? formatPrice(kit.priceCents) : "Inquiry";
+
+  return (
+    <div
+      className="rounded-2xl border p-6 flex flex-col gap-4 h-full"
+      style={{
+        borderColor: `${meta.color}44`,
+        background: `linear-gradient(135deg, ${meta.color}12 0%, ${meta.color}06 100%)`,
+      }}
+    >
+      <div>
+        <div
+          className="text-[10px] font-bold uppercase tracking-widest mb-2"
+          style={{ color: meta.color }}
+        >
+          The easy button
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl leading-none">{meta.icon}</span>
+          <h3 className="font-serif text-lg font-bold text-foreground leading-tight">
+            {kit.name}
+          </h3>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+          {kit.tagline}
+        </p>
+      </div>
+
+      {price && (
+        <div className="text-xs font-semibold text-muted-foreground">
+          {kit.priceType === "direct" ? (
+            <span>
+              <span className="text-foreground font-bold text-base">{price}</span>
+              <span className="ml-1">one-time</span>
+            </span>
+          ) : (
+            <span className="italic">Consultative — inquiry to start</span>
+          )}
+        </div>
+      )}
+
+      <Link
+        href={`/kits/${kit.slug}`}
+        className="mt-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-bold text-sm transition-all hover:-translate-y-px"
+        style={{
+          color: "#fff",
+          background: meta.color,
+          boxShadow: `0 4px 20px ${meta.color}40`,
+        }}
+      >
+        <Package className="w-4 h-4" />
+        Get {kit.name}
+        <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+
+      <p className="text-[10px] text-muted-foreground text-center -mt-2">
+        Skip the deep dive — this is the packaged path
+      </p>
+    </div>
+  );
+}
+
+// ─── Main content ───────────────────────────────────────────────────────────────
 
 function TransformDetailContent({ slug }: { slug: string }) {
   const { data: transformations, isLoading, isError } = useTransformations();
   const t = transformations?.find((x) => x.slug === slug) ?? null;
-
-  const gordTitle = t ? `${t.from} → ${t.to}` : null;
 
   const queryTags = t ? [...new Set([...t.tags, ...t.categories].map((s) => s.toLowerCase()))] : [];
   const params = { limit: 20, offset: 0, tags: queryTags, sort: "popular" as const };
@@ -22,6 +175,12 @@ function TransformDetailContent({ slug }: { slug: string }) {
   });
   const episodes = episodePage?.items ?? [];
   const total = episodePage?.total ?? null;
+
+  const { data: allCreators = [] } = useListSuiteCreators();
+  const { data: allKits = [] } = useListSuiteKits();
+
+  const matchedCreators = allCreators.filter((c) => c.transformationSlugs.includes(slug));
+  const matchedKit = allKits.find((k) => k.transformationSlugs.includes(slug)) ?? null;
 
   if (isLoading) {
     return (
@@ -109,80 +268,126 @@ function TransformDetailContent({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* Episodes */}
+      {/* Main content — episodes, voices, and kit */}
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="flex items-end justify-between mb-8">
+        <div>
+
+          {/* Episodes */}
           <div>
-            <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
-              Episodes for this path
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              The most relevant episodes for the {t.from} → {t.to} journey.
-            </p>
-          </div>
-          <Link
-            href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
-            className="hidden sm:flex items-center gap-1 text-sm font-semibold transition-colors"
-            style={{ color: t.color }}
-          >
-            Browse all <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {episodes.length === 0 && total === null && (
-          <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Loading episodes…</span>
-          </div>
-        )}
-
-        {episodes.length === 0 && total === 0 && (
-          <div className="py-16 text-center text-muted-foreground">
-            No episodes found for this path yet.
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {episodes.map((ep) => (
-            <Link
-              key={ep.slug}
-              href={`/episodes/${ep.slug}`}
-              className="group flex items-start gap-3 rounded-xl px-4 py-3.5 transition-colors hover:bg-black/5"
-              style={{ border: `1px solid ${t.color}20`, background: t.color + "06" }}
-            >
-              <PlayCircle
-                className="w-4 h-4 mt-0.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
-                style={{ color: t.color }}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
-                  {ep.title}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {format(parseISO(ep.pubDate), "MMM d, yyyy")}
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
+                  Episodes for this path
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  The most relevant episodes for the {t.from} → {t.to} journey.
                 </p>
               </div>
-              <ArrowRight className="w-4 h-4 mt-0.5 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: t.color }} />
-            </Link>
-          ))}
-        </div>
+              <Link
+                href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+                className="hidden sm:flex items-center gap-1 text-sm font-semibold transition-colors"
+                style={{ color: t.color }}
+              >
+                Browse all <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
 
-        {total !== null && total > episodes.length && (
-          <div className="mt-8 text-center">
-            <Link
-              href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
-              style={{
-                color: t.color,
-                background: t.color + "15",
-                border: `1px solid ${t.color}33`,
-              }}
-            >
-              See all {total.toLocaleString()} episodes
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {episodes.length === 0 && total === null && (
+              <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading episodes…</span>
+              </div>
+            )}
+
+            {episodes.length === 0 && total === 0 && (
+              <div className="py-16 text-center text-muted-foreground">
+                No episodes found for this path yet.
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              {episodes.map((ep) => (
+                <Link
+                  key={ep.slug}
+                  href={`/episodes/${ep.slug}`}
+                  className="group flex items-start gap-3 rounded-xl px-4 py-3.5 transition-colors hover:bg-black/5"
+                  style={{ border: `1px solid ${t.color}20`, background: t.color + "06" }}
+                >
+                  <PlayCircle
+                    className="w-4 h-4 mt-0.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+                    style={{ color: t.color }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
+                      {ep.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(parseISO(ep.pubDate), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 mt-0.5 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: t.color }} />
+                </Link>
+              ))}
+            </div>
+
+            {total !== null && total > episodes.length && (
+              <div className="mt-8 text-center">
+                <Link
+                  href={`/episodes?transformation=${encodeURIComponent(t.slug)}`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+                  style={{
+                    color: t.color,
+                    background: t.color + "15",
+                    border: `1px solid ${t.color}33`,
+                  }}
+                >
+                  See all {total.toLocaleString()} episodes
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
+
+            {/* Trusted Voices — creators for this path */}
+            {matchedCreators.length > 0 && (
+              <div className="mt-14">
+                <div className="mb-6">
+                  <div
+                    className="text-[11px] font-bold uppercase tracking-widest mb-2"
+                    style={{ color: t.color }}
+                  >
+                    Free self-directed route
+                  </div>
+                  <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
+                    Trusted Voices on This Path
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Independent creators who've walked this ground. Follow their work at your own pace.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {matchedCreators.map((creator) => (
+                    <CreatorCard key={creator.slug} creator={creator} accentColor={t.color} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Kit easy button — directly below voices, only when a kit is paired to this path */}
+            {matchedKit && (
+              <div className="mt-10 max-w-sm">
+                <KitEasyButton kit={matchedKit} />
+                <div className="mt-3 text-center">
+                  <Link
+                    href="/kits"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                  >
+                    Browse all kits <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
