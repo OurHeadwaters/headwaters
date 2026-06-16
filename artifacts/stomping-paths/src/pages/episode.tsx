@@ -9,6 +9,7 @@ import { Calendar, Clock, Tag, ChevronLeft, ChevronRight, Layers, MapPin, BookOp
 import { KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 import { Link } from "wouter";
 import { useState } from "react";
+import { SharedNoteBanner } from "@/components/share-modal";
 import { ProductShelf, type ReviewedProduct } from "@/components/product-shelf";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { decodeHtml } from "@/lib/decode-html";
@@ -123,6 +124,12 @@ function HistoryLessonCard({
 export function EpisodeDetail() {
   const [, params] = useRoute("/episodes/:slug");
   const slug = params?.slug || "";
+  const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
+  const searchParams = new URLSearchParams(
+    typeof window !== "undefined" ? window.location.search : "",
+  );
+  const sharedNote = searchParams.get("note");
+  const sharedFrom = searchParams.get("from");
 
   const { data: episode, isLoading, isError } = useGetEpisode(slug, {
     query: { enabled: !!slug, queryKey: getGetEpisodeQueryKey(slug) }
@@ -246,6 +253,15 @@ export function EpisodeDetail() {
   }
 
   return (
+    <div>
+      {sharedNote && !noteBannerDismissed && (
+        <SharedNoteBanner
+          note={sharedNote}
+          from={sharedFrom}
+          accentColor={matchedTransformations[0]?.color ?? "#5C9E5C"}
+          onDismiss={() => setNoteBannerDismissed(true)}
+        />
+      )}
     <div className="container mx-auto px-4 md:px-6 py-10 md:py-16">
       <Link href="/episodes" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors mb-8">
         <ChevronLeft className="w-4 h-4" /> Back to the archive
@@ -644,6 +660,7 @@ export function EpisodeDetail() {
           <OdysseyBridge variant="compact" />
         </div>
       </div>
+    </div>
     </div>
   );
 }

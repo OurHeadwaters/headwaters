@@ -340,10 +340,17 @@ function TransformDetailContent({ slug }: { slug: string }) {
             )}
 
             <div className="flex flex-col gap-3">
-              {episodes.map((ep) => (
+              {episodes.map((ep) => {
+                const epParams = new URLSearchParams();
+                if (sharedNote) epParams.set("note", sharedNote);
+                if (sharedFrom) epParams.set("from", sharedFrom);
+                const epHref = epParams.toString()
+                  ? `/episodes/${ep.slug}?${epParams.toString()}`
+                  : `/episodes/${ep.slug}`;
+                return (
                 <Link
                   key={ep.slug}
-                  href={`/episodes/${ep.slug}`}
+                  href={epHref}
                   className="group flex items-start gap-3 rounded-xl px-4 py-3.5 transition-colors hover:bg-black/5"
                   style={{ border: `1px solid ${t.color}20`, background: t.color + "06" }}
                 >
@@ -361,7 +368,7 @@ function TransformDetailContent({ slug }: { slug: string }) {
                   </div>
                   <ArrowRight className="w-4 h-4 mt-0.5 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: t.color }} />
                 </Link>
-              ))}
+              ); })}
             </div>
 
             {total !== null && total > episodes.length && (

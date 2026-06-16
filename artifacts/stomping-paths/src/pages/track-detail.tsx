@@ -103,6 +103,8 @@ type TrackItemCardProps = {
   onToggleDone: (id: number) => void;
   isSharedView: boolean;
   transformation?: Transformation | null;
+  sharedNote?: string | null;
+  sharedFrom?: string | null;
 };
 
 function TrackItemCard({
@@ -114,14 +116,24 @@ function TrackItemCard({
   onToggleDone,
   isSharedView,
   transformation,
+  sharedNote,
+  sharedFrom,
 }: TrackItemCardProps) {
   const position = globalOffset + index + 1;
-  const href =
+  const isEpisode = item.kind === "audio" && item.source !== "ulg";
+  const baseHref =
     item.source === "ulg" || item.kind === "article"
       ? `/library/${item.slug}`
       : item.kind === "audio"
         ? `/episodes/${item.slug}`
         : `/library/${item.slug}`;
+  const href = (() => {
+    if (!isEpisode || (!sharedNote && !sharedFrom)) return baseHref;
+    const p = new URLSearchParams();
+    if (sharedNote) p.set("note", sharedNote);
+    if (sharedFrom) p.set("from", sharedFrom);
+    return `${baseHref}?${p.toString()}`;
+  })();
 
   return (
     <div
@@ -1115,6 +1127,8 @@ export default function TrackDetailPage() {
                   onToggleDone={progress.toggleDone}
                   isSharedView={isSharedView}
                   transformation={itemTransformation}
+                  sharedNote={sharedNote}
+                  sharedFrom={sharedFrom}
                 />
               );
 
