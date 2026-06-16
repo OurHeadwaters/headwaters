@@ -75,10 +75,10 @@ router.post("/codetry/assess", async (req: Request, res: Response) => {
     return;
   }
 
-  let openai: import("@workspace/integrations-openai-ai-server").OpenAI | null = null;
+  let openai: import("openai").default | null = null;
   try {
-    const mod = await import("@workspace/integrations-openai-ai-server");
-    openai = mod.openai;
+    const { getXaiClient } = await import("../xaiClient");
+    openai = getXaiClient();
   } catch {
     res.status(503).json({ error: "AI integration is not configured" });
     return;
@@ -90,7 +90,7 @@ router.post("/codetry/assess", async (req: Request, res: Response) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "grok-3-mini",
       max_completion_tokens: 512,
       messages: [
         { role: "system", content: ASSESSMENT_SYSTEM_PROMPT },

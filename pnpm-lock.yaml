@@ -212,6 +212,9 @@ importers:
       nostr-tools:
         specifier: ^2.23.5
         version: 2.23.5(typescript@5.9.3)
+      openai:
+        specifier: ^6.38.0
+        version: 6.38.0(ws@8.20.1)(zod@3.25.76)
       openid-client:
         specifier: ^6.8.4
         version: 6.8.4

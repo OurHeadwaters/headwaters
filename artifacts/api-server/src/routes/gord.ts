@@ -80,10 +80,10 @@ async function gordHandler(req: import("express").Request, res: import("express"
       return;
     }
 
-    let openai: import("@workspace/integrations-openai-ai-server").OpenAI | null = null;
+    let openai: import("openai").default | null = null;
     try {
-      const mod = await import("@workspace/integrations-openai-ai-server");
-      openai = mod.openai;
+      const { getXaiClient } = await import("../xaiClient");
+      openai = getXaiClient();
     } catch {
       res.status(503).json({ error: "AI integration not configured." });
       return;
@@ -107,7 +107,7 @@ async function gordHandler(req: import("express").Request, res: import("express"
     }
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "grok-3",
       max_completion_tokens: 512,
       messages: [
         ...systemMessages,

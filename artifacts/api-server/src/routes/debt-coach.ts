@@ -94,10 +94,10 @@ router.post("/debt-coach/chat", async (req, res) => {
       return;
     }
 
-    let openai: import("@workspace/integrations-openai-ai-server").OpenAI | null = null;
+    let openai: import("openai").default | null = null;
     try {
-      const mod = await import("@workspace/integrations-openai-ai-server");
-      openai = mod.openai;
+      const { getXaiClient } = await import("../xaiClient");
+      openai = getXaiClient();
     } catch {
       res.status(503).json({ error: "AI integration is not configured. Please contact the site administrator." });
       return;
@@ -108,7 +108,7 @@ router.post("/debt-coach/chat", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-5.4",
+      model: "grok-3",
       max_completion_tokens: 1024,
       messages: [
         { role: "system", content: DEBT_COACH_SYSTEM_PROMPT },
