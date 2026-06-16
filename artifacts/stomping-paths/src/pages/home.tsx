@@ -893,6 +893,26 @@ function JourneyMapSection() {
         >
           <StompingGroundsScene compact />
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="mt-8 text-center"
+        >
+          <Link
+            href="/map"
+            className="group inline-flex items-center gap-3 px-7 py-4 rounded-full font-bold text-[#2C4A36] bg-gradient-to-r from-[#D9A066] to-[#e8b06b] hover:from-[#e0a972] hover:to-[#f1bb78] transition-all shadow-lg shadow-[#D9A066]/25 hover:shadow-[#D9A066]/40 hover:-translate-y-0.5"
+          >
+            <MapIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            Explore the Zone Map
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+          <p className="mt-3 text-sm text-[#FDFBF7]/45">
+            See how the zones fit together — and where you stand.
+          </p>
+        </motion.div>
       </div>
     </section>
   );
