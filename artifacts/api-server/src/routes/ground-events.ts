@@ -70,6 +70,8 @@ router.get("/ground-events", async (req, res) => {
       typeof req.query.zone === "string" && req.query.zone.trim()
         ? req.query.zone.trim()
         : null;
+    const familyFriendlyFilter =
+      req.query.familyFriendly === "true" || req.query.familyFriendly === "1";
     const sessionId =
       typeof req.query.sessionId === "string" && req.query.sessionId.trim()
         ? req.query.sessionId.trim().slice(0, 128)
@@ -106,6 +108,9 @@ router.get("/ground-events", async (req, res) => {
     }
     if (zoneFilter) {
       baseConditions.push(eq(groundEventsTable.zoneSlug, zoneFilter));
+    }
+    if (familyFriendlyFilter) {
+      baseConditions.push(eq(groundEventsTable.familyFriendly, true));
     }
 
     const whereClause = and(...baseConditions);

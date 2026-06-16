@@ -23,6 +23,9 @@ import {
   Video,
   Headphones,
   Share2,
+  Calendar,
+  MapPin,
+  Wifi,
 } from "lucide-react";
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
@@ -200,6 +203,49 @@ function useKitCreators(kitSlug: string) {
 
   return { creators };
 }
+
+type GroundEvent = {
+  id: number;
+  title: string;
+  description: string;
+  hostName: string;
+  eventDate: string;
+  location: string;
+  isOnline: boolean;
+  priceDisplay: string;
+  externalUrl: string | null;
+  seats: number | null;
+  rsvpCount: number;
+  isFeatured: boolean;
+};
+
+function useFamilyWorkshops(enabled: boolean) {
+  const [workshops, setWorkshops] = useState<GroundEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    setLoading(true);
+    const base = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+    fetch(`${base}/api/ground-events?familyFriendly=true&status=upcoming&limit=3`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`workshops fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data: { events: GroundEvent[] }) => setWorkshops(data.events ?? []))
+      .catch(() => setWorkshops([]))
+      .finally(() => setLoading(false));
+  }, [enabled]);
+
+  return { workshops, loading };
+}
+
+const FAMILY_HOUSEHOLD_VALUES = new Set([
+  "expecting",
+  "new-parent",
+  "kids-under-10",
+  "kids-older",
+]);
 
 function KindIcon({ kind }: { kind: string }) {
   if (kind === "audio") return <Mic className="w-3.5 h-3.5" />;
@@ -489,6 +535,7 @@ export default function KitDetailPage() {
   const finderSecondary = searchParams.get("secondary");
   const sharedNote = searchParams.get("note");
   const sharedFrom = searchParams.get("from");
+  const household = searchParams.get("household") ?? "";
 
   const meta = KIT_META[slug] ?? { icon: "📦", color: "#6B7280" };
   const isLinkOut = LINK_OUT_KITS.has(slug);
@@ -496,6 +543,8 @@ export default function KitDetailPage() {
   const manual = KIT_MANUALS[slug];
   const { creators } = useKitCreators(slug);
   const [kitShareCount, incrementKitShareCount] = useShareCount("kit", slug);
+  const showFamilyWorkshops = FAMILY_HOUSEHOLD_VALUES.has(household);
+  const { workshops, loading: workshopsLoading } = useFamilyWorkshops(showFamilyWorkshops);
 
   const displayName =
     isFamilyKit
@@ -1111,6 +1160,117 @@ export default function KitDetailPage() {
                 </Link>
               </div>
             </div>
+          </section>
+        )}
+
+        {/* ── Family-friendly workshops ────────────────────────────── */}
+        {showFamilyWorkshops && (
+          <section>
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar className="w-4 h-4 shrink-0" style={{ color: "#8FA883" }} />
+              <h2 className="font-serif text-xl font-bold text-foreground">
+                Upcoming family-friendly workshops
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">
+              Local and online workshops where families work on this together.
+            </p>
+
+            {workshopsLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading workshops…</span>
+              </div>
+            ) : workshops.length === 0 ? (
+              <div
+                className="rounded-xl border p-6 text-center"
+                style={{ borderColor: "#8FA88333", background: "#8FA88308" }}
+              >
+                <p className="text-sm text-muted-foreground mb-3">
+                  No upcoming family workshops right now — but new ones are added regularly.
+                </p>
+                <a
+                  href="/workshops"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
+                  style={{ color: "#8FA883" }}
+                >
+                  Browse all workshops
+                  <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {workshops.map((w) => (
+                  <div
+                    key={w.id}
+                    className="rounded-xl border p-5 bg-card"
+                    style={{ borderColor: "#8FA88333", background: "#8FA88306" }}
+                  >
+                    {w.isFeatured && (
+                      <div
+                        className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2"
+                        style={{ color: "#8FA883", background: "#8FA88320", border: "1px solid #8FA88344" }}
+                      >
+                        Featured
+                      </div>
+                    )}
+                    <h3 className="font-serif font-bold text-sm text-foreground mb-1 leading-snug">
+                      {w.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-2">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {format(parseISO(w.eventDate), "MMM d, yyyy")}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {w.isOnline ? (
+                          <>
+                            <Wifi className="w-3 h-3" />
+                            Online
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="w-3 h-3" />
+                            {w.location}
+                          </>
+                        )}
+                      </span>
+                      <span
+                        className="font-semibold"
+                        style={{ color: "#8FA883" }}
+                      >
+                        {w.priceDisplay}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
+                      {w.description}
+                    </p>
+                    <a
+                      href={w.externalUrl ?? `/workshops/${w.id}`}
+                      target={w.externalUrl ? "_blank" : undefined}
+                      rel={w.externalUrl ? "noopener noreferrer" : undefined}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-px"
+                      style={{
+                        color: "#fff",
+                        background: "#8FA883",
+                        boxShadow: "0 2px 12px #8FA88340",
+                      }}
+                    >
+                      View workshop
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                ))}
+                <a
+                  href="/workshops"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors self-start mt-1"
+                  style={{ color: "#8FA88399" }}
+                >
+                  See all family workshops
+                  <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
+            )}
           </section>
         )}
 
