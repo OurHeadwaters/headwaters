@@ -362,7 +362,9 @@ export default function DeclarationPage() {
             <span style={S.fieldLabel}>Witness signature</span>
             <span style={S.fieldLine}></span>
             <span style={{ ...S.fieldLabel, marginLeft: "2rem" }}>Date</span>
-            <span style={S.fieldLineShort}></span>
+            <span style={{ ...S.fieldLineShort, display: "flex", alignItems: "flex-end", paddingBottom: "1px" }}>
+              <span className="prefilled-date" style={{ fontSize: "11px", color: "#999", fontStyle: "italic", lineHeight: 1 }}>{today}</span>
+            </span>
           </div>
           <div style={S.fieldRow}>
             <span style={S.fieldLabel}>Secondary keeper (optional)</span>
