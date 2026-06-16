@@ -305,6 +305,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
               isActive={isAdminActive}
             />
 
+            {/* Suggest a Creator — auth-gated */}
+            {isAuthenticated && !authLoading && (
+              <Link
+                href="/suggest-creator"
+                className={`relative text-sm font-medium transition-colors flex items-center gap-1 pb-0.5 ${
+                  location === "/suggest-creator"
+                    ? "text-white border-b-2 border-[#D9A066]"
+                    : "text-white/65 hover:text-white"
+                }`}
+              >
+                Suggest a Creator
+              </Link>
+            )}
+
             {/* My Map — auth-gated */}
             {isAuthenticated && !authLoading && (
               <Link
@@ -495,6 +509,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
+
+            {/* Suggest a Creator — mobile, auth-gated */}
+            {isAuthenticated && !authLoading && (
+              <Link
+                href="/suggest-creator"
+                className={`text-base font-medium px-3 py-2.5 rounded-md ${
+                  location === "/suggest-creator"
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Suggest a Creator
+              </Link>
+            )}
 
             {/* My Map — mobile, auth-gated */}
             {isAuthenticated && !authLoading && (

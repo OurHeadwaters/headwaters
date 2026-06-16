@@ -5,6 +5,25 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface CreatorSuggestionRequest {
+  creatorName: string;
+  websiteUrl: string;
+  /** @nullable */
+  rssFeedUrl?: string | null;
+  /** @nullable */
+  socialLinks?: string | null;
+  whyItFits: string;
+  /** @nullable */
+  additionalNotes?: string | null;
+}
+
+export interface CreatorSuggestionResponse {
+  /** @nullable */
+  id: string | null;
+  /** @nullable */
+  status: string | null;
+}
+
 export interface HealthStatus {
   status: string;
 }

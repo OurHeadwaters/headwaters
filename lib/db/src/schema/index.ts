@@ -23,3 +23,4 @@ export * from "./kit-purchases";
 export * from "./practitioners";
 export * from "./gord-tips";
 export * from "./stomping-path";
+export * from "./creator-suggestions";

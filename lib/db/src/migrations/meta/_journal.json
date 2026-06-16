@@ -225,6 +225,13 @@
       "when": 1748970000000,
       "tag": "0031_gord_tips",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1750042800000,
+      "tag": "0032_creator_suggestions",
+      "breakpoints": true
     }
   ]
 }

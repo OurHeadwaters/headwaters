@@ -18,6 +18,8 @@ export * from './compassClusterResult';
 export * from './createFiresideFlameRequest';
 export * from './creatorOverlapInput';
 export * from './creatorOverlapResult';
+export * from './creatorSuggestionRequest';
+export * from './creatorSuggestionResponse';
 export * from './curatedLink';
 export * from './curatedLinkType';
 export * from './episode';

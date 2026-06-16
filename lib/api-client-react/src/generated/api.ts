@@ -30,6 +30,8 @@ import type {
   CreateFiresideFlameRequest,
   CreatorOverlapInput,
   CreatorOverlapResult,
+  CreatorSuggestionRequest,
+  CreatorSuggestionResponse,
   Episode,
   EpisodeDetail,
   EpisodePage,
@@ -3805,4 +3807,76 @@ export function useGetSuiteCreator<TData = Awaited<ReturnType<typeof getSuiteCre
 
 
 
+
+export const getSuggestCreatorUrl = () => {
+
+
+
+
+  return `/api/suggestions/creator`
+}
+
+/**
+ * Authenticated members only. Saves the suggestion locally and forwards it to the Kitchen Table Intake API.
+ * @summary Submit a creator suggestion for Kitchen Table review
+ */
+export const suggestCreator = async (creatorSuggestionRequest: CreatorSuggestionRequest, options?: RequestInit): Promise<CreatorSuggestionResponse> => {
+
+  return customFetch<CreatorSuggestionResponse>(getSuggestCreatorUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      creatorSuggestionRequest,)
+  }
+);}
+
+
+
+
+export const getSuggestCreatorMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestCreator>>, TError,{data: BodyType<CreatorSuggestionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof suggestCreator>>, TError,{data: BodyType<CreatorSuggestionRequest>}, TContext> => {
+
+const mutationKey = ['suggestCreator'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suggestCreator>>, {data: BodyType<CreatorSuggestionRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  suggestCreator(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuggestCreatorMutationResult = NonNullable<Awaited<ReturnType<typeof suggestCreator>>>
+    export type SuggestCreatorMutationBody = BodyType<CreatorSuggestionRequest>
+    export type SuggestCreatorMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Submit a creator suggestion for Kitchen Table review
+ */
+export const useSuggestCreator = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestCreator>>, TError,{data: BodyType<CreatorSuggestionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof suggestCreator>>,
+        TError,
+        {data: BodyType<CreatorSuggestionRequest>},
+        TContext
+      > => {
+      return useMutation(getSuggestCreatorMutationOptions(options));
+    }
 

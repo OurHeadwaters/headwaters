@@ -31,6 +31,8 @@ tags:
     description: Community discussion flames — spark, fan, and browse posts tied to Fireside Freedom episodes.
   - name: stomping-path
     description: The Stomping Path — Zone 2. Compass influence excavation and overlap map.
+  - name: suggestions
+    description: Member creator suggestions forwarded to the Kitchen Table Intake API.
 paths:
   /healthz:
     get:
@@ -1086,6 +1088,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /suggestions/creator:
+    post:
+      operationId: suggestCreator
+      tags: [suggestions]
+      summary: Submit a creator suggestion for Kitchen Table review
+      description: Authenticated members only. Saves the suggestion locally and forwards it to the Kitchen Table Intake API.
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatorSuggestionRequest'
+      responses:
+        '201':
+          description: Suggestion received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorSuggestionResponse'
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -1103,6 +1140,22 @@ components:
       schema:
         type: string
   schemas:
+    CreatorSuggestionRequest:
+      type: object
+      required: [creatorName, websiteUrl, whyItFits]
+      properties:
+        creatorName: { type: string }
+        websiteUrl: { type: string }
+        rssFeedUrl: { type: ['string', 'null'] }
+        socialLinks: { type: ['string', 'null'] }
+        whyItFits: { type: string }
+        additionalNotes: { type: ['string', 'null'] }
+    CreatorSuggestionResponse:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: ['string', 'null'] }
+        status: { type: ['string', 'null'] }
     HealthStatus:
       type: object
       properties:

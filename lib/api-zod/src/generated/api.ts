@@ -1188,3 +1188,21 @@ export const GetSuiteCreatorResponse = zod.object({
 })
 
 
+/**
+ * Authenticated members only. Saves the suggestion locally and forwards it to the Kitchen Table Intake API.
+ * @summary Submit a creator suggestion for Kitchen Table review
+ */
+export const SuggestCreatorHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token — `Bearer <sid>`.')
+})
+
+export const SuggestCreatorBody = zod.object({
+  "creatorName": zod.string(),
+  "websiteUrl": zod.string(),
+  "rssFeedUrl": zod.string().nullish(),
+  "socialLinks": zod.string().nullish(),
+  "whyItFits": zod.string(),
+  "additionalNotes": zod.string().nullish()
+})
+
+

@@ -45,6 +45,7 @@ import practitionersRouter from "./practitioners";
 import trailblazerRouter from "./trailblazer";
 import gordRouter from "./gord";
 import stompingPathRouter from "./stomping-path";
+import suggestionsRouter from "./suggestions";
 
 const router: IRouter = Router();
 
@@ -94,5 +95,6 @@ router.use(practitionersRouter);
 router.use(trailblazerRouter);
 router.use(gordRouter);
 router.use(stompingPathRouter);
+router.use(suggestionsRouter);
 
 export default router;
