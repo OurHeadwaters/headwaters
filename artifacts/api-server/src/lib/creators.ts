@@ -518,6 +518,171 @@ export const CREATORS: Creator[] = [
     ],
   },
 
+  /* ─── Fireside Freedom Crew ─── */
+
+  {
+    slug: "brian-aleksivich",
+    name: "Brian Aleksivich",
+    bio: "Co-host of the Fireside Freedom Podcast and founder of The Lots Project — a liberty-minded community initiative focused on land, connection, and practical self-reliance. Brian brings grassroots community-building experience to the intersection of freedom philosophy and preparedness.",
+    avatarUrl: "",
+    websiteUrl: "https://www.thelotsproject.com",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "live",
+    transformationSlugs: ["employee-to-owner"],
+    kitSlugs: ["council-kit", "family-kit"],
+    curatedLinks: [
+      {
+        title: "The Lots Project — Land & Liberty Community",
+        url: "https://www.thelotsproject.com",
+        type: "article",
+      },
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
+  {
+    slug: "lettie-loo",
+    name: "Lettie Loo",
+    bio: "Co-host of the Fireside Freedom Podcast and creator of Liberty All Day — a platform exploring the everyday practice of living free. Lettie covers the mindset shifts, habits, and choices that build a genuinely self-directed life.",
+    avatarUrl: "",
+    websiteUrl: "https://libertyallday.home.blog",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "live",
+    transformationSlugs: ["employee-to-owner"],
+    kitSlugs: ["council-kit", "family-kit"],
+    curatedLinks: [
+      {
+        title: "Liberty All Day",
+        url: "https://libertyallday.home.blog",
+        type: "article",
+      },
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
+  {
+    slug: "tim-toolman-cook",
+    name: "Tim 'Toolman' Cook",
+    bio: "Alberta-based handyman, homesteader, and host of the Workshop Podcast. Tim covers practical home repair, workshop skills, and the hands-on preparedness that keeps a property running no matter what. If it involves tools, Tim has it covered.",
+    avatarUrl: "",
+    websiteUrl: "https://www.toolmantim.co",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "live",
+    transformationSlugs: ["grid-to-off-grid"],
+    kitSlugs: ["family-kit", "producer-kit", "council-kit"],
+    curatedLinks: [
+      {
+        title: "Toolman Tim — Workshop & Home Skills",
+        url: "https://www.toolmantim.co",
+        type: "article",
+      },
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
+  {
+    slug: "ken-eash",
+    name: "Ken Eash",
+    bio: "Co-host of the Fireside Freedom Podcast and host of the Constructive Liberty Podcast. Ken blends the principles of personal freedom with the practical craft of building — from structures to systems — on the homestead.",
+    avatarUrl: "",
+    websiteUrl: "https://www.kennetheash.com",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "live",
+    transformationSlugs: ["employee-to-owner", "grid-to-off-grid"],
+    kitSlugs: ["producer-kit", "family-kit", "council-kit"],
+    curatedLinks: [
+      {
+        title: "Constructive Liberty Podcast",
+        url: "https://www.kennetheash.com",
+        type: "podcast",
+      },
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
+  {
+    slug: "nate-erin-lamaster",
+    name: "Nate & Erin Lamaster",
+    bio: "Co-hosts of the Fireside Freedom Podcast and operators of Two Chicks Homestead. Nate and Erin document real homestead life — the animals, the gardens, the setbacks, and the wins — and inspire others to build productive, freedom-centered lives on the land.",
+    avatarUrl: "",
+    websiteUrl: "https://www.twochickshomestead.com",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "live",
+    transformationSlugs: ["employee-to-owner"],
+    kitSlugs: ["family-kit", "producer-kit", "council-kit"],
+    curatedLinks: [
+      {
+        title: "Two Chicks Homestead",
+        url: "https://www.twochickshomestead.com",
+        type: "article",
+      },
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
+  {
+    slug: "amy-fireside",
+    name: "Amy of A Farmish Kind of Life",
+    bio: "Co-host of the Fireside Freedom Podcast and creator of A Farmish Kind of Life — a practical, grounded resource for anyone building a homestead or farm-based lifestyle. Amy covers raising animals, preserving the harvest, and the honest realities of farm life.",
+    avatarUrl: "",
+    websiteUrl: "https://www.afarmishkindoflife.com",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "live",
+    transformationSlugs: ["employee-to-owner"],
+    kitSlugs: ["family-kit", "producer-kit", "council-kit"],
+    curatedLinks: [
+      {
+        title: "A Farmish Kind of Life",
+        url: "https://www.afarmishkindoflife.com",
+        type: "article",
+      },
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
+  {
+    slug: "hawkins-j",
+    name: "Hawkins J",
+    bio: "Co-host of the Fireside Freedom Podcast and a key voice in the liberty-media space. Hawkins brings a sharp perspective on freedom philosophy, independent media, and the culture of self-reliance.",
+    avatarUrl: "",
+    websiteUrl: "",
+    podcastUrl: "https://www.firesidefreedompodcast.com",
+    status: "coming-soon",
+    transformationSlugs: ["employee-to-owner"],
+    kitSlugs: ["council-kit"],
+    curatedLinks: [
+      {
+        title: "Fireside Freedom Podcast",
+        url: "https://www.firesidefreedompodcast.com",
+        type: "podcast",
+      },
+    ],
+  },
+
   /* ─── Community & Homestead Living ─── */
 
   {
