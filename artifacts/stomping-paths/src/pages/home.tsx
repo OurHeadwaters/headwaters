@@ -539,7 +539,7 @@ function HeroEntrance() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.65 }}
         >
-          6,000+ episodes. Seven transformation arcs. One archive built for people who decide their own terms.
+          Seven transformation journeys. Content curated to move you — not just inform you.
         </motion.p>
         <motion.p
           className="text-[#8FA883]/80 text-sm max-w-xl mb-8"
