@@ -539,7 +539,7 @@ function HeroEntrance() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.65 }}
         >
-          Seven transformation journeys. Content curated to move you — not just inform you.
+          Seven transformation journeys.<br />Content curated to move you — not just inform you.
         </motion.p>
         <motion.p
           className="text-[#8FA883]/80 text-sm max-w-xl mb-8"
