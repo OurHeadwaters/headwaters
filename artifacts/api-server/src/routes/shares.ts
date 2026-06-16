@@ -5,6 +5,7 @@
  * GET  /api/admin/shares         — aggregated share counts for the dashboard
  */
 
+import { createHash } from "crypto";
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -15,18 +16,58 @@ const router: IRouter = Router();
 
 const VALID_SURFACES = new Set(["kit", "track", "transform"]);
 
+const DEDUP_WINDOW_SECONDS = 60;
+
+function hashIp(ip: string): string {
+  return createHash("sha256").update(ip).digest("hex").slice(0, 16);
+}
+
+function getClientIp(req: import("express").Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  return req.socket?.remoteAddress ?? "unknown";
+}
+
 async function ensureShareEventsTable(): Promise<void> {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS share_events (
       id         SERIAL PRIMARY KEY,
       surface    TEXT NOT NULL,
       slug       TEXT NOT NULL,
+      ip_hash    TEXT NOT NULL DEFAULT '',
       shared_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
   await db.execute(sql`
+    ALTER TABLE share_events ADD COLUMN IF NOT EXISTS ip_hash TEXT NOT NULL DEFAULT ''
+  `);
+  await db.execute(sql`
     CREATE INDEX IF NOT EXISTS share_events_surface_slug_idx
     ON share_events (surface, slug)
+  `);
+  /*
+   * Partial functional unique index that provides atomic deduplication.
+   *
+   * The expression (floor(extract(epoch from shared_at) / 60)::bigint) bins
+   * each row into a 60-second bucket.  INSERT … ON CONFLICT DO NOTHING then
+   * becomes the sole write path — no separate SELECT is needed and there is
+   * no race window between check and insert.
+   *
+   * WHERE ip_hash <> '' makes this a partial index so it only covers new rows
+   * (which always carry a real hash).  Legacy rows that were recorded before
+   * the ip_hash column existed carry the default value '' and are excluded,
+   * which prevents CREATE UNIQUE INDEX from failing due to historical
+   * duplicates in those rows.
+   */
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS share_events_dedup_uniq
+    ON share_events (
+      surface,
+      slug,
+      ip_hash,
+      (floor(extract(epoch from shared_at) / ${DEDUP_WINDOW_SECONDS})::bigint)
+    )
+    WHERE ip_hash <> ''
   `);
 }
 
@@ -54,11 +95,21 @@ router.post("/shares", async (req, res) => {
     return;
   }
 
+  const ipHash = hashIp(getClientIp(req));
+  const cleanSlug = slug.trim();
+
   try {
     await withTable(async () => {
-      await db.execute(
-        sql`INSERT INTO share_events (surface, slug) VALUES (${surface}, ${slug.trim()})`,
-      );
+      /*
+       * Atomic dedup: the unique index on (surface, slug, ip_hash, time-bucket)
+       * means a concurrent duplicate simply conflicts and is silently dropped.
+       * No SELECT is needed — there is no race window.
+       */
+      await db.execute(sql`
+        INSERT INTO share_events (surface, slug, ip_hash)
+        VALUES (${surface}, ${cleanSlug}, ${ipHash})
+        ON CONFLICT DO NOTHING
+      `);
     });
     res.status(201).json({ ok: true });
   } catch (err) {
