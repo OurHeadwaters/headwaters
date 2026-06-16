@@ -46,6 +46,7 @@ import trailblazerRouter from "./trailblazer";
 import gordRouter from "./gord";
 import stompingPathRouter from "./stomping-path";
 import suggestionsRouter from "./suggestions";
+import sharesRouter from "./shares";
 
 const router: IRouter = Router();
 
@@ -96,5 +97,6 @@ router.use(trailblazerRouter);
 router.use(gordRouter);
 router.use(stompingPathRouter);
 router.use(suggestionsRouter);
+router.use(sharesRouter);
 
 export default router;

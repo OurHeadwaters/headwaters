@@ -22,7 +22,9 @@ import {
   BookOpen,
   Video,
   Headphones,
+  Share2,
 } from "lucide-react";
+import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
 import { ProductShelf } from "@/components/product-shelf";
@@ -473,6 +475,8 @@ export default function KitDetailPage() {
   const slug = params?.slug ?? "";
   const { data: kit, isLoading, isError } = useKitDetail(slug);
   const [edition, setEdition] = useState<"general" | "homeschool">("general");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
   const search = useSearch();
   const searchParams = new URLSearchParams(search);
   const fromFinder = searchParams.get("from_finder") === "1";
@@ -482,6 +486,8 @@ export default function KitDetailPage() {
   const finderReadiness = searchParams.get("readiness") as Parameters<typeof readinessLabel>[0] | null;
   const finderReason = searchParams.get("reason");
   const finderSecondary = searchParams.get("secondary");
+  const sharedNote = searchParams.get("note");
+  const sharedFrom = searchParams.get("from");
 
   const meta = KIT_META[slug] ?? { icon: "📦", color: "#6B7280" };
   const isLinkOut = LINK_OUT_KITS.has(slug);
@@ -533,6 +539,16 @@ export default function KitDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Shared-with-you banner */}
+      {sharedNote && !noteBannerDismissed && (
+        <SharedNoteBanner
+          note={sharedNote}
+          from={sharedFrom}
+          accentColor={meta.color}
+          onDismiss={() => setNoteBannerDismissed(true)}
+        />
+      )}
+
       {/* Finder recommendation banner */}
       {fromFinder && finderReason && (
         <div
@@ -736,6 +752,20 @@ export default function KitDetailPage() {
                 <ChevronRight className="w-4 h-4" />
               </a>
             )}
+
+            {/* Share button */}
+            <button
+              onClick={() => setShareOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all hover:-translate-y-px mt-2"
+              style={{
+                color: meta.color,
+                borderColor: meta.color + "44",
+                background: meta.color + "12",
+              }}
+            >
+              <Share2 className="w-4 h-4" />
+              Share this kit
+            </button>
           </div>
         </div>
       </div>
@@ -1235,6 +1265,15 @@ export default function KitDetailPage() {
 
         </div>{/* end lg:flex */}
       </div>
+
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        surface="kit"
+        slug={slug}
+        name={displayName}
+        accentColor={meta.color}
+      />
     </div>
   );
 }

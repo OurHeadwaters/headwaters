@@ -1,5 +1,7 @@
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ArrowRight, Compass, Loader2, PlayCircle, ExternalLink, Package } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, Compass, Loader2, PlayCircle, ExternalLink, Package, Share2 } from "lucide-react";
+import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 
 import { format, parseISO } from "date-fns";
 import { useTransformations } from "@/hooks/use-transformations";
@@ -162,6 +164,14 @@ function KitEasyButton({ kit }: { kit: SuiteKit }) {
 // ─── Main content ───────────────────────────────────────────────────────────────
 
 function TransformDetailContent({ slug }: { slug: string }) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
+  const searchParams = new URLSearchParams(
+    typeof window !== "undefined" ? window.location.search : "",
+  );
+  const sharedNote = searchParams.get("note");
+  const sharedFrom = searchParams.get("from");
+
   const { data: transformations, isLoading, isError } = useTransformations();
   const t = transformations?.find((x) => x.slug === slug) ?? null;
 
@@ -205,6 +215,16 @@ function TransformDetailContent({ slug }: { slug: string }) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Shared-with-you banner */}
+      {sharedNote && !noteBannerDismissed && (
+        <SharedNoteBanner
+          note={sharedNote}
+          from={sharedFrom}
+          accentColor={t.color}
+          onDismiss={() => setNoteBannerDismissed(true)}
+        />
+      )}
+
       {/* Hero */}
       <div
         className="border-b border-border relative overflow-hidden"
@@ -265,6 +285,20 @@ function TransformDetailContent({ slug }: { slug: string }) {
               {total.toLocaleString()} episode{total !== 1 ? "s" : ""} on this path
             </p>
           )}
+
+          {/* Share button */}
+          <button
+            onClick={() => setShareOpen(true)}
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all hover:-translate-y-px"
+            style={{
+              color: t.color,
+              borderColor: t.color + "44",
+              background: t.color + "18",
+            }}
+          >
+            <Share2 className="w-4 h-4" />
+            Share this path
+          </button>
         </div>
       </div>
 
@@ -389,6 +423,15 @@ function TransformDetailContent({ slug }: { slug: string }) {
           </div>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        surface="transform"
+        slug={slug}
+        name={`${t.from} → ${t.to}`}
+        accentColor={t.color}
+      />
     </div>
   );
 }

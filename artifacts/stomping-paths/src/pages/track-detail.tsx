@@ -27,6 +27,7 @@ import {
   ClipboardCopy,
   Printer,
 } from "lucide-react";
+import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { formatDuration } from "@/components/episode-card";
 
 const PAGE_SIZE = 24;
@@ -570,8 +571,12 @@ export default function TrackDetailPage() {
   const slug = params?.slug ?? "";
   const [copied, setCopied] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
+  const sharedNote = searchParams.get("note");
+  const sharedFrom = searchParams.get("from");
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
@@ -774,6 +779,16 @@ export default function TrackDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Shared-with-you banner */}
+      {sharedNote && !noteBannerDismissed && (
+        <SharedNoteBanner
+          note={sharedNote}
+          from={sharedFrom}
+          accentColor={track.color}
+          onDismiss={() => setNoteBannerDismissed(true)}
+        />
+      )}
+
       {/* Hero */}
       <div
         className="border-b border-border relative overflow-hidden"
@@ -900,33 +915,16 @@ export default function TrackDetailPage() {
             )}
 
             <button
-              onClick={handleShare}
+              onClick={() => setShareOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all duration-200"
-              style={
-                copied
-                  ? {
-                      color: "#22c55e",
-                      borderColor: "#22c55e44",
-                      background: "#22c55e12",
-                    }
-                  : {
-                      color: track.color,
-                      borderColor: track.color + "44",
-                      background: track.color + "12",
-                    }
-              }
+              style={{
+                color: track.color,
+                borderColor: track.color + "44",
+                background: track.color + "12",
+              }}
             >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Link copied!
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-4 h-4" />
-                  Share this track
-                </>
-              )}
+              <Share2 className="w-4 h-4" />
+              Share this track
             </button>
 
             <button
@@ -1210,6 +1208,15 @@ export default function TrackDetailPage() {
           <p className="mt-0.5">Episodes shown: page {page} of {totalPages} (up to {PAGE_SIZE} per page)</p>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        surface="track"
+        slug={slug}
+        name={track.title}
+        accentColor={track.color}
+      />
     </div>
   );
 }

@@ -60,6 +60,7 @@ import KitFinderPage from "@/pages/kit-finder";
 import KitWelcomePage from "@/pages/kit-welcome";
 import { AdminKitPurchases } from "@/pages/admin-kit-purchases";
 import { AdminGordTips } from "@/pages/admin-gord-tips";
+import { AdminShares } from "@/pages/admin-shares";
 import PractitionersPage from "@/pages/practitioners";
 import { SuggestCreatorPage } from "@/pages/suggest-creator";
 
@@ -132,6 +133,7 @@ function Router() {
         <Route path="/admin/cohorts" component={AdminCohorts} />
         <Route path="/admin/kit-purchases" component={AdminKitPurchases} />
         <Route path="/admin/gord-tips" component={AdminGordTips} />
+        <Route path="/admin/shares" component={AdminShares} />
         <Route path="/headwaters" component={HeadwatersPage} />
         <Route path="/kits" component={KitsPage} />
         <Route path="/kits/find" component={KitFinderPage} />
