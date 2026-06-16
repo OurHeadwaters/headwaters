@@ -366,6 +366,26 @@
 .animate-tsp-torch-d2 { animation: tsp-torch 2.4s ease-in-out 0.6s infinite;  transform-origin: center bottom; }
 .animate-tsp-torch-d3 { animation: tsp-torch 2.4s ease-in-out 1s   infinite;  transform-origin: center bottom; }
 
+/* ─── Campfire flame animations ─────────────────────────────────────────── */
+@keyframes campfire-sway {
+  0%, 100% { transform: skewX(-3deg) scaleX(0.97); }
+  25%       { transform: skewX(4deg)  scaleX(1.02); }
+  50%       { transform: skewX(-2deg) scaleX(0.98); }
+  75%       { transform: skewX(3deg)  scaleX(1.01); }
+}
+@keyframes campfire-glow {
+  0%, 100% { opacity: 0.35; transform: scaleX(0.95); }
+  50%       { opacity: 0.65; transform: scaleX(1.06); }
+}
+@keyframes campfire-spark {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  60%  { opacity: 0.5; }
+  100% { transform: translate(6px, -18px) scale(0.3); opacity: 0; }
+}
+.animate-tsp-campfire    { animation: campfire-sway 2.2s ease-in-out infinite;        transform-origin: center bottom; }
+.animate-tsp-campfire-d1 { animation: campfire-sway 2.2s ease-in-out 0.4s infinite;  transform-origin: center bottom; }
+.animate-tsp-campfire-d2 { animation: campfire-sway 2.2s ease-in-out 0.8s infinite;  transform-origin: center bottom; }
+
 /* ─── Ember glow pulse (Grounds hotspot hover) ──────────────────────────── */
 @keyframes ember-pulse-orange {
   0%, 100% {
@@ -422,7 +442,10 @@
   .animate-tsp-torch,
   .animate-tsp-torch-d1,
   .animate-tsp-torch-d2,
-  .animate-tsp-torch-d3 {
+  .animate-tsp-torch-d3,
+  .animate-tsp-campfire,
+  .animate-tsp-campfire-d1,
+  .animate-tsp-campfire-d2 {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

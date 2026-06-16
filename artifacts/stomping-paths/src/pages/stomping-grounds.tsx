@@ -108,23 +108,6 @@ export default function StompingGroundsPage() {
           50% { transform: translateY(-4px); }
         }
 
-        /* ─── Campfire animations ─── */
-        @keyframes campfire-sway {
-          0%, 100% { transform: skewX(-3deg) scaleX(0.97); }
-          25% { transform: skewX(4deg) scaleX(1.02); }
-          50% { transform: skewX(-2deg) scaleX(0.98); }
-          75% { transform: skewX(3deg) scaleX(1.01); }
-        }
-        @keyframes campfire-glow {
-          0%, 100% { opacity: 0.35; transform: scaleX(0.95); }
-          50% { opacity: 0.65; transform: scaleX(1.06); }
-        }
-        @keyframes campfire-spark {
-          0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
-          60% { opacity: 0.5; }
-          100% { transform: translate(6px, -18px) scale(0.3); opacity: 0; }
-        }
-
         /* ─── Lantern flicker ─── */
         @keyframes lantern-flicker {
           0%, 100% { opacity: 1; filter: drop-shadow(0 0 9px #D9A06699) drop-shadow(0 0 20px #D9A06644); }

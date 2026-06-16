@@ -244,21 +244,21 @@ function CampfireMarker({ isOpen }: { isOpen: boolean }) {
         d="M18 54 Q14 40 20 28 Q24 18 26 10 Q28 20 25 30 Q30 20 33 12 Q38 26 35 38 Q38 30 38 42 Q38 54 34 54 Z"
         fill="#E85A2A"
         opacity={isOpen ? "0.95" : "0.75"}
-        style={{ animation: "campfire-sway 2.2s ease-in-out infinite" }}
+        className="animate-tsp-campfire"
       />
       {/* Inner flame */}
       <path
         d="M20 54 Q18 44 22 34 Q25 24 26 16 Q27 26 25 34 Q28 26 30 18 Q34 30 32 40 Q34 46 32 54 Z"
         fill="#FF8C42"
         opacity={isOpen ? "0.9" : "0.65"}
-        style={{ animation: "campfire-sway 2.2s ease-in-out 0.4s infinite" }}
+        className="animate-tsp-campfire-d1"
       />
       {/* Core */}
       <path
         d="M22 53 Q21 46 24 38 Q26 30 26 22 Q27 30 26 36 Q28 30 29 24 Q31 34 30 42 Q30 48 28 53 Z"
         fill="#FFD580"
         opacity={isOpen ? "0.95" : "0.7"}
-        style={{ animation: "campfire-sway 2.2s ease-in-out 0.8s infinite" }}
+        className="animate-tsp-campfire-d2"
       />
       {/* Embers */}
       {isOpen && (
