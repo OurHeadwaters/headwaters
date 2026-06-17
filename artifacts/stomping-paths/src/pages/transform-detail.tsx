@@ -502,6 +502,55 @@ function TransformDetailContent({ slug }: { slug: string }) {
                 </div>
               </div>
             )}
+
+            {/* Community Workshops callout */}
+            <div
+              className="mt-14 rounded-xl border p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5"
+              style={{
+                borderColor: `${t.color}33`,
+                background: `${t.color}07`,
+              }}
+            >
+              <div className="text-3xl leading-none shrink-0">🔨</div>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                  style={{ color: t.color }}
+                >
+                  Community Workshops
+                </div>
+                <h3 className="font-serif text-lg font-bold text-foreground mb-1 leading-snug">
+                  Find workshops on this path
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Community-run events aligned with the {t.from} → {t.to} journey.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 shrink-0">
+                <Link
+                  href={`/workshops?path=${encodeURIComponent(t.slug)}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+                  style={{
+                    color: t.color,
+                    border: `1px solid ${t.color}44`,
+                    background: `${t.color}12`,
+                  }}
+                >
+                  Browse workshops <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href={`/workshops?path=${encodeURIComponent(t.slug)}&family=1`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+                  style={{
+                    color: "#4AA064",
+                    border: "1px solid rgba(74,160,100,0.35)",
+                    background: "rgba(74,160,100,0.08)",
+                  }}
+                >
+                  👨‍👩‍👧 Family-friendly only <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

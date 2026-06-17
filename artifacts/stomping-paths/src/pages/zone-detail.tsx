@@ -1190,6 +1190,57 @@ export default function ZoneDetailPage() {
         {/* Voices + Kit — creators and easy button for this zone */}
         <ZoneCreatorsAndKit zoneSlug={zone.slug} accentColor={accentColor} />
 
+        {/* Community Workshops callout */}
+        <section>
+          <div
+            className="rounded-xl border p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5"
+            style={{
+              borderColor: `${accentColor}33`,
+              background: `${accentColor}07`,
+            }}
+          >
+            <div className="text-3xl leading-none shrink-0">🔨</div>
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                style={{ color: accentColor }}
+              >
+                Community Workshops
+              </div>
+              <h3 className="font-serif text-lg font-bold text-foreground mb-1 leading-snug">
+                Find hands-on workshops for {zone.name.toLowerCase()}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Community-run events on skills in this zone — homesteading, self-reliance, and more.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 shrink-0">
+              <Link
+                href={`/workshops?zone=${encodeURIComponent(zone.slug)}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+                style={{
+                  color: accentColor,
+                  border: `1px solid ${accentColor}44`,
+                  background: `${accentColor}12`,
+                }}
+              >
+                Browse workshops <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href={`/workshops?zone=${encodeURIComponent(zone.slug)}&family=1`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+                style={{
+                  color: "#4AA064",
+                  border: "1px solid rgba(74,160,100,0.35)",
+                  background: "rgba(74,160,100,0.08)",
+                }}
+              >
+                👨‍👩‍👧 Family-friendly only <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Headwaters Odyssey CTA */}
         <OdysseyBridge variant="full" />
       </div>
