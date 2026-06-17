@@ -413,11 +413,17 @@ export function readAllActiveTracksOrdered(): ActiveTrackEntry[] {
   }
 }
 
-export function useAllActiveTracksState(): ActiveTrackEntry[] {
+export type AllActiveTracksState = {
+  entries: ActiveTrackEntry[];
+  isLoading: boolean;
+};
+
+export function useAllActiveTracksState(): AllActiveTracksState {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [entries, setEntries] = useState<ActiveTrackEntry[]>(() =>
     readAllActiveTracksOrdered(),
   );
+  const [serverFetchDone, setServerFetchDone] = useState(false);
 
   useEffect(() => {
     setEntries(readAllActiveTracksOrdered());
@@ -434,6 +440,13 @@ export function useAllActiveTracksState(): ActiveTrackEntry[] {
     };
   }, []);
 
+  // Reset serverFetchDone when auth state changes (e.g. login/logout)
+  useEffect(() => {
+    if (authLoading) {
+      setServerFetchDone(false);
+    }
+  }, [authLoading]);
+
   // When authenticated, merge server-persisted slugs that aren't in localStorage.
   // This ensures the Continue Learning widget reflects progress made on other
   // devices or after localStorage has been cleared.
@@ -441,44 +454,53 @@ export function useAllActiveTracksState(): ActiveTrackEntry[] {
     if (authLoading || !isAuthenticated) return;
 
     fetchAllTracksProgressFromServer().then(async (serverCounts) => {
-      if (!serverCounts) return;
+      try {
+        if (!serverCounts) return;
 
-      // Find slugs on the server that localStorage doesn't know about
-      const localSlugs = new Set(readAllActiveTracksOrdered().map((e) => e.slug));
-      const serverOnlySlugs = Object.keys(serverCounts).filter(
-        (slug) => serverCounts[slug] > 0 && !localSlugs.has(slug),
-      );
+        // Find slugs on the server that localStorage doesn't know about
+        const localSlugs = new Set(readAllActiveTracksOrdered().map((e) => e.slug));
+        const serverOnlySlugs = Object.keys(serverCounts).filter(
+          (slug) => serverCounts[slug] > 0 && !localSlugs.has(slug),
+        );
 
-      if (serverOnlySlugs.length === 0) return;
+        if (serverOnlySlugs.length > 0) {
+          // Fetch full episode IDs for each server-only slug
+          const fetched = await Promise.all(
+            serverOnlySlugs.map(async (slug) => {
+              const ids = await fetchServerProgress(slug);
+              if (ids === null || ids.length === 0) return null;
+              return { slug, doneIds: new Set(ids) } satisfies ActiveTrackEntry;
+            }),
+          );
 
-      // Fetch full episode IDs for each server-only slug
-      const fetched = await Promise.all(
-        serverOnlySlugs.map(async (slug) => {
-          const ids = await fetchServerProgress(slug);
-          if (ids === null || ids.length === 0) return null;
-          return { slug, doneIds: new Set(ids) } satisfies ActiveTrackEntry;
-        }),
-      );
+          const newEntries = fetched.filter(
+            (e): e is ActiveTrackEntry => e !== null,
+          );
 
-      const newEntries = fetched.filter(
-        (e): e is ActiveTrackEntry => e !== null,
-      );
+          if (newEntries.length > 0) {
+            // Backfill localStorage so future page loads (and cross-tab events) pick
+            // these up without another server round-trip
+            for (const { slug, doneIds } of newEntries) {
+              saveDoneIds(slug, doneIds);
+            }
 
-      if (newEntries.length === 0) return;
-
-      // Backfill localStorage so future page loads (and cross-tab events) pick
-      // these up without another server round-trip
-      for (const { slug, doneIds } of newEntries) {
-        saveDoneIds(slug, doneIds);
+            setEntries((prev) => {
+              const prevSlugs = new Set(prev.map((e) => e.slug));
+              const toAdd = newEntries.filter((e) => !prevSlugs.has(e.slug));
+              return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+            });
+          }
+        }
+      } finally {
+        setServerFetchDone(true);
       }
-
-      setEntries((prev) => {
-        const prevSlugs = new Set(prev.map((e) => e.slug));
-        const toAdd = newEntries.filter((e) => !prevSlugs.has(e.slug));
-        return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
-      });
     });
   }, [isAuthenticated, authLoading]);
 
-  return entries;
+  // isLoading is true while we don't yet have a definitive answer:
+  //   - auth check is still in flight, OR
+  //   - user is authenticated but the server fetch hasn't completed yet
+  const isLoading = authLoading || (isAuthenticated && !serverFetchDone);
+
+  return { entries, isLoading };
 }

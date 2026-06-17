@@ -654,9 +654,49 @@ function ContinueLearningRow({
   );
 }
 
+function ContinueLearningSkeletonRow() {
+  return (
+    <div className="flex items-center gap-3 rounded-xl p-3 animate-pulse">
+      <div className="w-8 h-8 rounded-lg bg-[#FDFBF7]/10 shrink-0" />
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        <div className="h-3 w-2/5 rounded bg-[#FDFBF7]/10" />
+        <div className="h-2 w-full rounded bg-[#FDFBF7]/7" />
+      </div>
+      <div className="w-4 h-4 rounded bg-[#FDFBF7]/10 shrink-0" />
+    </div>
+  );
+}
+
 function ContinueLearningWidget() {
-  const activeEntries = useAllActiveTracksState();
+  const { entries: activeEntries, isLoading } = useAllActiveTracksState();
   const { data: tracks } = useListTracks();
+
+  if (isLoading && activeEntries.length === 0) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="relative bg-[#0c1611] pt-10 pb-0 overflow-hidden"
+      >
+        <div className="container mx-auto px-4 md:px-6 max-w-2xl">
+          <div className="rounded-2xl border border-[#D9A066]/20 bg-[#D9A066]/5 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Footprints className="w-4 h-4 text-[#D9A066]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D9A066]">
+                Continue Learning
+              </span>
+              <div className="ml-auto h-2.5 w-20 rounded bg-[#FDFBF7]/10 animate-pulse" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <ContinueLearningSkeletonRow />
+              <ContinueLearningSkeletonRow />
+            </div>
+          </div>
+        </div>
+      </motion.section>
+    );
+  }
 
   if (activeEntries.length === 0 || !tracks) return null;
 
