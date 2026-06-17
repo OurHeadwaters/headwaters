@@ -3,6 +3,31 @@ import { pool } from "@workspace/db";
 import { logger } from "../lib/logger";
 
 /**
+ * Single shared pruning interval that deletes ALL expired rows from the
+ * `rate_limits` table on a fixed schedule, covering every key type (IP-based,
+ * email-based, route-scoped, etc.).
+ *
+ * Running one shared sweep instead of one per rate-limiter instance avoids
+ * redundant concurrent DELETEs and ensures that consumers like the email-based
+ * rate limiter in kits.ts (which has no interval of its own) are also pruned.
+ *
+ * 5-minute interval is short enough to keep the table lean under high bot
+ * traffic while cheap enough to have negligible DB impact.
+ */
+const PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+const _pruneInterval = setInterval(async () => {
+  try {
+    await pool.query("DELETE FROM rate_limits WHERE reset_at <= NOW()");
+  } catch (err) {
+    // Non-critical — log at warn so persistent DB issues are visible without
+    // creating alert noise for transient hiccups.
+    logger.warn({ err }, "rateLimiter: prune sweep failed (non-critical)");
+  }
+}, PRUNE_INTERVAL_MS);
+_pruneInterval.unref();
+
+/**
  * Creates an IP-based rate limiter middleware backed by PostgreSQL so that
  * counters survive server restarts and deploys.
  *
@@ -25,16 +50,6 @@ export function createRateLimiter(
   windowMs: number,
   keyPrefix?: string,
 ) {
-  // Periodically prune expired rows so the table stays tidy.
-  const pruneInterval = setInterval(async () => {
-    try {
-      await pool.query("DELETE FROM rate_limits WHERE reset_at <= NOW()");
-    } catch {
-      // Non-critical — ignore prune errors
-    }
-  }, windowMs);
-  pruneInterval.unref();
-
   return async function rateLimiter(
     req: Request,
     res: Response,
