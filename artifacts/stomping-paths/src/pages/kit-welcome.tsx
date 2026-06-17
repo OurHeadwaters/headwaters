@@ -1,5 +1,5 @@
 import { Link, useRoute, useLocation } from "wouter";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   CheckCircle2,
   ArrowLeft,
@@ -262,26 +262,28 @@ export default function KitWelcomePage() {
     })();
   }, [slug]);
 
+  const retryBackgroundCheck = useCallback(async () => {
+    if (!slug || !accessEmail) return;
+    const email = accessEmail;
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.hasAccess) {
+        saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
+        setBackgroundCheckWarning(false);
+      }
+    } catch {
+    }
+  }, [slug, accessEmail, emailLinkVerified]);
+
   useEffect(() => {
     if (!backgroundCheckWarning || !slug || !accessEmail) return;
-    const email = accessEmail;
-    const handleOnline = async () => {
-      try {
-        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-        const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
-        const res = await fetch(url, { credentials: "include" });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.hasAccess) {
-          saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
-          setBackgroundCheckWarning(false);
-        }
-      } catch {
-      }
-    };
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
-  }, [backgroundCheckWarning, slug, accessEmail, emailLinkVerified]);
+    window.addEventListener("online", retryBackgroundCheck);
+    return () => window.removeEventListener("online", retryBackgroundCheck);
+  }, [backgroundCheckWarning, slug, accessEmail, retryBackgroundCheck]);
 
   async function runAccessCheck(email: string, token?: string) {
     if (!email) return;
@@ -496,6 +498,13 @@ export default function KitWelcomePage() {
             <span className="flex-1 leading-snug">
               Couldn't verify your access — check your connection. Your cached access is still active.
             </span>
+            <button
+              type="button"
+              onClick={retryBackgroundCheck}
+              className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity"
+            >
+              Try again
+            </button>
             <button
               type="button"
               aria-label="Dismiss"
