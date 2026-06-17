@@ -754,16 +754,20 @@ function ContinueLearningWidget() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                {ordered.map(({ entry, track }, i) => (
-                  <motion.div
-                    key={track.slug}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: i * 0.07 }}
-                  >
-                    <ContinueLearningRow entry={entry} track={track} />
-                  </motion.div>
-                ))}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {ordered.map(({ entry, track }, i) => (
+                    <motion.div
+                      key={track.slug}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.22, ease: "easeIn" } }}
+                      transition={{ duration: 0.35, delay: i * 0.07, layout: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } }}
+                    >
+                      <ContinueLearningRow entry={entry} track={track} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
