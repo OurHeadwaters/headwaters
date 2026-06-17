@@ -510,6 +510,13 @@ router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
   const email = (req.query.email as string) ?? null;
   const token = (req.query.token as string) ?? null;
 
+  // Per-email rate limit: even if the caller rotates IPs, each individual
+  // address is limited to RATE_LIMIT_MAX token checks per RATE_LIMIT_WINDOW_MS.
+  if (email && !checkRateLimit(email.toLowerCase())) {
+    res.status(429).json({ error: "Too many requests for this email address. Please try again later." });
+    return;
+  }
+
   // Unauthenticated callers with no email at all: deny immediately.
   if (!userId && !email) {
     res.json({ hasAccess: false, isAuthenticated: false });
