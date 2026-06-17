@@ -20,6 +20,49 @@ import { sendKitInquiryNotification, sendKitAccessEmail, generateKitAccessToken,
 
 const router: IRouter = Router();
 
+/* ─────────────────── In-memory rate limiter ─────────────────── */
+
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+/** timestamps of recent requests keyed by lowercase email */
+const accessEmailRateLimitStore = new Map<string, number[]>();
+
+/**
+ * Returns true when the caller is within the allowed rate, false when they've
+ * exceeded it.  Prunes stale timestamps on every call; expired keys are swept
+ * by the background interval to keep Map cardinality bounded.
+ */
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const timestamps = (accessEmailRateLimitStore.get(email) ?? []).filter(
+    (ts) => ts > cutoff,
+  );
+  if (timestamps.length >= RATE_LIMIT_MAX) {
+    // Keep the pruned list so the next check sees the accurate count.
+    accessEmailRateLimitStore.set(email, timestamps);
+    return false;
+  }
+  timestamps.push(now);
+  accessEmailRateLimitStore.set(email, timestamps);
+  return true;
+}
+
+/** Evict entries whose window has fully expired to bound Map memory. */
+function evictExpiredRateLimitEntries(): void {
+  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS;
+  for (const [key, timestamps] of accessEmailRateLimitStore) {
+    if (timestamps.every((ts) => ts <= cutoff)) {
+      accessEmailRateLimitStore.delete(key);
+    }
+  }
+}
+
+// Sweep expired entries every 15 minutes so memory stays bounded even under
+// high-cardinality random-email traffic from bots.
+setInterval(evictExpiredRateLimitEntries, RATE_LIMIT_WINDOW_MS).unref();
+
 /* ─────────────────── Helpers ─────────────────── */
 
 function esc(s: string): string {
@@ -119,6 +162,13 @@ router.post("/kits/send-access-email", async (req, res) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     res.status(400).json({ error: "Invalid email address" });
+    return;
+  }
+
+  if (!checkRateLimit(email)) {
+    res.status(429).json({
+      error: "Too many requests. Please wait 15 minutes before requesting another access email.",
+    });
     return;
   }
 
