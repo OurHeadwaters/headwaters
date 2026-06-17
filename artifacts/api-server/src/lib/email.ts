@@ -522,7 +522,7 @@ export function verifyKitAccessToken(
   }
 }
 
-function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
+export function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
   const displayName = opts.buyerName ?? "there";
   const siteUrl = getSiteUrl();
 
