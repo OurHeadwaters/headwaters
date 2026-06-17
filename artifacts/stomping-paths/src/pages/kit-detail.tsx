@@ -537,18 +537,19 @@ function UnauthenticatedAccessGate({
   kit,
   meta,
   displayName,
+  onEmailVerified,
   children,
 }: {
   kit: NonNullable<ReturnType<typeof useKitDetail>["data"]>;
   meta: { icon: string; color: string };
   displayName: string;
+  onEmailVerified: (email: string) => void;
   children: React.ReactNode;
 }) {
   const loginUrl = apiUrl(`/login?returnTo=${encodeURIComponent(window.location.pathname)}`);
   const [email, setEmail] = useState("");
   const [checking, setChecking] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [emailGranted, setEmailGranted] = useState(false);
 
   async function handleEmailCheck(e: React.FormEvent) {
     e.preventDefault();
@@ -559,7 +560,7 @@ function UnauthenticatedAccessGate({
       const res = await fetch(apiUrl(`/kits/${kit.slug}/access?email=${encodeURIComponent(email.trim())}`));
       const data = await res.json();
       if (data.hasAccess) {
-        setEmailGranted(true);
+        onEmailVerified(email.trim());
       } else {
         setEmailError("No purchase found for that email. Check the address or purchase below.");
       }
@@ -568,11 +569,6 @@ function UnauthenticatedAccessGate({
     } finally {
       setChecking(false);
     }
-  }
-
-  // Email verified — render gated content directly without page reload
-  if (emailGranted) {
-    return <>{children}</>;
   }
 
   return (
@@ -684,6 +680,7 @@ function KitAccessGate({
   kit,
   meta,
   displayName,
+  onEmailVerified,
   children,
 }: {
   hasAccess: boolean;
@@ -692,6 +689,7 @@ function KitAccessGate({
   kit: NonNullable<ReturnType<typeof useKitDetail>["data"]>;
   meta: { icon: string; color: string };
   displayName: string;
+  onEmailVerified: (email: string) => void;
   children: React.ReactNode;
 }) {
   const [cardLoading, setCardLoading] = useState(false);
@@ -716,7 +714,7 @@ function KitAccessGate({
 
   if (!isAuthenticated) {
     return (
-      <UnauthenticatedAccessGate kit={kit} meta={meta} displayName={displayName}>
+      <UnauthenticatedAccessGate kit={kit} meta={meta} displayName={displayName} onEmailVerified={onEmailVerified}>
         {children}
       </UnauthenticatedAccessGate>
     );
@@ -843,7 +841,28 @@ export default function KitDetailPage() {
   const [, params] = useRoute("/kits/:slug");
   const slug = params?.slug ?? "";
   const { data: kit, isLoading, isError } = useKitDetail(slug);
-  const { data: accessData, isLoading: accessLoading } = useKitAccess(slug);
+  const [storedEmail, setStoredEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!slug) return;
+    try {
+      const saved = localStorage.getItem(`kit_access_${slug}`);
+      setStoredEmail(saved ?? null);
+    } catch {
+      setStoredEmail(null);
+    }
+  }, [slug]);
+
+  function handleEmailVerified(email: string) {
+    try {
+      localStorage.setItem(`kit_access_${slug}`, email);
+    } catch {
+      // ignore
+    }
+    setStoredEmail(email);
+  }
+
+  const { data: accessData, isLoading: accessLoading } = useKitAccess(slug, storedEmail);
   const [edition, setEdition] = useState<"general" | "homeschool">("general");
   const [shareOpen, setShareOpen] = useState(false);
   const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
@@ -1436,6 +1455,7 @@ export default function KitDetailPage() {
             kit={kit}
             meta={meta}
             displayName={displayName}
+            onEmailVerified={handleEmailVerified}
           >
           <section>
             <h2 className="font-serif text-xl font-bold text-foreground mb-1">
@@ -1820,6 +1840,7 @@ export default function KitDetailPage() {
             kit={kit}
             meta={meta}
             displayName={displayName}
+            onEmailVerified={handleEmailVerified}
           >
           <section>
             <div className="flex items-center gap-2 mb-1">
@@ -1934,6 +1955,7 @@ export default function KitDetailPage() {
             kit={kit}
             meta={meta}
             displayName={displayName}
+            onEmailVerified={handleEmailVerified}
           >
           <section>
             <h2 className="font-serif text-xl font-bold text-foreground mb-4">

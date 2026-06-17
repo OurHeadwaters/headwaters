@@ -81,11 +81,14 @@ export function useKitDetail(slug: string) {
   });
 }
 
-export function useKitAccess(slug: string) {
+export function useKitAccess(slug: string, email?: string | null) {
   return useQuery<{ hasAccess: boolean; isAuthenticated: boolean }>({
-    queryKey: ["kit-access", slug],
+    queryKey: ["kit-access", slug, email ?? ""],
     queryFn: async () => {
-      const res = await fetch(apiUrl(`/kits/${slug}/access`));
+      const path = email
+        ? `/kits/${slug}/access?email=${encodeURIComponent(email)}`
+        : `/kits/${slug}/access`;
+      const res = await fetch(apiUrl(path));
       if (!res.ok) throw new Error("Failed to check access");
       return res.json();
     },
