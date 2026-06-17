@@ -96,6 +96,20 @@ function saveStoredAccess(kitSlug: string, email: string, elv: boolean) {
   }
 }
 
+function getSessionDaysRemaining(kitSlug: string): number | null {
+  try {
+    const raw = localStorage.getItem(storageKey(kitSlug));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt?: number };
+    if (!parsed.savedAt) return null;
+    const msRemaining = STORAGE_TTL_MS - (Date.now() - parsed.savedAt);
+    if (msRemaining <= 0) return null;
+    return Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
+  } catch {
+    return null;
+  }
+}
+
 function clearStoredAccess(kitSlug: string) {
   try {
     localStorage.removeItem(storageKey(kitSlug));
@@ -128,6 +142,10 @@ export default function KitWelcomePage() {
     if (!slug) return "idle";
     const stored = loadStoredAccess(slug);
     return stored ? "found" : "idle";
+  });
+  const [sessionDaysRemaining, setSessionDaysRemaining] = useState<number | null>(() => {
+    if (!slug) return null;
+    return getSessionDaysRemaining(slug);
   });
   const [sessionExpired, setSessionExpired] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
@@ -193,6 +211,7 @@ export default function KitWelcomePage() {
   useEffect(() => {
     if (accessStatus === "found" && slug && accessEmail) {
       saveStoredAccess(slug, accessEmail, emailLinkVerified);
+      setSessionDaysRemaining(getSessionDaysRemaining(slug));
     }
   }, [accessStatus, slug, accessEmail, emailLinkVerified]);
 
@@ -278,6 +297,7 @@ export default function KitWelcomePage() {
       const data = await res.json();
       if (data.hasAccess) {
         saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
+        setSessionDaysRemaining(getSessionDaysRemaining(slug));
         setBackgroundCheckWarning(false);
       }
     } catch {
@@ -397,6 +417,7 @@ export default function KitWelcomePage() {
                   setAccessStatus("idle");
                   setAccessEmail("");
                   setEmailLinkVerified(false);
+                  setSessionDaysRemaining(null);
                   window.dispatchEvent(new CustomEvent("kit-session-change", { detail: { slug } }));
                 }}
                 className="text-[11px] font-semibold underline underline-offset-2 opacity-50 hover:opacity-80 transition-opacity"
@@ -407,9 +428,19 @@ export default function KitWelcomePage() {
             )}
           </div>
           {accessStatus === "found" && accessEmail && (
-            <p className="text-xs mb-4 -mt-1" style={{ color: "#8FA883" }}>
+            <p className="text-xs mb-1 -mt-1" style={{ color: "#8FA883" }}>
               Signed in as {accessEmail}
             </p>
+          )}
+          {accessStatus === "found" && sessionDaysRemaining !== null && sessionDaysRemaining <= 2 && (
+            <p className="text-xs mb-4 opacity-60" style={{ color: "#C8A96E" }}>
+              {sessionDaysRemaining <= 1
+                ? "Access expires tomorrow — visit again to auto-renew."
+                : `Access expires in ${sessionDaysRemaining} days — visit again to auto-renew.`}
+            </p>
+          )}
+          {accessStatus === "found" && (sessionDaysRemaining === null || sessionDaysRemaining > 2) && (
+            <div className="mb-4" />
           )}
 
           <div className="flex items-start gap-4 mb-4">
