@@ -434,7 +434,7 @@ export async function fetchFeaturedImageBySlug(slug: string): Promise<string | n
   }
 
   try {
-    const url = `${WP_BASE}/posts?slug=${encodeURIComponent(slug)}&_embed&_fields=id,slug&per_page=1`;
+    const url = `${WP_BASE}/posts?slug=${encodeURIComponent(slug)}&_embed&per_page=1`;
     const { data } = await fetchJson<WPPost[]>(url);
     const post = data[0];
     const imageUrl = post ? extractFeaturedImageUrl(post) : null;

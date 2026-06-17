@@ -19,11 +19,16 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-const BATCH_SIZE = 50;
+const DEFAULT_BATCH_SIZE = 50;
+const MAX_BATCH_SIZE = 500;
 const CONCURRENCY = 4;
 
 router.post("/admin/artwork-backfill", requireEditor, async (req, res) => {
   const dryRun = req.query.dry === "true";
+  const rawBatch = Number(req.query.batchSize ?? DEFAULT_BATCH_SIZE);
+  const BATCH_SIZE = Number.isFinite(rawBatch) && rawBatch > 0
+    ? Math.min(rawBatch, MAX_BATCH_SIZE)
+    : DEFAULT_BATCH_SIZE;
 
   try {
     const rows = await db

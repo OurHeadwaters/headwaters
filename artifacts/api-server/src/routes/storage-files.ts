@@ -211,7 +211,7 @@ router.put("/admin/storage/files/metadata", requireEditor, async (req, res) => {
 /* ── DELETE /api/admin/storage/files/metadata/:key ──────────────────────── */
 
 router.delete("/admin/storage/files/metadata/:key", requireEditor, async (req, res) => {
-  const fileKey = decodeURIComponent(req.params.key);
+  const fileKey = decodeURIComponent(String(req.params.key));
   try {
     await db
       .delete(fileMetadataTable)
