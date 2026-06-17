@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { Resend } from "resend";
 import { logger } from "./logger";
 
@@ -447,9 +448,58 @@ export interface KitWelcomeEmailOptions {
   accessUrl?: string;
 }
 
+/**
+ * Generates a short-lived HMAC token that proves a specific email address
+ * purchased a specific kit.  The token is embedded in the welcome email link
+ * so returning buyers are auto-verified on /kits/:slug/access without having
+ * to type their email.
+ *
+ * Signing key: KIT_ACCESS_SECRET env var, falling back to RESEND_API_KEY.
+ * If neither is set the function returns null and the plain URL is used.
+ */
+export function generateKitAccessToken(kitSlug: string, email: string): string | null {
+  const secret = process.env.KIT_ACCESS_SECRET ?? process.env.RESEND_API_KEY;
+  if (!secret) return null;
+  return crypto
+    .createHmac("sha256", secret)
+    .update(`${kitSlug}:${email.toLowerCase()}`)
+    .digest("hex");
+}
+
+/**
+ * Verifies a kit access token produced by generateKitAccessToken.
+ * Returns true only when the token is cryptographically valid.
+ */
+export function verifyKitAccessToken(
+  kitSlug: string,
+  email: string,
+  token: string,
+): boolean {
+  const secret = process.env.KIT_ACCESS_SECRET ?? process.env.RESEND_API_KEY;
+  if (!secret) return false;
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${kitSlug}:${email.toLowerCase()}`)
+    .digest("hex");
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(token.toLowerCase(), "hex"),
+      Buffer.from(expected, "hex"),
+    );
+  } catch {
+    return false;
+  }
+}
+
 function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
   const displayName = opts.buyerName ?? "there";
-  const welcomeUrl = opts.accessUrl ?? `https://www.thesurvivalpodcast.com/kits/${opts.kitSlug}/welcome`;
+  const baseWelcomeUrl =
+    opts.accessUrl ?? `https://www.thesurvivalpodcast.com/kits/${opts.kitSlug}/welcome`;
+
+  const token = generateKitAccessToken(opts.kitSlug, opts.buyerEmail);
+  const welcomeUrl = token
+    ? `${baseWelcomeUrl}?email=${encodeURIComponent(opts.buyerEmail)}&token=${token}`
+    : baseWelcomeUrl;
 
   const manualSection = opts.userManual
     ? `

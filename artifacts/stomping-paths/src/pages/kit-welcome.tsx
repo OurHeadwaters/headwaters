@@ -75,6 +75,7 @@ export default function KitWelcomePage() {
 
   const [sessionVerified, setSessionVerified] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [emailLinkVerified, setEmailLinkVerified] = useState(false);
 
   const [accessEmail, setAccessEmail] = useState("");
   const [accessStatus, setAccessStatus] = useState<"idle" | "loading" | "found" | "notFound" | "error">("idle");
@@ -102,6 +103,12 @@ export default function KitWelcomePage() {
     if (params.get("payment")) {
       setPaymentMethod(params.get("payment"));
     }
+    const emailParam = params.get("email");
+    const tokenParam = params.get("token");
+    if (emailParam && tokenParam) {
+      setAccessEmail(emailParam);
+      runAccessCheck(emailParam, tokenParam);
+    }
   }, [location]);
 
   useEffect(() => {
@@ -128,16 +135,22 @@ export default function KitWelcomePage() {
     };
   }, [accessStatus]);
 
-  async function runAccessCheck(email: string) {
+  async function runAccessCheck(email: string, token?: string) {
     if (!email) return;
     setAccessStatus("loading");
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
+      let url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
+      if (token) url += `&token=${encodeURIComponent(token)}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Server error");
       const data = await res.json();
-      setAccessStatus(data.hasAccess ? "found" : "notFound");
+      if (data.hasAccess) {
+        setAccessStatus("found");
+        if (data.tokenVerified) setEmailLinkVerified(true);
+      } else {
+        setAccessStatus("notFound");
+      }
     } catch {
       setAccessStatus("error");
     }
@@ -192,16 +205,31 @@ export default function KitWelcomePage() {
             Back to Kit
           </Link>
 
-          <div
-            className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest mb-4 px-3 py-1.5 rounded-full"
-            style={{
-              color: meta.color,
-              background: meta.color + "18",
-              border: `1px solid ${meta.color}33`,
-            }}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Access Confirmed</span>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div
+              className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+              style={{
+                color: meta.color,
+                background: meta.color + "18",
+                border: `1px solid ${meta.color}33`,
+              }}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Access Confirmed</span>
+            </div>
+            {emailLinkVerified && (
+              <div
+                className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+                style={{
+                  color: "#6b9e6b",
+                  background: "#2d4a2d18",
+                  border: "1px solid #2d4a2d33",
+                }}
+              >
+                <Mail className="w-3 h-3" />
+                <span>Verified via email</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-start gap-4 mb-4">

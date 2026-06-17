@@ -15,7 +15,7 @@ import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
 import { trackBySlug } from "../lib/tracks";
-import { sendKitInquiryNotification } from "../lib/email";
+import { sendKitInquiryNotification, verifyKitAccessToken } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -343,9 +343,18 @@ router.get("/kits/:slug/access", async (req, res) => {
   const userId = (req as any).user?.id ?? null;
   const isAuthenticated = userId !== null;
   const email = (req.query.email as string) ?? null;
+  const token = (req.query.token as string) ?? null;
 
   if (!userId && !email) {
     res.json({ hasAccess: false, isAuthenticated: false });
+    return;
+  }
+
+  // Fast-path: if a valid HMAC token is supplied with the email, trust it
+  // without a DB round-trip. Tokens are only generated server-side after a
+  // purchase is recorded, so a valid token proves purchase happened.
+  if (email && token && verifyKitAccessToken(kit.slug, email, token)) {
+    res.json({ hasAccess: true, isAuthenticated, tokenVerified: true });
     return;
   }
 
