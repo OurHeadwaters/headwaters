@@ -16,8 +16,15 @@ import { logger } from "../lib/logger";
  *
  * @param maxRequests - Maximum requests allowed per window
  * @param windowMs    - Window duration in milliseconds
+ * @param keyPrefix   - Optional prefix scoping the counter (e.g. a route name).
+ *                      Key stored in DB is `${ip}:${keyPrefix}` when provided,
+ *                      otherwise plain `${ip}`.
  */
-export function createRateLimiter(maxRequests: number, windowMs: number) {
+export function createRateLimiter(
+  maxRequests: number,
+  windowMs: number,
+  keyPrefix?: string,
+) {
   // Periodically prune expired rows so the table stays tidy.
   const pruneInterval = setInterval(async () => {
     try {
@@ -40,6 +47,8 @@ export function createRateLimiter(maxRequests: number, windowMs: number) {
       req.socket.remoteAddress ??
       "unknown";
 
+    const key = keyPrefix ? `${ip}:${keyPrefix}` : ip;
+
     try {
       // Single atomic UPSERT: insert a new window or increment/reset existing.
       // The CASE expressions handle window expiry without a separate SELECT.
@@ -57,7 +66,7 @@ export function createRateLimiter(maxRequests: number, windowMs: number) {
                        ELSE rate_limits.reset_at
                      END
          RETURNING count, reset_at`,
-        [ip, windowMs],
+        [key, windowMs],
       );
 
       const row = result.rows[0];
@@ -80,4 +89,25 @@ export function createRateLimiter(maxRequests: number, windowMs: number) {
 
     next();
   };
+}
+
+/**
+ * Convenience wrapper around `createRateLimiter` for per-route limits.
+ *
+ * The DB key is scoped as `${ip}:${routeKey}` so each route gets its own
+ * independent counter that does not consume from the global IP budget.
+ *
+ * @example
+ *   router.post("/codetry/assess", createRouteLimiter("codetry-assess", 10, 60_000), handler);
+ *
+ * @param routeKey    - Short identifier for the route (e.g. "codetry-assess")
+ * @param maxRequests - Maximum requests allowed per window
+ * @param windowMs    - Window duration in milliseconds
+ */
+export function createRouteLimiter(
+  routeKey: string,
+  maxRequests: number,
+  windowMs: number,
+) {
+  return createRateLimiter(maxRequests, windowMs, routeKey);
 }

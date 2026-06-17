@@ -1,23 +1,11 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { logger } from "../lib/logger";
+import { createRouteLimiter } from "../middlewares/rateLimiter";
 
 const router: IRouter = Router();
 
-const ipHits = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60_000;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = ipHits.get(ip);
-  if (!entry || now > entry.resetAt) {
-    ipHits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= RATE_LIMIT) return true;
-  entry.count++;
-  return false;
-}
+// 10 requests per minute — DB-backed so the counter survives restarts.
+const assessRateLimit = createRouteLimiter("codetry-assess", 10, 60_000);
 
 const CODETRY_ZONE_DEFINITIONS = `
 Stage 1 — Dependent: Fully reliant on SaaS platforms and third-party tools your community doesn't own. Data lives elsewhere. No internal technical capacity.
@@ -61,14 +49,7 @@ Response format (strict JSON):
   "rationale": "2–3 sentence plain-language explanation"
 }`;
 
-router.post("/codetry/assess", async (req: Request, res: Response) => {
-  const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? req.socket.remoteAddress ?? "unknown";
-
-  if (isRateLimited(ip)) {
-    res.status(429).json({ error: "Too many requests — please wait a moment and try again." });
-    return;
-  }
-
+router.post("/codetry/assess", assessRateLimit, async (req: Request, res: Response) => {
   const { answers } = req.body as { answers: Record<string, string> };
   if (!answers || typeof answers !== "object" || Object.keys(answers).length === 0) {
     res.status(400).json({ error: "answers object is required" });
