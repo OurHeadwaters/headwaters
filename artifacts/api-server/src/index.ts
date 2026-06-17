@@ -10,6 +10,7 @@ import { seedStompingPathHandles } from "./lib/seed-stomping-path";
 import { startNostrIngestion } from "./lib/nostr-ingestion";
 import { startYouTubeIngestion } from "./lib/youtube-ingestion";
 import { startXrpRateRefresh } from "./lib/xrp-rate";
+import { getSiteUrl } from "./lib/config";
 
 const rawPort = process.env["PORT"];
 
@@ -40,27 +41,30 @@ async function initStripe(): Promise<void> {
 
     const stripeSync = await getStripeSync();
 
-    const deployedDomain = (process.env.REPLIT_DOMAINS ?? "").split(",")[0];
-    const webhookBase = `https://${deployedDomain}`;
-    const expectedWebhookUrl = `${webhookBase}/api/stripe/webhook`;
+    // Use the canonical site URL so the webhook always points at the real
+    // production domain (thestompingpaths.com), not the ephemeral Replit domain.
+    const siteUrl = getSiteUrl();
+    const expectedWebhookUrl = `${siteUrl}/api/stripe/webhook`;
 
-    await stripeSync.findOrCreateManagedWebhook(expectedWebhookUrl);
+    const webhook = await stripeSync.findOrCreateManagedWebhook(expectedWebhookUrl);
 
-    // Verify the registered webhook URL matches the deployed domain.
-    // If REPLIT_DOMAINS is empty (dev environment), this logs a warning so
-    // it is visible that webhook registration cannot be confirmed locally.
-    if (!deployedDomain) {
+    // When a new webhook endpoint is first created, Stripe returns the signing
+    // secret in the response (whsec_…). It is never returned again after this
+    // point, so log a clear prompt for the operator to save it.
+    if (webhook.secret) {
       logger.warn(
-        { expectedWebhookUrl },
-        "stripe: REPLIT_DOMAINS not set — webhook URL could not be verified against deployed domain. " +
-          "This is expected in development; confirm the webhook URL in the Stripe dashboard after deploying.",
-      );
-    } else {
-      logger.info(
-        { webhookUrl: expectedWebhookUrl, deployedDomain },
-        "stripe: managed webhook configured — webhook URL matches deployed domain",
+        { webhookUrl: expectedWebhookUrl, webhookId: webhook.id },
+        "stripe: managed webhook CREATED — a new signing secret (whsec_…) was issued. " +
+          "Save it to the Stripe integration's webhook_secret field to enable signature " +
+          "verification. Find it in the Stripe Dashboard → Developers → Webhooks → " +
+          "select the endpoint → Signing secret.",
       );
     }
+
+    logger.info(
+      { webhookUrl: expectedWebhookUrl },
+      "stripe: managed webhook configured",
+    );
 
     // syncBackfill is async and intentionally fire-and-forget
     stripeSync.syncBackfill().catch((err) =>
