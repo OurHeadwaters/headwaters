@@ -1252,11 +1252,14 @@ async function submitMiniTip(data: { amountUnits: number; wishText: string; list
 
 const WW_TOSSED_KEY = "tsp-ww-tossed-v1";
 
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 function getWwTossed(): boolean {
-  try { return sessionStorage.getItem(WW_TOSSED_KEY) === "1"; } catch { return false; }
+  try { return sessionStorage.getItem(WW_TOSSED_KEY) === todayUtc(); } catch { return false; }
 }
 function setWwTossed() {
-  try { sessionStorage.setItem(WW_TOSSED_KEY, "1"); } catch { /* ignore */ }
+  try { sessionStorage.setItem(WW_TOSSED_KEY, todayUtc()); } catch { /* ignore */ }
 }
 function clearWwTossed() {
   try { sessionStorage.removeItem(WW_TOSSED_KEY); } catch { /* ignore */ }
