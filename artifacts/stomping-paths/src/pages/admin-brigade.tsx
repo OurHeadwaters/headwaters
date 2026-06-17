@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Shield, TrendingUp, Users, RefreshCw, AlertTriangle, TrendingDown } from "lucide-react";
+import { Shield, TrendingUp, Users, RefreshCw, AlertTriangle, TrendingDown, Lock } from "lucide-react";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -46,7 +46,64 @@ function StatCard({
   );
 }
 
+/* ─────────────── Auth gate ─────────────── */
+interface AuthUserResponse {
+  user: { id: string; email: string | null; firstName: string | null; lastName: string | null } | null;
+}
+
+async function fetchAuthUser(): Promise<AuthUserResponse> {
+  const res = await fetch(apiUrl("/auth/user"));
+  if (!res.ok) return { user: null };
+  return res.json();
+}
+
+function AdminLoginWall({ returnTo }: { returnTo: string }) {
+  const loginUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/login?returnTo=${encodeURIComponent(returnTo)}`;
+  return (
+    <div className="container mx-auto px-4 md:px-6 py-24 max-w-md text-center">
+      <div className="flex justify-center mb-6">
+        <div className="p-4 rounded-full bg-muted">
+          <Lock className="w-8 h-8 text-muted-foreground" />
+        </div>
+      </div>
+      <h1 className="font-serif text-2xl font-bold text-foreground mb-3">Admin access required</h1>
+      <p className="text-muted-foreground mb-8">
+        Sign in to access this admin page.
+      </p>
+      <a
+        href={loginUrl}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+      >
+        Sign in to continue
+      </a>
+    </div>
+  );
+}
+
 export function AdminBrigade() {
+  const { data: auth, isLoading: authLoading } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: fetchAuthUser,
+    staleTime: 60_000,
+  });
+
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-12 max-w-4xl">
+        <div className="h-10 w-48 bg-muted animate-pulse rounded mb-4" />
+        <div className="h-4 w-96 bg-muted animate-pulse rounded" />
+      </div>
+    );
+  }
+
+  if (!auth?.user) {
+    return <AdminLoginWall returnTo="/admin/brigade" />;
+  }
+
+  return <AdminBrigadeContent />;
+}
+
+function AdminBrigadeContent() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-brigade-stats"],
     queryFn: fetchStats,

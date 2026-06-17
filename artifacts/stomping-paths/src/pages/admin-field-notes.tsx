@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Loader2, Mic, Radio, Tag, Clock, ChevronDown, ChevronUp, AlertCircle, Lock, Youtube, X, Plus, Flame, CheckCircle2, XCircle } from "lucide-react";
-import { useAuth } from "@workspace/replit-auth-web";
+
 import { format } from "date-fns";
 
 type FieldNote = {
@@ -34,6 +34,10 @@ type SyncStatus = {
 };
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function apiUrl(path: string): string {
+  return `${base}/api${path}`;
+}
 
 const ZONE_SLUGS = [
   { slug: "zone-0", label: "Zone 0 — The Self" },
@@ -310,8 +314,64 @@ function RelayHealthRow({ relay }: { relay: RelayHealth }) {
   );
 }
 
+/* ─────────────── Auth gate ─────────────── */
+interface AuthUserResponse {
+  user: { id: string; email: string | null; firstName: string | null; lastName: string | null } | null;
+}
+
+async function fetchAuthUser(): Promise<AuthUserResponse> {
+  const res = await fetch(apiUrl("/auth/user"));
+  if (!res.ok) return { user: null };
+  return res.json();
+}
+
+function AdminLoginWall({ returnTo }: { returnTo: string }) {
+  const loginUrl = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/login?returnTo=${encodeURIComponent(returnTo)}`;
+  return (
+    <div className="container mx-auto px-4 md:px-6 py-24 max-w-md text-center">
+      <div className="flex justify-center mb-6">
+        <div className="p-4 rounded-full bg-muted">
+          <Lock className="w-8 h-8 text-muted-foreground" />
+        </div>
+      </div>
+      <h1 className="font-serif text-2xl font-bold text-foreground mb-3">Admin access required</h1>
+      <p className="text-muted-foreground mb-8">
+        Sign in to access this admin page.
+      </p>
+      <a
+        href={loginUrl}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+      >
+        Sign in to continue
+      </a>
+    </div>
+  );
+}
+
 export function AdminFieldNotes() {
-  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { data: auth, isLoading: authLoading } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: fetchAuthUser,
+    staleTime: 60_000,
+  });
+
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-12 max-w-4xl">
+        <div className="h-10 w-48 bg-muted animate-pulse rounded mb-4" />
+        <div className="h-4 w-96 bg-muted animate-pulse rounded" />
+      </div>
+    );
+  }
+
+  if (!auth?.user) {
+    return <AdminLoginWall returnTo="/admin/field-notes" />;
+  }
+
+  return <AdminFieldNotesContent />;
+}
+
+function AdminFieldNotesContent() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -321,14 +381,12 @@ export function AdminFieldNotes() {
     queryKey: ["admin-field-notes"],
     queryFn: fetchNotes,
     staleTime: 30_000,
-    enabled: isAuthenticated,
   });
 
   const { data: syncStatus } = useQuery<SyncStatus>({
     queryKey: ["admin-sync-status"],
     queryFn: fetchSyncStatus,
     staleTime: 60_000,
-    enabled: isAuthenticated,
   });
 
   const mutation = useMutation({
@@ -381,38 +439,6 @@ export function AdminFieldNotes() {
   const relayHealth = syncStatus?.relayHealth ?? [];
   const failingRelays = relayHealth.filter((r) => r.status === "error");
   const hasRelayErrors = failingRelays.length > 0;
-
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-24 max-w-md text-center flex flex-col items-center gap-6">
-        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-          <Lock className="w-6 h-6 text-muted-foreground" />
-        </div>
-        <div>
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Login required
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            This page is only accessible to editors. Please log in to continue.
-          </p>
-        </div>
-        <button
-          onClick={login}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          Log in
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-10 max-w-4xl">
