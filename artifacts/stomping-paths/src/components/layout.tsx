@@ -51,6 +51,7 @@ const adminItems = [
   { href: "/admin/content-gaps", label: "Content Gaps", desc: "Identify content gaps" },
   { href: "/admin/gear", label: "Gear Catalog", desc: "Manage the gear catalog" },
   { href: "/admin/wisdom", label: "Wisdom Scraper", desc: "Scrape and manage wisdom entries" },
+  { href: "/admin/media-library", label: "Media Library", desc: "Upload PDFs and videos to the resource library" },
 ];
 
 function DropdownMenu({

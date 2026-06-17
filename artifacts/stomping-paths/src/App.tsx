@@ -67,6 +67,7 @@ import PractitionersPage from "@/pages/practitioners";
 import { SuggestCreatorPage } from "@/pages/suggest-creator";
 import ResourcesPage from "@/pages/resources";
 import { AdminFiles } from "@/pages/admin-files";
+import { AdminMediaLibrary } from "@/pages/admin-media-library";
 
 const queryClient = new QueryClient();
 
@@ -148,6 +149,7 @@ function Router() {
         <Route path="/practitioners" component={PractitionersPage} />
         <Route path="/suggest-creator" component={SuggestCreatorPage} />
         <Route path="/resources" component={ResourcesPage} />
+        <Route path="/admin/media-library" component={AdminMediaLibrary} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

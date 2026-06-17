@@ -1,8 +1,9 @@
 /**
- * Storage files route — file listing from Arc object storage with DB metadata.
+ * Storage files route — file listing and admin upload for Arc object storage with DB metadata.
  *
- * GET  /api/storage/files          — list all uploaded files with metadata (public)
- * GET  /api/storage/files/:key     — stream a single file (public)
+ * GET  /api/storage/files                    — list all uploaded files with metadata (public)
+ * POST /api/storage/uploads/request-url      — request a presigned upload URL (admin only)
+ * GET  /api/storage/files/:key               — stream a single file (public)
  * PUT  /api/admin/storage/files/metadata
  *   Body: { fileKey, title?, description?, category?, tags? }
  *   Upserts metadata for a file. Requires editor auth.
@@ -10,14 +11,48 @@
 
 import { Router, type IRouter } from "express";
 import { objectStorageClient } from "../lib/objectStorage";
+import { requireEditor } from "../middlewares/requireEditor";
 import { logger } from "../lib/logger";
 import { db, fileMetadataTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
 
 const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID ?? "";
+const REPLIT_SIDECAR = "http://127.0.0.1:1106";
+
+async function generatePresignedUploadURL(
+  filename: string,
+  contentType: string
+): Promise<{ uploadURL: string; key: string }> {
+  const sanitized = filename
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .replace(/^\.+/, "");
+  const key = `media/${sanitized || "upload"}`;
+
+  const resp = await fetch(
+    `${REPLIT_SIDECAR}/object-storage/signed-object-url`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bucket_name: bucketId,
+        object_name: key,
+        method: "PUT",
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      }),
+      signal: AbortSignal.timeout(30_000),
+    }
+  );
+
+  if (!resp.ok) {
+    throw new Error(`Sidecar returned ${resp.status} generating presigned URL`);
+  }
+
+  const body = (await resp.json()) as { signed_url: string };
+  return { uploadURL: body.signed_url, key };
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -32,6 +67,49 @@ function inferFileType(name: string): "pdf" | "video" | "image" | "other" {
   if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) return "image";
   return "other";
 }
+
+/* ── POST /api/storage/uploads/request-url ──────────────────────────────── */
+
+/**
+ * Admin-only: request a presigned PUT URL for uploading a file to GCS.
+ * Body: { name: string; size: number; contentType: string }
+ * Returns: { uploadURL: string; key: string }
+ */
+router.post(
+  "/storage/uploads/request-url",
+  requireEditor,
+  async (req, res) => {
+    if (!bucketId) {
+      res.status(503).json({ error: "Object storage not configured" });
+      return;
+    }
+
+    const { name, size, contentType } = req.body ?? {};
+    if (!name || typeof name !== "string") {
+      res.status(400).json({ error: "Missing required field: name" });
+      return;
+    }
+    if (typeof size !== "number" || size < 0) {
+      res.status(400).json({ error: "Missing or invalid field: size" });
+      return;
+    }
+    if (!contentType || typeof contentType !== "string") {
+      res.status(400).json({ error: "Missing required field: contentType" });
+      return;
+    }
+
+    try {
+      const { uploadURL, key } = await generatePresignedUploadURL(
+        name,
+        contentType
+      );
+      res.json({ uploadURL, key, metadata: { name, size, contentType } });
+    } catch (err) {
+      logger.error({ err }, "Failed to generate presigned upload URL");
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  }
+);
 
 /* ── GET /api/storage/files ─────────────────────────────────────────────── */
 
