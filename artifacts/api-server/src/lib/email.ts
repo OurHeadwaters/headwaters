@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { Resend } from "resend";
 import { logger } from "./logger";
+import { getSiteUrl } from "./config";
 
 export interface HostConfirmationOptions {
   hostEmail: string;
@@ -33,6 +34,7 @@ export interface RsvpNotificationOptions {
 }
 
 function buildRsvpEmailHtml(opts: RsvpNotificationOptions): string {
+  const siteUrl = getSiteUrl();
   const displayName = opts.attendeeName ?? opts.attendeeEmail;
   const formattedDate = (() => {
     try {
@@ -111,7 +113,7 @@ function buildRsvpEmailHtml(opts: RsvpNotificationOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Ground Events &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Survival Podcast Ground Events &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
               </p>
             </td>
           </tr>
@@ -132,6 +134,7 @@ export interface ListingApprovalEmailOptions {
 }
 
 function buildListingApprovalHtml(opts: ListingApprovalEmailOptions): string {
+  const siteUrl = getSiteUrl();
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -193,7 +196,7 @@ function buildListingApprovalHtml(opts: ListingApprovalEmailOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Expert Council &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Survival Podcast Expert Council &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
               </p>
             </td>
           </tr>
@@ -207,6 +210,7 @@ function buildListingApprovalHtml(opts: ListingApprovalEmailOptions): string {
 }
 
 function buildHostConfirmationEmailHtml(opts: HostConfirmationOptions): string {
+  const siteUrl = getSiteUrl();
   const formattedDate = (() => {
     try {
       return new Date(opts.eventDate + "T00:00:00").toLocaleDateString("en-US", {
@@ -294,7 +298,7 @@ function buildHostConfirmationEmailHtml(opts: HostConfirmationOptions): string {
               </table>
 
               <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
-                Questions? Reply to this email or reach out at <a href="https://www.thesurvivalpodcast.com" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a>.
+                Questions? Reply to this email or reach out at <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a>.
               </p>
             </td>
           </tr>
@@ -303,7 +307,7 @@ function buildHostConfirmationEmailHtml(opts: HostConfirmationOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Ground Events &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Survival Podcast Ground Events &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
               </p>
             </td>
           </tr>
@@ -493,7 +497,7 @@ export function verifyKitAccessToken(
 
 function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
   const displayName = opts.buyerName ?? "there";
-  const siteUrl = (process.env.SITE_URL ?? "https://www.thesurvivalpodcast.com").replace(/\/$/, "");
+  const siteUrl = getSiteUrl();
   const baseWelcomeUrl =
     opts.accessUrl ?? `${siteUrl}/kits/${opts.kitSlug}/welcome`;
 
@@ -575,7 +579,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
 
               <!-- Secondary CTA: My Kits library -->
               <p style="margin:0 0 28px;font-size:14px;text-align:center;">
-                <a href="https://www.thesurvivalpodcast.com/kits/my-purchases?email=${encodeURIComponent(opts.buyerEmail)}"
+                <a href="${siteUrl}/kits/my-purchases?email=${encodeURIComponent(opts.buyerEmail)}"
                    style="color:#2d4a2d;text-decoration:none;font-family:'Arial',sans-serif;">
                   See all your kits →
                 </a>
@@ -584,7 +588,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
               ${manualSection}
 
               <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
-                Questions? Visit <a href="https://www.thesurvivalpodcast.com" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a> or reply to this email.
+                Questions? Visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a> or reply to this email.
               </p>
             </td>
           </tr>
@@ -593,7 +597,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Kits &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Survival Podcast Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
               </p>
             </td>
           </tr>
@@ -640,6 +644,7 @@ export interface GordTipNotificationOptions {
 }
 
 function buildGordTipNotificationHtml(opts: GordTipNotificationOptions): string {
+  const siteUrl = getSiteUrl();
   const displayName = opts.tipperName ?? opts.tipperEmail ?? "Someone";
   const dollars = (opts.amountCents / 100).toFixed(2);
 
@@ -695,7 +700,7 @@ function buildGordTipNotificationHtml(opts: GordTipNotificationOptions): string 
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast &mdash; <a href="https://www.thesurvivalpodcast.com" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Survival Podcast &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
               </p>
             </td>
           </tr>
@@ -748,7 +753,7 @@ export interface KitAccessEmailOptions {
 }
 
 function buildKitAccessEmailHtml(opts: KitAccessEmailOptions): string {
-  const siteUrl = (process.env.SITE_URL ?? "https://www.thesurvivalpodcast.com").replace(/\/$/, "");
+  const siteUrl = getSiteUrl();
 
   const kitRows = opts.kits
     .map((kit) => {

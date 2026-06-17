@@ -4,6 +4,7 @@ import { eq, sql, and, desc, asc, gte, inArray, isNull, lt, or } from "drizzle-o
 import { randomUUID } from "crypto";
 import { logger } from "../lib/logger";
 import { sendRsvpNotification, sendHostConfirmationEmail } from "../lib/email";
+import { getSiteUrl } from "../lib/config";
 
 const router: IRouter = Router();
 
@@ -329,7 +330,7 @@ router.post("/ground-events", async (req, res) => {
     // This runs after the response-critical DB write so a failed email never
     // blocks the 201 response.  We update the flag in the background.
     if (contactEmail) {
-      const appBaseUrl = (process.env.APP_BASE_URL ?? "https://www.thesurvivalpodcast.com").replace(/\/$/, "");
+      const appBaseUrl = getSiteUrl();
       const dashboardUrl = `${appBaseUrl}/workshops/dashboard?token=${row.hostToken}`;
       sendHostConfirmationEmail({
         hostEmail: contactEmail,
@@ -402,9 +403,7 @@ router.post("/ground-events/resend-confirmation", async (req, res) => {
     resendLastSent.set(email, now);
 
     if (events.length > 0) {
-      const appBaseUrl = (
-        process.env.APP_BASE_URL ?? "https://www.thesurvivalpodcast.com"
-      ).replace(/\/$/, "");
+      const appBaseUrl = getSiteUrl();
 
       // Fire-and-forget: send one confirmation email per event
       for (const event of events) {

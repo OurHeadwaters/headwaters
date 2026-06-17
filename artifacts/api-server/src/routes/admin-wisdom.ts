@@ -5,6 +5,7 @@ import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
 import { scrapeAll, scrapeSource, type ScrapeSourceType } from "../lib/wisdom-scraper";
 import { EXPERT_COUNCIL } from "../lib/expert-council-static";
+import { getSiteUrl } from "../lib/config";
 
 const router: IRouter = Router();
 
@@ -26,7 +27,7 @@ router.get("/admin/wisdom/scrape-status", requireEditor, async (_req, res) => {
 
     const sources = EXPERT_COUNCIL.flatMap((m) => {
       const skipInternalUrl =
-        m.url.startsWith("https://www.thesurvivalpodcast.com") &&
+        m.url.startsWith(getSiteUrl()) &&
         m.id !== "jack-spirko";
 
       const items: {

@@ -3,8 +3,9 @@ import { logger } from "../logger";
 import { fetchAudioChapters, extractChapterHistoryTimestamp, pMap } from "../id3-chapters";
 import { extractHistorySegment } from "../history-detection";
 import type { InsertContentItem } from "@workspace/db";
+import { getSiteUrl } from "../config";
 
-const WP_BASE = "https://www.thesurvivalpodcast.com/wp-json/wp/v2";
+const WP_BASE = `${getSiteUrl()}/wp-json/wp/v2`;
 const FETCH_TIMEOUT_MS = 30_000;
 const PAGE_SIZE = 50;
 const RETRY_ATTEMPTS = 3;

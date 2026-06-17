@@ -11,6 +11,9 @@
  * Three creators were explicitly noted as "not yet seeded" there — they are here now:
  * Nicole Sauce, Doc Bones & Nurse Amy, Michael Pugliano.
  */
+import { getSiteUrl } from "./config";
+
+const S = getSiteUrl();
 
 export type CuratedLink = {
   title: string;
@@ -39,8 +42,8 @@ export const CREATORS: Creator[] = [
     name: "Jack Spirko",
     bio: "Host of The Survival Podcast since 2008. Jack has produced 3,800+ episodes covering permaculture, preparedness, personal finance, entrepreneurship, and individual sovereignty — the full spectrum of self-reliant living. His archive is the backbone of every transformation path on this platform.",
     avatarUrl: "https://ui-avatars.com/api/?name=Jack+Spirko&size=256&background=2d5a3d&color=fdf8f0&bold=true&rounded=true",
-    websiteUrl: "https://www.thesurvivalpodcast.com",
-    podcastUrl: "https://www.thesurvivalpodcast.com/feed/mp3",
+    websiteUrl: S,
+    podcastUrl: `${S}/feed/mp3`,
     status: "live",
     transformationSlugs: [
       "employee-to-owner",
@@ -59,17 +62,17 @@ export const CREATORS: Creator[] = [
     curatedLinks: [
       {
         title: "TSP Episode 3000 — The Big Picture",
-        url: "https://www.thesurvivalpodcast.com/episode-3000",
+        url: `${S}/episode-3000`,
         type: "podcast",
       },
       {
         title: "The 13 Things That Make A Permaculture Design",
-        url: "https://www.thesurvivalpodcast.com/13-things-permaculture-design",
+        url: `${S}/13-things-permaculture-design`,
         type: "podcast",
       },
       {
         title: "Modern Survival Philosophy",
-        url: "https://www.thesurvivalpodcast.com/modern-survival-philosophy",
+        url: `${S}/modern-survival-philosophy`,
         type: "article",
       },
     ],
@@ -123,12 +126,12 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Steven Harris on Solar Power for Everyone",
-        url: "https://www.thesurvivalpodcast.com/steven-harris-solar",
+        url: `${S}/steven-harris-solar`,
         type: "podcast",
       },
       {
         title: "TSP: Emergency Fuel Storage with Steven Harris",
-        url: "https://www.thesurvivalpodcast.com/emergency-fuel-steven-harris",
+        url: `${S}/emergency-fuel-steven-harris`,
         type: "podcast",
       },
     ],
@@ -186,7 +189,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Joel Salatin on Producing Your Way to Sovereignty",
-        url: "https://www.thesurvivalpodcast.com/joel-salatin-sovereignty",
+        url: `${S}/joel-salatin-sovereignty`,
         type: "podcast",
       },
     ],
@@ -215,7 +218,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Marjory Wildcraft on Home Food Production",
-        url: "https://www.thesurvivalpodcast.com/marjory-wildcraft",
+        url: `${S}/marjory-wildcraft`,
         type: "podcast",
       },
     ],
@@ -272,7 +275,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Ben Falk on Designing a Resilient Property",
-        url: "https://www.thesurvivalpodcast.com/ben-falk",
+        url: `${S}/ben-falk`,
         type: "podcast",
       },
     ],
@@ -303,7 +306,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Dr. Ken Berry on Metabolic Health",
-        url: "https://www.thesurvivalpodcast.com/dr-ken-berry",
+        url: `${S}/dr-ken-berry`,
         type: "podcast",
       },
     ],
@@ -332,7 +335,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Doc Bones & Nurse Amy on Off-Grid Medicine",
-        url: "https://www.thesurvivalpodcast.com/doc-bones-nurse-amy",
+        url: `${S}/doc-bones-nurse-amy`,
         type: "podcast",
       },
     ],
@@ -421,7 +424,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Michael Pugliano on Bitcoin and Financial Sovereignty",
-        url: "https://www.thesurvivalpodcast.com/michael-pugliano",
+        url: `${S}/michael-pugliano`,
         type: "podcast",
       },
     ],
@@ -703,7 +706,7 @@ export const CREATORS: Creator[] = [
       },
       {
         title: "TSP: Nicole Sauce on Homesteading and Community",
-        url: "https://www.thesurvivalpodcast.com/nicole-sauce",
+        url: `${S}/nicole-sauce`,
         type: "podcast",
       },
       {

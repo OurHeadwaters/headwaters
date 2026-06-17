@@ -18,6 +18,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { EXPERT_COUNCIL } from "./expert-council-static";
 import { extractGems } from "./wisdom-extraction";
 import { logger } from "./logger";
+import { getSiteUrl } from "./config";
 
 const MAX_GEMS_PER_SOURCE = 10;
 const FETCH_TIMEOUT_MS = 12_000;
@@ -323,7 +324,7 @@ export async function scrapeAll(): Promise<ScrapeResult[]> {
   for (const member of EXPERT_COUNCIL) {
     const skipTsp = member.id === "nicholas-de-hart" || member.id === "chuck-taylor";
     const skipInternalUrl =
-      !skipTsp && member.url.startsWith("https://www.thesurvivalpodcast.com");
+      !skipTsp && member.url.startsWith(getSiteUrl());
 
     if (!skipInternalUrl) {
       try {

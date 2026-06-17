@@ -3,6 +3,7 @@
  * Each entry is tagged with one or more zone slugs.
  * Update this file to add/edit entries — no component code changes needed.
  */
+import { getSiteUrl } from "./config";
 
 export type ExpertCouncilMember = {
   id: string;
@@ -121,7 +122,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     role: "Host — The Survival Podcast",
     description:
       "Jack Spirko has been teaching modern survivalism since 2008 — practical self-reliance, permaculture, financial independence, and building a life so good it's worth protecting.",
-    url: "https://www.thesurvivalpodcast.com",
+    url: getSiteUrl(),
     xHandle: "JackSpirok",
     zones: ["zone-0", "zone-1", "zone-2", "zone-3", "zone-4", "zone-5"],
   },

@@ -4,6 +4,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
 import { sendHostConfirmationEmail } from "../lib/email";
+import { getSiteUrl } from "../lib/config";
 
 const router: IRouter = Router();
 
@@ -310,7 +311,7 @@ router.post("/admin/ground-events/:id/resend-confirmation", requireEditor, async
       return;
     }
 
-    const appBaseUrl = process.env.APP_BASE_URL ?? "https://www.thesurvivalpodcast.com";
+    const appBaseUrl = getSiteUrl();
     const dashboardUrl = `${appBaseUrl}/workshops/dashboard?token=${event.hostToken}`;
 
     const sent = await sendHostConfirmationEmail({

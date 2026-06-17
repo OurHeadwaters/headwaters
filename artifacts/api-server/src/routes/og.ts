@@ -5,6 +5,7 @@ import { db, contentItemsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { libraryRowToRssEpisode } from "../lib/series";
 import { logger } from "../lib/logger";
+import { getSiteUrl } from "../lib/config";
 
 const router: IRouter = Router();
 
@@ -57,7 +58,7 @@ function buildOgHtml(opts: {
 
 function canonicalPageUrl(req: { headers: Record<string, string | string[] | undefined>; hostname?: string }, path: string): string {
   const proto = (req.headers["x-forwarded-proto"] as string | undefined) ?? "https";
-  const host = (req.headers["x-forwarded-host"] as string | undefined) ?? req.hostname ?? "www.thesurvivalpodcast.com";
+  const host = (req.headers["x-forwarded-host"] as string | undefined) ?? req.hostname ?? new URL(getSiteUrl()).hostname;
   return `${proto}://${host}${path}`;
 }
 

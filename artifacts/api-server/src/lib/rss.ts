@@ -2,8 +2,9 @@ import { XMLParser } from "fast-xml-parser";
 import { logger } from "./logger";
 import { fetchFeaturedImageBySlug } from "./sources/wordpress";
 import { pMap } from "./id3-chapters";
+import { getSiteUrl } from "./config";
 
-const FEED_URL = "https://www.thesurvivalpodcast.com/feed/podcast";
+const FEED_URL = `${getSiteUrl()}/feed/podcast`;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 15_000;
 
