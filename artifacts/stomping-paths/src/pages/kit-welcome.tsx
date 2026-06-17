@@ -537,15 +537,21 @@ export default function KitWelcomePage() {
                 ? "Reconnected — verifying your access…"
                 : "Couldn't verify your access — check your connection. Your cached access is still active."}
             </span>
-            {!backgroundRecheckInFlight && (
-              <button
-                type="button"
-                onClick={retryBackgroundCheck}
-                className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity"
-              >
-                Try again
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={retryBackgroundCheck}
+              disabled={backgroundRecheckInFlight}
+              className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1"
+            >
+              {backgroundRecheckInFlight ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Checking…
+                </>
+              ) : (
+                "Try again"
+              )}
+            </button>
             {!backgroundRecheckInFlight && (
               <button
                 type="button"
