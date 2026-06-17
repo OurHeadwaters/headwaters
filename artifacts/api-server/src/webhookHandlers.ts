@@ -75,12 +75,31 @@ export class WebhookHandlers {
       try {
         event = await verifyAndParseWebhookEvent(payload, signature);
       } catch (verifyErr) {
-        // No independent webhook secret configured; parse raw payload.
-        // stripe-replit-sync already passed signature verification before
-        // the non-signature error was thrown, so this is safe.
+        // Production guard: if BOTH verification paths failed with configuration
+        // errors (not bad signatures), we cannot confirm the payload came from
+        // Stripe. Parsing raw bytes here would accept unverified requests.
+        // Throw so the route returns 400 and Stripe will retry later.
+        if (process.env.REPLIT_DEPLOYMENT === "1") {
+          const verifyMsg = verifyErr instanceof Error ? verifyErr.message : String(verifyErr);
+          logger.error(
+            { syncErr, verifyErr },
+            "webhookHandlers: webhook verification failed in production — refusing to process unverified payload. " +
+              "Fix: add STRIPE_WEBHOOK_SECRET to Replit Secrets (copy whsec_… from Stripe Dashboard → " +
+              "Developers → Webhooks → https://thestompingpaths.com/api/stripe/webhook → Signing secret).",
+          );
+          throw new Error(
+            `Webhook verification failed: ${verifyMsg}. ` +
+              "STRIPE_WEBHOOK_SECRET must be set in Replit Secrets for production webhook processing.",
+          );
+        }
+
+        // Development only: fall back to raw payload parsing.
+        // This path is safe in dev because stripe-replit-sync has already
+        // passed signature verification before the non-signature error (e.g.
+        // missing stripe.accounts table) was thrown.
         logger.warn(
           { verifyErr },
-          "webhookHandlers: independent verification unavailable — parsing raw payload (signature pre-verified by stripe-replit-sync)",
+          "webhookHandlers: independent verification unavailable — parsing raw payload (signature pre-verified by stripe-replit-sync; dev only)",
         );
         try {
           event = JSON.parse(payload.toString()) as Stripe.Event;
