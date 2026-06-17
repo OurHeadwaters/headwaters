@@ -49,8 +49,9 @@ app.post("/api/stripe/webhook", stripeWebhookHandler, handleStripeWebhook);
 app.post("/api/brigade/webhook", stripeWebhookHandler, handleStripeWebhook);
 
 // ─── Zaprite webhook — Bitcoin / Lightning / XRP / RLUSD payments ─────────────
-// Zaprite sends a JSON body (no raw Buffer needed) with an HMAC-SHA256 signature
-// in the X-Zaprite-Signature header. Must be registered BEFORE express.json().
+// Zaprite does not support HMAC signing. Secured with a secret URL token instead:
+//   POST /api/zaprite/webhook?token=<ZAPRITE_WEBHOOK_TOKEN>
+// Must be registered BEFORE express.json() so req.body stays a raw Buffer.
 app.post(
   "/api/zaprite/webhook",
   express.raw({ type: "application/json" }),

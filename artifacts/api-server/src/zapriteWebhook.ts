@@ -1,11 +1,16 @@
 /**
  * Zaprite webhook handler — Bitcoin / Lightning / XRP / RLUSD payments.
  *
- * Zaprite sends a POST with JSON body and an HMAC-SHA256 signature in the
- * X-Zaprite-Signature header (hex-encoded, keyed on ZAPRITE_WEBHOOK_SECRET).
+ * Zaprite does not provide HMAC signing secrets. Instead, we secure the
+ * endpoint with a secret token in the URL query string:
  *
- * On a successful "order.completed" event we:
- *   1. Verify the signature (if ZAPRITE_WEBHOOK_SECRET is set)
+ *   POST /api/zaprite/webhook?token=<ZAPRITE_WEBHOOK_TOKEN>
+ *
+ * Configure that full URL as your webhook endpoint in Zaprite's dashboard
+ * (Settings → API → Webhooks). Anyone who doesn't know the token gets a 401.
+ *
+ * On a successful "order.change" event with status "completed" we:
+ *   1. Verify the URL token matches ZAPRITE_WEBHOOK_TOKEN
  *   2. Extract kit_slug from the order metadata
  *   3. Insert a row into kit_purchases (idempotent via zaprite_order_id unique)
  *   4. Send the welcome email
@@ -13,7 +18,6 @@
  * Zaprite webhook docs: https://zaprite.com/docs/webhooks
  */
 
-import crypto from "crypto";
 import type { Request, Response } from "express";
 import { db, kitPurchasesTable } from "@workspace/db";
 import { logger } from "./lib/logger";
@@ -75,60 +79,45 @@ function extractKitSlug(order: ZapriteOrderPayload["order"]): string | null {
   return null;
 }
 
-function verifySignature(rawBody: Buffer, signature: string, secret: string): boolean {
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(rawBody)
-    .digest("hex");
-  try {
-    return crypto.timingSafeEqual(Buffer.from(signature, "hex"), Buffer.from(expected, "hex"));
-  } catch {
-    return false;
-  }
-}
-
 export async function handleZapriteWebhook(req: Request, res: Response): Promise<void> {
-  const rawBody = req.body as Buffer;
-  const signature = req.headers["x-zaprite-signature"] as string | undefined;
-  const secret = process.env.ZAPRITE_WEBHOOK_SECRET;
+  const expectedToken = process.env.ZAPRITE_WEBHOOK_TOKEN;
 
-  // Signature verification is required. Without ZAPRITE_WEBHOOK_SECRET any caller
-  // could forge a purchase event — we fail closed so no fraudulent inserts occur.
-  // To obtain the secret: contact Zaprite support and ask for the signing secret
-  // for your webhook endpoint. Set it as ZAPRITE_WEBHOOK_SECRET in Replit Secrets.
-  if (!secret) {
+  // Token is required. Without it, any caller could forge a purchase event.
+  // To set up: generate any long random string (e.g. openssl rand -hex 32),
+  // save it as ZAPRITE_WEBHOOK_TOKEN in Replit Secrets, then configure your
+  // Zaprite webhook URL as:
+  //   https://<your-domain>/api/zaprite/webhook?token=<that-value>
+  if (!expectedToken) {
     logger.error(
-      "zaprite webhook: ZAPRITE_WEBHOOK_SECRET is not set — rejecting all webhook calls. " +
-        "Contact Zaprite support to obtain the signing secret for your webhook endpoint, " +
-        "then set it in Replit Secrets as ZAPRITE_WEBHOOK_SECRET.",
+      "zaprite webhook: ZAPRITE_WEBHOOK_TOKEN is not set — rejecting all webhook calls. " +
+        "Set it in Replit Secrets and add ?token=<value> to your Zaprite webhook URL.",
     );
     res.status(503).json({
-      error: "Webhook endpoint not yet configured — ZAPRITE_WEBHOOK_SECRET missing.",
+      error: "Webhook endpoint not yet configured — ZAPRITE_WEBHOOK_TOKEN missing.",
     });
     return;
   }
 
-  if (!signature) {
-    logger.warn("zaprite webhook: missing X-Zaprite-Signature header — rejecting");
-    res.status(401).json({ error: "Missing signature" });
-    return;
-  }
-
-  if (!verifySignature(rawBody, signature, secret)) {
-    logger.warn("zaprite webhook: invalid signature — rejecting");
-    res.status(401).json({ error: "Invalid signature" });
+  const providedToken = req.query["token"] as string | undefined;
+  if (!providedToken || providedToken !== expectedToken) {
+    logger.warn("zaprite webhook: invalid or missing token — rejecting");
+    res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
   let payload: ZapriteOrderPayload;
   try {
+    const rawBody = req.body as Buffer;
     payload = JSON.parse(rawBody.toString()) as ZapriteOrderPayload;
   } catch {
     res.status(400).json({ error: "Invalid JSON body" });
     return;
   }
 
-  if (payload.event !== "order.completed") {
+  // Zaprite sends "order.change" for all order state transitions.
+  // We only care about fully completed/paid orders.
+  const isOrderEvent = payload.event === "order.change" || payload.event === "order.completed";
+  if (!isOrderEvent) {
     res.status(200).json({ received: true, skipped: true });
     return;
   }
@@ -148,7 +137,7 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
   }
 
   // Validate that the slug resolves to a real kit — rejects spoofed payloads
-  // that reference non-existent kits (defense-in-depth when no signing secret).
+  // that reference non-existent kits.
   const kit = kitBySlug(kitSlug);
   if (!kit) {
     logger.warn({ orderId: order.id, kitSlug }, "zaprite webhook: unknown kit_slug — rejecting");
@@ -196,7 +185,6 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
         "zaprite webhook: kit purchase recorded",
       );
 
-      const kit = kitBySlug(kitSlug);
       await sendKitWelcomeEmail({
         buyerEmail,
         buyerName,
