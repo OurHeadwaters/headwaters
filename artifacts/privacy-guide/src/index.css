@@ -171,7 +171,7 @@ html, body {
 /* ── Hero section ── */
 .hero-section {
   position: relative;
-  height: 520px;
+  height: 620px;
   overflow: hidden;
   margin-top: 57px;
 }
@@ -231,22 +231,23 @@ html, body {
 /* Gord perched on hero lantern */
 .gord-hero {
   position: absolute;
-  /* Centred over lantern post (50% x in SVG) – clear of the subtitle text */
+  /* Centred over lantern post (50% x in SVG).
+     bottom: 56.67% = 272/480 of SVG height from bottom, which tracks the
+     lantern cap under xMidYMax slice scaling regardless of hero height. */
   left: calc(50% - 36px);
-  top: 36%;
-  transform: translateY(-100%);
+  bottom: 56.67%;
   z-index: 10;
 }
 
-/* Hero text overlay */
+/* Hero text overlay — text sits at the bottom of the scene, bird mid-scene */
 .hero-content {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 80px 24px 60px;
+  justify-content: flex-end;
+  padding: 0 24px 52px;
   text-align: center;
   z-index: 5;
 }
@@ -1115,7 +1116,7 @@ html, body {
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .hero-section { height: 380px; }
+  .hero-section { height: 460px; }
   .hero-title { font-size: 26px; }
   .hero-subtitle { font-size: 13px; }
   .trail-content { padding: 0 16px 60px; }
