@@ -197,7 +197,7 @@ export default function Guide() {
           <span style={S.sectionTag}>A redesigned home for 6,000+ episodes, learning, and community</span>
 
           <p style={S.p}>
-            The Survival Podcast (TSP) has been running since 2008. Jack Spirko has recorded over
+            The Survival Podcast (TSP) has been running since 2009. Jack Spirko has recorded over
             6,000 episodes covering homesteading, food production, financial independence,
             preparedness, and community resilience. The Stomping Path is a completely rebuilt
             version of the TSP website — faster, easier to navigate, and organized around the way
