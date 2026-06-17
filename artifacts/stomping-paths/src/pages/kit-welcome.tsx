@@ -552,16 +552,14 @@ export default function KitWelcomePage() {
                 "Try again"
               )}
             </button>
-            {!backgroundRecheckInFlight && (
-              <button
-                type="button"
-                aria-label="Dismiss"
-                onClick={() => setBackgroundCheckWarning(false)}
-                className="shrink-0 opacity-50 hover:opacity-80 transition-opacity"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setBackgroundCheckWarning(false)}
+              className="shrink-0 opacity-50 hover:opacity-80 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
 
