@@ -281,7 +281,7 @@ describe("handleKitCheckoutComplete — DB insert, email, and guards", () => {
     expect(sendKitWelcomeEmailSpy).not.toHaveBeenCalled();
   });
 
-  it("skips insert and email when buyer email is absent from the session", async () => {
+  it("skips insert and welcome email when buyer email is absent, but fires an admin alert", async () => {
     const sessionId = uniqueSessionId();
 
     await WebhookHandlers.handleKitCheckoutComplete(
@@ -296,6 +296,18 @@ describe("handleKitCheckoutComplete — DB insert, email, and guards", () => {
 
     expect(rows).toHaveLength(0);
     expect(sendKitWelcomeEmailSpy).not.toHaveBeenCalled();
+
+    expect(sendKitPurchaseAdminNotificationSpy).toHaveBeenCalledOnce();
+    const alertArgs = sendKitPurchaseAdminNotificationSpy.mock.calls[0][0] as {
+      buyerEmail: string | null;
+      welcomeEmailSent: boolean;
+      welcomeEmailError: string;
+      kitSlug: string;
+    };
+    expect(alertArgs.buyerEmail).toBeNull();
+    expect(alertArgs.welcomeEmailSent).toBe(false);
+    expect(alertArgs.kitSlug).toBe(TEST_KIT_SLUG);
+    expect(alertArgs.welcomeEmailError).toContain(sessionId);
   });
 });
 

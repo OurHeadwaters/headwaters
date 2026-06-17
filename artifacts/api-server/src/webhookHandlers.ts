@@ -231,6 +231,19 @@ export class WebhookHandlers {
         { sessionId: session.id, kitSlug },
         "webhookHandlers: kit checkout missing buyer email — skipping",
       );
+      const kit = kitBySlug(kitSlug);
+      sendKitPurchaseAdminNotification({
+        kitName: kit?.name ?? kitSlug,
+        kitSlug,
+        buyerEmail: null,
+        buyerName: null,
+        amountPaidCents: session.amount_total ?? 0,
+        paymentMethod: "stripe",
+        welcomeEmailSent: false,
+        welcomeEmailError: `Stripe checkout.session.completed arrived without customer_details.email — purchase not recorded. Stripe session ID: ${session.id}`,
+      }).catch((err) =>
+        logger.warn({ err, sessionId: session.id, kitSlug }, "webhookHandlers: missing-email alert failed (non-fatal)"),
+      );
       return;
     }
 

@@ -703,7 +703,12 @@ export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise
 export interface KitPurchaseAdminNotificationOptions {
   kitName: string;
   kitSlug: string;
-  buyerEmail: string;
+  /**
+   * The buyer's email address. Pass null when the webhook fired but Stripe did
+   * not include customer_details.email — the notification becomes a failure
+   * alert rather than a purchase confirmation.
+   */
+  buyerEmail: string | null;
   buyerName: string | null;
   amountPaidCents: number;
   paymentMethod: "stripe" | "zaprite";
@@ -714,7 +719,7 @@ export interface KitPurchaseAdminNotificationOptions {
 function buildKitPurchaseAdminHtml(opts: KitPurchaseAdminNotificationOptions): string {
   const siteUrl = getSiteUrl();
   const dollars = (opts.amountPaidCents / 100).toFixed(2);
-  const displayName = opts.buyerName ?? opts.buyerEmail;
+  const displayName = opts.buyerName ?? opts.buyerEmail ?? "(unknown)";
   const now = new Date().toLocaleString("en-CA", {
     timeZone: "America/Winnipeg",
     year: "numeric",
@@ -729,7 +734,13 @@ function buildKitPurchaseAdminHtml(opts: KitPurchaseAdminNotificationOptions): s
   const emailStatusLabel = opts.welcomeEmailSent ? "✓ Sent successfully" : "✗ Failed to send";
   const emailStatusNote = opts.welcomeEmailSent
     ? `The buyer's welcome email was delivered to <strong>${opts.buyerEmail}</strong>.`
-    : `<strong>Action needed:</strong> The welcome email did not send${opts.welcomeEmailError ? ` — ${opts.welcomeEmailError}` : ""}. You may want to send a manual follow-up to <a href="mailto:${opts.buyerEmail}" style="color:#2d4a2d;">${opts.buyerEmail}</a>.`;
+    : opts.buyerEmail
+      ? `<strong>Action needed:</strong> The welcome email did not send${opts.welcomeEmailError ? ` — ${opts.welcomeEmailError}` : ""}. You may want to send a manual follow-up to <a href="mailto:${opts.buyerEmail}" style="color:#2d4a2d;">${opts.buyerEmail}</a>.`
+      : `<strong>Action needed:</strong> ${opts.welcomeEmailError ?? "No buyer email was present in the Stripe session — no welcome email could be sent and the purchase was not recorded."}`;
+
+  const emailCell = opts.buyerEmail
+    ? `<p style="margin:0 0 16px;font-size:15px;color:#1a2e1a;"><a href="mailto:${opts.buyerEmail}" style="color:#2d4a2d;text-decoration:none;">${opts.buyerEmail}</a></p>`
+    : `<p style="margin:0 0 16px;font-size:15px;color:#c0392b;font-style:italic;">(not provided by Stripe)</p>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -764,7 +775,7 @@ function buildKitPurchaseAdminHtml(opts: KitPurchaseAdminNotificationOptions): s
                     <p style="margin:0 0 16px;font-size:17px;color:#1a2e1a;font-weight:bold;">${displayName}</p>
 
                     <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Email</p>
-                    <p style="margin:0 0 16px;font-size:15px;color:#1a2e1a;"><a href="mailto:${opts.buyerEmail}" style="color:#2d4a2d;text-decoration:none;">${opts.buyerEmail}</a></p>
+                    ${emailCell}
 
                     <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Amount Paid</p>
                     <p style="margin:0 0 16px;font-size:20px;color:#1a2e1a;font-weight:bold;">$${dollars} USD</p>
@@ -826,13 +837,16 @@ export async function sendKitPurchaseAdminNotification(opts: KitPurchaseAdminNot
   }
 
   const dollars = (opts.amountPaidCents / 100).toFixed(2);
+  const subject = opts.buyerEmail
+    ? `New purchase: ${opts.kitName} — $${dollars} — welcome email ${opts.welcomeEmailSent ? "✓ sent" : "✗ FAILED"}`
+    : `⚠️ Kit purchase webhook skipped — missing buyer email (${opts.kitName})`;
 
   try {
     const { error } = await client.emails.send({
       from: getKitEmailFrom(),
       to: [to],
-      replyTo: opts.buyerEmail,
-      subject: `New purchase: ${opts.kitName} — $${dollars} — welcome email ${opts.welcomeEmailSent ? "✓ sent" : "✗ FAILED"}`,
+      ...(opts.buyerEmail ? { replyTo: opts.buyerEmail } : {}),
+      subject,
       html: buildKitPurchaseAdminHtml(opts),
     });
 
