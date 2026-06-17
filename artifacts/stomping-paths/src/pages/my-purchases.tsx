@@ -12,9 +12,23 @@ import {
   Search,
   Send,
   CheckCircle2,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 
 import { KIT_META } from "@/hooks/use-kits";
+
+const TOKEN_TTL_DAYS = 90;
+
+type AccessStatus = "active" | "expiring";
+
+function getAccessStatus(purchasedAt: string): AccessStatus {
+  const purchased = new Date(purchasedAt).getTime();
+  const now = Date.now();
+  const ageMs = now - purchased;
+  const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  return ageDays < TOKEN_TTL_DAYS ? "active" : "expiring";
+}
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -135,6 +149,23 @@ function ResendButton({
   );
 }
 
+const ACCESS_BADGE = {
+  active: {
+    label: "Access active",
+    color: "#4ADE80",
+    bg: "#4ADE8018",
+    border: "#4ADE8033",
+    Icon: ShieldCheck,
+  },
+  expiring: {
+    label: "Refresh your link",
+    color: "#F59E0B",
+    bg: "#F59E0B18",
+    border: "#F59E0B33",
+    Icon: RefreshCw,
+  },
+} as const;
+
 function KitCard({
   kitSlug,
   kitName,
@@ -151,6 +182,9 @@ function KitCard({
   href: string;
 }) {
   const meta = KIT_META[kitSlug] ?? { icon: "📦", color: "#6B7280" };
+  const status = getAccessStatus(purchasedAt);
+  const badge = ACCESS_BADGE[status];
+  const BadgeIcon = badge.Icon;
   return (
     <div
       className="rounded-xl border overflow-hidden"
@@ -182,14 +216,27 @@ function KitCard({
                 {kitTagline}
               </p>
             )}
-            <p className="text-xs text-muted-foreground/60 mt-1.5">
-              Purchased{" "}
-              {new Date(purchasedAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+              <p className="text-xs text-muted-foreground/60">
+                Purchased{" "}
+                {new Date(purchasedAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  color: badge.color,
+                  background: badge.bg,
+                  border: `1px solid ${badge.border}`,
+                }}
+              >
+                <BadgeIcon className="w-3 h-3" />
+                {badge.label}
+              </span>
+            </div>
           </div>
         </div>
         <div className="shrink-0 flex items-center gap-2">
