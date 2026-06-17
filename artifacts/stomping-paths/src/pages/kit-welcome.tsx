@@ -1,5 +1,5 @@
 import { Link, useRoute, useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   CheckCircle2,
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Mail,
   Bitcoin,
+  XCircle,
 } from "lucide-react";
 import { useKitDetail, KIT_META } from "@/hooks/use-kits";
 
@@ -74,6 +75,10 @@ export default function KitWelcomePage() {
   const [sessionVerified, setSessionVerified] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
+  const [accessEmail, setAccessEmail] = useState("");
+  const [accessStatus, setAccessStatus] = useState<"idle" | "loading" | "found" | "notFound" | "error">("idle");
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1] ?? "");
     if (params.get("session_id")) {
@@ -83,6 +88,22 @@ export default function KitWelcomePage() {
       setPaymentMethod(params.get("payment"));
     }
   }, [location]);
+
+  async function checkAccess(e: React.FormEvent) {
+    e.preventDefault();
+    if (!accessEmail.trim()) return;
+    setAccessStatus("loading");
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(accessEmail.trim())}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      setAccessStatus(data.hasAccess ? "found" : "notFound");
+    } catch {
+      setAccessStatus("error");
+    }
+  }
 
   if (isLoading) {
     return (
@@ -176,34 +197,112 @@ export default function KitWelcomePage() {
 
         {paymentMethod === "bitcoin" && (
           <section
-            className="rounded-xl border p-6 flex items-start gap-4"
+            className="rounded-xl border p-6"
             style={{
               borderColor: "#F7931A44",
               background: "#F7931A0A",
             }}
           >
-            <div
-              className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-0.5"
-              style={{ background: "#F7931A18" }}
-            >
-              <Mail className="w-5 h-5" style={{ color: "#F7931A" }} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Bitcoin className="w-4 h-4" style={{ color: "#F7931A" }} />
-                <h3 className="font-serif text-base font-bold text-foreground">
-                  Confirmation email on its way
-                </h3>
+            <div className="flex items-start gap-4">
+              <div
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-0.5"
+                style={{ background: "#F7931A18" }}
+              >
+                <Mail className="w-5 h-5" style={{ color: "#F7931A" }} />
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Your Bitcoin / Lightning payment has been received. A confirmation email with your
-                kit access details has been sent to the address you provided at checkout. Check
-                your inbox (and spam folder if needed) — it should arrive within a few minutes.
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bitcoin className="w-4 h-4" style={{ color: "#F7931A" }} />
+                  <h3 className="font-serif text-base font-bold text-foreground">
+                    Confirmation email on its way
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Your Bitcoin / Lightning payment has been received. A confirmation email with your
+                  kit access details has been sent to the address you provided at checkout. Check
+                  your inbox (and spam folder if needed) — it should arrive within a few minutes.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-5 border-t" style={{ borderColor: "#F7931A22" }}>
+              <p className="text-sm font-semibold text-foreground mb-3">
+                Check your access
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                You can also access your kit directly at any time by returning to this page and
-                entering your email below.
-              </p>
+              {accessStatus === "found" ? (
+                <div
+                  className="flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
+                  style={{ background: "#16A34A18", color: "#16A34A", border: "1px solid #16A34A33" }}
+                >
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Access confirmed — you're all set. Your kit is ready.
+                </div>
+              ) : accessStatus === "notFound" ? (
+                <div className="space-y-3">
+                  <div
+                    className="flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
+                    style={{ background: "#F7931A18", color: "#C96A00", border: "1px solid #F7931A33" }}
+                  >
+                    <XCircle className="w-4 h-4 shrink-0" />
+                    Not recorded yet — Bitcoin payments can take a minute. Wait a moment and try again.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setAccessStatus("idle"); setAccessEmail(""); }}
+                    className="text-xs font-semibold underline underline-offset-2"
+                    style={{ color: "#F7931A" }}
+                  >
+                    Try a different email
+                  </button>
+                </div>
+              ) : accessStatus === "error" ? (
+                <div className="space-y-3">
+                  <div
+                    className="flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
+                    style={{ background: "#EF444418", color: "#B91C1C", border: "1px solid #EF444433" }}
+                  >
+                    <XCircle className="w-4 h-4 shrink-0" />
+                    Something went wrong. Please try again.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAccessStatus("idle")}
+                    className="text-xs font-semibold underline underline-offset-2"
+                    style={{ color: "#F7931A" }}
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={checkAccess} className="flex gap-2">
+                  <input
+                    ref={emailInputRef}
+                    type="email"
+                    value={accessEmail}
+                    onChange={(e) => setAccessEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    disabled={accessStatus === "loading"}
+                    className="flex-1 min-w-0 rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 disabled:opacity-50"
+                    style={{ borderColor: "#F7931A44", focusRingColor: "#F7931A" } as React.CSSProperties}
+                  />
+                  <button
+                    type="submit"
+                    disabled={accessStatus === "loading" || !accessEmail.trim()}
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: "#F7931A", color: "#fff" }}
+                  >
+                    {accessStatus === "loading" ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Checking…
+                      </>
+                    ) : (
+                      "Check access"
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
           </section>
         )}
