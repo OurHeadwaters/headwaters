@@ -17,6 +17,7 @@ export type KitSummary = {
   featured?: boolean;
   /** Direct access URL for kits whose content lives on an external platform (e.g. parrs-jars). */
   accessUrl?: string;
+  userManual?: KitUserManual;
 };
 
 export type KitTrack = {
@@ -57,7 +58,6 @@ export type KitDetail = KitSummary & {
   tracks: KitTrack[];
   episodes: KitEpisode[];
   gear: ReviewedProduct[];
-  userManual?: KitUserManual;
 };
 
 function apiUrl(path: string): string {
