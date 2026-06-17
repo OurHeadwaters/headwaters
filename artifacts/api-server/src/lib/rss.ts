@@ -22,6 +22,7 @@ export type RssEpisode = {
   artworkUrl: string | null;
   categories: string[];
   tags: string[];
+  chaptersJsonUrl: string | null;
 };
 
 export type RssFeed = {
@@ -232,6 +233,8 @@ export function parseChannel(xml: string): RssFeed {
     const episodeNumber = parseEpisodeNumber(rawTitle);
     const title = cleanTitle(rawTitle);
     const slug = slugFromLink(link, guid);
+    const podcastChapters = item["podcast:chapters"] as Record<string, unknown> | undefined;
+    const chaptersJsonUrl = (podcastChapters?.["@_url"] as string | undefined) ?? null;
     return {
       slug,
       guid,
@@ -247,6 +250,7 @@ export function parseChannel(xml: string): RssFeed {
       artworkUrl,
       categories,
       tags,
+      chaptersJsonUrl,
     };
   });
 

@@ -110,6 +110,7 @@ export async function getSeriesConsistencyReport(
               artworkUrl: null,
               categories: sqlRow[0].categories,
               tags: sqlRow[0].tags,
+              chaptersJsonUrl: null,
             };
             if (!seriesDef.detect(ep)) {
               missedByDetect.push(slug);
@@ -235,6 +236,7 @@ function rowToEpisode(row: LibraryRow): RssEpisode {
     summary: row.summary,
     descriptionHtml: row.bodyHtml,
     durationSeconds: row.durationSeconds ?? null,
+    chaptersJsonUrl: null,
     audioUrl: row.audioUrl ?? null,
     audioType: row.audioType ?? null,
     artworkUrl: row.artworkUrl ?? null,

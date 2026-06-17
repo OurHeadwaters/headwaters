@@ -226,6 +226,7 @@ router.get("/episodes", async (req, res) => {
             artworkUrl: row.artworkUrl,
             categories: row.categories ?? [],
             tags: row.tags ?? [],
+            chaptersJsonUrl: null,
             historySegment,
           });
         }
@@ -333,6 +334,7 @@ router.get("/episodes", async (req, res) => {
               artworkUrl: row.artworkUrl,
               categories: row.categories,
               tags: row.tags ?? [],
+              chaptersJsonUrl: null,
             });
           }
 

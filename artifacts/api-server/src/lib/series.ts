@@ -275,6 +275,7 @@ export function libraryRowToRssEpisode(row: LibraryRow): RssEpisode {
     artworkUrl: row.artworkUrl ?? null,
     categories: row.categories,
     tags: row.tags,
+    chaptersJsonUrl: null,
   };
 }
 

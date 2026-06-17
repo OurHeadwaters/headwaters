@@ -269,6 +269,7 @@ function postToInsert(
   post: WPPost,
   categories: Map<number, string>,
   tags: Map<number, string>,
+  chaptersJsonUrl?: string | null,
 ): InsertContentItem {
   const html = rendered(post.content);
   const sanitized = sanitizeHtml(html);
@@ -299,6 +300,9 @@ function postToInsert(
     extra.historyText = historySegment.lessonText;
     // Mark checked so chapter fetching is skipped for this episode.
     extra.historyTimestampChecked = true;
+  }
+  if (chaptersJsonUrl) {
+    extra.chaptersJsonUrl = chaptersJsonUrl;
   }
 
   return {
@@ -458,8 +462,10 @@ export async function syncWordPressArchive(options: {
   getExistingExtras?: (
     sourceIds: string[],
   ) => Promise<Map<string, Record<string, unknown>>>;
+  /** Optional map of post slug → podcast:chapters JSON URL sourced from the RSS feed. */
+  chaptersSlugMap?: Map<string, string>;
 }): Promise<WordPressSyncResult> {
-  const { signal, upsertPage, getExistingExtras } = options;
+  const { signal, upsertPage, getExistingExtras, chaptersSlugMap } = options;
   const [categories, tags] = await Promise.all([
     fetchAllTerms("categories", signal),
     fetchAllTerms("tags", signal),
@@ -478,7 +484,9 @@ export async function syncWordPressArchive(options: {
     try {
       const { data, headers } = await fetchJson<WPPost[]>(url, signal);
       totalPages = Number(headers.get("x-wp-totalpages") ?? totalPages.toString());
-      const inserts = data.map((p) => postToInsert(p, categories, tags));
+      const inserts = data.map((p) =>
+        postToInsert(p, categories, tags, chaptersSlugMap?.get(p.slug)),
+      );
 
       // Fetch existing extras so already-checked episodes skip audio fetching
       let existingExtras = new Map<string, Record<string, unknown>>();
