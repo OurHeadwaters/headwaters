@@ -10,6 +10,8 @@ import {
 import { useGetFeaturedEpisodes, useListZones, useListSuiteCreators, useListSuiteKits } from "@workspace/api-client-react";
 import type { SuiteCreator, SuiteKit } from "@workspace/api-client-react";
 import { useTransformations } from "@/hooks/use-transformations";
+import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
+import { useTransformationEpisodes } from "@/hooks/use-transformation-episodes";
 import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 import { KIT_META } from "@/hooks/use-kits";
 import { useAllActiveTracksState, type ActiveTrackEntry } from "@/hooks/use-track-progress";
@@ -711,6 +713,146 @@ function ContinueLearningWidget() {
         </div>
       </div>
     </motion.section>
+  );
+}
+
+// ─── Your Path Rail ────────────────────────────────────────────────────────────
+
+function YourPathRail() {
+  const { selectedSlug, clear } = useSelectedTransformation();
+  const { data: transformations } = useTransformations();
+  const { data: episodesResult, isLoading } = useTransformationEpisodes(selectedSlug, 5);
+
+  const transformation = transformations?.find((t) => t.slug === selectedSlug) ?? null;
+  const episodes = episodesResult?.items ?? [];
+
+  if (!selectedSlug || !transformation) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.section
+        key={selectedSlug}
+        initial={{ opacity: 0, y: -24 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -16 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative bg-gradient-to-b from-[#0c1611] to-[#15241b] border-b border-white/8 py-10 overflow-hidden"
+      >
+        {/* Subtle ambient glow in the transformation's color */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse at 50% 0%, ${transformation.color}18 0%, transparent 65%)`,
+          }}
+        />
+
+        <div className="relative container mx-auto px-4 md:px-6 max-w-6xl">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-2xl leading-none">{transformation.icon}</span>
+              <div className="min-w-0">
+                <div
+                  className="text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5"
+                  style={{ color: transformation.color }}
+                >
+                  For your path
+                </div>
+                <h2 className="font-serif text-lg sm:text-xl text-[#FDFBF7] font-bold leading-tight truncate">
+                  {transformation.from} <span className="text-[#FDFBF7]/40 font-normal">→</span>{" "}
+                  <span style={{ color: transformation.color }}>{transformation.to}</span>
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href={`/episodes?transformation=${encodeURIComponent(selectedSlug)}`}
+                className="text-xs font-bold uppercase tracking-widest flex items-center gap-1 hover:opacity-80 transition-opacity"
+                style={{ color: transformation.color }}
+              >
+                All episodes <ArrowRight className="w-3 h-3" />
+              </Link>
+              <button
+                onClick={clear}
+                aria-label="Clear selected path"
+                className="p-1.5 rounded-full text-[#FDFBF7]/35 hover:text-[#FDFBF7]/70 hover:bg-white/8 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Episode cards row */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-48 rounded-xl bg-white/5 animate-pulse border border-white/5" />
+              ))}
+            </div>
+          ) : episodes.length === 0 ? (
+            <p className="text-sm text-[#FDFBF7]/45">No episodes found for this path yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {episodes.map((ep, i) => (
+                <motion.div
+                  key={ep.slug}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.07 }}
+                >
+                  <Link
+                    href={`/episodes/${ep.slug}`}
+                    className="group flex flex-col h-full rounded-xl overflow-hidden border border-white/8 bg-[#15241b] hover:border-white/20 hover:-translate-y-0.5 transition-all"
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative aspect-video bg-[#0c1611] overflow-hidden">
+                      {ep.artworkUrl ? (
+                        <img
+                          src={ep.artworkUrl}
+                          alt={ep.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Mic className="w-8 h-8 text-[#D9A066]/25" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+                        <span
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-[#FDFBF7] shadow"
+                          style={{ background: transformation.color }}
+                        >
+                          <PlayCircle className="w-4 h-4" />
+                        </span>
+                        {ep.episodeNumber && (
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-white/80 bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
+                            Ep. {ep.episodeNumber}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Text */}
+                    <div className="p-3 flex flex-col flex-1">
+                      <h3 className="font-serif text-sm text-[#FDFBF7] font-bold leading-snug line-clamp-3 group-hover:text-[#D9A066] transition-colors">
+                        {ep.title}
+                      </h3>
+                      {ep.summary && (
+                        <p className="mt-1.5 text-[11px] text-[#FDFBF7]/45 leading-relaxed line-clamp-2">
+                          {ep.summary}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.section>
+    </AnimatePresence>
   );
 }
 
@@ -1512,6 +1654,7 @@ export function Home() {
       <DailyStompOrb />
 
       <HeroEntrance />
+      <YourPathRail />
       <ContinueLearningWidget />
       <StormToBloomSection />
       <JourneyMapSection />
