@@ -66,26 +66,26 @@ const DEFAULT_STEPS = {
   next: "Return to this kit as your situation changes. The content compounds over time.",
 };
 
-function loadStoredAccess(kitSlug: string): { email: string; emailLinkVerified: boolean } | null {
+function loadStoredAccess(kitSlug: string): { email: string; emailLinkVerified: boolean; token: string | null } | null {
   try {
     const raw = localStorage.getItem(kitStorageKey(kitSlug));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { email: string; emailLinkVerified: boolean; savedAt: number };
+    const parsed = JSON.parse(raw) as { email: string; emailLinkVerified: boolean; token?: string | null; savedAt: number };
     if (Date.now() - parsed.savedAt > KIT_SESSION_TTL_MS) {
       localStorage.removeItem(kitStorageKey(kitSlug));
       return null;
     }
-    return { email: parsed.email, emailLinkVerified: parsed.emailLinkVerified };
+    return { email: parsed.email, emailLinkVerified: parsed.emailLinkVerified, token: parsed.token ?? null };
   } catch {
     return null;
   }
 }
 
-function saveStoredAccess(kitSlug: string, email: string, elv: boolean) {
+function saveStoredAccess(kitSlug: string, email: string, elv: boolean, token?: string | null) {
   try {
     localStorage.setItem(
       kitStorageKey(kitSlug),
-      JSON.stringify({ email, emailLinkVerified: elv, savedAt: Date.now() }),
+      JSON.stringify({ email, emailLinkVerified: elv, token: token ?? null, savedAt: Date.now() }),
     );
   } catch {
   }
@@ -127,6 +127,10 @@ export default function KitWelcomePage() {
   const [emailLinkVerified, setEmailLinkVerified] = useState(() => {
     if (!slug) return false;
     return loadStoredAccess(slug)?.emailLinkVerified ?? false;
+  });
+  const [accessToken, setAccessToken] = useState<string | null>(() => {
+    if (!slug) return null;
+    return loadStoredAccess(slug)?.token ?? null;
   });
 
   const [accessEmail, setAccessEmail] = useState(() => {
@@ -175,6 +179,7 @@ export default function KitWelcomePage() {
     const tokenParam = params.get("token");
     if (emailParam && tokenParam) {
       setAccessEmail(emailParam);
+      setAccessToken(tokenParam);
       runAccessCheck(emailParam, tokenParam);
     }
   }, [location]);
@@ -205,10 +210,10 @@ export default function KitWelcomePage() {
 
   useEffect(() => {
     if (accessStatus === "found" && slug && accessEmail) {
-      saveStoredAccess(slug, accessEmail, emailLinkVerified);
+      saveStoredAccess(slug, accessEmail, emailLinkVerified, accessToken);
       setSessionDaysRemaining(getSessionDaysRemaining(slug));
     }
-  }, [accessStatus, slug, accessEmail, emailLinkVerified]);
+  }, [accessStatus, slug, accessEmail, emailLinkVerified, accessToken]);
 
   useEffect(() => {
     if (!slug || sessionCheckDoneRef.current) return;
@@ -241,6 +246,7 @@ export default function KitWelcomePage() {
         setAccessStatus("idle");
         setAccessEmail("");
         setEmailLinkVerified(false);
+        setAccessToken(null);
       }
     }
     window.addEventListener("kit-session-change", handleKitSessionChange);
@@ -412,6 +418,7 @@ export default function KitWelcomePage() {
                   setAccessStatus("idle");
                   setAccessEmail("");
                   setEmailLinkVerified(false);
+                  setAccessToken(null);
                   setSessionDaysRemaining(null);
                   window.dispatchEvent(new CustomEvent("kit-session-change", { detail: { slug } }));
                 }}
@@ -859,21 +866,39 @@ export default function KitWelcomePage() {
                 Everything is ready
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Your kit content — episodes, gear recommendations, and resources — is organized
-                for your transformation. Return to the kit page at any time.
+                {(kit as any)?.accessUrl
+                  ? "Your course access is confirmed. Click below to go directly to your course platform."
+                  : "Your kit content — episodes, gear recommendations, and resources — is organized for your transformation. Return to the kit page at any time."}
               </p>
-              <Link
-                href={`/kits/${slug}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
-                style={{
-                  color: "#fff",
-                  background: meta.color,
-                  boxShadow: `0 4px 20px ${meta.color}40`,
-                }}
-              >
-                View Kit Content
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {(kit as any)?.accessUrl ? (
+                <a
+                  href={(kit as any).accessUrl as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+                  style={{
+                    color: "#fff",
+                    background: meta.color,
+                    boxShadow: `0 4px 20px ${meta.color}40`,
+                  }}
+                >
+                  Go to Course
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              ) : (
+                <Link
+                  href={`/kits/${slug}`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all hover:-translate-y-px"
+                  style={{
+                    color: "#fff",
+                    background: meta.color,
+                    boxShadow: `0 4px 20px ${meta.color}40`,
+                  }}
+                >
+                  View Kit Content
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
         </section>

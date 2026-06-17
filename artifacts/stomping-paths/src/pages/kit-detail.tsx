@@ -30,6 +30,7 @@ import {
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { goalLabel, situationLabel, companionsLabel, readinessLabel } from "@/lib/kit-finder";
 import { useKitDetail, useKitAccess, KIT_META, LINK_OUT_KITS } from "@/hooks/use-kits";
+import { kitStorageKey } from "@workspace/tsp-constants";
 import { useShareCount } from "@/hooks/use-share-count";
 import { ProductShelf } from "@/components/product-shelf";
 import { formatDuration } from "@/components/episode-card";
@@ -842,27 +843,41 @@ export default function KitDetailPage() {
   const slug = params?.slug ?? "";
   const { data: kit, isLoading, isError } = useKitDetail(slug);
   const [storedEmail, setStoredEmail] = useState<string | null>(null);
+  const [storedToken, setStoredToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
     try {
-      const saved = localStorage.getItem(`kit_access_${slug}`);
-      setStoredEmail(saved ?? null);
+      const raw = localStorage.getItem(kitStorageKey(slug));
+      if (!raw) {
+        setStoredEmail(null);
+        setStoredToken(null);
+        return;
+      }
+      const parsed = JSON.parse(raw) as { email?: string; token?: string | null };
+      setStoredEmail(parsed.email ?? null);
+      setStoredToken(parsed.token ?? null);
     } catch {
       setStoredEmail(null);
+      setStoredToken(null);
     }
   }, [slug]);
 
   function handleEmailVerified(email: string) {
     try {
-      localStorage.setItem(`kit_access_${slug}`, email);
+      const existingRaw = localStorage.getItem(kitStorageKey(slug));
+      const existing = existingRaw ? (JSON.parse(existingRaw) as Record<string, unknown>) : {};
+      localStorage.setItem(
+        kitStorageKey(slug),
+        JSON.stringify({ ...existing, email, savedAt: existing.savedAt ?? Date.now() }),
+      );
     } catch {
       // ignore
     }
     setStoredEmail(email);
   }
 
-  const { data: accessData, isLoading: accessLoading } = useKitAccess(slug, storedEmail);
+  const { data: accessData, isLoading: accessLoading } = useKitAccess(slug, storedEmail, storedToken);
   const [edition, setEdition] = useState<"general" | "homeschool">("general");
   const [shareOpen, setShareOpen] = useState(false);
   const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);

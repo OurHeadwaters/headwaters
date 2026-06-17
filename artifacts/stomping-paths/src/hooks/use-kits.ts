@@ -15,6 +15,8 @@ export type KitSummary = {
   priceCents?: number;
   ctaLabel: string;
   featured?: boolean;
+  /** Direct access URL for kits whose content lives on an external platform (e.g. parrs-jars). */
+  accessUrl?: string;
 };
 
 export type KitTrack = {
@@ -81,13 +83,14 @@ export function useKitDetail(slug: string) {
   });
 }
 
-export function useKitAccess(slug: string, email?: string | null) {
+export function useKitAccess(slug: string, email?: string | null, token?: string | null) {
   return useQuery<{ hasAccess: boolean; isAuthenticated: boolean }>({
-    queryKey: ["kit-access", slug, email ?? ""],
+    queryKey: ["kit-access", slug, email ?? "", token ?? ""],
     queryFn: async () => {
-      const path = email
+      let path = email
         ? `/kits/${slug}/access?email=${encodeURIComponent(email)}`
         : `/kits/${slug}/access`;
+      if (email && token) path += `&token=${encodeURIComponent(token)}`;
       const res = await fetch(apiUrl(path));
       if (!res.ok) throw new Error("Failed to check access");
       return res.json();

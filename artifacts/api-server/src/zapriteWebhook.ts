@@ -191,6 +191,7 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
         kitName: kit?.name ?? kitSlug,
         kitSlug,
         userManual: kit?.userManual,
+        accessUrl: kit?.accessUrl,
       });
     } else {
       logger.info(
