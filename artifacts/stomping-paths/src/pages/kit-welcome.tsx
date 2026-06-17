@@ -324,7 +324,7 @@ export default function KitWelcomePage() {
                       className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
                       style={{ background: "#6B728018", color: "#4B5563", border: "1px solid #6B728033" }}
                     >
-                      <Clock className="w-4 h-4 shrink-0 mt-0.5 animate-pulse" />
+                      <Clock className="w-4 h-4 shrink-0 mt-0.5 animate-clock-spin" />
                       <div>
                         <span>Not recorded yet — Bitcoin payments can take a minute.</span>
                         <span className="flex items-center gap-1.5 text-xs font-normal mt-1 opacity-70 animate-pulse">

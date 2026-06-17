@@ -353,6 +353,13 @@
   }
 }
 
+/* ─── Clock countdown spin ───────────────────────────────────────────────── */
+@keyframes clock-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-clock-spin { animation: clock-spin 2s linear infinite; transform-origin: center; }
+
 /* ─── Castle torch flame flicker ────────────────────────────────────────── */
 @keyframes tsp-torch {
   0%, 100% { transform: scaleX(1)    scaleY(1)    translateY(0);    opacity: 0.95; }
