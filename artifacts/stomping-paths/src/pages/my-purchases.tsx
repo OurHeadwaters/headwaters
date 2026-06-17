@@ -20,7 +20,7 @@ import {
 
 import { KIT_META } from "@/hooks/use-kits";
 
-const TOKEN_TTL_DAYS = 90;
+const DEFAULT_TOKEN_TTL_DAYS = 90;
 
 function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -39,12 +39,12 @@ function formatRelativeTime(iso: string): string {
 
 type AccessStatus = "active" | "expiring";
 
-function getAccessStatus(purchasedAt: string): AccessStatus {
+function getAccessStatus(purchasedAt: string, ttlDays: number = DEFAULT_TOKEN_TTL_DAYS): AccessStatus {
   const purchased = new Date(purchasedAt).getTime();
   const now = Date.now();
   const ageMs = now - purchased;
   const ageDays = ageMs / (1000 * 60 * 60 * 24);
-  return ageDays < TOKEN_TTL_DAYS ? "active" : "expiring";
+  return ageDays < ttlDays ? "active" : "expiring";
 }
 
 function apiUrl(path: string): string {
@@ -71,6 +71,7 @@ interface PurchasedKit {
 
 interface MyPurchasesData {
   purchases: PurchasedKit[];
+  ttlDays?: number;
 }
 
 
@@ -98,12 +99,14 @@ function ResendButton({
   color,
   lastResendAt: initialLastResendAt,
   isExpiring = false,
+  ttlDays = DEFAULT_TOKEN_TTL_DAYS,
 }: {
   kitSlug: string;
   buyerEmail: string;
   color: string;
   lastResendAt: string | null;
   isExpiring?: boolean;
+  ttlDays?: number;
 }) {
   const btnColor = isExpiring ? AMBER : color;
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
@@ -181,7 +184,7 @@ function ResendButton({
       )}
       {isExpiring && status === "idle" && (
         <span className="text-[11px] text-muted-foreground/60 pl-1 leading-snug">
-          Your access link is older than 90 days — re-send to get a fresh one
+          Your access link is older than {ttlDays} days — re-send to get a fresh one
         </span>
       )}
       {status === "error" && errorMsg && (
@@ -258,6 +261,7 @@ function KitCard({
   purchasedAt,
   lastResendAt,
   href,
+  ttlDays,
 }: {
   kitSlug: string;
   kitName: string;
@@ -266,9 +270,10 @@ function KitCard({
   purchasedAt: string;
   lastResendAt: string | null;
   href: string;
+  ttlDays?: number;
 }) {
   const meta = KIT_META[kitSlug] ?? { icon: "📦", color: "#6B7280" };
-  const status = getAccessStatus(purchasedAt);
+  const status = getAccessStatus(purchasedAt, ttlDays);
   const badge = ACCESS_BADGE[status];
   const BadgeIcon = badge.Icon;
   return (
@@ -355,6 +360,7 @@ function KitCard({
           color={meta.color}
           lastResendAt={lastResendAt}
           isExpiring={status === "expiring"}
+          ttlDays={ttlDays}
         />
       </div>
     </div>
@@ -671,6 +677,7 @@ export default function MyPurchasesPage() {
                   purchasedAt={purchase.purchasedAt}
                   lastResendAt={purchase.lastResendAt}
                   href={href}
+                  ttlDays={data.ttlDays}
                 />
               );
             })}

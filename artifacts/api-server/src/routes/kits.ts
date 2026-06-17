@@ -143,7 +143,10 @@ router.get("/kits/my-purchases", async (req, res) => {
       };
     });
 
-    res.json({ purchases });
+    const parsedTtl = parseInt(process.env.KIT_TOKEN_TTL_DAYS ?? "", 10);
+    const ttlDays = Number.isFinite(parsedTtl) && parsedTtl > 0 ? parsedTtl : 90;
+
+    res.json({ purchases, ttlDays });
   } catch (err) {
     logger.error({ err }, "kits: GET /my-purchases failed");
     res.status(500).json({ error: "Failed to load purchases" });
