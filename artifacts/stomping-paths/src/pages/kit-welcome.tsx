@@ -149,6 +149,7 @@ export default function KitWelcomePage() {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
   const [backgroundCheckWarning, setBackgroundCheckWarning] = useState(false);
+  const [backgroundCheckSuccess, setBackgroundCheckSuccess] = useState(false);
   const [backgroundRecheckInFlight, setBackgroundRecheckInFlight] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [resendRateLimited, setResendRateLimited] = useState(false);
@@ -301,7 +302,7 @@ export default function KitWelcomePage() {
       if (data.hasAccess) {
         saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
         setSessionDaysRemaining(getSessionDaysRemaining(slug));
-        setBackgroundCheckWarning(false);
+        setBackgroundCheckSuccess(true);
       }
     } catch {
     } finally {
@@ -314,6 +315,15 @@ export default function KitWelcomePage() {
     window.addEventListener("online", retryBackgroundCheck);
     return () => window.removeEventListener("online", retryBackgroundCheck);
   }, [backgroundCheckWarning, slug, accessEmail, retryBackgroundCheck]);
+
+  useEffect(() => {
+    if (!backgroundCheckSuccess) return;
+    const t = setTimeout(() => {
+      setBackgroundCheckSuccess(false);
+      setBackgroundCheckWarning(false);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [backgroundCheckSuccess]);
 
   async function runAccessCheck(email: string, token?: string) {
     if (!email) return;
@@ -615,40 +625,48 @@ export default function KitWelcomePage() {
           <div
             className="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm transition-colors"
             style={
-              backgroundRecheckInFlight
+              backgroundCheckSuccess
+                ? { background: "#0F2A1A0D", borderColor: "#16A34A55", color: "#166534" }
+                : backgroundRecheckInFlight
                 ? { background: "#0F1F1A0A", borderColor: "#8FA88344", color: "#4B6B55" }
                 : { background: "#78350F0A", borderColor: "#92400E33", color: "#92400E" }
             }
           >
-            {backgroundRecheckInFlight ? (
+            {backgroundCheckSuccess ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#16A34A" }} />
+            ) : backgroundRecheckInFlight ? (
               <Loader2 className="w-4 h-4 shrink-0 mt-0.5 animate-spin" />
             ) : (
               <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
             )}
             <span className="flex-1 leading-snug">
-              {backgroundRecheckInFlight
+              {backgroundCheckSuccess
+                ? "Connected — access verified"
+                : backgroundRecheckInFlight
                 ? "Reconnected — verifying your access…"
                 : "Couldn't verify your access — check your connection. Your cached access is still active."}
             </span>
-            <button
-              type="button"
-              onClick={retryBackgroundCheck}
-              disabled={backgroundRecheckInFlight}
-              className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1"
-            >
-              {backgroundRecheckInFlight ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Checking…
-                </>
-              ) : (
-                "Try again"
-              )}
-            </button>
+            {!backgroundCheckSuccess && (
+              <button
+                type="button"
+                onClick={retryBackgroundCheck}
+                disabled={backgroundRecheckInFlight}
+                className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1"
+              >
+                {backgroundRecheckInFlight ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Checking…
+                  </>
+                ) : (
+                  "Try again"
+                )}
+              </button>
+            )}
             <button
               type="button"
               aria-label="Dismiss"
-              onClick={() => setBackgroundCheckWarning(false)}
+              onClick={() => { setBackgroundCheckSuccess(false); setBackgroundCheckWarning(false); }}
               className="shrink-0 opacity-50 hover:opacity-80 transition-opacity"
             >
               <X className="w-4 h-4" />
