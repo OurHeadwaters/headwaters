@@ -650,6 +650,70 @@ export default function KitWelcomePage() {
           </div>
         )}
 
+        {accessStatus === "found" && accessEmail && (
+          <div
+            className="rounded-xl border px-5 py-4"
+            style={{ borderColor: "#2d4a2d22", background: "#0F1F1A06" }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-0.5">
+                  Need your access link again?
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {resendStatus === "sent"
+                    ? `A new link has been sent to ${accessEmail}.`
+                    : `We'll re-send your welcome email to ${accessEmail}.`}
+                </p>
+              </div>
+              <div className="shrink-0">
+                {resendStatus === "sent" ? (
+                  <div
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                    style={{ background: "#16A34A12", color: "#15803D", border: "1px solid #16A34A2a" }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    Sent — check your inbox
+                  </div>
+                ) : resendRateLimited ? (
+                  <p className="text-xs text-muted-foreground">
+                    Too many requests — wait 15 minutes and try again.
+                  </p>
+                ) : resendStatus === "error" ? (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    className="text-xs font-semibold underline underline-offset-2 transition-opacity hover:opacity-80"
+                    style={{ color: "#B91C1C" }}
+                  >
+                    Failed — try again
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resendStatus === "sending"}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                    style={{ background: "#2d4a2d", color: "#fff" }}
+                  >
+                    {resendStatus === "sending" ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Sending…
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-3 h-3" />
+                        Re-send my access link
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {paymentMethod === "bitcoin" && (
           <section
             className="rounded-xl border p-6"

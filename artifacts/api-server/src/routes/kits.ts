@@ -16,7 +16,7 @@ import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
 import { trackBySlug } from "../lib/tracks";
-import { sendKitInquiryNotification, sendKitAccessEmail, generateKitAccessToken, verifyKitAccessToken } from "../lib/email";
+import { sendKitInquiryNotification, sendKitAccessEmail, sendKitWelcomeEmail, generateKitAccessToken, verifyKitAccessToken } from "../lib/email";
 import { createRateLimiter } from "../middlewares/rateLimiter";
 
 const router: IRouter = Router();
@@ -254,6 +254,7 @@ router.post("/kits/:slug/resend-access", emailLookupRateLimit, async (req, res) 
       .select({
         id: kitPurchasesTable.id,
         kitSlug: kitPurchasesTable.kitSlug,
+        buyerName: kitPurchasesTable.buyerName,
         purchasedAt: kitPurchasesTable.purchasedAt,
       })
       .from(kitPurchasesTable)
@@ -266,19 +267,16 @@ router.post("/kits/:slug/resend-access", emailLookupRateLimit, async (req, res) 
       .limit(1);
 
     if (rows.length > 0) {
-      const token = generateKitAccessToken(kit.slug, email);
-      const tagline = Array.isArray(kit.tagline) ? kit.tagline[0] ?? "" : (kit.tagline ?? "");
-      const kits = [
-        {
-          slug: kit.slug,
-          name: kit.name,
-          tagline,
-          token,
-        },
-      ];
-
-      sendKitAccessEmail({ buyerEmail: email, kits }).catch((err) =>
-        logger.warn({ err, email, kitSlug: kit.slug }, "kits: resend-access fire failed (non-fatal)"),
+      const buyerName = rows[0].buyerName ?? null;
+      sendKitWelcomeEmail({
+        buyerEmail: email,
+        buyerName,
+        kitName: kit.name,
+        kitSlug: kit.slug,
+        accessUrl: kit.accessUrl,
+        userManual: kit.userManual,
+      }).catch((err) =>
+        logger.warn({ err, email, kitSlug: kit.slug }, "kits: resend-access welcome email failed (non-fatal)"),
       );
     }
 
