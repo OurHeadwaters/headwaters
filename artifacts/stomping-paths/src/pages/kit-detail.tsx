@@ -1086,16 +1086,26 @@ export default function KitDetailPage() {
             </div>
           )}
 
-          <div
-            className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest mb-4 px-3 py-1.5 rounded-full"
-            style={{
-              color: meta.color,
-              background: meta.color + "18",
-              border: `1px solid ${meta.color}33`,
-            }}
-          >
-            <Package className="w-3.5 h-3.5" />
-            <span>Headwaters Kit</span>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div
+              className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+              style={{
+                color: meta.color,
+                background: meta.color + "18",
+                border: `1px solid ${meta.color}33`,
+              }}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Headwaters Kit</span>
+            </div>
+            {kitShareCount !== null && kitShareCount > 3 && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full"
+                style={{ background: "#D9A06618", color: "#D9A066", border: "1px solid #D9A06633" }}
+              >
+                🔥 {kitShareCount} shares
+              </span>
+            )}
           </div>
 
           <div className="flex items-start gap-4 mb-4">

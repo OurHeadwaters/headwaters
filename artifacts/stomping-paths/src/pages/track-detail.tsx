@@ -1140,6 +1140,14 @@ export default function TrackDetailPage() {
                 )}
               </div>
             )}
+            {trackShareCount !== null && trackShareCount > 3 && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full"
+                style={{ background: "#D9A06618", color: "#D9A066", border: "1px solid #D9A06633" }}
+              >
+                🔥 {trackShareCount} shares
+              </span>
+            )}
           </div>
 
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-2">
