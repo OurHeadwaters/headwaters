@@ -409,17 +409,38 @@ export default function KitWelcomePage() {
 
         {sessionExpired && accessStatus === "idle" && (
           <div
-            className="flex items-start gap-3 rounded-xl border px-5 py-4 text-sm"
+            className="rounded-xl border px-5 py-4 text-sm space-y-3"
             style={{
               borderColor: "#F59E0B44",
               background: "#F59E0B0A",
-              color: "#92400E",
             }}
           >
-            <Clock className="w-4 h-4 shrink-0 mt-0.5 opacity-70" style={{ color: "#F59E0B" }} />
-            <p>
-              <span className="font-semibold">Your session expired</span> — please re-enter your email to restore access.
-            </p>
+            <div className="flex items-start gap-3" style={{ color: "#92400E" }}>
+              <Clock className="w-4 h-4 shrink-0 mt-0.5 opacity-70" style={{ color: "#F59E0B" }} />
+              <p>
+                <span className="font-semibold">Your session expired</span> — re-enter your email to restore access.
+              </p>
+            </div>
+            <form onSubmit={checkAccess} className="flex gap-2">
+              <input
+                ref={emailInputRef}
+                type="email"
+                value={accessEmail}
+                onChange={(e) => setAccessEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="flex-1 min-w-0 rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2"
+                style={{ borderColor: "#F59E0B66" } as React.CSSProperties}
+              />
+              <button
+                type="submit"
+                disabled={!accessEmail.trim()}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: "#F59E0B", color: "#fff" }}
+              >
+                Restore access
+              </button>
+            </form>
           </div>
         )}
 
@@ -557,13 +578,13 @@ export default function KitWelcomePage() {
                     Try again
                   </button>
                 </div>
-              ) : (
+              ) : sessionExpired ? null : (
                 <form onSubmit={checkAccess} className="flex gap-2">
                   <input
                     ref={emailInputRef}
                     type="email"
                     value={accessEmail}
-                    onChange={(e) => { setAccessEmail(e.target.value); if (sessionExpired) setSessionExpired(false); }}
+                    onChange={(e) => setAccessEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
                     disabled={accessStatus === "loading"}
