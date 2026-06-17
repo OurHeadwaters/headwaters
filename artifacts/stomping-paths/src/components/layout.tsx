@@ -39,6 +39,7 @@ function readKitSession(slug: string): string | null {
 function clearKitSession(slug: string) {
   try {
     localStorage.removeItem(kitStorageKey(slug));
+    window.dispatchEvent(new CustomEvent("kit-session-change", { detail: { slug } }));
   } catch {
   }
 }
@@ -63,6 +64,18 @@ function useKitSession(path: string): { slug: string; email: string; signOut: ()
       return;
     }
     setEmail(readKitSession(slug));
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    function handleChange(e: Event) {
+      const detail = (e as CustomEvent<{ slug: string }>).detail;
+      if (detail?.slug === slug) {
+        setEmail(readKitSession(slug));
+      }
+    }
+    window.addEventListener("kit-session-change", handleChange);
+    return () => window.removeEventListener("kit-session-change", handleChange);
   }, [slug]);
 
   if (!slug || !email) return null;

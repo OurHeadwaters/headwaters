@@ -218,6 +218,21 @@ export default function KitWelcomePage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!slug) return;
+    function handleKitSessionChange(e: Event) {
+      const detail = (e as CustomEvent<{ slug: string }>).detail;
+      if (detail?.slug !== slug) return;
+      if (!loadStoredAccess(slug)) {
+        setAccessStatus("idle");
+        setAccessEmail("");
+        setEmailLinkVerified(false);
+      }
+    }
+    window.addEventListener("kit-session-change", handleKitSessionChange);
+    return () => window.removeEventListener("kit-session-change", handleKitSessionChange);
+  }, [slug]);
+
+  useEffect(() => {
     if (!slug || !accessEmail || backgroundRecheckDoneRef.current) return;
     const restoredFromCache = !!loadStoredAccess(slug);
     if (!restoredFromCache) return;
@@ -339,18 +354,20 @@ export default function KitWelcomePage() {
           </Link>
 
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <div
-              className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
-              style={{
-                color: meta.color,
-                background: meta.color + "18",
-                border: `1px solid ${meta.color}33`,
-              }}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Access Confirmed</span>
-            </div>
-            {emailLinkVerified && (
+            {accessStatus === "found" && (
+              <div
+                className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+                style={{
+                  color: meta.color,
+                  background: meta.color + "18",
+                  border: `1px solid ${meta.color}33`,
+                }}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Access Confirmed</span>
+              </div>
+            )}
+            {accessStatus === "found" && emailLinkVerified && (
               <div
                 className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
                 style={{
@@ -371,6 +388,7 @@ export default function KitWelcomePage() {
                   setAccessStatus("idle");
                   setAccessEmail("");
                   setEmailLinkVerified(false);
+                  window.dispatchEvent(new CustomEvent("kit-session-change", { detail: { slug } }));
                 }}
                 className="text-[11px] font-semibold underline underline-offset-2 opacity-50 hover:opacity-80 transition-opacity"
                 style={{ color: "#C8D4C0" }}
