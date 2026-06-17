@@ -575,7 +575,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
 
               <!-- Secondary CTA: My Kits library -->
               <p style="margin:0 0 28px;font-size:14px;text-align:center;">
-                <a href="https://www.thesurvivalpodcast.com/kits/my-purchases"
+                <a href="https://www.thesurvivalpodcast.com/kits/my-purchases?email=${encodeURIComponent(opts.buyerEmail)}"
                    style="color:#2d4a2d;text-decoration:none;font-family:'Arial',sans-serif;">
                   See all your kits →
                 </a>

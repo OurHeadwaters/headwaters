@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
@@ -125,21 +125,24 @@ function KitCard({
   );
 }
 
-function EmailLookupSection() {
-  const [emailInput, setEmailInput] = useState("");
+function EmailLookupSection({ initialEmail = "" }: { initialEmail?: string }) {
+  const [emailInput, setEmailInput] = useState(initialEmail);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentEmail, setSentEmail] = useState<string | null>(null);
 
-  async function handleLookup(e: React.FormEvent) {
-    e.preventDefault();
-    const email = emailInput.trim();
-    if (!email) return;
+  useEffect(() => {
+    if (initialEmail) {
+      setEmailInput(initialEmail);
+      doLookup(initialEmail);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEmail]);
 
+  async function doLookup(email: string) {
     setIsLoading(true);
     setError(null);
     setSentEmail(null);
-
     try {
       const res = await fetch(apiUrl("/kits/send-access-email"), {
         method: "POST",
@@ -156,6 +159,13 @@ function EmailLookupSection() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleLookup(e: React.FormEvent) {
+    e.preventDefault();
+    const email = emailInput.trim();
+    if (!email) return;
+    await doLookup(email);
   }
 
   if (sentEmail) {
@@ -250,6 +260,8 @@ function EmailLookupSection() {
 export default function MyPurchasesPage() {
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const { data, isLoading, isError } = usePurchases(isAuthenticated);
+  const search = useSearch();
+  const emailParam = new URLSearchParams(search).get("email") ?? "";
 
   if (authLoading) {
     return (
@@ -313,7 +325,7 @@ export default function MyPurchasesPage() {
         </div>
 
         <div className="max-w-2xl mx-auto px-6 py-12">
-          <EmailLookupSection />
+          <EmailLookupSection initialEmail={emailParam} />
         </div>
       </div>
     );
