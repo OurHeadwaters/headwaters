@@ -58,6 +58,7 @@ app.post("/api/brigade/webhook", webhookLimiter, stripeWebhookHandler, handleStr
 // Must be registered BEFORE express.json() so req.body stays a raw Buffer.
 app.post(
   "/api/zaprite/webhook",
+  webhookLimiter,
   express.raw({ type: "application/json" }),
   async (req: import("express").Request, res: import("express").Response) => {
     try {
