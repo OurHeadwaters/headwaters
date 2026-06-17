@@ -51,6 +51,7 @@ import storageFilesRouter from "./storage-files";
 import adminArtworkBackfillRouter from "./admin-artwork-backfill";
 import adminKitExpiryRemindersRouter from "./admin-kit-expiry-reminders";
 import adminZapriteFulfilRouter from "./admin-zaprite-fulfil";
+import adminKitsHealthRouter from "./admin-kits-health";
 
 const router: IRouter = Router();
 
@@ -106,5 +107,6 @@ router.use(storageFilesRouter);
 router.use(adminArtworkBackfillRouter);
 router.use(adminKitExpiryRemindersRouter);
 router.use(adminZapriteFulfilRouter);
+router.use(adminKitsHealthRouter);
 
 export default router;
