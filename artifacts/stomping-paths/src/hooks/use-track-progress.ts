@@ -77,8 +77,9 @@ function recordLastActive(slug: string) {
       } catch {
       }
     }
-    // Move slug to front, deduplicated
-    order = [slug, ...order.filter((s) => s !== slug)];
+    // Move slug to front, deduplicated, capped at 20
+    const RECENCY_CAP = 20;
+    order = [slug, ...order.filter((s) => s !== slug)].slice(0, RECENCY_CAP);
     localStorage.setItem(RECENCY_ORDER_KEY, JSON.stringify(order));
     // Keep legacy key in sync for any old code that might read it
     localStorage.setItem(LAST_ACTIVE_KEY, slug);
