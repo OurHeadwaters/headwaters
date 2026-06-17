@@ -737,6 +737,136 @@ export async function sendGordTipNotificationEmail(opts: GordTipNotificationOpti
   }
 }
 
+export interface KitAccessEmailOptions {
+  buyerEmail: string;
+  kits: Array<{
+    slug: string;
+    name: string;
+    tagline: string;
+    token: string | null;
+  }>;
+}
+
+function buildKitAccessEmailHtml(opts: KitAccessEmailOptions): string {
+  const siteUrl = (process.env.SITE_URL ?? "https://www.thesurvivalpodcast.com").replace(/\/$/, "");
+
+  const kitRows = opts.kits
+    .map((kit) => {
+      const params = new URLSearchParams({ email: opts.buyerEmail });
+      if (kit.token) params.set("token", kit.token);
+      const accessUrl = `${siteUrl}/kits/${kit.slug}/welcome?${params.toString()}`;
+
+      return `
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;border-radius:6px;margin-bottom:16px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 4px;font-size:17px;color:#1a2e1a;font-weight:bold;font-family:'Georgia',serif;">${kit.name}</p>
+                    ${kit.tagline ? `<p style="margin:0 0 14px;font-size:14px;color:#666666;line-height:1.5;">${kit.tagline}</p>` : `<p style="margin:0 0 14px;"></p>`}
+                    <a href="${accessUrl}"
+                       style="display:inline-block;padding:10px 24px;background-color:#2d4a2d;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-family:'Arial',sans-serif;font-weight:bold;">
+                      Open Kit →
+                    </a>
+                    <p style="margin:10px 0 0;font-size:11px;color:#aaaaaa;word-break:break-all;">
+                      <a href="${accessUrl}" style="color:#8a9e88;">${accessUrl}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>`;
+    })
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your TSP Kit Access Links</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f0eb;font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#1A2A20;padding:28px 40px;">
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <h1 style="margin:8px 0 0;font-size:24px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">Your kit access links</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 8px;font-size:16px;color:#333333;line-height:1.6;">
+                Here ${opts.kits.length === 1 ? "is the kit" : `are the ${opts.kits.length} kits`} purchased with <strong>${opts.buyerEmail}</strong>.
+              </p>
+              <p style="margin:0 0 28px;font-size:14px;color:#666666;line-height:1.6;">
+                Each link below opens your kit directly — no login required. Bookmark any page you'd like to revisit.
+              </p>
+
+              ${kitRows}
+
+              <p style="margin:24px 0 0;font-size:14px;color:#666666;line-height:1.6;">
+                Questions? Reply to this email or visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
+              <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
+                Sent by The Survival Podcast Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendKitAccessEmail(
+  opts: KitAccessEmailOptions,
+): Promise<{ sent: boolean; error?: string }> {
+  const client = getResendClient();
+  if (!client) {
+    logger.warn({ buyerEmail: opts.buyerEmail }, "email: RESEND_API_KEY not set — skipping kit access email");
+    return { sent: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const kitCount = opts.kits.length;
+  const subject =
+    kitCount === 1
+      ? `Your access link for ${opts.kits[0].name}`
+      : `Your ${kitCount} TSP kit access links`;
+
+  try {
+    const { error } = await client.emails.send({
+      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      to: [opts.buyerEmail],
+      subject,
+      html: buildKitAccessEmailHtml(opts),
+    });
+
+    if (error) {
+      logger.error({ error, buyerEmail: opts.buyerEmail }, "email: kit access email failed");
+      return { sent: false, error: String(error) };
+    }
+
+    logger.info({ buyerEmail: opts.buyerEmail, kitCount }, "email: kit access email sent");
+    return { sent: true };
+  } catch (err) {
+    logger.error({ err, buyerEmail: opts.buyerEmail }, "email: kit access email threw unexpectedly");
+    return { sent: false, error: String(err) };
+  }
+}
+
 export async function sendRsvpNotification(opts: RsvpNotificationOptions): Promise<void> {
   const client = getResendClient();
   if (!client) {

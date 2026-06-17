@@ -11,6 +11,7 @@ import {
   Mail,
   Search,
 } from "lucide-react";
+
 import { KIT_META } from "@/hooks/use-kits";
 
 function apiUrl(path: string): string {
@@ -36,24 +37,6 @@ interface MyPurchasesData {
   purchases: PurchasedKit[];
 }
 
-interface EmailPurchase {
-  id: number;
-  kitSlug: string;
-  purchasedAt: string;
-  token: string | null;
-  kit: {
-    slug: string;
-    name: string;
-    tagline: string;
-    description: string;
-    priceType: string;
-    ctaLabel: string;
-  } | null;
-}
-
-interface EmailPurchasesData {
-  purchases: EmailPurchase[];
-}
 
 function usePurchases(enabled: boolean) {
   return useQuery<MyPurchasesData>({
@@ -142,10 +125,9 @@ function KitCard({
 
 function EmailLookupSection() {
   const [emailInput, setEmailInput] = useState("");
-  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<EmailPurchasesData | null>(null);
+  const [sentEmail, setSentEmail] = useState<string | null>(null);
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -154,25 +136,65 @@ function EmailLookupSection() {
 
     setIsLoading(true);
     setError(null);
-    setResults(null);
-    setSubmittedEmail(null);
+    setSentEmail(null);
 
     try {
-      const res = await fetch(
-        apiUrl(`/kits/purchases-by-email?email=${encodeURIComponent(email)}`),
-      );
+      const res = await fetch(apiUrl("/kits/send-access-email"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Lookup failed — please try again.");
+        throw new Error(body.error ?? "Something went wrong — please try again.");
       }
-      const data: EmailPurchasesData = await res.json();
-      setResults(data);
-      setSubmittedEmail(email);
+      setSentEmail(email);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (sentEmail) {
+    return (
+      <div className="mt-10 pt-10 border-t border-border/40">
+        <div className="flex items-center gap-2 mb-4">
+          <Mail className="w-4 h-4" style={{ color: "#8FA883" }} />
+          <p className="text-sm font-semibold text-foreground">
+            Bought without logging in?
+          </p>
+        </div>
+        <div
+          className="rounded-xl border px-6 py-8 text-center max-w-md"
+          style={{ borderColor: "#8FA88333", background: "#8FA88308" }}
+        >
+          <div
+            className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
+            style={{ background: "#8FA88318", border: "1px solid #8FA88333" }}
+          >
+            <Mail className="w-5 h-5" style={{ color: "#8FA883" }} />
+          </div>
+          <p className="text-sm font-semibold text-foreground mb-1">
+            Check your inbox
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            We emailed one-click access links to{" "}
+            <span className="font-semibold text-foreground">{sentEmail}</span>.
+            Click any link in that email to open your kit directly.
+          </p>
+          <button
+            onClick={() => {
+              setSentEmail(null);
+              setEmailInput("");
+            }}
+            className="mt-5 text-xs text-muted-foreground/60 underline underline-offset-2 hover:text-muted-foreground transition-colors"
+          >
+            Use a different email
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -184,8 +206,8 @@ function EmailLookupSection() {
         </p>
       </div>
       <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-        Enter the email address you used at checkout and we'll show your kits
-        directly — no account needed.
+        Enter the email address you used at checkout and we'll send one-click
+        access links straight to your inbox — no account needed.
       </p>
 
       <form onSubmit={handleLookup} className="flex gap-3 max-w-md">
@@ -212,69 +234,12 @@ function EmailLookupSection() {
           ) : (
             <Search className="w-4 h-4" />
           )}
-          {isLoading ? "Looking…" : "Find my kits"}
+          {isLoading ? "Sending…" : "Send my links"}
         </button>
       </form>
 
       {error && (
         <p className="mt-4 text-sm text-destructive">{error}</p>
-      )}
-
-      {results && submittedEmail && (
-        <div className="mt-6">
-          {results.purchases.length === 0 ? (
-            <div className="py-8 text-center rounded-xl border border-dashed border-border">
-              <Package className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                No kits found for <strong>{submittedEmail}</strong>.
-              </p>
-              <p className="text-xs text-muted-foreground/60 mt-1">
-                Try the email you used at checkout, or{" "}
-                <a
-                  href="mailto:jack@thesurvivalpodcast.com"
-                  className="underline underline-offset-2"
-                >
-                  contact support
-                </a>
-                .
-              </p>
-            </div>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground mb-4">
-                Showing kits purchased with{" "}
-                <span className="font-semibold text-foreground">
-                  {submittedEmail}
-                </span>
-              </p>
-              <div className="flex flex-col gap-4">
-                {results.purchases.map((purchase) => {
-                  const kitName =
-                    purchase.kit?.name ??
-                    purchase.kitSlug
-                      .replace(/-/g, " ")
-                      .replace(/\b\w/g, (c) => c.toUpperCase());
-                  const kitTagline = purchase.kit?.tagline ?? "";
-                  const params = new URLSearchParams({
-                    email: submittedEmail,
-                    ...(purchase.token ? { token: purchase.token } : {}),
-                  });
-                  const href = `/kits/${purchase.kitSlug}/welcome?${params.toString()}`;
-                  return (
-                    <KitCard
-                      key={purchase.id}
-                      kitSlug={purchase.kitSlug}
-                      kitName={kitName}
-                      kitTagline={kitTagline}
-                      purchasedAt={purchase.purchasedAt}
-                      href={href}
-                    />
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
       )}
     </div>
   );

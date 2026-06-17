@@ -16,7 +16,7 @@ import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
 import { trackBySlug } from "../lib/tracks";
-import { sendKitInquiryNotification, generateKitAccessToken, verifyKitAccessToken } from "../lib/email";
+import { sendKitInquiryNotification, sendKitAccessEmail, generateKitAccessToken, verifyKitAccessToken } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -95,18 +95,17 @@ router.get("/kits/my-purchases", async (req, res) => {
   }
 });
 
-/* ─────────────────── GET /api/kits/purchases-by-email ─────────────────── */
+
+/* ─────────────────── POST /api/kits/send-access-email ─────────────────── */
 
 /**
- * Unauthenticated email-based purchase lookup.
- * Returns all kits purchased with the given email, each with an HMAC access
- * token so the buyer can reach /kits/:slug/welcome?email=...&token=... without
- * needing a Replit account.
- *
- * Rate-limiting and email validation are enforced to limit scraping.
+ * Unauthenticated endpoint that looks up kit purchases by email and sends the
+ * buyer a one-click access email instead of returning results in-browser.
+ * Always responds 200 regardless of whether the email matched any purchases
+ * to prevent email enumeration.
  */
-router.get("/kits/purchases-by-email", async (req, res) => {
-  const email = (req.query.email as string | undefined)?.trim().toLowerCase() ?? "";
+router.post("/kits/send-access-email", async (req, res) => {
+  const email = (req.body?.email as string | undefined)?.trim().toLowerCase() ?? "";
 
   if (!email) {
     res.status(400).json({ error: "email is required" });
@@ -130,31 +129,28 @@ router.get("/kits/purchases-by-email", async (req, res) => {
       .where(eq(kitPurchasesTable.buyerEmail, email))
       .orderBy(desc(kitPurchasesTable.purchasedAt));
 
-    const purchases = rows.map((row) => {
-      const kit = kitBySlug(row.kitSlug);
-      const token = generateKitAccessToken(row.kitSlug, email);
-      return {
-        id: row.id,
-        kitSlug: row.kitSlug,
-        purchasedAt: row.purchasedAt,
-        token,
-        kit: kit
-          ? {
-              slug: kit.slug,
-              name: kit.name,
-              tagline: kit.tagline,
-              description: kit.description,
-              priceType: kit.priceType,
-              ctaLabel: kit.ctaLabel,
-            }
-          : null,
-      };
-    });
+    if (rows.length > 0) {
+      const kits = rows.map((row) => {
+        const kit = kitBySlug(row.kitSlug);
+        const token = generateKitAccessToken(row.kitSlug, email);
+        return {
+          slug: row.kitSlug,
+          name: kit?.name ?? row.kitSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          tagline: kit?.tagline ?? "",
+          token,
+        };
+      });
 
-    res.json({ purchases });
+      sendKitAccessEmail({ buyerEmail: email, kits }).catch((err) =>
+        logger.warn({ err, email }, "kits: send-access-email fire failed (non-fatal)"),
+      );
+    }
+
+    // Always 200 — don't reveal whether the email exists in our system
+    res.json({ sent: true });
   } catch (err) {
-    logger.error({ err }, "kits: GET /purchases-by-email failed");
-    res.status(500).json({ error: "Failed to look up purchases" });
+    logger.error({ err }, "kits: POST /send-access-email failed");
+    res.status(500).json({ error: "Failed to send access email" });
   }
 });
 
@@ -455,36 +451,44 @@ router.get("/kits/:slug/access", async (req, res) => {
   const email = (req.query.email as string) ?? null;
   const token = (req.query.token as string) ?? null;
 
+  // Unauthenticated callers with no email at all: deny immediately.
   if (!userId && !email) {
     res.json({ hasAccess: false, isAuthenticated: false });
     return;
   }
 
-  // Fast-path: if a valid HMAC token is supplied with the email, trust it
-  // without a DB round-trip. Tokens are only generated server-side after a
-  // purchase is recorded, so a valid token proves purchase happened.
+  // Unauthenticated email-based access: require a valid HMAC token.
+  // Accepting email alone would let anyone enumerate a known address's
+  // purchases by iterating kit slugs — the token proves server-issued
+  // access (i.e. a real purchase already recorded).
+  if (!userId && email) {
+    if (token && verifyKitAccessToken(kit.slug, email, token)) {
+      res.json({ hasAccess: true, isAuthenticated: false, tokenVerified: true });
+    } else {
+      res.json({ hasAccess: false, isAuthenticated: false });
+    }
+    return;
+  }
+
+  // Authenticated path: token fast-path first, then DB lookup by userId.
   if (email && token && verifyKitAccessToken(kit.slug, email, token)) {
-    res.json({ hasAccess: true, isAuthenticated, tokenVerified: true });
+    res.json({ hasAccess: true, isAuthenticated: true, tokenVerified: true });
     return;
   }
 
   try {
-    const conditions = [];
-    if (userId) conditions.push(eq(kitPurchasesTable.userId, userId));
-    if (email) conditions.push(eq(kitPurchasesTable.buyerEmail, email.toLowerCase()));
-
     const rows = await db
       .select({ id: kitPurchasesTable.id })
       .from(kitPurchasesTable)
       .where(
         and(
           eq(kitPurchasesTable.kitSlug, kit.slug),
-          or(...conditions),
+          eq(kitPurchasesTable.userId, userId!),
         ),
       )
       .limit(1);
 
-    res.json({ hasAccess: rows.length > 0, isAuthenticated });
+    res.json({ hasAccess: rows.length > 0, isAuthenticated: true });
   } catch (err) {
     logger.error({ err, slug: kit.slug }, "kits: GET /access failed");
     res.status(500).json({ error: "Failed to check access" });
