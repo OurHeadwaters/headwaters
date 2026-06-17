@@ -24,6 +24,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 
+async function fetchAllTracksProgressFromServer(): Promise<Record<string, number> | null> {
+  try {
+    const res = await fetch("/api/track-progress", { credentials: "include" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { counts: Record<string, number> };
+    return data.counts;
+  } catch {
+    return null;
+  }
+}
+
 const storageKey = (slug: string) => `tsp_track_progress_${slug}`;
 const LAST_ACTIVE_KEY = "tsp_track_last_active";
 
@@ -258,8 +269,10 @@ function buildSummary(slugs: string[]): AllTracksSummary {
 
 export function useAllTracksProgress(slugs: string[]): AllTracksSummary {
   const slugKey = slugs.join(",");
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [summary, setSummary] = useState<AllTracksSummary>(() => buildSummary(slugs));
 
+  // Always keep a live local summary as the baseline
   useEffect(() => {
     setSummary(buildSummary(slugs));
 
@@ -274,6 +287,28 @@ export function useAllTracksProgress(slugs: string[]): AllTracksSummary {
       window.removeEventListener("focus", refresh);
     };
   }, [slugKey]);
+
+  // When authenticated, overlay server counts (server is source of truth)
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
+    fetchAllTracksProgressFromServer().then((serverCounts) => {
+      if (serverCounts === null) return;
+      setSummary((prev) => {
+        const next = { ...prev };
+        // Server is authoritative for slugs it returns; localStorage fills the
+        // gaps for slugs not yet on the server (e.g. first-ever local toggle
+        // whose PATCH hasn't landed yet — rare, but graceful).
+        for (const slug of slugs) {
+          if (Object.prototype.hasOwnProperty.call(serverCounts, slug)) {
+            next[slug] = serverCounts[slug];
+          }
+          // else: keep the localStorage value already in `prev`
+        }
+        return next;
+      });
+    });
+  }, [slugKey, isAuthenticated, authLoading]);
 
   return summary;
 }
