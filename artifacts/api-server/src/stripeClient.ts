@@ -89,6 +89,24 @@ async function getStripeCredentials(): Promise<{
     );
   }
 
+  if (!settings.webhook_secret) {
+    // Development only — production throws above.
+    // Log clearly so the operator knows signature verification is disabled.
+    logger.warn(
+      { environment: targetEnvironment },
+      "stripe: webhook_secret not set — signature verification is DISABLED. " +
+        "Stripe webhooks will be rejected with 400 until you add the signing secret. " +
+        "Steps: Stripe Dashboard → Developers → Webhooks → select the endpoint → " +
+        "Signing secret → paste the whsec_… value into " +
+        "Integrations → Stripe → " + targetEnvironment + " environment → webhook_secret field.",
+    );
+  } else {
+    logger.info(
+      { environment: targetEnvironment },
+      "stripe: webhook_secret configured — signature verification enabled",
+    );
+  }
+
   return {
     secretKey: settings.secret,
     webhookSecret: settings.webhook_secret,
