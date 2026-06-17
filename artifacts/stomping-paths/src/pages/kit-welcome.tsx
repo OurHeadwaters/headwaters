@@ -132,6 +132,7 @@ export default function KitWelcomePage() {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
   const [backgroundCheckWarning, setBackgroundCheckWarning] = useState(false);
+  const [backgroundRecheckInFlight, setBackgroundRecheckInFlight] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const retryCountRef = useRef(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -265,17 +266,23 @@ export default function KitWelcomePage() {
   const retryBackgroundCheck = useCallback(async () => {
     if (!slug || !accessEmail) return;
     const email = accessEmail;
+    setBackgroundRecheckInFlight(true);
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setBackgroundRecheckInFlight(false);
+        return;
+      }
       const data = await res.json();
       if (data.hasAccess) {
         saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
         setBackgroundCheckWarning(false);
       }
     } catch {
+    } finally {
+      setBackgroundRecheckInFlight(false);
     }
   }, [slug, accessEmail, emailLinkVerified]);
 
@@ -487,32 +494,42 @@ export default function KitWelcomePage() {
 
         {backgroundCheckWarning && (
           <div
-            className="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm"
-            style={{
-              background: "#78350F0A",
-              borderColor: "#92400E33",
-              color: "#92400E",
-            }}
+            className="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm transition-colors"
+            style={
+              backgroundRecheckInFlight
+                ? { background: "#0F1F1A0A", borderColor: "#8FA88344", color: "#4B6B55" }
+                : { background: "#78350F0A", borderColor: "#92400E33", color: "#92400E" }
+            }
           >
-            <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
+            {backgroundRecheckInFlight ? (
+              <Loader2 className="w-4 h-4 shrink-0 mt-0.5 animate-spin" />
+            ) : (
+              <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
+            )}
             <span className="flex-1 leading-snug">
-              Couldn't verify your access — check your connection. Your cached access is still active.
+              {backgroundRecheckInFlight
+                ? "Reconnected — verifying your access…"
+                : "Couldn't verify your access — check your connection. Your cached access is still active."}
             </span>
-            <button
-              type="button"
-              onClick={retryBackgroundCheck}
-              className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity"
-            >
-              Try again
-            </button>
-            <button
-              type="button"
-              aria-label="Dismiss"
-              onClick={() => setBackgroundCheckWarning(false)}
-              className="shrink-0 opacity-50 hover:opacity-80 transition-opacity"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {!backgroundRecheckInFlight && (
+              <button
+                type="button"
+                onClick={retryBackgroundCheck}
+                className="shrink-0 text-xs font-semibold underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity"
+              >
+                Try again
+              </button>
+            )}
+            {!backgroundRecheckInFlight && (
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={() => setBackgroundCheckWarning(false)}
+                className="shrink-0 opacity-50 hover:opacity-80 transition-opacity"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         )}
 
