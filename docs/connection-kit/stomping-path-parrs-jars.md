@@ -124,6 +124,133 @@ slug in these locations (checked in order):
 
 ---
 
+## Storefront implementation
+
+Add this to the parrsjars.ca server in the function that runs after an order
+is confirmed paid. The call is fire-and-forget — a failure here should never
+block the buyer's confirmation page or receipt email.
+
+### Environment variable required on the storefront
+
+| Variable | Where to set it | What it does |
+|---|---|---|
+| `TSP_WEBHOOK_URL` | Replit Secrets on the parrsjars.ca project | Full webhook URL including the token: `https://<domain>/api/zaprite/webhook?token=<ZAPRITE_WEBHOOK_TOKEN>` |
+
+### Node.js / fetch snippet
+
+Drop this helper into your order completion handler (e.g. inside your Stripe
+`checkout.session.completed` handler, WooCommerce order hook, or custom
+checkout success route):
+
+```js
+/**
+ * Notify the Stomping Path API that a Parr's Jars course purchase completed.
+ * Call this after the payment is confirmed — never before.
+ *
+ * @param {object} order
+ * @param {string} order.id         - Your platform's unique order ID
+ * @param {string} order.email      - Buyer's email address
+ * @param {string} [order.name]     - Buyer's name (optional)
+ * @param {number} [order.amountUsd] - Amount paid in USD (optional, e.g. 97.00)
+ */
+async function notifyTspPurchase({ id, email, name, amountUsd }) {
+  const webhookUrl = process.env.TSP_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.error("notifyTspPurchase: TSP_WEBHOOK_URL is not set — skipping TSP notification");
+    return;
+  }
+
+  const payload = {
+    event: "order.completed",
+    order: {
+      id,
+      status: "completed",
+      customerEmail: email,
+      ...(name ? { customerName: name } : {}),
+      ...(amountUsd != null ? { amountUsd } : {}),
+      metadata: { kit_slug: "parrs-jars" },
+    },
+  };
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error("notifyTspPurchase: API returned non-200", {
+        status: res.status,
+        body: json,
+        orderId: id,
+      });
+      return;
+    }
+
+    if (json.skipped) {
+      console.log("notifyTspPurchase: duplicate order — already recorded", { orderId: id });
+    } else {
+      console.log("notifyTspPurchase: purchase recorded, welcome email sent", { orderId: id });
+    }
+  } catch (err) {
+    // Non-fatal — buyer already has their receipt; log and continue.
+    console.error("notifyTspPurchase: fetch failed (non-fatal)", { err, orderId: id });
+  }
+}
+```
+
+### Where to call it
+
+**If parrsjars.ca uses Stripe**, call it inside your `checkout.session.completed`
+webhook handler, after you've confirmed the session is paid:
+
+```js
+// Inside your Stripe webhook handler:
+if (event.type === "checkout.session.completed") {
+  const session = event.data.object;
+  if (session.payment_status === "paid") {
+    await notifyTspPurchase({
+      id: session.id,
+      email: session.customer_details?.email ?? session.customer_email,
+      name: session.customer_details?.name,
+      amountUsd: session.amount_total ? session.amount_total / 100 : undefined,
+    });
+  }
+}
+```
+
+**If parrsjars.ca uses a custom order flow**, call it at the point where the
+order status transitions to `paid` / `completed`:
+
+```js
+// Inside your order completion handler:
+await notifyTspPurchase({
+  id: order.id,             // must be unique per purchase
+  email: order.buyerEmail,
+  name: order.buyerName,
+  amountUsd: order.totalUsd,
+});
+```
+
+### Setting `TSP_WEBHOOK_URL` on the parrsjars.ca project
+
+The full URL to set as `TSP_WEBHOOK_URL` is:
+
+```
+https://<stomping-path-api-domain>/api/zaprite/webhook?token=<ZAPRITE_WEBHOOK_TOKEN>
+```
+
+- `<stomping-path-api-domain>` — the deployed domain of this API project
+- `<ZAPRITE_WEBHOOK_TOKEN>` — the same value set as `ZAPRITE_WEBHOOK_TOKEN` in
+  Replit Secrets on the API project (generated with `openssl rand -hex 32`)
+
+Both projects must share the same token value.
+
+---
+
 ## Worked example
 
 A buyer completes a $97 purchase on parrsjars.ca. The storefront fires:
