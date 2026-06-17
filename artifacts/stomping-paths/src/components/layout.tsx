@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogIn, LogOut, User, ChevronDown, Map, Shield } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, ChevronDown, Map, Shield, Package } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
@@ -325,6 +325,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           <span className="text-xs text-white/50 mt-0.5">Your member area</span>
                         </Link>
                       )}
+                      <Link href="/kits/my-purchases" onClick={() => setUserMenuOpen(false)} className="flex flex-col px-4 py-2 hover:bg-white/5 transition-colors">
+                        <span className="text-sm font-semibold text-white">My Kits</span>
+                        <span className="text-xs text-white/50 mt-0.5">Your purchased kit library</span>
+                      </Link>
                       <Link href="/map" onClick={() => setUserMenuOpen(false)} className="flex flex-col px-4 py-2 hover:bg-white/5 transition-colors">
                         <span className="text-sm font-semibold text-white">My Map</span>
                         <span className="text-xs text-white/50 mt-0.5">Your practitioner journey</span>
@@ -470,6 +474,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onClick={() => setMenuOpen(false)}
               >
                 Suggest a Creator
+              </Link>
+            )}
+
+            {/* My Kits — mobile, auth-gated */}
+            {isAuthenticated && !authLoading && (
+              <Link
+                href="/kits/my-purchases"
+                className={`text-base font-medium px-3 py-2.5 rounded-md flex items-center gap-2 ${
+                  location === "/kits/my-purchases"
+                    ? "bg-white/10 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Package className="w-4 h-4" />
+                My Kits
               </Link>
             )}
 

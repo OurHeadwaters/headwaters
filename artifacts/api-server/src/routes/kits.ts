@@ -2,6 +2,7 @@
  * Kit routes — kit registry API and commerce endpoints.
  *
  * GET  /api/kits                      — all kits (metadata only)
+ * GET  /api/kits/my-purchases         — kits purchased by the authenticated user
  * GET  /api/kits/:slug                — single kit with full content bundle
  * POST /api/kits/:slug/checkout       — create Stripe Checkout session (direct kits)
  * POST /api/kits/:slug/inquire        — submit inquiry form (consultative kits)
@@ -46,6 +47,52 @@ function contentWhereFragment(tags: string[], categories: string[]): string {
 
 router.get("/kits", (_req, res) => {
   res.json(KITS);
+});
+
+/* ─────────────────── GET /api/kits/my-purchases ─────────────────── */
+
+router.get("/kits/my-purchases", async (req, res) => {
+  const userId = (req as any).user?.id ?? null;
+  if (!userId) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select({
+        id: kitPurchasesTable.id,
+        kitSlug: kitPurchasesTable.kitSlug,
+        createdAt: kitPurchasesTable.createdAt,
+      })
+      .from(kitPurchasesTable)
+      .where(eq(kitPurchasesTable.userId, userId))
+      .orderBy(desc(kitPurchasesTable.createdAt));
+
+    const purchases = rows.map((row) => {
+      const kit = kitBySlug(row.kitSlug);
+      return {
+        id: row.id,
+        kitSlug: row.kitSlug,
+        createdAt: row.createdAt,
+        kit: kit
+          ? {
+              slug: kit.slug,
+              name: kit.name,
+              tagline: kit.tagline,
+              description: kit.description,
+              priceType: kit.priceType,
+              ctaLabel: kit.ctaLabel,
+            }
+          : null,
+      };
+    });
+
+    res.json({ purchases });
+  } catch (err) {
+    logger.error({ err }, "kits: GET /my-purchases failed");
+    res.status(500).json({ error: "Failed to load purchases" });
+  }
 });
 
 /* ─────────────────── GET /api/kits/:slug ─────────────────── */

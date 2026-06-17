@@ -60,6 +60,7 @@ import KitsPage from "@/pages/kits";
 import KitDetailPage from "@/pages/kit-detail";
 import KitFinderPage from "@/pages/kit-finder";
 import KitWelcomePage from "@/pages/kit-welcome";
+import MyPurchasesPage from "@/pages/my-purchases";
 import { AdminKitPurchases } from "@/pages/admin-kit-purchases";
 import { AdminGordTips } from "@/pages/admin-gord-tips";
 import { AdminShares } from "@/pages/admin-shares";
@@ -144,6 +145,7 @@ function Router() {
         <Route path="/headwaters" component={HeadwatersPage} />
         <Route path="/kits" component={KitsPage} />
         <Route path="/kits/find" component={KitFinderPage} />
+        <Route path="/kits/my-purchases" component={MyPurchasesPage} />
         <Route path="/kits/:slug/welcome" component={KitWelcomePage} />
         <Route path="/kits/:slug" component={KitDetailPage} />
         <Route path="/practitioners" component={PractitionersPage} />
