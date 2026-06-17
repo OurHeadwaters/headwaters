@@ -328,7 +328,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { currentEpisode } = usePlayer();
-  const { continueListening } = useHistory();
+  const { continueListening, isReady: historyReady } = useHistory();
   const [page, setPage] = useState(0);
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -510,7 +510,27 @@ export default function HomeScreen() {
       </View>
 
       {/* Continue Listening — tool station */}
-      {continueListening.length > 0 && (
+      {!historyReady ? (
+        <View style={[styles.section, { paddingHorizontal: 16 }]}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="headset" size={15} color={colors.woodBrown} />
+            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+              Continue Listening
+            </Text>
+          </View>
+          {[0, 1].map((i) => (
+            <View key={i} style={[styles.continueSkeletonRow, { backgroundColor: colors.muted }]}>
+              <View style={[styles.continueSkeletonArt, { backgroundColor: colors.woodBorder }]} />
+              <View style={styles.continueSkeletonInfo}>
+                <View style={[styles.continueSkeletonLine, { width: "60%", backgroundColor: colors.woodBorder }]} />
+                <View style={[styles.continueSkeletonLine, { width: "85%", backgroundColor: colors.woodBorder, marginTop: 6 }]} />
+                <View style={[styles.continueSkeletonBar, { backgroundColor: colors.woodBorder }]} />
+              </View>
+              <View style={[styles.continueSkeletonBtn, { backgroundColor: colors.woodBorder }]} />
+            </View>
+          ))}
+        </View>
+      ) : continueListening.length > 0 ? (
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="headset" size={15} color={colors.woodBrown} />
@@ -522,7 +542,7 @@ export default function HomeScreen() {
             <ContinueListeningCard key={record.slug} record={record} />
           ))}
         </View>
-      )}
+      ) : null}
 
       {/* Latest Episodes — radio shack corner */}
       {featured && featured.length > 0 && (
@@ -844,6 +864,20 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
+  continueSkeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 10,
+    borderRadius: 12,
+    marginBottom: 10,
+    opacity: 0.6,
+  },
+  continueSkeletonArt: { width: 52, height: 52, borderRadius: 8, flexShrink: 0 },
+  continueSkeletonInfo: { flex: 1, gap: 0 },
+  continueSkeletonLine: { height: 10, borderRadius: 5 },
+  continueSkeletonBar: { height: 4, borderRadius: 2, marginTop: 10, width: "100%" },
+  continueSkeletonBtn: { width: 32, height: 32, borderRadius: 16, flexShrink: 0 },
   center: { padding: 40, alignItems: "center", gap: 8 },
   emptyText: { fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
