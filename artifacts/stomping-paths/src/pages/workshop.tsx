@@ -327,15 +327,25 @@ function RsvpModal({
 function EventCard({
   event,
   rsvped,
-  onRsvp,
+  onRsvpSuccess,
 }: {
   event: GroundEvent;
   rsvped: boolean;
-  onRsvp: (id: number, name: string, email: string) => void;
+  onRsvpSuccess: (eventId: number) => void;
 }) {
+  const qc = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [, navigate] = useLocation();
+
+  const rsvpMutation = useMutation({
+    mutationFn: postRsvp,
+    onSuccess: (result) => {
+      setShowRsvpModal(false);
+      onRsvpSuccess(result.eventId);
+      qc.invalidateQueries({ queryKey: ["ground-events"] });
+    },
+  });
   const isFull = event.seats !== null && event.rsvpCount >= event.seats;
   const seatsLeft = event.seats !== null ? event.seats - event.rsvpCount : null;
   const transformation = event.transformationSlug
@@ -352,12 +362,11 @@ function EventCard({
         <RsvpModal
           event={event}
           onConfirm={(name, email) => {
-            onRsvp(event.id, name, email);
-            setShowRsvpModal(false);
+            rsvpMutation.mutate({ eventId: event.id, attendeeName: name, attendeeEmail: email });
           }}
-          onClose={() => setShowRsvpModal(false)}
-          isPending={false}
-          error={null}
+          onClose={() => { if (!rsvpMutation.isPending) setShowRsvpModal(false); }}
+          isPending={rsvpMutation.isPending}
+          error={rsvpMutation.isError ? (rsvpMutation.error instanceof Error ? rsvpMutation.error.message : "RSVP failed — please try again") : null}
         />
       )}
 
@@ -1105,18 +1114,9 @@ export function WorkshopBoard() {
     queryFn: fetchEvents,
   });
 
-  const rsvpMutation = useMutation({
-    mutationFn: postRsvp,
-    onSuccess: (result) => {
-      setRsvped((prev) => new Set(prev).add(result.eventId));
-      qc.invalidateQueries({ queryKey: ["ground-events"] });
-    },
-  });
-
-  const handleRsvp = useCallback(
-    (eventId: number, attendeeName: string, attendeeEmail: string) =>
-      rsvpMutation.mutate({ eventId, attendeeName, attendeeEmail }),
-    [rsvpMutation],
+  const handleRsvpSuccess = useCallback(
+    (eventId: number) => setRsvped((prev) => new Set(prev).add(eventId)),
+    [],
   );
 
   const allEvents = data?.events ?? [];
@@ -1243,7 +1243,7 @@ export function WorkshopBoard() {
                 key={event.id}
                 event={event}
                 rsvped={rsvped.has(event.id)}
-                onRsvp={handleRsvp}
+                onRsvpSuccess={handleRsvpSuccess}
               />
             ))}
           </div>

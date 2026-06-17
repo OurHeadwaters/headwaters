@@ -255,6 +255,13 @@ export default function StompingGroundsPage() {
             rgba(0,0,0,0.06) 14px, rgba(0,0,0,0.06) 15px
           );
         }
+
+        /* ─── Reduced motion: pause decorative bounce animations ─── */
+        @media (prefers-reduced-motion: reduce) {
+          .sg-wooden-tab--swing { animation: none !important; }
+          .drop-tick-anim { animation: none !important; }
+          .badge-settle-anim { animation: none !important; }
+        }
       `}</style>
 
       <div className="min-h-screen bg-[#1C3020]">
@@ -310,7 +317,7 @@ export default function StompingGroundsPage() {
           </div>
 
           <div className="container mx-auto px-4 md:px-6 relative">
-            <div className="flex items-end gap-1.5">
+            <div className="flex items-end gap-1.5 overflow-x-auto scrollbar-none pb-px">
               {TABS.map((tab) => (
                 <WoodenTab
                   key={tab.id}

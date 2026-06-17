@@ -600,7 +600,6 @@ export function FiresideChats() {
   );
 
   const handlePostSuccess = useCallback(() => {
-    setShowForm(false);
     qc.invalidateQueries({ queryKey: ["fireside-flames-hot"] });
     qc.invalidateQueries({ queryKey: ["fireside-flames-new"] });
     qc.invalidateQueries({ queryKey: ["fireside-flames-preview"] });

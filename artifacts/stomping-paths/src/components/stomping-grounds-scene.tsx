@@ -1148,6 +1148,7 @@ async function anchorGemInline(id: number): Promise<{ anchorCount: number }> {
 
 function WisdomDigInlinePanel() {
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
   const [anchored, setAnchored] = useState<Set<number>>(new Set());
   const { data: gems = [], isLoading } = useQuery({
     queryKey: ["stomping-gems-top"],
@@ -1202,12 +1203,12 @@ function WisdomDigInlinePanel() {
           })}
         </div>
       )}
-      <Link
-        href="/wisdom-dig"
+      <button
+        onClick={() => navigate("/stomping-grounds?tab=wisdom")}
         className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#2C4A36] hover:opacity-90 transition-opacity"
       >
         💎 See full page <ArrowRight className="w-3.5 h-3.5" />
-      </Link>
+      </button>
     </div>
   );
 }
@@ -1251,6 +1252,7 @@ async function submitMiniTip(data: { amountUnits: number; wishText: string; list
 
 function WishingWellInlinePanel() {
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
   const [wishText, setWishText] = useState("");
   const [listenerName, setListenerName] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -1335,12 +1337,12 @@ function WishingWellInlinePanel() {
           ))}
         </div>
       )}
-      <Link
-        href="/wishing-well"
+      <button
+        onClick={() => navigate("/stomping-grounds?tab=well")}
         className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white/80 border border-white/20 hover:border-white/40 hover:text-white transition-all"
       >
         See full page <ArrowRight className="w-3.5 h-3.5" />
-      </Link>
+      </button>
     </div>
   );
 }
