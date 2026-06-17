@@ -328,10 +328,21 @@ function postToInsert(
 const CHAPTER_FETCH_CONCURRENCY = 8;
 
 /**
+ * Episodes published before this date are served from an older server and are
+ * extremely unlikely to have ID3 CHAP tags — chapter markers weren't common in
+ * podcasting until the mid-2010s. Skipping the audio fetch for these episodes
+ * saves significant bandwidth and speeds up full-archive syncs.
+ */
+const CHAPTER_FETCH_CUTOFF_DATE = new Date("2017-01-01T00:00:00Z");
+
+/**
  * For each insert item that has an audioUrl and hasn't already had its chapters
  * checked (indicated by `extra.historyTimestampChecked` in the existing DB
  * record), fetch ID3/podcast:chapters and write `historyTimestamp` +
  * `historyTimestampChecked` into the item's `extra` field.
+ *
+ * Episodes published before CHAPTER_FETCH_CUTOFF_DATE are immediately marked
+ * as checked with `historyTimestamp: null` — no audio fetch is attempted.
  *
  * Items that are already marked checked keep their existing values; `extra` is
  * left untouched so the JSONB-merge upsert in library.ts can preserve them.
@@ -340,22 +351,40 @@ async function enrichWithChapterTimestamps(
   inserts: InsertContentItem[],
   existingExtras: Map<string, Record<string, unknown>>,
 ): Promise<void> {
-  const toEnrich = inserts.filter((item) => {
-    if (!item.audioUrl) return false;
-    // Skip if text-based detection already found a history timestamp at ingest time
+  const needsCheck: InsertContentItem[] = [];
+
+  for (const item of inserts) {
+    if (!item.audioUrl) continue;
+
     const itemExtra = item.extra as Record<string, unknown> | undefined;
-    if (itemExtra?.historyTimestampChecked) return false;
-    const existing = existingExtras.get(item.sourceId);
+
+    // Skip if text-based detection already found a history timestamp at ingest time
+    if (itemExtra?.historyTimestampChecked) continue;
+
     // Skip if we've already checked this episode in a previous sync
-    return !existing?.historyTimestampChecked;
-  });
+    const existing = existingExtras.get(item.sourceId);
+    if (existing?.historyTimestampChecked) continue;
 
-  if (toEnrich.length === 0) return;
+    // Episodes before the cutoff almost certainly have no ID3 chapters — mark
+    // them as checked immediately so they're never retried.
+    if (item.publishedAt && item.publishedAt < CHAPTER_FETCH_CUTOFF_DATE) {
+      item.extra = {
+        ...(itemExtra ?? {}),
+        historyTimestamp: null,
+        historyTimestampChecked: true,
+      };
+      continue;
+    }
 
-  logger.debug({ count: toEnrich.length }, "Fetching chapters for unchecked episodes");
+    needsCheck.push(item);
+  }
+
+  if (needsCheck.length === 0) return;
+
+  logger.debug({ count: needsCheck.length }, "Fetching chapters for unchecked episodes");
 
   await pMap(
-    toEnrich,
+    needsCheck,
     async (item) => {
       const chaptersJsonUrl =
         (item.extra as Record<string, unknown> | undefined)?.chaptersJsonUrl as
