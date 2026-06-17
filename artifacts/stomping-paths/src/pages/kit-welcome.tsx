@@ -131,6 +131,7 @@ export default function KitWelcomePage() {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const retryCountRef = useRef(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const backgroundRecheckDoneRef = useRef(false);
 
   const MAX_RETRIES = 10;
   const RETRY_INTERVAL = 30;
@@ -188,6 +189,31 @@ export default function KitWelcomePage() {
       saveStoredAccess(slug, accessEmail, emailLinkVerified);
     }
   }, [accessStatus, slug, accessEmail, emailLinkVerified]);
+
+  useEffect(() => {
+    if (!slug || !accessEmail || backgroundRecheckDoneRef.current) return;
+    const restoredFromCache = !!loadStoredAccess(slug);
+    if (!restoredFromCache) return;
+    backgroundRecheckDoneRef.current = true;
+    const email = accessEmail;
+    (async () => {
+      try {
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+        const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.hasAccess) {
+          saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
+        } else {
+          clearStoredAccess(slug);
+          setAccessStatus("idle");
+          setAccessEmail("");
+        }
+      } catch {
+      }
+    })();
+  }, [slug]);
 
   async function runAccessCheck(email: string, token?: string) {
     if (!email) return;
