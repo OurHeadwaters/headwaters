@@ -16,7 +16,12 @@ const router: IRouter = Router();
 
 const VALID_SURFACES = new Set(["kit", "track", "transform"]);
 
-const DEDUP_WINDOW_SECONDS = 60;
+const _dedupRaw = parseInt(process.env.SHARE_DEDUP_SECONDS ?? "", 10);
+const DEDUP_WINDOW_SECONDS =
+  Number.isFinite(_dedupRaw) && _dedupRaw > 0 ? _dedupRaw : 60;
+if (process.env.SHARE_DEDUP_SECONDS !== undefined && DEDUP_WINDOW_SECONDS === 60 && process.env.SHARE_DEDUP_SECONDS !== "60") {
+  logger.warn({ SHARE_DEDUP_SECONDS: process.env.SHARE_DEDUP_SECONDS }, "shares: SHARE_DEDUP_SECONDS is invalid; falling back to 60");
+}
 
 function hashIp(ip: string): string {
   return createHash("sha256").update(ip).digest("hex").slice(0, 16);
@@ -48,8 +53,9 @@ async function ensureShareEventsTable(): Promise<void> {
   /*
    * Partial functional unique index that provides atomic deduplication.
    *
-   * The expression (floor(extract(epoch from shared_at) / 60)::bigint) bins
-   * each row into a 60-second bucket.  INSERT … ON CONFLICT DO NOTHING then
+   * The expression (floor(extract(epoch from shared_at) / N)::bigint) bins
+   * each row into an N-second bucket (N = DEDUP_WINDOW_SECONDS, default 60,
+   * configurable via the SHARE_DEDUP_SECONDS env var).  INSERT … ON CONFLICT DO NOTHING then
    * becomes the sole write path — no separate SELECT is needed and there is
    * no race window between check and insert.
    *

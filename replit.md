@@ -175,6 +175,14 @@ All five secrets must be set in Replit Secrets before real money can flow. Missi
 
 ---
 
+## Environment Variables (API Server)
+
+| Variable | Default | Description |
+|---|---|---|
+| `SHARE_DEDUP_SECONDS` | `60` | Deduplication window for share events. Shares from the same IP for the same surface+slug within this many seconds are collapsed into one. Set in Replit Secrets to tune without a code change. |
+
+---
+
 ## Gotchas
 
 - RSS has duplicate-cased categories ("friday flashbacks" vs "Friday Flashbacks"). Upstream data; surfaced as-is.
