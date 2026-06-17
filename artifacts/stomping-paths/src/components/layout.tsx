@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogIn, LogOut, User, ChevronDown, Map, Shield, Package } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, ChevronDown, Map, Shield, Package, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import tspLogo from "@assets/tsp-stomping-path-logo.svg";
@@ -12,6 +12,69 @@ import { TAGLINE } from "@workspace/tsp-constants";
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return `${base}/api${path}`;
+}
+
+const KIT_STORAGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const NON_SLUG_KIT_PATHS = new Set(["my-purchases", "find"]);
+
+function kitStorageKey(slug: string) {
+  return `kit-access-v1:${slug}`;
+}
+
+function readKitSession(slug: string): string | null {
+  try {
+    const raw = localStorage.getItem(kitStorageKey(slug));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { email: string; savedAt: number };
+    if (Date.now() - parsed.savedAt > KIT_STORAGE_TTL_MS) {
+      localStorage.removeItem(kitStorageKey(slug));
+      return null;
+    }
+    return parsed.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function clearKitSession(slug: string) {
+  try {
+    localStorage.removeItem(kitStorageKey(slug));
+  } catch {
+  }
+}
+
+function getKitSlugFromPath(path: string): string | null {
+  const match = path.match(/^\/kits\/([^/]+)/);
+  if (!match) return null;
+  const slug = match[1];
+  if (NON_SLUG_KIT_PATHS.has(slug)) return null;
+  const rest = path.slice(match[0].length);
+  if (rest === "/welcome" || rest === "/welcome/") return null;
+  return slug;
+}
+
+function useKitSession(path: string): { slug: string; email: string; signOut: () => void } | null {
+  const slug = getKitSlugFromPath(path);
+  const [email, setEmail] = useState<string | null>(() => (slug ? readKitSession(slug) : null));
+
+  useEffect(() => {
+    if (!slug) {
+      setEmail(null);
+      return;
+    }
+    setEmail(readKitSession(slug));
+  }, [slug]);
+
+  if (!slug || !email) return null;
+
+  return {
+    slug,
+    email,
+    signOut: () => {
+      clearKitSession(slug);
+      setEmail(null);
+    },
+  };
 }
 
 function useBrigadeStatus(isAuthenticated: boolean) {
@@ -241,6 +304,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: brigadeData } = useBrigadeStatus(isAuthenticated);
   const isBrigadeMember = brigadeData?.isMember === true;
   const { data: kitCount = 0 } = useKitPurchaseCount(isAuthenticated);
+  const kitSession = useKitSession(location);
 
   const adminPaths = adminItems.map((i) => i.href);
   const landmarkPaths = landmarkItems.map((i) => i.href);
@@ -557,6 +621,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </header>
+
+      {kitSession && (
+        <div className="w-full bg-[#1A2A20] border-b border-[#3a5a3a]/60 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-1.5 text-[#8FA883]">
+            <UserCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>Signed in as <span className="font-semibold text-[#C8D4C0]">{kitSession.email}</span></span>
+          </div>
+          <button
+            type="button"
+            onClick={kitSession.signOut}
+            className="font-semibold text-[#8FA883] underline underline-offset-2 hover:text-[#C8D4C0] transition-colors whitespace-nowrap"
+          >
+            Not you? Sign out
+          </button>
+        </div>
+      )}
 
       <main className={`flex-1 flex flex-col transition-[padding]${episode ? " pb-20" : ""}`}>
         {children}
