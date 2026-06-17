@@ -80,21 +80,28 @@ async function getStripeCredentials(): Promise<{
     );
   }
 
-  // ── Webhook secret guard: never accept unverified webhooks in production ──
-  if (isProduction && !settings.webhook_secret) {
-    throw new Error(
-      "STRIPE PRODUCTION ERROR: Webhook secret is missing from the production Stripe integration connection. " +
-        "Without it, incoming webhooks cannot be verified and membership/purchase activations will not work. " +
-        "Add the live webhook secret (whsec_…) to Integrations → Stripe → Production environment.",
-    );
-  }
-
-  // Fall back to STRIPE_WEBHOOK_SECRET_FALLBACK when the integration doesn't
-  // carry a webhook_secret (common in dev before a webhook endpoint is registered
-  // in the Stripe Dashboard).  Never used in production — the guard above fires first.
+  // ── Webhook secret resolution (priority order) ──────────────────────────
+  //
+  //  1. Integration connection field `webhook_secret`  (preferred; set via Integrations UI)
+  //  2. STRIPE_WEBHOOK_SECRET env var / Replit Secret   (production fallback; set in Secrets tab)
+  //  3. STRIPE_WEBHOOK_SECRET_FALLBACK env var           (dev only; set via `stripe listen`)
+  //
+  // Production guard: if none of the above are present, throw — never accept
+  // unverified webhooks in production.
   const webhookSecret =
     settings.webhook_secret ??
-    (!isProduction ? process.env.STRIPE_WEBHOOK_SECRET_FALLBACK : undefined);
+    (isProduction
+      ? process.env.STRIPE_WEBHOOK_SECRET
+      : process.env.STRIPE_WEBHOOK_SECRET ?? process.env.STRIPE_WEBHOOK_SECRET_FALLBACK);
+
+  if (isProduction && !webhookSecret) {
+    throw new Error(
+      "STRIPE PRODUCTION ERROR: Webhook secret is missing. " +
+        "Without it, incoming webhooks cannot be verified and purchase/membership activations will not work. " +
+        "Fix: add STRIPE_WEBHOOK_SECRET to Replit Secrets (copy the whsec_… value from the Stripe Dashboard " +
+        "→ Developers → Webhooks → https://thestompingpaths.com/api/stripe/webhook → Signing secret).",
+    );
+  }
 
   if (!isProduction && !webhookSecret) {
     logger.warn(
