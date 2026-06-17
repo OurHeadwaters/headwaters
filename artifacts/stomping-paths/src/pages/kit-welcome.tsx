@@ -136,6 +136,7 @@ export default function KitWelcomePage() {
   const retryCountRef = useRef(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const backgroundRecheckDoneRef = useRef(false);
+  const sessionCheckDoneRef = useRef(false);
 
   const MAX_RETRIES = 10;
   const RETRY_INTERVAL = 30;
@@ -193,6 +194,28 @@ export default function KitWelcomePage() {
       saveStoredAccess(slug, accessEmail, emailLinkVerified);
     }
   }, [accessStatus, slug, accessEmail, emailLinkVerified]);
+
+  useEffect(() => {
+    if (!slug || sessionCheckDoneRef.current) return;
+    const urlParams = new URLSearchParams(location.split("?")[1] ?? "");
+    const hasUrlAuth = urlParams.get("email") && urlParams.get("token");
+    const hasCache = !!loadStoredAccess(slug);
+    if (hasUrlAuth || hasCache) return;
+    sessionCheckDoneRef.current = true;
+    (async () => {
+      try {
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+        const url = `${base}/api/kits/${encodeURIComponent(slug)}/access`;
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.hasAccess && data.isAuthenticated) {
+          setAccessStatus("found");
+        }
+      } catch {
+      }
+    })();
+  }, [slug]);
 
   useEffect(() => {
     if (!slug || !accessEmail || backgroundRecheckDoneRef.current) return;
