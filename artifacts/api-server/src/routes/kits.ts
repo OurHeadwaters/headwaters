@@ -214,6 +214,82 @@ router.post("/kits/send-access-email", emailLookupRateLimit, async (req, res) =>
   }
 });
 
+/* ─────────────────── POST /api/kits/:slug/resend-access ─────────────────── */
+
+/**
+ * Per-kit variant of /kits/send-access-email.
+ * Looks up whether the supplied email purchased this specific kit and, if so,
+ * fires a fresh welcome email containing a new tokenized access link.
+ * Always responds 200 to prevent email enumeration.
+ */
+router.post("/kits/:slug/resend-access", emailLookupRateLimit, async (req, res) => {
+  const kit = kitBySlug(req.params.slug as string);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  const email = (req.body?.email as string | undefined)?.trim().toLowerCase() ?? "";
+
+  if (!email) {
+    res.status(400).json({ error: "email is required" });
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    res.status(400).json({ error: "Invalid email address" });
+    return;
+  }
+
+  if (!(await checkRateLimit(email))) {
+    res.status(429).json({
+      error: "Too many requests. Please wait 15 minutes before requesting another access email.",
+    });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select({
+        id: kitPurchasesTable.id,
+        kitSlug: kitPurchasesTable.kitSlug,
+        purchasedAt: kitPurchasesTable.purchasedAt,
+      })
+      .from(kitPurchasesTable)
+      .where(
+        and(
+          eq(kitPurchasesTable.kitSlug, kit.slug),
+          eq(kitPurchasesTable.buyerEmail, email),
+        ),
+      )
+      .limit(1);
+
+    if (rows.length > 0) {
+      const token = generateKitAccessToken(kit.slug, email);
+      const tagline = Array.isArray(kit.tagline) ? kit.tagline[0] ?? "" : (kit.tagline ?? "");
+      const kits = [
+        {
+          slug: kit.slug,
+          name: kit.name,
+          tagline,
+          token,
+        },
+      ];
+
+      sendKitAccessEmail({ buyerEmail: email, kits }).catch((err) =>
+        logger.warn({ err, email, kitSlug: kit.slug }, "kits: resend-access fire failed (non-fatal)"),
+      );
+    }
+
+    // Always 200 — don't reveal whether the email exists in our system
+    res.json({ sent: true });
+  } catch (err) {
+    logger.error({ err, slug: kit.slug }, "kits: POST /:slug/resend-access failed");
+    res.status(500).json({ error: "Failed to send access email" });
+  }
+});
+
 /* ─────────────────── GET /api/kits/:slug ─────────────────── */
 
 router.get("/kits/:slug", async (req, res) => {

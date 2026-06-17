@@ -551,12 +551,16 @@ function UnauthenticatedAccessGate({
   const [email, setEmail] = useState("");
   const [checking, setChecking] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resendRateLimited, setResendRateLimited] = useState(false);
 
   async function handleEmailCheck(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     setChecking(true);
     setEmailError(null);
+    setResendStatus("idle");
+    setResendRateLimited(false);
     try {
       const res = await fetch(apiUrl(`/kits/${kit.slug}/access?email=${encodeURIComponent(email.trim())}`));
       const data = await res.json();
@@ -569,6 +573,28 @@ function UnauthenticatedAccessGate({
       setEmailError("Could not verify — please try again.");
     } finally {
       setChecking(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!email.trim() || resendStatus === "sending" || resendStatus === "sent") return;
+    setResendStatus("sending");
+    setResendRateLimited(false);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kit.slug}/resend-access`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.status === 429) {
+        setResendRateLimited(true);
+        setResendStatus("idle");
+        return;
+      }
+      if (!res.ok) throw new Error("Server error");
+      setResendStatus("sent");
+    } catch {
+      setResendStatus("error");
     }
   }
 
@@ -630,7 +656,11 @@ function UnauthenticatedAccessGate({
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+                if (resendStatus !== "idle") setResendStatus("idle");
+              }}
               placeholder="jane@example.com"
               className="flex-1 px-3 py-2.5 rounded-lg border bg-background text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 transition-all"
               style={{ borderColor: meta.color + "44" }}
@@ -650,12 +680,60 @@ function UnauthenticatedAccessGate({
               {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Unlock"}
             </button>
           </div>
-          {emailError && (
-            <p className="text-xs text-red-500 text-left">{emailError}</p>
+
+          {emailError && resendStatus !== "sent" && (
+            <div className="flex flex-col gap-1.5 text-left">
+              <p className="text-xs text-red-500">{emailError}</p>
+              {resendRateLimited ? (
+                <p className="text-xs text-muted-foreground">
+                  Too many requests — please wait 15 minutes and try again.
+                </p>
+              ) : resendStatus === "error" ? (
+                <p className="text-xs text-red-500">
+                  Could not send — please try again in a moment.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Lost your welcome email?{" "}
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resendStatus === "sending"}
+                    className="underline underline-offset-2 font-semibold transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ color: meta.color }}
+                  >
+                    {resendStatus === "sending" ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Sending…
+                      </span>
+                    ) : (
+                      "Re-send my access link"
+                    )}
+                  </button>
+                </p>
+              )}
+            </div>
           )}
-          <p className="text-xs text-muted-foreground text-left">
-            Paid with Bitcoin? Use the email you entered at checkout.
-          </p>
+
+          {resendStatus === "sent" && (
+            <div
+              className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs text-left"
+              style={{ background: "#16A34A10", border: "1px solid #16A34A33", color: "#15803D" }}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>
+                If that email matches a purchase, you'll receive a new access link shortly.
+                Check your inbox (and spam folder).
+              </span>
+            </div>
+          )}
+
+          {resendStatus !== "sent" && (
+            <p className="text-xs text-muted-foreground text-left">
+              Paid with Bitcoin? Use the email you entered at checkout.
+            </p>
+          )}
         </form>
 
         <a
