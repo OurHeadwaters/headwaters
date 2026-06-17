@@ -720,13 +720,39 @@ function ContinueLearningWidget() {
   // Once the server confirms zero progress (`serverReturnedEmpty`), the widget disappears.
   const showSkeleton = isLoading || minSkeletonActive;
   const showContent = !showSkeleton && ordered.length > 0;
+  const hasContent = !serverReturnedEmpty && (showSkeleton || showContent);
 
-  if (serverReturnedEmpty || (!showSkeleton && !showContent)) return null;
+  // Two-phase exit: keep the section mounted while the last row's exit animation plays,
+  // then animate the section itself out.
+  // - Normal removal path: widgetVisible is set false only via onExitComplete (gated by
+  //   orderedLengthRef), guaranteeing the row animation fully completes first.
+  // - serverReturnedEmpty path: no rows ever animate, so a dedicated effect handles it.
+  const [widgetVisible, setWidgetVisible] = useState(hasContent);
+  // Always-current ref so the onExitComplete closure checks the live row count, not a
+  // stale closure value — prevents hiding the section when rows still remain.
+  const orderedLengthRef = useRef(ordered.length);
+  orderedLengthRef.current = ordered.length;
+
+  // Re-show the widget when content arrives (async data load, returning listener, etc.)
+  useEffect(() => {
+    if (hasContent) setWidgetVisible(true);
+  }, [hasContent]);
+
+  // Hide immediately when the server confirms there are zero tracks — there are no rows
+  // to animate so onExitComplete never fires; this is the only case that needs a direct
+  // setWidgetVisible(false) outside of the row AnimatePresence callback.
+  useEffect(() => {
+    if (serverReturnedEmpty) setWidgetVisible(false);
+  }, [serverReturnedEmpty]);
 
   return (
+    <AnimatePresence>
+      {widgetVisible && (
     <motion.section
+      key="continue-learning-widget"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, paddingTop: 0, overflow: "hidden", transition: { duration: 0.4, ease: "easeIn" } }}
       transition={{ duration: 0.6, delay: 0.3 }}
       className="relative bg-[#0c1611] pt-10 pb-0 overflow-hidden"
     >
@@ -784,7 +810,17 @@ function ContinueLearningWidget() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence
+                  initial={false}
+                  mode="popLayout"
+                  onExitComplete={() => {
+                    // Only hide the section when all rows are truly gone; a partial
+                    // removal (still rows remaining) must not collapse the widget.
+                    if (orderedLengthRef.current === 0) {
+                      setWidgetVisible(false);
+                    }
+                  }}
+                >
                   {ordered.map(({ entry, track }, i) => (
                     <motion.div
                       key={track.slug}
@@ -820,6 +856,8 @@ function ContinueLearningWidget() {
         </motion.div>
       </div>
     </motion.section>
+      )}
+    </AnimatePresence>
   );
 }
 
