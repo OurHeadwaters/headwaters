@@ -333,6 +333,8 @@ export default function HomeScreen() {
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [hour, setHour] = useState(() => new Date().getHours());
+  const [showProgressHint, setShowProgressHint] = useState(false);
+  const progressHintOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const id = setInterval(() => setHour(new Date().getHours()), 60_000);
@@ -353,6 +355,23 @@ export default function HomeScreen() {
     );
     anim.start();
     return () => anim.stop();
+  }, [historyReady]);
+
+  useEffect(() => {
+    if (historyReady) {
+      setShowProgressHint(false);
+      progressHintOpacity.setValue(0);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setShowProgressHint(true);
+      Animated.timing(progressHintOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [historyReady]);
 
   const today = new Date();
@@ -547,6 +566,11 @@ export default function HomeScreen() {
               </View>
             ))}
           </Animated.View>
+          {showProgressHint && (
+            <Animated.Text style={[styles.progressHintLabel, { opacity: progressHintOpacity, color: colors.woodBrown }]}>
+              Fetching your progress…
+            </Animated.Text>
+          )}
         </View>
       ) : continueListening.length > 0 ? (
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
@@ -896,6 +920,7 @@ const styles = StyleSheet.create({
   continueSkeletonLine: { height: 10, borderRadius: 5 },
   continueSkeletonBar: { height: 4, borderRadius: 2, marginTop: 10, width: "100%" },
   continueSkeletonBtn: { width: 32, height: 32, borderRadius: 16, flexShrink: 0 },
+  progressHintLabel: { fontSize: 12, textAlign: "center", marginTop: 10, fontFamily: "DMSans_400Regular" },
   center: { padding: 40, alignItems: "center", gap: 8 },
   emptyText: { fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
