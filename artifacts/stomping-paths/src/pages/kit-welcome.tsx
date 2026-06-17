@@ -69,6 +69,23 @@ function clearStoredAccess(kitSlug: string) {
   }
 }
 
+function getEmailDeliveryHint(email: string): string {
+  const domain = email.split("@")[1]?.toLowerCase() ?? "";
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    return "check Promotions or Spam";
+  }
+  if (["outlook.com", "hotmail.com", "hotmail.co.uk", "live.com", "msn.com"].includes(domain)) {
+    return "check your Junk folder";
+  }
+  if (["yahoo.com", "yahoo.co.uk", "ymail.com"].includes(domain)) {
+    return "check your Spam folder";
+  }
+  if (["icloud.com", "me.com", "mac.com"].includes(domain)) {
+    return "check your Junk folder";
+  }
+  return "check Spam or Junk";
+}
+
 export default function KitWelcomePage() {
   const [, params] = useRoute("/kits/:slug/welcome");
   const [location] = useLocation();
@@ -590,7 +607,9 @@ export default function KitWelcomePage() {
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <span>
                   If that email matches a purchase, you'll receive a new access link shortly.
-                  Check your inbox (and spam folder).
+                  {accessEmail.includes("@") && (
+                    <> We sent it to <strong>{accessEmail.split("@")[1]}</strong> — {getEmailDeliveryHint(accessEmail)}.</>
+                  )}
                 </span>
               </div>
             )}
@@ -661,9 +680,16 @@ export default function KitWelcomePage() {
                   Need your access link again?
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {resendStatus === "sent"
-                    ? `A new link has been sent to ${accessEmail}.`
-                    : `We'll re-send your welcome email to ${accessEmail}.`}
+                  {resendStatus === "sent" ? (
+                    <>
+                      A new link has been sent to {accessEmail}
+                      {accessEmail.includes("@") && (
+                        <> — {getEmailDeliveryHint(accessEmail)}</>
+                      )}.
+                    </>
+                  ) : (
+                    `We'll re-send your welcome email to ${accessEmail}.`
+                  )}
                 </p>
               </div>
               <div className="shrink-0">
