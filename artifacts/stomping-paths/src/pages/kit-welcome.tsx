@@ -310,6 +310,21 @@ export default function KitWelcomePage() {
                 <span>Verified via email</span>
               </div>
             )}
+            {accessStatus === "found" && (
+              <button
+                type="button"
+                onClick={() => {
+                  clearStoredAccess(slug);
+                  setAccessStatus("idle");
+                  setAccessEmail("");
+                  setEmailLinkVerified(false);
+                }}
+                className="text-[11px] font-semibold underline underline-offset-2 opacity-50 hover:opacity-80 transition-opacity"
+                style={{ color: "#C8D4C0" }}
+              >
+                Not you? Sign out
+              </button>
+            )}
           </div>
 
           <div className="flex items-start gap-4 mb-4">
