@@ -1250,17 +1250,33 @@ async function submitMiniTip(data: { amountUnits: number; wishText: string; list
   return res.json();
 }
 
+const WW_TOSSED_KEY = "tsp-ww-tossed-v1";
+
+function getWwTossed(): boolean {
+  try { return sessionStorage.getItem(WW_TOSSED_KEY) === "1"; } catch { return false; }
+}
+function setWwTossed() {
+  try { sessionStorage.setItem(WW_TOSSED_KEY, "1"); } catch { /* ignore */ }
+}
+function clearWwTossed() {
+  try { sessionStorage.removeItem(WW_TOSSED_KEY); } catch { /* ignore */ }
+}
+
 function WishingWellInlinePanel() {
   const qc = useQueryClient();
   const [, navigate] = useLocation();
   const [wishText, setWishText] = useState("");
   const [listenerName, setListenerName] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(() => getWwTossed());
+  // True when submitted was restored from a previous session toss (not set during this mount).
+  // Used to hide "Toss another" so re-opening the panel doesn't re-enable tossing.
+  const restoredFromSession = useRef(getWwTossed());
   const { data: pot } = useQuery({ queryKey: ["stomping-ww-pot"], queryFn: fetchInlinePot, staleTime: 30_000 });
   const { data: wishes = [] } = useQuery({ queryKey: ["stomping-ww-wishes"], queryFn: fetchInlineWishes, staleTime: 30_000 });
   const tipMut = useMutation({
     mutationFn: submitMiniTip,
     onSuccess: () => {
+      setWwTossed();
       setSubmitted(true);
       qc.invalidateQueries({ queryKey: ["stomping-ww-pot"] });
       qc.invalidateQueries({ queryKey: ["stomping-ww-wishes"] });
@@ -1273,12 +1289,18 @@ function WishingWellInlinePanel() {
       <div className="flex items-center gap-3 p-3 rounded-xl bg-[#B5853A]/15 border border-[#D9A066]/25">
         <Coins className="w-5 h-5 text-[#D9A066] shrink-0" />
         <div>
-          <div className="text-lg font-bold text-white font-serif leading-none">
-            {pot != null ? pot.totalUnits : "—"}
-            <span className="text-sm font-sans font-normal text-white/60 ml-1.5">coins in pot</span>
+          <div className="text-lg font-bold text-white font-serif leading-none flex items-baseline gap-1.5">
+            {pot != null ? (
+              pot.totalUnits
+            ) : (
+              <span className="inline-block w-8 h-4 rounded bg-white/15 animate-pulse align-middle" />
+            )}
+            <span className="text-sm font-sans font-normal text-white/60">coins in pot</span>
           </div>
           <div className="text-[10px] text-white/50 mt-0.5">
-            {pot ? `${pot.tipCount} wish${pot.tipCount !== 1 ? "es" : ""} today${pot.drawn ? " · Draw complete" : ""}` : "Loading…"}
+            {pot != null
+              ? `${pot.tipCount} wish${pot.tipCount !== 1 ? "es" : ""} today${pot.drawn ? " · Draw complete" : ""}`
+              : <span className="inline-block w-28 h-2.5 rounded bg-white/10 animate-pulse" />}
           </div>
         </div>
       </div>
@@ -1286,12 +1308,14 @@ function WishingWellInlinePanel() {
         <div className="rounded-xl border border-[#2C4A36]/40 bg-[#2C4A36]/15 p-4 text-center">
           <div className="text-2xl mb-1">🪙</div>
           <p className="text-white/80 text-sm font-serif">Your coin is in the well!</p>
-          <button
-            onClick={() => { setSubmitted(false); setWishText(""); setListenerName(""); }}
-            className="mt-2 text-xs text-white/40 hover:text-white/70 underline"
-          >
-            Toss another
-          </button>
+          {!restoredFromSession.current && (
+            <button
+              onClick={() => { clearWwTossed(); setSubmitted(false); setWishText(""); setListenerName(""); }}
+              className="mt-2 text-xs text-white/40 hover:text-white/70 underline"
+            >
+              Toss another
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
