@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Platform,
   Pressable,
@@ -92,6 +93,8 @@ export default function TransformationScreen() {
 
   const [page, setPage] = useState(0);
   const [allEpisodes, setAllEpisodes] = useState<TransformationEpisode[]>([]);
+  const progressHintOpacity = useRef(new Animated.Value(0)).current;
+  const progressHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPadding = currentEpisode
@@ -124,6 +127,35 @@ export default function TransformationScreen() {
     setPage(0);
     setAllEpisodes([]);
   }, [slug]);
+
+  React.useEffect(() => {
+    if (progress.isLoaded) {
+      if (progressHintTimer.current) {
+        clearTimeout(progressHintTimer.current);
+        progressHintTimer.current = null;
+      }
+      Animated.timing(progressHintOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      progressHintOpacity.setValue(0);
+      progressHintTimer.current = setTimeout(() => {
+        Animated.timing(progressHintOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }, 1500);
+    }
+    return () => {
+      if (progressHintTimer.current) {
+        clearTimeout(progressHintTimer.current);
+        progressHintTimer.current = null;
+      }
+    };
+  }, [progress.isLoaded]);
 
   const loadMore = () => {
     if (episodesPage && allEpisodes.length < episodesPage.total && !epLoading) {
@@ -182,7 +214,7 @@ export default function TransformationScreen() {
             >
               {totalCount > 0 ? `${totalCount} episodes` : " "}
             </Text>
-            {doneCount > 0 && totalCount > 0 && (
+            {doneCount > 0 && totalCount > 0 ? (
               <Text
                 style={[
                   styles.progressLabel,
@@ -191,6 +223,15 @@ export default function TransformationScreen() {
               >
                 {doneCount}/{totalCount} done
               </Text>
+            ) : (
+              <Animated.Text
+                style={[
+                  styles.progressHint,
+                  { color: colors.mutedForeground, fontFamily: "DMSans_400Regular", opacity: progressHintOpacity },
+                ]}
+              >
+                Fetching your progress…
+              </Animated.Text>
             )}
           </View>
           {!authLoading && !isAuthenticated && (
@@ -332,6 +373,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   progressLabel: {
+    fontSize: 12,
+  },
+  progressHint: {
     fontSize: 12,
   },
   loginBtn: {
