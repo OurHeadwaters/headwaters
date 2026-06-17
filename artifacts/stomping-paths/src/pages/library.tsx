@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch, Link } from "wouter";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
+import { TSP_EPISODE_COUNT } from "@/lib/constants";
 import { 
   useSearchLibrary, 
   getSearchLibraryQueryKey, 
@@ -293,11 +294,11 @@ function PeopleAndBusinesses({ q }: { q: string }) {
 
 export function Library() {
   useDocumentMeta({
-    title: "The Library — 6,000+ TSP Episodes | The Stomping Path",
+    title: `The Library — ${TSP_EPISODE_COUNT} TSP Episodes | The Stomping Path`,
     description:
-      "Search Jack Spirko's entire Survival Podcast archive: 6,000+ episodes, articles, and videos on homesteading, permaculture, financial independence, and self-reliance. 2009 to today.",
+      `Search Jack Spirko's entire Survival Podcast archive: ${TSP_EPISODE_COUNT} episodes, articles, and videos on homesteading, permaculture, financial independence, and self-reliance. 2009 to today.`,
     ogTitle: "The Library — The Stomping Path",
-    ogDescription: "Search 6,000+ episodes on homesteading, permaculture, financial independence, and self-reliance.",
+    ogDescription: `Search ${TSP_EPISODE_COUNT} episodes on homesteading, permaculture, financial independence, and self-reliance.`,
   });
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
@@ -580,7 +581,7 @@ export function Library() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search 6,000+ episodes and articles — try 'permaculture', 'EMP', 'chicken coop'…"
+              placeholder={`Search ${TSP_EPISODE_COUNT} episodes and articles — try 'permaculture', 'EMP', 'chicken coop'…`}
               className="w-full pl-12 pr-4 py-4 bg-card border border-border rounded-xl text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all font-medium"
               value={searchInput}
               onChange={(e) => {

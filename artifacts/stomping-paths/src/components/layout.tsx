@@ -8,6 +8,7 @@ import { WatershedRibbon } from "./watershed-ribbon";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
 import { TAGLINE, KIT_SESSION_TTL_MS, kitStorageKey } from "@workspace/tsp-constants";
+import { TSP_EPISODE_COUNT } from "@/lib/constants";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -118,7 +119,7 @@ const landmarkItems = [
   { href: "/start", label: "Find Your Path", desc: "New here? 5 questions → recommendation" },
   { href: "/tracks", label: "Learning Tracks", desc: "7 structured paths by permaculture zone" },
   { href: "/zones", label: "Browse by Zone", desc: "Zone map — navigate the archive" },
-  { href: "/library", label: "The Archive", desc: "6,000+ episodes — search everything" },
+  { href: "/library", label: "The Archive", desc: `${TSP_EPISODE_COUNT} episodes — search everything` },
   { href: "/council", label: "Expert Council", desc: "Practitioners and advisors" },
   { href: "/headwaters", label: "The Headwaters", desc: "Member area — community and resources" },
   { href: "/privacy-guide/", label: "Family Kit", desc: "Privacy guide for families", external: true },

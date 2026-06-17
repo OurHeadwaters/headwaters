@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { TSP_SHOW_AGE } from "@/lib/constants";
 import { Link, useLocation } from "wouter";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { useListTracks, TrackSummary } from "@/hooks/use-tracks";
@@ -219,7 +220,7 @@ export default function TracksPage() {
           </h1>
 
           <p className="text-lg leading-relaxed max-w-2xl mb-6" style={{ color: "#C8D4C0" }}>
-            Sixteen years of episodes, organized as seven structured learning paths. The tracks
+            {TSP_SHOW_AGE} years of episodes, organized as seven structured learning paths. The tracks
             follow the permaculture zone framework — starting from the self and working outward —
             so you build knowledge the same way you build resilience. Zone 0 offers two tracks,
             reflecting the depth of work that starts closest to home.

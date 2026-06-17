@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { TSP_EPISODE_COUNT } from "@/lib/constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Anchor, Sparkles, RefreshCw, ExternalLink, BookOpen, Globe, Twitter, Users, Trash2, ShieldCheck } from "lucide-react";
 
@@ -344,7 +345,7 @@ export function WisdomDig() {
         <div className="text-5xl mb-4">💎</div>
         <h1 className="font-serif text-4xl font-bold text-foreground mb-3">Wisdom Dig</h1>
         <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
-          Gems of wisdom mined from 6,000+ episodes of The Stomping Path and the Expert Council —
+          Gems of wisdom mined from {TSP_EPISODE_COUNT} episodes of The Stomping Path and the Expert Council —
           principle-language pulled from Jack's best moments and the people he trusts most.
         </p>
       </header>

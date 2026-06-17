@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { TSP_EPISODE_COUNT } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
@@ -1510,7 +1511,7 @@ export function StationContent({
 // ─── Front Porch empty state ──────────────────────────────────────────────────
 
 const STATION_TEASERS: Record<string, { headline: string; teaser: string }> = {
-  "wisdom-dig":   { headline: "Wisdom Dig",         teaser: "Unearth key phrases and gems from 6,000+ episodes." },
+  "wisdom-dig":   { headline: "Wisdom Dig",         teaser: `Unearth key phrases and gems from ${TSP_EPISODE_COUNT} episodes.` },
   "wishing-well": { headline: "Wishing Well",        teaser: "Toss a coin, make a wish, build community momentum." },
   "transform":    { headline: "Transformation Trail", teaser: "Six paths of change — find the one that fits your life." },
   "water-wheel":  { headline: "Water Wheel",          teaser: "Let your drops accumulate and sweep them to your bucket." },
@@ -1914,7 +1915,7 @@ export function StompingGroundsScene({ compact = false }: { compact?: boolean })
       id: "wisdom-dig",
       icon: "💎",
       label: "Wisdom Dig",
-      description: "Mine key phrases and wisdom gems from 6,000+ episodes.",
+      description: `Mine key phrases and wisdom gems from ${TSP_EPISODE_COUNT} episodes.`,
       badge: gemCount != null ? String(gemCount) : null,
       color: "#2C4A36",
       glowColor: "#4A9A5A",

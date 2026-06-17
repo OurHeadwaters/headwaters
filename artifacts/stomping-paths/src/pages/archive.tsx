@@ -5,6 +5,7 @@ import { EpisodeCard } from "@/components/episode-card";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
+import { TSP_EPISODE_COUNT } from "@/lib/constants";
 import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight, Compass, X, Layers } from "lucide-react";
 
 function matchTransformations(
@@ -25,9 +26,9 @@ export function Archive() {
   useDocumentMeta({
     title: "All Episodes — TSP Archive | The Stomping Path",
     description:
-      "Browse all 6,000+ episodes of The Stomping Path — filter by zone, category, or transformation. Homesteading, permaculture, financial independence, bushcraft, and more.",
+      `Browse all ${TSP_EPISODE_COUNT} episodes of The Stomping Path — filter by zone, category, or transformation. Homesteading, permaculture, financial independence, bushcraft, and more.`,
     ogTitle: "All Episodes — The Stomping Path",
-    ogDescription: "6,000+ episodes on homesteading, permaculture, financial independence, and self-reliance. Filter by zone or category.",
+    ogDescription: `${TSP_EPISODE_COUNT} episodes on homesteading, permaculture, financial independence, and self-reliance. Filter by zone or category.`,
   });
   const [location, setLocation] = useLocation();
   const searchString = useSearch();

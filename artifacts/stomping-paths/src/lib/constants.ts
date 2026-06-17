@@ -1,4 +1,23 @@
 /**
+ * Canonical episode-count label shown across the site.
+ * Update this single string when the archive milestone changes.
+ */
+export const TSP_EPISODE_COUNT = "6,000+";
+
+/**
+ * Year TSP first published. Used to derive show age dynamically.
+ * Never hardcode a year-count — derive it from this constant instead.
+ */
+export const TSP_SHOW_START_YEAR = 2009;
+
+/**
+ * Current age of the show in whole years, computed at runtime.
+ * Use this wherever the site says "X years of episodes" so the number
+ * stays accurate without code changes.
+ */
+export const TSP_SHOW_AGE = new Date().getFullYear() - TSP_SHOW_START_YEAR;
+
+/**
  * How long (in milliseconds) continuous loading must persist before the
  * "Fetching your progress…" hint fades in on the ContinueLearningWidget.
  *

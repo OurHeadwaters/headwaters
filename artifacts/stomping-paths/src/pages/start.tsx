@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TSP_EPISODE_COUNT, TSP_SHOW_AGE } from "@/lib/constants";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
@@ -308,7 +309,7 @@ export default function StartPage() {
                 Where should you start?
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-2 max-w-lg mx-auto">
-                TSP has 6,000+ episodes spanning permaculture, homesteading, financial independence, bushcraft, and more. That's a lot of trail to navigate.
+                TSP has {TSP_EPISODE_COUNT} episodes spanning permaculture, homesteading, financial independence, bushcraft, and more. That's a lot of trail to navigate.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-10 max-w-lg mx-auto">
                 Answer five questions and we'll point you at the track or zone that fits your situation right now.
@@ -544,7 +545,7 @@ export default function StartPage() {
                 {
                   label: "Step 1",
                   title: "The Archive",
-                  body: "16 years of episodes covering permaculture, food production, financial independence, bushcraft, homesteading, natural medicine, and more. Over 6,000 hours of content organized so you can find what you need.",
+                  body: `${TSP_SHOW_AGE} years of episodes covering permaculture, food production, financial independence, bushcraft, homesteading, natural medicine, and more. Over 6,000 hours of content organized so you can find what you need.`,
                   color: "#4A7A3A",
                   Icon: Radio,
                   cta: null as null | { href: string; label: string; external?: boolean },

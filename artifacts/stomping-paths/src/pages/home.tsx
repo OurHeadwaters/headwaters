@@ -16,7 +16,7 @@ import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 import { KIT_META } from "@/hooks/use-kits";
 import { useAllActiveTracksState, type ActiveTrackEntry } from "@/hooks/use-track-progress";
 import { useListTracks, useGetTrackNextUndone, type TrackSummary } from "@/hooks/use-tracks";
-import { EXTENDED_LOAD_THRESHOLD_MS, MIN_SKELETON_DISPLAY_MS } from "@/lib/constants";
+import { EXTENDED_LOAD_THRESHOLD_MS, MIN_SKELETON_DISPLAY_MS, TSP_EPISODE_COUNT } from "@/lib/constants";
 
 // ─── Daily Stomp (Imprint) local state ────────────────────────────────────────
 
@@ -1584,7 +1584,7 @@ function StoriesSection() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-[#FDFBF7] border border-[#FDFBF7]/20 hover:bg-[#FDFBF7]/5 transition-colors"
           >
             <LibraryIcon className="w-4 h-4" />
-            Search the 6,000+ archive
+            Search the {TSP_EPISODE_COUNT} archive
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -1730,7 +1730,7 @@ function CommunitySection() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-0">
             {[
-              { href: "/library", label: "Search Archive", desc: "6,000+ episodes", Icon: Search },
+              { href: "/library", label: "Search Archive", desc: `${TSP_EPISODE_COUNT} episodes`, Icon: Search },
               { href: "/tracks", label: "Learning Tracks", desc: "Seven curated paths", Icon: Compass },
               { href: "/stomping-grounds", label: "Full Grounds", desc: "Wisdom · Pot · Wheel", Icon: MapIcon },
             ].map((card) => (
@@ -1809,7 +1809,7 @@ export function Home() {
   useEffect(() => {
     document.title = "The Stomping Path — Practical Self-Reliance Podcast | Jack Spirko";
     const desc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-    if (desc) desc.content = "Jack Spirko's Survival Podcast archive — 6,000+ episodes on homesteading, permaculture, food production, financial independence, and bushcraft. Curated paths to take you from curious to capable.";
+    if (desc) desc.content = `Jack Spirko's Survival Podcast archive — ${TSP_EPISODE_COUNT} episodes on homesteading, permaculture, food production, financial independence, and bushcraft. Curated paths to take you from curious to capable.`;
     return () => {
       document.title = "The Stomping Path";
     };
