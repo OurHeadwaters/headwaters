@@ -104,3 +104,6 @@ channel = "stable-25_05"
 [userenv.shared]
 KIT_STRIPE_PRICE_IDS = "{\"family-kit\":\"price_1TaSglPd6A0oJ5bADuFS0PGK\",\"producer-kit\":\"price_1TaSgmPd6A0oJ5bAfpl0kUcX\",\"care-kit\":\"price_1TaSgmPd6A0oJ5bAHuBs74W9\",\"budget-kit\":\"price_1TaSgnPd6A0oJ5bAjGFiJ0sr\",\"digital-kit\":\"price_1TaSgoPd6A0oJ5bAmL40yqdP\",\"physical-kit\":\"price_1TaSgpPd6A0oJ5bAqiEhfJT0\"}"
 COURSE1_ACCESS_URL = "https://northern-store-plan.replit.app/print-marketing/pj-kit"
+
+[userenv.production]
+SITE_URL = "https://thestompingpaths.com"
