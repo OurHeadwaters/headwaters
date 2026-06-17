@@ -9,6 +9,9 @@ import { WebhookHandlers } from "./webhookHandlers";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createProxyMiddleware, type RequestHandler } from "http-proxy-middleware";
+import { createRouteLimiter } from "./middlewares/rateLimiter";
+
+const webhookLimiter = createRouteLimiter("webhook", 30, 60_000);
 
 const app: Express = express();
 app.set("trust proxy", 1);
@@ -39,14 +42,14 @@ async function handleStripeWebhook(
 }
 
 // Main Stripe webhook (shared — handles all event types)
-app.post("/api/stripe/webhook", stripeWebhookHandler, handleStripeWebhook);
+app.post("/api/stripe/webhook", webhookLimiter, stripeWebhookHandler, handleStripeWebhook);
 
 // Brigade-specific webhook alias — same handler, separate URL for clarity.
 // Both endpoints use the same Stripe webhook secret and shared processWebhook logic.
 // The Brigade subscription events (checkout.session.completed,
 // customer.subscription.updated, customer.subscription.deleted) are routed
 // by metadata.brigade_user_id presence inside WebhookHandlers.processWebhook.
-app.post("/api/brigade/webhook", stripeWebhookHandler, handleStripeWebhook);
+app.post("/api/brigade/webhook", webhookLimiter, stripeWebhookHandler, handleStripeWebhook);
 
 // ─── Zaprite webhook — Bitcoin / Lightning / XRP / RLUSD payments ─────────────
 // Zaprite does not support HMAC signing. Secured with a secret URL token instead:

@@ -19,6 +19,9 @@ import {
   ISSUER_URL,
   type SessionData,
 } from "../lib/auth";
+import { createRouteLimiter } from "../middlewares/rateLimiter";
+
+const authLimiter = createRouteLimiter("auth", 20, 60_000);
 
 const OIDC_COOKIE_TTL = 10 * 60 * 1000;
 
@@ -83,7 +86,7 @@ async function upsertUser(claims: Record<string, unknown>) {
   return user;
 }
 
-router.get("/auth/user", (req: Request, res: Response) => {
+router.get("/auth/user", authLimiter, (req: Request, res: Response) => {
   res.json(
     GetCurrentAuthUserResponse.parse({
       user: req.isAuthenticated() ? req.user : null,
@@ -91,7 +94,7 @@ router.get("/auth/user", (req: Request, res: Response) => {
   );
 });
 
-router.get("/login", async (req: Request, res: Response) => {
+router.get("/login", authLimiter, async (req: Request, res: Response) => {
   const config = await getOidcConfig();
   const callbackUrl = `${getOrigin(req)}/api/callback`;
 
@@ -122,7 +125,7 @@ router.get("/login", async (req: Request, res: Response) => {
 
 // Query params are not validated because the OIDC provider may include
 // parameters not expressed in the schema.
-router.get("/callback", async (req: Request, res: Response) => {
+router.get("/callback", authLimiter, async (req: Request, res: Response) => {
   const config = await getOidcConfig();
   const callbackUrl = `${getOrigin(req)}/api/callback`;
 
@@ -196,7 +199,7 @@ router.get("/callback", async (req: Request, res: Response) => {
   res.redirect(destination);
 });
 
-router.get("/logout", async (req: Request, res: Response) => {
+router.get("/logout", authLimiter, async (req: Request, res: Response) => {
   const config = await getOidcConfig();
   const origin = getOrigin(req);
 
@@ -213,6 +216,7 @@ router.get("/logout", async (req: Request, res: Response) => {
 
 router.post(
   "/mobile-auth/token-exchange",
+  authLimiter,
   async (req: Request, res: Response) => {
     const parsed = ExchangeMobileAuthorizationCodeBody.safeParse(req.body);
     if (!parsed.success) {
@@ -270,7 +274,7 @@ router.post(
   },
 );
 
-router.post("/mobile-auth/logout", async (req: Request, res: Response) => {
+router.post("/mobile-auth/logout", authLimiter, async (req: Request, res: Response) => {
   const sid = getSessionId(req);
   if (sid) {
     await deleteSession(sid);
