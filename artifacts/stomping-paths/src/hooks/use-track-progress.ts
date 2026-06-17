@@ -19,6 +19,9 @@
  *     auth resolves because isAuthenticated drives the server sync effect
  *   - useAllTracksProgress: refreshes on storage events (cross-tab sync)
  *     and on window focus (re-focus from another app)
+ *   - useAllActiveTracksState: when authenticated, merges server-persisted
+ *     slugs so the Continue Learning widget shows progress even after
+ *     localStorage is cleared or on a different device
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -28,8 +31,13 @@ async function fetchAllTracksProgressFromServer(): Promise<Record<string, number
   try {
     const res = await fetch("/api/track-progress", { credentials: "include" });
     if (!res.ok) return null;
-    const data = (await res.json()) as { counts: Record<string, number> };
-    return data.counts;
+    const data = (await res.json()) as { tracks: { slug: string; doneCount: number }[] };
+    if (!Array.isArray(data.tracks)) return null;
+    const result: Record<string, number> = {};
+    for (const t of data.tracks) {
+      result[t.slug] = t.doneCount;
+    }
+    return result;
   } catch {
     return null;
   }
@@ -369,6 +377,7 @@ export function readAllActiveTracksOrdered(): ActiveTrackEntry[] {
 }
 
 export function useAllActiveTracksState(): ActiveTrackEntry[] {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [entries, setEntries] = useState<ActiveTrackEntry[]>(() =>
     readAllActiveTracksOrdered(),
   );
@@ -387,6 +396,52 @@ export function useAllActiveTracksState(): ActiveTrackEntry[] {
       window.removeEventListener("focus", refresh);
     };
   }, []);
+
+  // When authenticated, merge server-persisted slugs that aren't in localStorage.
+  // This ensures the Continue Learning widget reflects progress made on other
+  // devices or after localStorage has been cleared.
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
+    fetchAllTracksProgressFromServer().then(async (serverCounts) => {
+      if (!serverCounts) return;
+
+      // Find slugs on the server that localStorage doesn't know about
+      const localSlugs = new Set(readAllActiveTracksOrdered().map((e) => e.slug));
+      const serverOnlySlugs = Object.keys(serverCounts).filter(
+        (slug) => serverCounts[slug] > 0 && !localSlugs.has(slug),
+      );
+
+      if (serverOnlySlugs.length === 0) return;
+
+      // Fetch full episode IDs for each server-only slug
+      const fetched = await Promise.all(
+        serverOnlySlugs.map(async (slug) => {
+          const ids = await fetchServerProgress(slug);
+          if (ids === null || ids.length === 0) return null;
+          return { slug, doneIds: new Set(ids) } satisfies ActiveTrackEntry;
+        }),
+      );
+
+      const newEntries = fetched.filter(
+        (e): e is ActiveTrackEntry => e !== null,
+      );
+
+      if (newEntries.length === 0) return;
+
+      // Backfill localStorage so future page loads (and cross-tab events) pick
+      // these up without another server round-trip
+      for (const { slug, doneIds } of newEntries) {
+        saveDoneIds(slug, doneIds);
+      }
+
+      setEntries((prev) => {
+        const prevSlugs = new Set(prev.map((e) => e.slug));
+        const toAdd = newEntries.filter((e) => !prevSlugs.has(e.slug));
+        return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+      });
+    });
+  }, [isAuthenticated, authLoading]);
 
   return entries;
 }
