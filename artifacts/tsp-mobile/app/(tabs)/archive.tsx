@@ -12,6 +12,7 @@ import type { Episode, LibraryItem, SeriesSummary } from "@workspace/api-client-
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Platform,
   Pressable,
@@ -27,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
+import { usePulseAnimation } from "@/hooks/usePulseAnimation";
 
 const PAGE_SIZE = 20;
 const MINI_PLAYER_HEIGHT = 64;
@@ -117,6 +119,7 @@ export default function ArchiveScreen() {
 
   const isLoading = selectedSeries ? searchLoading : listLoading;
   const totalItems = selectedSeries ? (searchPage?.total ?? 0) : (episodesPage?.total ?? 0);
+  const archiveSkeletonOpacity = usePulseAnimation(isLoading && allItems.length === 0);
 
   React.useEffect(() => {
     if (!selectedSeries && episodesPage?.items) {
@@ -408,9 +411,21 @@ export default function ArchiveScreen() {
         ListHeaderComponent={<ListHeader />}
         ListEmptyComponent={
           isLoading ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={colors.primary} />
-            </View>
+            <Animated.View style={{ opacity: archiveSkeletonOpacity }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <View key={i} style={[styles.skeletonOuter, { borderColor: colors.woodBorder, backgroundColor: colors.woodBorder }]}>
+                  <View style={[styles.skeletonInner, { backgroundColor: colors.card, borderColor: colors.woodBorder }]}>
+                    <View style={[styles.skeletonArt, { backgroundColor: colors.muted }]} />
+                    <View style={styles.skeletonContent}>
+                      <View style={[styles.skeletonMeta, { backgroundColor: colors.muted }]} />
+                      <View style={[styles.skeletonTitle1, { backgroundColor: colors.muted }]} />
+                      <View style={[styles.skeletonTitle2, { backgroundColor: colors.muted }]} />
+                      <View style={[styles.skeletonFooter, { backgroundColor: colors.muted }]} />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </Animated.View>
           ) : (
             <View style={styles.center}>
               <Ionicons name="albums-outline" size={40} color={colors.mutedForeground} />
@@ -547,6 +562,53 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontSize: 12,
+  },
+  skeletonOuter: {
+    borderRadius: 14,
+    borderWidth: 2,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    overflow: "hidden",
+  },
+  skeletonInner: {
+    borderRadius: 11,
+    borderWidth: 1,
+    overflow: "hidden",
+    padding: 12,
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "flex-start",
+  },
+  skeletonArt: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+    flexShrink: 0,
+  },
+  skeletonContent: {
+    flex: 1,
+    gap: 6,
+  },
+  skeletonMeta: {
+    width: "40%",
+    height: 10,
+    borderRadius: 5,
+  },
+  skeletonTitle1: {
+    width: "90%",
+    height: 12,
+    borderRadius: 5,
+  },
+  skeletonTitle2: {
+    width: "70%",
+    height: 12,
+    borderRadius: 5,
+  },
+  skeletonFooter: {
+    width: "20%",
+    height: 10,
+    borderRadius: 5,
+    marginTop: 2,
   },
   center: {
     padding: 40,

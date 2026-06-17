@@ -28,6 +28,7 @@ import { GordBird } from "@/components/GordBird";
 import { EmberParticles } from "@/components/EmberParticles";
 import { usePlayer } from "@/context/PlayerContext";
 import { useColors } from "@/hooks/useColors";
+import { usePulseAnimation } from "@/hooks/usePulseAnimation";
 
 const PAGE_SIZE = 20;
 const MINI_PLAYER_HEIGHT = 64;
@@ -346,11 +347,10 @@ export default function HomeScreen() {
   const skeletonAnimGen = useRef(0);
   const [skeletonVisible, setSkeletonVisible] = useState(() => !historyReady);
   const skeletonFadeAnim = useRef(new Animated.Value(historyReady ? 0 : 1)).current;
-  const skeletonOpacity = useRef(new Animated.Value(1)).current;
+  const skeletonOpacity = usePulseAnimation(!historyReady);
 
   useEffect(() => {
     if (historyReady) {
-      skeletonOpacity.setValue(1);
       const gen = ++skeletonAnimGen.current;
       const elapsed = Date.now() - skeletonMountTime.current;
       const delay = Math.max(0, SKELETON_MIN_MS - elapsed);
@@ -369,14 +369,6 @@ export default function HomeScreen() {
     skeletonFadeAnim.setValue(1);
     skeletonMountTime.current = Date.now();
     setSkeletonVisible(true);
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(skeletonOpacity, { toValue: 0.35, duration: 700, useNativeDriver: true }),
-        Animated.timing(skeletonOpacity, { toValue: 1, duration: 700, useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
   }, [historyReady]);
 
   useEffect(() => {
@@ -413,6 +405,8 @@ export default function HomeScreen() {
   const { data: thisDayEpisodes, isLoading: thisDayLoading } = useGetThisDayEpisodes({
     month: selectedMonth, day: selectedDay,
   });
+  const thisDaySkeletonOpacity = usePulseAnimation(thisDayLoading);
+
   const { data: episodesPage, isLoading, refetch } = useListEpisodes(
     { limit: PAGE_SIZE, offset: page * PAGE_SIZE }
   );
@@ -542,11 +536,13 @@ export default function HomeScreen() {
         </View>
 
         {thisDayLoading ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thisDayList}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={[styles.thisDayCard, { backgroundColor: colors.woodBrown + "15", borderColor: colors.woodBorder }]} />
-            ))}
-          </ScrollView>
+          <Animated.View style={{ opacity: thisDaySkeletonOpacity }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thisDayList}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} style={[styles.thisDayCard, { backgroundColor: colors.woodBrown + "15", borderColor: colors.woodBorder }]} />
+              ))}
+            </ScrollView>
+          </Animated.View>
         ) : !thisDayEpisodes || thisDayEpisodes.length === 0 ? (
           <View style={styles.thisDayEmpty}>
             <Ionicons name="time-outline" size={28} color={colors.mutedForeground} />
