@@ -1,10 +1,12 @@
 import { Link } from "wouter";
-import { ArrowRight, Check, Compass, Loader2, PlayCircle } from "lucide-react";
+import { ArrowRight, Check, Compass, Flame, Loader2, PlayCircle, TrendingUp } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useState } from "react";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
 import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
+import { useShareCounts } from "@/hooks/use-share-counts";
 
 function buildEpisodesUrl(t: Transformation): string {
   return `/episodes?transformation=${encodeURIComponent(t.slug)}`;
@@ -19,10 +21,12 @@ function TransformationCard({
   t,
   isSelected,
   onSelect,
+  shareCount,
 }: {
   t: Transformation;
   isSelected: boolean;
   onSelect: (slug: string) => void;
+  shareCount: number;
 }) {
   const queryTags = buildTagsFilter(t);
   const params = { limit: 3, offset: 0, tags: queryTags, sort: "popular" as const };
@@ -54,19 +58,34 @@ function TransformationCard({
             >
               Transformation Path
             </div>
-            {isSelected && (
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{
-                  color: t.color,
-                  background: t.color + "20",
-                  border: `1px solid ${t.color}55`,
-                }}
-              >
-                <Check className="w-2.5 h-2.5" />
-                Your Path
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {shareCount > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    color: t.color,
+                    background: t.color + "18",
+                    border: `1px solid ${t.color}33`,
+                  }}
+                >
+                  <Flame className="w-2.5 h-2.5" />
+                  {shareCount.toLocaleString()} share{shareCount !== 1 ? "s" : ""}
+                </span>
+              )}
+              {isSelected && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    color: t.color,
+                    background: t.color + "20",
+                    border: `1px solid ${t.color}55`,
+                  }}
+                >
+                  <Check className="w-2.5 h-2.5" />
+                  Your Path
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-serif text-lg font-bold text-foreground">
@@ -178,9 +197,22 @@ function TransformationCard({
   );
 }
 
+type SortMode = "default" | "popular";
+
 export default function TransformPage() {
   const { data: transformations, isLoading, isError } = useTransformations();
   const { selectedSlug, select } = useSelectedTransformation();
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+
+  const slugs = transformations?.map((t) => t.slug) ?? [];
+  const shareCounts = useShareCounts("transform", slugs);
+
+  const sorted =
+    transformations && sortMode === "popular"
+      ? [...transformations].sort(
+          (a, b) => (shareCounts[b.slug] ?? 0) - (shareCounts[a.slug] ?? 0),
+        )
+      : transformations;
 
   return (
     <div className="min-h-screen bg-background">
@@ -236,23 +268,48 @@ export default function TransformPage() {
 
       {/* Transformation grid */}
       <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
           <div>
             <h2 className="font-serif text-2xl font-bold text-foreground mb-1">
               The six transformations
             </h2>
             <p className="text-sm text-muted-foreground">
               {selectedSlug
-                ? "Your selected path is highlighted. Switch anytime."
+                ? "Your selected path is highlighted."
                 : "Pick the path that matches where you are right now."}
             </p>
           </div>
-          <Link
-            href="/episodes"
-            className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            Browse all episodes <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSortMode("default")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={
+                sortMode === "default"
+                  ? { background: "#C4622D", color: "#fff", border: "1px solid #C4622D" }
+                  : { background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border)" }
+              }
+            >
+              Default
+            </button>
+            <button
+              onClick={() => setSortMode("popular")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={
+                sortMode === "popular"
+                  ? { background: "#C4622D", color: "#fff", border: "1px solid #C4622D" }
+                  : { background: "transparent", color: "var(--muted-foreground)", border: "1px solid var(--border)" }
+              }
+            >
+              <TrendingUp className="w-3 h-3" />
+              Popular
+            </button>
+            <Link
+              href="/episodes"
+              className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors ml-2"
+            >
+              Browse all <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
 
         {isLoading && (
@@ -268,14 +325,15 @@ export default function TransformPage() {
           </div>
         )}
 
-        {transformations && (
+        {sorted && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {transformations.map((t) => (
+            {sorted.map((t) => (
               <TransformationCard
                 key={t.slug}
                 t={t}
                 isSelected={selectedSlug === t.slug}
                 onSelect={select}
+                shareCount={shareCounts[t.slug] ?? 0}
               />
             ))}
           </div>
