@@ -7,26 +7,21 @@ import { MiniPlayer } from "./mini-player";
 import { WatershedRibbon } from "./watershed-ribbon";
 import { usePlayer } from "@/context/player-context";
 import { useAuth } from "@workspace/replit-auth-web";
-import { TAGLINE } from "@workspace/tsp-constants";
+import { TAGLINE, KIT_SESSION_TTL_MS, kitStorageKey } from "@workspace/tsp-constants";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return `${base}/api${path}`;
 }
 
-const KIT_STORAGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const NON_SLUG_KIT_PATHS = new Set(["my-purchases", "find"]);
-
-function kitStorageKey(slug: string) {
-  return `kit-access-v1:${slug}`;
-}
 
 function readKitSession(slug: string): string | null {
   try {
     const raw = localStorage.getItem(kitStorageKey(slug));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { email: string; savedAt: number };
-    if (Date.now() - parsed.savedAt > KIT_STORAGE_TTL_MS) {
+    if (Date.now() - parsed.savedAt > KIT_SESSION_TTL_MS) {
       localStorage.removeItem(kitStorageKey(slug));
       return null;
     }

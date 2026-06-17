@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useKitDetail, KIT_META } from "@/hooks/use-kits";
+import { KIT_SESSION_TTL_MS, kitStorageKey } from "@workspace/tsp-constants";
 
 const KIT_FIRST_STEPS: Record<string, { what: string; first: string; next: string }> = {
   "family-kit": {
@@ -65,19 +66,13 @@ const DEFAULT_STEPS = {
   next: "Return to this kit as your situation changes. The content compounds over time.",
 };
 
-const STORAGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-function storageKey(kitSlug: string) {
-  return `kit-access-v1:${kitSlug}`;
-}
-
 function loadStoredAccess(kitSlug: string): { email: string; emailLinkVerified: boolean } | null {
   try {
-    const raw = localStorage.getItem(storageKey(kitSlug));
+    const raw = localStorage.getItem(kitStorageKey(kitSlug));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { email: string; emailLinkVerified: boolean; savedAt: number };
-    if (Date.now() - parsed.savedAt > STORAGE_TTL_MS) {
-      localStorage.removeItem(storageKey(kitSlug));
+    if (Date.now() - parsed.savedAt > KIT_SESSION_TTL_MS) {
+      localStorage.removeItem(kitStorageKey(kitSlug));
       return null;
     }
     return { email: parsed.email, emailLinkVerified: parsed.emailLinkVerified };
@@ -89,7 +84,7 @@ function loadStoredAccess(kitSlug: string): { email: string; emailLinkVerified: 
 function saveStoredAccess(kitSlug: string, email: string, elv: boolean) {
   try {
     localStorage.setItem(
-      storageKey(kitSlug),
+      kitStorageKey(kitSlug),
       JSON.stringify({ email, emailLinkVerified: elv, savedAt: Date.now() }),
     );
   } catch {
@@ -112,7 +107,7 @@ function getSessionDaysRemaining(kitSlug: string): number | null {
 
 function clearStoredAccess(kitSlug: string) {
   try {
-    localStorage.removeItem(storageKey(kitSlug));
+    localStorage.removeItem(kitStorageKey(kitSlug));
   } catch {
   }
 }
