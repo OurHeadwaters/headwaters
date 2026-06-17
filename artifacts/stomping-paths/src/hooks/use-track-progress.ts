@@ -13,8 +13,8 @@
  *   - Unauthenticated: saves to localStorage only; no API calls
  *   - Server fetch failure: silently falls back to local data (no crash)
  *   - mergeLocalToServer: skips if no local-only ids (avoids empty PATCH)
- *   - resetProgress: clears localStorage + state; does NOT call server
- *     (intended for local reset only — backend reset is a separate task)
+ *   - resetProgress: clears localStorage + state; also calls DELETE /api/track-progress/:slug
+ *     for authenticated users so the server database is wiped in sync
  *   - toggleDone while auth is loading: queued in local state, synced after
  *     auth resolves because isAuthenticated drives the server sync effect
  *   - useAllTracksProgress: refreshes on storage events (cross-tab sync)
@@ -245,7 +245,13 @@ export function useTrackProgress(slug: string): TrackProgress {
   const resetProgress = useCallback(() => {
     setDoneIds(new Set());
     saveDoneIds(slug, new Set());
-  }, [slug]);
+    if (isAuthenticated) {
+      fetch(`/api/track-progress/${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+        credentials: "include",
+      }).catch(() => {});
+    }
+  }, [slug, isAuthenticated]);
 
   return {
     doneIds,

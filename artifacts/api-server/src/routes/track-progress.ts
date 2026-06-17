@@ -1,10 +1,11 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, userTrackProgressTable } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { requireBrigade } from "../middlewares/requireBrigade";
 
 const router: IRouter = Router();
 
+// Must be declared before /:slug to avoid Express treating "summary" as a slug value
 router.get("/track-progress", requireBrigade, async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
@@ -16,18 +17,15 @@ router.get("/track-progress", requireBrigade, async (req: Request, res: Response
   const rows = await db
     .select({
       trackSlug: userTrackProgressTable.trackSlug,
-      count: sql<number>`cast(count(*) as int)`,
+      doneCount: count(userTrackProgressTable.episodeId),
     })
     .from(userTrackProgressTable)
     .where(eq(userTrackProgressTable.userId, userId))
     .groupBy(userTrackProgressTable.trackSlug);
 
-  const counts: Record<string, number> = {};
-  for (const row of rows) {
-    counts[row.trackSlug] = row.count;
-  }
-
-  res.json({ counts });
+  res.json({
+    tracks: rows.map((r) => ({ slug: r.trackSlug, doneCount: Number(r.doneCount) })),
+  });
 });
 
 router.get("/track-progress/:slug", requireBrigade, async (req: Request, res: Response) => {
@@ -83,6 +81,27 @@ router.patch("/track-progress/:slug", requireBrigade, async (req: Request, res: 
         ),
       );
   }
+
+  res.json({ success: true });
+});
+
+router.delete("/track-progress/:slug", requireBrigade, async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const slug = req.params.slug as string;
+  const userId = req.user.id;
+
+  await db
+    .delete(userTrackProgressTable)
+    .where(
+      and(
+        eq(userTrackProgressTable.userId, userId),
+        eq(userTrackProgressTable.trackSlug, slug),
+      ),
+    );
 
   res.json({ success: true });
 });

@@ -1,7 +1,8 @@
 import { Link, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useGetTrackEpisodes, fetchAllTrackEpisodes, type TrackNugget } from "@/hooks/use-tracks";
-import { useTrackProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
+import { useGetTrackEpisodes, useListTracks, fetchAllTrackEpisodes, type TrackNugget, type TrackSummary } from "@/hooks/use-tracks";
+import { useTrackProgress, useAllTracksProgress, buildShareUrl, decodeProgressParam } from "@/hooks/use-track-progress";
+import { useAuth } from "@workspace/replit-auth-web";
 import { useDocumentMeta } from "@/hooks/use-document-meta";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { ProductShelf, type ReviewedProduct } from "@/components/product-shelf";
@@ -26,6 +27,8 @@ import {
   Check,
   ClipboardCopy,
   Printer,
+  RotateCcw,
+  BarChart2,
 } from "lucide-react";
 import { ShareModal, SharedNoteBanner } from "@/components/share-modal";
 import { formatDuration } from "@/components/episode-card";
@@ -529,6 +532,287 @@ function ExportPdfButton({
   );
 }
 
+type ResetProgressButtonProps = {
+  doneCount: number;
+  onReset: () => void;
+};
+
+function ResetProgressButton({ doneCount, onReset }: ResetProgressButtonProps) {
+  const [confirm, setConfirm] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  if (doneCount === 0) return null;
+
+  function handleClick() {
+    if (!confirm) {
+      setConfirm(true);
+      timerRef.current = setTimeout(() => setConfirm(false), 4000);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setConfirm(false);
+    onReset();
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ${
+        confirm
+          ? "bg-red-500/10 border-red-500/40 text-red-600 hover:bg-red-500/20"
+          : "bg-background border-border hover:border-destructive/40 hover:bg-destructive/5 text-muted-foreground"
+      }`}
+      title={confirm ? "Click again to confirm reset" : "Reset all progress for this track"}
+    >
+      <RotateCcw className="w-4 h-4" />
+      {confirm ? "Confirm reset?" : "Reset progress"}
+    </button>
+  );
+}
+
+type MyProgressModalProps = {
+  currentSlug: string;
+  onClose: () => void;
+};
+
+function MyProgressModal({ currentSlug, onClose }: MyProgressModalProps) {
+  const { isAuthenticated } = useAuth();
+  const { data: tracks = [] } = useListTracks();
+  const slugs = tracks.map((t: TrackSummary) => t.slug);
+  const localCounts = useAllTracksProgress(slugs);
+
+  const [serverCounts, setServerCounts] = useState<Record<string, number> | null>(null);
+  const [serverLoading, setServerLoading] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<Set<string>>(new Set());
+  // Tracks slugs reset locally this session so same-tab UI reflects immediately
+  // (useAllTracksProgress only refreshes on storage/focus events)
+  const [localResetSlugs, setLocalResetSlugs] = useState<Set<string>>(new Set());
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setServerLoading(true);
+    fetch("/api/track-progress", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { tracks: Array<{ slug: string; doneCount: number }> } | null) => {
+        if (data?.tracks) {
+          const map: Record<string, number> = {};
+          for (const t of data.tracks) map[t.slug] = t.doneCount;
+          setServerCounts(map);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setServerLoading(false));
+  }, [isAuthenticated]);
+
+  useEffect(() => () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); }, []);
+
+  const baseCounts: Record<string, number> =
+    isAuthenticated && serverCounts !== null ? serverCounts : localCounts;
+  // Apply same-session local resets so the UI reflects immediately
+  const counts: Record<string, number> = localResetSlugs.size > 0
+    ? Object.fromEntries(
+        Object.entries(baseCounts).map(([k, v]) => [k, localResetSlugs.has(k) ? 0 : v])
+      )
+    : baseCounts;
+
+  const tracksWithProgress = tracks.filter((t: TrackSummary) => (counts[t.slug] ?? 0) > 0);
+  const totalDone = tracksWithProgress.reduce((sum: number, t: TrackSummary) => sum + (counts[t.slug] ?? 0), 0);
+
+  async function handleReset(slug: string) {
+    if (resetConfirm !== slug) {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+      setResetConfirm(slug);
+      confirmTimerRef.current = setTimeout(() => setResetConfirm(null), 4000);
+      return;
+    }
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    setResetConfirm(null);
+    setResetting((prev) => new Set([...prev, slug]));
+
+    try { localStorage.removeItem(`tsp_track_progress_${slug}`); } catch {}
+
+    if (isAuthenticated) {
+      await fetch(`/api/track-progress/${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+        credentials: "include",
+      }).catch(() => {});
+    }
+
+    setServerCounts((prev) => (prev ? { ...prev, [slug]: 0 } : prev));
+    setLocalResetSlugs((prev) => new Set([...prev, slug]));
+    setResetting((prev) => { const s = new Set(prev); s.delete(slug); return s; });
+  }
+
+  function handleExportCSV() {
+    const header = ["Track Slug", "Track Title", "Episodes Done", "Total Episodes"];
+    const rows = tracks.map((t: TrackSummary) => [
+      t.slug,
+      t.title,
+      String(counts[t.slug] ?? 0),
+      String(t.episodeCount),
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "tsp-progress.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-background border border-border rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-primary" />
+            <span className="font-serif font-bold text-lg text-foreground">My Progress</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Summary bar */}
+        {totalDone > 0 && (
+          <div className="px-5 py-3 bg-muted/40 border-b border-border shrink-0 flex items-center justify-between gap-4">
+            <span className="text-sm text-muted-foreground">
+              <span className="font-bold text-foreground">{totalDone.toLocaleString()}</span> episodes done across{" "}
+              <span className="font-bold text-foreground">{tracksWithProgress.length}</span>{" "}
+              {tracksWithProgress.length === 1 ? "track" : "tracks"}
+            </span>
+            <button
+              onClick={handleExportCSV}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all shrink-0"
+              title="Download progress as CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </button>
+          </div>
+        )}
+
+        {/* Track list */}
+        <div className="overflow-y-auto flex-1 px-5 py-4">
+          {serverLoading && serverCounts === null ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground">
+              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+              <span className="text-sm">Loading your progress…</span>
+            </div>
+          ) : tracksWithProgress.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="text-sm text-muted-foreground mb-1">No progress recorded yet.</p>
+              <p className="text-xs text-muted-foreground/70">
+                Check off episodes on any track to see your summary here.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {tracksWithProgress.map((t: TrackSummary) => {
+                const done = counts[t.slug] ?? 0;
+                const pct = t.episodeCount > 0 ? Math.min(100, (done / t.episodeCount) * 100) : 0;
+                const isComplete = done >= t.episodeCount && t.episodeCount > 0;
+                const isCurrentTrack = t.slug === currentSlug;
+                const isConfirming = resetConfirm === t.slug;
+                const isResetting = resetting.has(t.slug);
+
+                return (
+                  <div
+                    key={t.slug}
+                    className={`rounded-xl p-4 border transition-all ${
+                      isCurrentTrack ? "border-primary/30 bg-primary/5" : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl leading-none mt-0.5 shrink-0">{t.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <Link
+                            href={`/tracks/${t.slug}`}
+                            onClick={onClose}
+                            className="font-serif font-bold text-sm text-foreground hover:text-primary transition-colors leading-tight"
+                          >
+                            {t.title}
+                          </Link>
+                          {isCurrentTrack && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm">
+                              Current
+                            </span>
+                          )}
+                          {isComplete && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-sm">
+                              Complete!
+                            </span>
+                          )}
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="h-1.5 rounded-full bg-border overflow-hidden mb-1.5">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${pct}%`,
+                              background: isComplete ? "#22c55e" : t.color,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {done.toLocaleString()} / {t.episodeCount.toLocaleString()} episodes
+                        </span>
+                      </div>
+                      {/* Reset button */}
+                      <button
+                        onClick={() => handleReset(t.slug)}
+                        disabled={isResetting}
+                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          isConfirming
+                            ? "bg-red-500/10 border-red-500/40 text-red-600 hover:bg-red-500/20"
+                            : "bg-background border-border text-muted-foreground hover:border-destructive/40 hover:text-destructive"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        title={isConfirming ? "Click again to confirm" : "Reset this track's progress"}
+                      >
+                        {isResetting ? (
+                          <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        {isConfirming ? "Confirm?" : "Reset"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!isAuthenticated && (
+            <p className="mt-4 text-center text-xs text-muted-foreground/70">
+              <Link href="/" className="text-primary hover:underline">Sign in</Link> to sync progress across devices.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type SharedProgressBannerProps = {
   sharedDoneCount: number;
   total: number;
@@ -586,6 +870,7 @@ export default function TrackDetailPage() {
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [noteBannerDismissed, setNoteBannerDismissed] = useState(false);
+  const [showMyProgress, setShowMyProgress] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const sharedNote = searchParams.get("note");
@@ -793,6 +1078,11 @@ export default function TrackDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* My Progress modal */}
+      {showMyProgress && (
+        <MyProgressModal currentSlug={slug} onClose={() => setShowMyProgress(false)} />
+      )}
+
       {/* Shared-with-you banner */}
       {sharedNote && !noteBannerDismissed && (
         <SharedNoteBanner
@@ -885,7 +1175,7 @@ export default function TrackDetailPage() {
             <ProgressBar doneCount={displayDoneCount} total={total} color={track.color} />
           </div>
 
-          {/* Share + Export buttons — only shown when user has their own progress */}
+          {/* Share + Export + Reset buttons — only shown when user has their own progress */}
           {!isSharedView && (
             <div className="print:hidden mt-4 flex items-center gap-3 flex-wrap">
               <ShareProgressButton
@@ -904,6 +1194,10 @@ export default function TrackDetailPage() {
                 doneIds={progress.doneIds}
                 doneCount={progress.doneCount}
                 total={total}
+              />
+              <ResetProgressButton
+                doneCount={progress.doneCount}
+                onReset={progress.resetProgress}
               />
             </div>
           )}
@@ -987,8 +1281,15 @@ export default function TrackDetailPage() {
             </button>
           </div>
 
-          {/* Print overview button */}
-          <div className="print:hidden mt-6">
+          {/* My Progress + Print buttons */}
+          <div className="print:hidden mt-6 flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => setShowMyProgress(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 text-foreground transition-all duration-200"
+            >
+              <BarChart2 className="w-4 h-4" />
+              My Progress
+            </button>
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 text-foreground transition-all duration-200"
