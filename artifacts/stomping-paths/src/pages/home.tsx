@@ -686,9 +686,12 @@ function ContinueLearningWidget() {
   );
   const ordered = [...inProgress, ...completed];
 
-  // Show skeleton only for returning users (local entries exist) while server sync is in-flight.
-  // Brand-new users with no local history should see nothing — not a misleading loading state.
-  const showSkeleton = isLoading && activeEntries.length > 0;
+  // Show skeleton whenever a server fetch is in-flight (auth loading OR authenticated and awaiting
+  // the server response).  This covers returning listeners whose localStorage was cleared — they
+  // have no local entries yet but the server will return their history, so showing a brief
+  // skeleton is better than silently showing nothing and then having the widget pop in.
+  // Once the server confirms zero progress (`serverReturnedEmpty`), the widget disappears.
+  const showSkeleton = isLoading;
   const showContent = !showSkeleton && ordered.length > 0;
 
   if (serverReturnedEmpty || (!showSkeleton && !showContent)) return null;
