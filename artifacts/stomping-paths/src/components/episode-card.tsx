@@ -1,10 +1,11 @@
 import { Episode } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
-import { PlayCircle, Clock, Calendar, Layers, Flame } from "lucide-react";
+import { PlayCircle, Clock, Calendar, Layers, Flame, Footprints } from "lucide-react";
 import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
+import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
 
 const FIRESIDE_FREEDOM_URL = "https://www.firesidefreedompodcast.com";
 
@@ -69,10 +70,14 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
     ? `/episodes/${episode.slug}?transformation=${transformation.slug}`
     : `/episodes/${episode.slug}`;
 
+  const { selectedSlug } = useSelectedTransformation();
+  const isYourPath = !!transformation && !!selectedSlug && transformation.slug === selectedSlug;
+
   return (
     <Link 
       href={episodeHref}
-      className={`group flex flex-col bg-card rounded-lg border border-border overflow-hidden card-lift hover:border-primary/30 ${featured ? 'md:flex-row' : ''}`}
+      className={`group flex flex-col bg-card rounded-lg border overflow-hidden card-lift hover:border-primary/30 ${featured ? 'md:flex-row' : ''} ${isYourPath ? 'border-[color:var(--your-path-color,hsl(var(--primary)/0.4))]' : 'border-border'}`}
+      style={isYourPath && transformation ? { borderColor: transformation.color + "55" } : undefined}
     >
       <div className={`relative bg-muted ${featured ? 'md:w-1/3 shrink-0' : 'w-full aspect-video'}`}>
         <img 
@@ -91,6 +96,22 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
             <PlayCircle className="w-6 h-6 ml-0.5" />
           </div>
         </div>
+
+        {isYourPath && transformation && (
+          <div className="absolute top-2 left-2">
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-sm backdrop-blur-sm"
+              style={{
+                color: transformation.color,
+                background: transformation.color + "30",
+                border: `1px solid ${transformation.color}55`,
+              }}
+            >
+              <Footprints className="w-2.5 h-2.5 shrink-0" />
+              Your path
+            </span>
+          </div>
+        )}
       </div>
       
       <div className="p-5 flex flex-col flex-1">

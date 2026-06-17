@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { PlayerProvider } from "@/context/player-context";
+import { SelectedTransformationProvider } from "@/hooks/use-selected-transformation";
 import { GordChat } from "@/components/GordChat";
 import { Home } from "@/pages/home";
 import { Archive } from "@/pages/archive";
@@ -155,13 +156,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <PlayerProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-            <GordChat />
-          </WouterRouter>
-          <Toaster />
-        </PlayerProvider>
+        <SelectedTransformationProvider>
+          <PlayerProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+              <GordChat />
+            </WouterRouter>
+            <Toaster />
+          </PlayerProvider>
+        </SelectedTransformationProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

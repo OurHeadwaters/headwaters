@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createElement } from "react";
 
 const STORAGE_KEY = "tsp_selected_transformation";
 
@@ -22,7 +23,15 @@ function writeStored(slug: string | null): void {
   }
 }
 
-export function useSelectedTransformation() {
+interface SelectedTransformationContextValue {
+  selectedSlug: string | null;
+  select: (slug: string) => void;
+  clear: () => void;
+}
+
+const SelectedTransformationContext = createContext<SelectedTransformationContextValue | null>(null);
+
+export function SelectedTransformationProvider({ children }: { children: ReactNode }) {
   const [selectedSlug, setSelectedSlugState] = useState<string | null>(readStored);
 
   const select = useCallback((slug: string) => {
@@ -35,5 +44,27 @@ export function useSelectedTransformation() {
     setSelectedSlugState(null);
   }, []);
 
-  return { selectedSlug, select, clear };
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === STORAGE_KEY) {
+        setSelectedSlugState(e.newValue);
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  return createElement(
+    SelectedTransformationContext.Provider,
+    { value: { selectedSlug, select, clear } },
+    children,
+  );
+}
+
+export function useSelectedTransformation(): SelectedTransformationContextValue {
+  const ctx = useContext(SelectedTransformationContext);
+  if (!ctx) {
+    throw new Error("useSelectedTransformation must be used inside SelectedTransformationProvider");
+  }
+  return ctx;
 }

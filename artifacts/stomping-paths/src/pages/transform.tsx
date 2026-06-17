@@ -1,9 +1,10 @@
 import { Link } from "wouter";
-import { ArrowRight, Compass, Loader2, PlayCircle } from "lucide-react";
+import { ArrowRight, Check, Compass, Loader2, PlayCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { useListEpisodes, getListEpisodesQueryKey } from "@workspace/api-client-react";
 import { useTransformations, type Transformation } from "@/hooks/use-transformations";
+import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
 
 function buildEpisodesUrl(t: Transformation): string {
   return `/episodes?transformation=${encodeURIComponent(t.slug)}`;
@@ -14,7 +15,15 @@ function buildTagsFilter(t: Transformation): string[] {
   return [...new Set(allTerms.map((s) => s.toLowerCase()))];
 }
 
-function TransformationCard({ t }: { t: Transformation }) {
+function TransformationCard({
+  t,
+  isSelected,
+  onSelect,
+}: {
+  t: Transformation;
+  isSelected: boolean;
+  onSelect: (slug: string) => void;
+}) {
   const queryTags = buildTagsFilter(t);
   const params = { limit: 3, offset: 0, tags: queryTags, sort: "popular" as const };
   const { data: episodePage } = useListEpisodes(params, {
@@ -26,7 +35,11 @@ function TransformationCard({ t }: { t: Transformation }) {
   return (
     <div
       className="flex flex-col rounded-xl border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-      style={{ borderColor: t.color + "33", background: t.color + "08" }}
+      style={{
+        borderColor: isSelected ? t.color + "88" : t.color + "33",
+        background: isSelected ? t.color + "12" : t.color + "08",
+        boxShadow: isSelected ? `0 0 0 2px ${t.color}44` : undefined,
+      }}
     >
       <div
         className="px-6 py-5 flex items-start gap-4"
@@ -34,11 +47,26 @@ function TransformationCard({ t }: { t: Transformation }) {
       >
         <span className="text-3xl leading-none mt-0.5">{t.icon}</span>
         <div className="flex-1 min-w-0">
-          <div
-            className="text-[10px] font-bold uppercase tracking-widest mb-2"
-            style={{ color: t.color }}
-          >
-            Transformation Path
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: t.color }}
+            >
+              Transformation Path
+            </div>
+            {isSelected && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  color: t.color,
+                  background: t.color + "20",
+                  border: `1px solid ${t.color}55`,
+                }}
+              >
+                <Check className="w-2.5 h-2.5" />
+                Your Path
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-serif text-lg font-bold text-foreground">
@@ -91,13 +119,42 @@ function TransformationCard({ t }: { t: Transformation }) {
         )}
 
         <div className="flex items-center gap-2 mt-auto flex-wrap">
+          <button
+            onClick={() => onSelect(t.slug)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
+            style={
+              isSelected
+                ? {
+                    color: t.color,
+                    background: t.color + "25",
+                    border: `1px solid ${t.color}55`,
+                  }
+                : {
+                    color: t.color,
+                    background: t.color + "15",
+                    border: `1px solid ${t.color}33`,
+                  }
+            }
+          >
+            {isSelected ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                Your path
+              </>
+            ) : (
+              <>
+                Select this path
+                <ArrowRight className="w-3.5 h-3.5" />
+              </>
+            )}
+          </button>
           <Link
             href={`/transform/${t.slug}`}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
             style={{
-              color: t.color,
-              background: t.color + "15",
-              border: `1px solid ${t.color}33`,
+              color: t.color + "99",
+              background: t.color + "08",
+              border: `1px solid ${t.color}22`,
             }}
           >
             Explore Path
@@ -107,9 +164,9 @@ function TransformationCard({ t }: { t: Transformation }) {
             href={buildEpisodesUrl(t)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
             style={{
-              color: t.color + "99",
-              background: t.color + "08",
-              border: `1px solid ${t.color}22`,
+              color: t.color + "80",
+              background: t.color + "05",
+              border: `1px solid ${t.color}18`,
             }}
           >
             All Episodes
@@ -123,6 +180,7 @@ function TransformationCard({ t }: { t: Transformation }) {
 
 export default function TransformPage() {
   const { data: transformations, isLoading, isError } = useTransformations();
+  const { selectedSlug, select } = useSelectedTransformation();
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,7 +242,9 @@ export default function TransformPage() {
               The six transformations
             </h2>
             <p className="text-sm text-muted-foreground">
-              Pick the path that matches where you are right now.
+              {selectedSlug
+                ? "Your selected path is highlighted. Switch anytime."
+                : "Pick the path that matches where you are right now."}
             </p>
           </div>
           <Link
@@ -211,7 +271,12 @@ export default function TransformPage() {
         {transformations && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {transformations.map((t) => (
-              <TransformationCard key={t.slug} t={t} />
+              <TransformationCard
+                key={t.slug}
+                t={t}
+                isSelected={selectedSlug === t.slug}
+                onSelect={select}
+              />
             ))}
           </div>
         )}
