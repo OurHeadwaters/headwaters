@@ -86,6 +86,20 @@ function getEmailDeliveryHint(email: string): string {
   return "check Spam or Junk";
 }
 
+function getEmailInboxLink(email: string): { href: string; label: string } | null {
+  const domain = email.split("@")[1]?.toLowerCase() ?? "";
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    return { href: "https://mail.google.com", label: "check Promotions or Spam" };
+  }
+  if (["outlook.com", "hotmail.com", "hotmail.co.uk", "live.com", "msn.com"].includes(domain)) {
+    return { href: "https://outlook.live.com/mail/junkemail", label: "check your Junk folder" };
+  }
+  if (["yahoo.com", "yahoo.co.uk", "ymail.com"].includes(domain)) {
+    return { href: "https://mail.yahoo.com", label: "check your Spam folder" };
+  }
+  return null;
+}
+
 export default function KitWelcomePage() {
   const [, params] = useRoute("/kits/:slug/welcome");
   const [location] = useLocation();
@@ -693,9 +707,18 @@ export default function KitWelcomePage() {
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <span>
                   If that email matches a purchase, you'll receive a new access link shortly.
-                  {accessEmail.includes("@") && (
-                    <> We sent it to <strong>{accessEmail.split("@")[1]}</strong> — {getEmailDeliveryHint(accessEmail)}.</>
-                  )}
+                  {accessEmail.includes("@") && (() => {
+                    const link = getEmailInboxLink(accessEmail);
+                    return (
+                      <> We sent it to <strong>{accessEmail.split("@")[1]}</strong> —{" "}
+                        {link ? (
+                          <a href={link.href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity">{link.label}</a>
+                        ) : (
+                          getEmailDeliveryHint(accessEmail)
+                        )}.
+                      </>
+                    );
+                  })()}
                 </span>
               </div>
             )}
@@ -769,9 +792,14 @@ export default function KitWelcomePage() {
                   {resendStatus === "sent" ? (
                     <>
                       A new link has been sent to {accessEmail}
-                      {accessEmail.includes("@") && (
-                        <> — {getEmailDeliveryHint(accessEmail)}</>
-                      )}.
+                      {accessEmail.includes("@") && (() => {
+                        const link = getEmailInboxLink(accessEmail);
+                        return link ? (
+                          <> — <a href={link.href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity">{link.label}</a></>
+                        ) : (
+                          <> — {getEmailDeliveryHint(accessEmail)}</>
+                        );
+                      })()}.
                     </>
                   ) : (
                     `We'll re-send your welcome email to ${accessEmail}.`
