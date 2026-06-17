@@ -577,11 +577,14 @@ router.post("/kits/:slug/zaprite-checkout", async (req, res) => {
 
   // Append a return_url so Zaprite redirects buyers back to the welcome page
   // after payment, where they see a "check your inbox" confirmation message.
+  // {orderId} is a Zaprite template variable that is substituted with the
+  // real Zaprite order ID on redirect, allowing the welcome page to look up
+  // the buyer's email and display it (mirroring the Stripe session flow).
   const siteUrl =
     process.env.SITE_URL ??
     (req.headers.origin as string | undefined) ??
     `https://${req.get("host")}`;
-  const returnUrl = `${siteUrl}/kits/${kit.slug}/welcome?payment=bitcoin`;
+  const returnUrl = `${siteUrl}/kits/${kit.slug}/welcome?payment=bitcoin&zaprite_order_id={orderId}`;
   const zapriteUrlWithReturn = `${kit.zapriteUrl}&return_url=${encodeURIComponent(returnUrl)}`;
 
   res.json({ url: zapriteUrlWithReturn });
@@ -630,6 +633,56 @@ router.get("/kits/:slug/welcome-session", async (req, res) => {
     }
     logger.error({ err, slug: kit.slug }, "kits: GET /:slug/welcome-session failed");
     res.status(500).json({ error: "Failed to retrieve session" });
+  }
+});
+
+/* ─────────────────── GET /api/kits/:slug/welcome-bitcoin ──────────── */
+
+/**
+ * Returns the buyer email for a completed Zaprite (Bitcoin/Lightning) order so
+ * the welcome page can show "We've sent your confirmation to [email]", mirroring
+ * the Stripe session flow.
+ *
+ * The zaprite_order_id comes from the {orderId} template variable that Zaprite
+ * substitutes in the return_url on redirect.  We look up the purchase by
+ * stripeCheckoutSessionId = "zaprite_<orderId>" which is how the Zaprite webhook
+ * stores it.  We only return the email — nothing else — and only after the
+ * webhook has already recorded the completed purchase.
+ */
+router.get("/kits/:slug/welcome-bitcoin", async (req, res) => {
+  const kit = kitBySlug(req.params.slug as string);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  const orderId = (req.query.zaprite_order_id as string | undefined)?.trim() ?? "";
+  if (!orderId) {
+    res.status(400).json({ error: "zaprite_order_id is required" });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select({ buyerEmail: kitPurchasesTable.buyerEmail })
+      .from(kitPurchasesTable)
+      .where(
+        and(
+          eq(kitPurchasesTable.kitSlug, kit.slug),
+          eq(kitPurchasesTable.stripeCheckoutSessionId, `zaprite_${orderId}`),
+        ),
+      )
+      .limit(1);
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    res.json({ customerEmail: rows[0].buyerEmail });
+  } catch (err) {
+    logger.error({ err, slug: kit.slug }, "kits: GET /:slug/welcome-bitcoin failed");
+    res.status(500).json({ error: "Failed to retrieve order" });
   }
 });
 

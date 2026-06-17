@@ -97,6 +97,8 @@ export default function KitWelcomePage() {
   const [sessionVerified, setSessionVerified] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [bitcoinEmail, setBitcoinEmail] = useState<string | null>(null);
+  const bitcoinEmailFetchedRef = useRef(false);
   const [emailLinkVerified, setEmailLinkVerified] = useState(() => {
     if (!slug) return false;
     return loadStoredAccess(slug)?.emailLinkVerified ?? false;
@@ -163,6 +165,34 @@ export default function KitWelcomePage() {
     }
     if (params.get("payment")) {
       setPaymentMethod(params.get("payment"));
+    }
+    const zapriteOrderId = params.get("zaprite_order_id");
+    if (params.get("payment") === "bitcoin" && zapriteOrderId && !bitcoinEmailFetchedRef.current) {
+      bitcoinEmailFetchedRef.current = true;
+      // Retry up to 5 times with 3-second gaps — the webhook may land slightly
+      // after Zaprite's redirect, so we give it a moment to be recorded.
+      (async () => {
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+        const url = `${base}/api/kits/${encodeURIComponent(slug)}/welcome-bitcoin?zaprite_order_id=${encodeURIComponent(zapriteOrderId)}`;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 3000));
+          }
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.customerEmail) {
+                setBitcoinEmail(data.customerEmail);
+                break;
+              }
+            }
+            if (res.status !== 404) break;
+          } catch {
+            break;
+          }
+        }
+      })();
     }
     const emailParam = params.get("email");
     const tokenParam = params.get("token");
@@ -489,7 +519,12 @@ export default function KitWelcomePage() {
                   className="text-base font-semibold mt-2"
                   style={{ color: "#F7931A" }}
                 >
-                  Bitcoin payment received — check your inbox for your confirmation email.
+                  Bitcoin payment received —{" "}
+                  {bitcoinEmail ? (
+                    <>check <span style={{ color: "#FDFBF7" }}>{bitcoinEmail}</span> for your confirmation.</>
+                  ) : (
+                    <>check your inbox for your confirmation email.</>
+                  )}
                 </p>
               ) : (
                 <p
@@ -533,6 +568,35 @@ export default function KitWelcomePage() {
               ) : (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   A welcome email with your kit details and access link is on its way. Check your
+                  inbox (and spam folder) — it should arrive within a few minutes.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {paymentMethod === "bitcoin" && (
+          <section
+            className="rounded-xl border p-5 flex items-start gap-4"
+            style={{
+              borderColor: "#F7931A44",
+              background: "#F7931A0A",
+            }}
+          >
+            <Bitcoin className="w-5 h-5 shrink-0 mt-0.5" style={{ color: "#F7931A" }} />
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-1">
+                Check your inbox
+              </p>
+              {bitcoinEmail ? (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  We've sent your confirmation email to{" "}
+                  <span className="font-semibold text-foreground">{bitcoinEmail}</span>.{" "}
+                  {`Check your inbox (${getEmailDeliveryHint(bitcoinEmail)}) — it should arrive within a few minutes.`}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  A confirmation email with your kit access link is on its way. Check your
                   inbox (and spam folder) — it should arrive within a few minutes.
                 </p>
               )}
