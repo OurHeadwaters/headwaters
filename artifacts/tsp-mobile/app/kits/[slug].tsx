@@ -567,6 +567,39 @@ const gearStyles = StyleSheet.create({
   linkText: { fontSize: 11 },
 });
 
+const KIT_ACCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function kitAccessKey(slug: string) {
+  return `kit-access-v1:${slug}`;
+}
+
+async function loadStoredKitAccess(slug: string): Promise<{ email: string } | null> {
+  try {
+    const raw = await AsyncStorage.getItem(kitAccessKey(slug));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { email: string; savedAt: number };
+    if (Date.now() - parsed.savedAt > KIT_ACCESS_TTL_MS) {
+      await AsyncStorage.removeItem(kitAccessKey(slug));
+      return null;
+    }
+    return { email: parsed.email };
+  } catch {
+    return null;
+  }
+}
+
+async function saveStoredKitAccess(slug: string, email: string) {
+  try {
+    await AsyncStorage.setItem(kitAccessKey(slug), JSON.stringify({ email, savedAt: Date.now() }));
+  } catch {}
+}
+
+async function clearStoredKitAccess(slug: string) {
+  try {
+    await AsyncStorage.removeItem(kitAccessKey(slug));
+  } catch {}
+}
+
 function KitWelcomeInline({
   kit,
   accent,
@@ -667,8 +700,48 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
   const [verifying, setVerifying] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const [backgroundCheckWarning, setBackgroundCheckWarning] = useState(false);
+  const [accessLoadedFromCache, setAccessLoadedFromCache] = useState(false);
 
   const appStateRef = useRef(AppState.currentState);
+  const backgroundRecheckDoneRef = useRef(false);
+
+  useEffect(() => {
+    loadStoredKitAccess(kit.slug).then((cached) => {
+      if (cached) {
+        setVerifyEmail(cached.email);
+        setHasAccess(true);
+        setAccessLoadedFromCache(true);
+      }
+    });
+  }, [kit.slug]);
+
+  useEffect(() => {
+    if (!accessLoadedFromCache || backgroundRecheckDoneRef.current) return;
+    backgroundRecheckDoneRef.current = true;
+    const email = verifyEmail;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/kits/${encodeURIComponent(kit.slug)}/access?email=${encodeURIComponent(email)}`,
+        );
+        if (!res.ok) {
+          setBackgroundCheckWarning(true);
+          return;
+        }
+        const data = await res.json();
+        if (data.hasAccess) {
+          await saveStoredKitAccess(kit.slug, email);
+        } else {
+          await clearStoredKitAccess(kit.slug);
+          setHasAccess(false);
+          setVerifyEmail("");
+        }
+      } catch {
+        setBackgroundCheckWarning(true);
+      }
+    })();
+  }, [accessLoadedFromCache]);
 
   useEffect(() => {
     if (!checkoutOpened) return;
@@ -711,6 +784,7 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
       const data = await res.json();
       if (data.hasAccess) {
         setHasAccess(true);
+        await saveStoredKitAccess(kit.slug, email);
         AsyncStorage.removeItem(KIT_FINDER_REC_KEY).catch(() => {});
       } else {
         setError("No purchase found for that email. If you just paid, try again in a moment.");
@@ -748,11 +822,56 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
   const isDirect = kit.priceType === "direct";
 
   if (isDirect && hasAccess && !welcomeDismissed) {
-    return <KitWelcomeInline kit={kit} accent={accent} onDismiss={() => setWelcomeDismissed(true)} />;
+    return (
+      <>
+        {backgroundCheckWarning && (
+          <View
+            style={[
+              connectionWarningStyles.wrap,
+              { backgroundColor: "#78350F0A", borderColor: "#92400E33" },
+            ]}
+          >
+            <Ionicons name="wifi-outline" size={15} color="#92400E" style={connectionWarningStyles.icon} />
+            <Text style={[connectionWarningStyles.text, { fontFamily: "DMSans_400Regular" }]}>
+              Couldn't verify your access — check your connection. Your cached access is still active.
+            </Text>
+            <Pressable
+              onPress={() => setBackgroundCheckWarning(false)}
+              hitSlop={8}
+              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 0.6 }]}
+            >
+              <Ionicons name="close" size={16} color="#92400E" />
+            </Pressable>
+          </View>
+        )}
+        <KitWelcomeInline kit={kit} accent={accent} onDismiss={() => setWelcomeDismissed(true)} />
+      </>
+    );
   }
 
   if (isDirect && hasAccess && welcomeDismissed) {
-    return null;
+    if (!backgroundCheckWarning) return null;
+    return (
+      <View
+        style={[
+          connectionWarningStyles.wrap,
+          connectionWarningStyles.standalone,
+          { backgroundColor: "#78350F0A", borderColor: "#92400E33" },
+        ]}
+      >
+        <Ionicons name="wifi-outline" size={15} color="#92400E" style={connectionWarningStyles.icon} />
+        <Text style={[connectionWarningStyles.text, { fontFamily: "DMSans_400Regular" }]}>
+          Couldn't verify your access — check your connection. Your cached access is still active.
+        </Text>
+        <Pressable
+          onPress={() => setBackgroundCheckWarning(false)}
+          hitSlop={8}
+          style={({ pressed }) => [{ opacity: pressed ? 0.5 : 0.6 }]}
+        >
+          <Ionicons name="close" size={16} color="#92400E" />
+        </Pressable>
+      </View>
+    );
   }
 
   if (isDirect && checkoutOpened) {
@@ -961,6 +1080,30 @@ const ctaStyles = StyleSheet.create({
   hint: { fontSize: 11, textAlign: "center", marginTop: 8 },
   errorText: { fontSize: 12, marginTop: 4 },
   successTitle: { fontSize: 17, marginTop: 8, marginBottom: 6, textAlign: "center" },
+});
+
+const connectionWarningStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  standalone: {
+    marginBottom: 16,
+  },
+  icon: { flexShrink: 0 },
+  text: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    color: "#92400E",
+  },
 });
 
 function FamilyEditionToggle({
