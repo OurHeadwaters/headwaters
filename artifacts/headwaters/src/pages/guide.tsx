@@ -240,7 +240,7 @@ export default function Guide() {
             <li style={S.featureItem}><strong>Daily Stomp tracker</strong> — Track which episodes you've listened to today. Builds a habit of daily learning.</li>
             <li style={S.featureItem}><strong>Homestead Map</strong> — An interactive zone map showing your current homestead stage and what's available in each zone.</li>
             <li style={S.featureItem}><strong>Wisdom Dig</strong> — A searchable collection of extracted wisdom nuggets and key quotes from TSP episodes.</li>
-            <li style={S.featureItem}><strong>History Timeline</strong> — A visual timeline of TSP episodes across 18 years.</li>
+            <li style={S.featureItem}><strong>History Timeline</strong> — A visual timeline of TSP episodes across 17 years.</li>
             <li style={S.featureItem}><strong>Gear reviews</strong> — Products and tools reviewed and recommended by Jack.</li>
           </ul>
 
