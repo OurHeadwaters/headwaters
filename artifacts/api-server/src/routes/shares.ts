@@ -69,6 +69,24 @@ async function ensureShareEventsTable(): Promise<void> {
     )
     WHERE ip_hash <> ''
   `);
+
+  /*
+   * share_blocks records every duplicate that was dropped by the dedup window.
+   * No ip_hash is stored here — we only need aggregate counts for the admin
+   * dashboard; we deliberately avoid logging more than necessary.
+   */
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS share_blocks (
+      id         SERIAL PRIMARY KEY,
+      surface    TEXT NOT NULL,
+      slug       TEXT NOT NULL,
+      blocked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS share_blocks_surface_slug_idx
+    ON share_blocks (surface, slug)
+  `);
 }
 
 let tableReady = false;
@@ -103,13 +121,22 @@ router.post("/shares", async (req, res) => {
       /*
        * Atomic dedup: the unique index on (surface, slug, ip_hash, time-bucket)
        * means a concurrent duplicate simply conflicts and is silently dropped.
-       * No SELECT is needed — there is no race window.
+       * RETURNING id lets us detect whether the row was actually inserted or
+       * was a no-op conflict — an empty result means a duplicate was blocked.
        */
-      await db.execute(sql`
+      const result = await db.execute(sql`
         INSERT INTO share_events (surface, slug, ip_hash)
         VALUES (${surface}, ${cleanSlug}, ${ipHash})
         ON CONFLICT DO NOTHING
+        RETURNING id
       `);
+      const inserted = ((result as any).rows ?? result) as unknown[];
+      if (inserted.length === 0) {
+        await db.execute(sql`
+          INSERT INTO share_blocks (surface, slug)
+          VALUES (${surface}, ${cleanSlug})
+        `);
+      }
     });
     res.status(201).json({ ok: true });
   } catch (err) {
@@ -197,27 +224,28 @@ router.get("/shares/bulk", async (req, res) => {
 
 router.get("/admin/shares", requireEditor, async (_req, res) => {
   try {
-    const rows = await withTable(async () => {
-      return db.execute(sql`
-        SELECT
-          surface,
-          slug,
-          COUNT(*)::int AS share_count,
-          MAX(shared_at) AS last_shared_at
-        FROM share_events
-        GROUP BY surface, slug
-        ORDER BY share_count DESC, last_shared_at DESC
-        LIMIT 200
-      `);
+    const [rows, total, blocked] = await withTable(async () => {
+      return Promise.all([
+        db.execute(sql`
+          SELECT
+            surface,
+            slug,
+            COUNT(*)::int AS share_count,
+            MAX(shared_at) AS last_shared_at
+          FROM share_events
+          GROUP BY surface, slug
+          ORDER BY share_count DESC, last_shared_at DESC
+          LIMIT 200
+        `),
+        db.execute(sql`SELECT COUNT(*)::int AS total FROM share_events`),
+        db.execute(sql`SELECT COUNT(*)::int AS total_blocked FROM share_blocks`),
+      ]);
     });
-
-    const total = await db.execute(
-      sql`SELECT COUNT(*)::int AS total FROM share_events`,
-    );
 
     res.json({
       shares: (rows as any).rows ?? rows,
       total: ((total as any).rows ?? total)[0]?.total ?? 0,
+      total_blocked: ((blocked as any).rows ?? blocked)[0]?.total_blocked ?? 0,
     });
   } catch (err) {
     logger.error({ err }, "admin-shares: GET failed");
