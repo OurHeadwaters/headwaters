@@ -127,6 +127,7 @@ export default function KitWelcomePage() {
     const stored = loadStoredAccess(slug);
     return stored ? "found" : "idle";
   });
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const retryCountRef = useRef(0);
@@ -207,6 +208,7 @@ export default function KitWelcomePage() {
           saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
         } else {
           clearStoredAccess(slug);
+          setSessionExpired(true);
           setAccessStatus("idle");
           setAccessEmail("");
         }
@@ -375,6 +377,22 @@ export default function KitWelcomePage() {
 
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-10">
 
+        {sessionExpired && accessStatus === "idle" && (
+          <div
+            className="flex items-start gap-3 rounded-xl border px-5 py-4 text-sm"
+            style={{
+              borderColor: "#F59E0B44",
+              background: "#F59E0B0A",
+              color: "#92400E",
+            }}
+          >
+            <Clock className="w-4 h-4 shrink-0 mt-0.5 opacity-70" style={{ color: "#F59E0B" }} />
+            <p>
+              <span className="font-semibold">Your session expired</span> — please re-enter your email to restore access.
+            </p>
+          </div>
+        )}
+
         {paymentMethod === "bitcoin" && (
           <section
             className="rounded-xl border p-6"
@@ -491,7 +509,7 @@ export default function KitWelcomePage() {
                     ref={emailInputRef}
                     type="email"
                     value={accessEmail}
-                    onChange={(e) => setAccessEmail(e.target.value)}
+                    onChange={(e) => { setAccessEmail(e.target.value); if (sessionExpired) setSessionExpired(false); }}
                     placeholder="you@example.com"
                     required
                     disabled={accessStatus === "loading"}
