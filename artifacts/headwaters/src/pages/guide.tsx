@@ -1,5 +1,9 @@
 import { useEffect } from "react";
 
+const TSP_FOUNDING_YEAR = 2009;
+const TSP_EPISODE_COUNT = "6,000+";
+const TSP_SHOW_AGE = new Date().getFullYear() - TSP_FOUNDING_YEAR;
+
 const S = {
   page: {
     fontFamily: "Georgia, 'Times New Roman', serif",
@@ -194,11 +198,11 @@ export default function Guide() {
         {/* ── 1. The Stomping Path ── */}
         <div className="section-block" style={S.sectionBlock}>
           <div style={S.sectionTitle}>1. The Stomping Path</div>
-          <span style={S.sectionTag}>A redesigned home for 6,000+ episodes, learning, and community</span>
+          <span style={S.sectionTag}>A redesigned home for {TSP_EPISODE_COUNT} episodes, learning, and community</span>
 
           <p style={S.p}>
-            The Stomping Path has been running since 2008. Jack Spirko has recorded over
-            6,000 episodes covering homesteading, food production, financial independence,
+            The Stomping Path has been running since {TSP_FOUNDING_YEAR}. Jack Spirko has recorded over
+            {TSP_EPISODE_COUNT} episodes covering homesteading, food production, financial independence,
             preparedness, and community resilience. The Stomping Path is a completely rebuilt
             version of the original website — faster, easier to navigate, and organized around the way
             listeners actually use the content.
@@ -206,7 +210,7 @@ export default function Guide() {
 
           <div style={S.featureHead}>Finding content</div>
           <ul style={S.featureList}>
-            <li style={S.featureItem}><strong>Episode search</strong> — Search all 6,000+ episodes by keyword, topic, or date. Full-text search across titles, descriptions, and transcripts. Results appear instantly as you type.</li>
+            <li style={S.featureItem}><strong>Episode search</strong> — Search all {TSP_EPISODE_COUNT} episodes by keyword, topic, or date. Full-text search across titles, descriptions, and transcripts. Results appear instantly as you type.</li>
             <li style={S.featureItem}><strong>Library</strong> — Every article, resource, and episode organized in one place. Browse by topic or search by keyword.</li>
             <li style={S.featureItem}><strong>Series</strong> — Curated sets of episodes on specific topics (e.g. Unloose the Goose, a series about practical community action). Episodes in a series play in order.</li>
             <li style={S.featureItem}><strong>Zones</strong> — Content organized by where you are in your self-reliance journey: Self → Home → Garden → Homestead → Forest → Wild. Wherever you are, you see the content that's most relevant to you right now.</li>
@@ -240,13 +244,13 @@ export default function Guide() {
             <li style={S.featureItem}><strong>Daily Stomp tracker</strong> — Track which episodes you've listened to today. Builds a habit of daily learning.</li>
             <li style={S.featureItem}><strong>Homestead Map</strong> — An interactive zone map showing your current homestead stage and what's available in each zone.</li>
             <li style={S.featureItem}><strong>Wisdom Dig</strong> — A searchable collection of extracted wisdom nuggets and key quotes from TSP episodes.</li>
-            <li style={S.featureItem}><strong>History Timeline</strong> — A visual timeline of TSP episodes across 17 years.</li>
+            <li style={S.featureItem}><strong>History Timeline</strong> — A visual timeline of TSP episodes across {TSP_SHOW_AGE} years.</li>
             <li style={S.featureItem}><strong>Gear reviews</strong> — Products and tools reviewed and recommended by Jack.</li>
           </ul>
 
           <div style={S.callout}>
             Who it's for: anyone who listens to The Stomping Path and wants to get more from
-            6,000+ episodes — find what matters, learn in order, support the show, and connect
+            {TSP_EPISODE_COUNT} episodes — find what matters, learn in order, support the show, and connect
             with the community.
           </div>
         </div>
@@ -424,7 +428,7 @@ export default function Guide() {
 
           <div style={S.featureHead}>What it includes</div>
           <ul style={S.featureList}>
-            <li style={S.featureItem}><strong>Episode browser</strong> — Browse, search, and stream all 6,000+ TSP episodes. Download for offline listening when you're out of signal.</li>
+            <li style={S.featureItem}><strong>Episode browser</strong> — Browse, search, and stream all {TSP_EPISODE_COUNT} TSP episodes. Download for offline listening when you're out of signal.</li>
             <li style={S.featureItem}><strong>Home feed</strong> — Featured episodes and the daily stomp — what to listen to today.</li>
             <li style={S.featureItem}><strong>Library</strong> — The full curated resource library, organized by topic.</li>
             <li style={S.featureItem}><strong>Zone map</strong> — Visual map of the self-reliance zones, with kit references for each stage.</li>
@@ -454,7 +458,7 @@ export default function Guide() {
 
           <div style={S.featureHead}>What it does</div>
           <ul style={S.featureList}>
-            <li style={S.featureItem}><strong>Content sync</strong> — Automatically pulls new TSP episodes from the RSS feed, articles from the WordPress site, and videos from YouTube. Runs in the background every hour. Over 6,000 items are indexed and searchable.</li>
+            <li style={S.featureItem}><strong>Content sync</strong> — Automatically pulls new TSP episodes from the RSS feed, articles from the WordPress site, and videos from YouTube. Runs in the background every hour. Over {TSP_EPISODE_COUNT} items are indexed and searchable.</li>
             <li style={S.featureItem}><strong>Full-text search</strong> — Powers the episode and library search across all tools. Uses PostgreSQL full-text indexing for fast, accurate results.</li>
             <li style={S.featureItem}><strong>Login and accounts</strong> — Handles login via Replit Auth for Brigade members, editors, and practitioners.</li>
             <li style={S.featureItem}><strong>Payments</strong> — Processes Brigade subscriptions and kit purchases through Stripe (credit card) and Zaprite (Bitcoin and Lightning). Handles all payment webhooks and confirmation emails.</li>
