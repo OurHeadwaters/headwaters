@@ -29,11 +29,15 @@ import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vites
 import request from "supertest";
 
 /* ─── Mock: bypass Stripe signature verification ──────────────────────────────
- * getStripeSync().processWebhook() returns an empty object so the handler
- * falls through to the JSON.parse(payload.toString()) path and processes
- * whatever event we supply without contacting Stripe or the Replit connector.
+ * verifyAndParseWebhookEvent is now the primary security gate in processWebhook.
+ * Mock it to parse the raw Buffer payload directly (skipping HMAC verification)
+ * so tests can inject arbitrary events without real Stripe credentials.
+ *
+ * getStripeSync is still mocked for the non-blocking background sync path.
  */
 vi.mock("./stripeClient.js", () => ({
+  verifyAndParseWebhookEvent: (_payload: Buffer, _sig: string) =>
+    Promise.resolve(JSON.parse(_payload.toString()) as import("stripe").default.Event),
   getStripeSync: () =>
     Promise.resolve({
       processWebhook: (_payload: Buffer, _sig: string) => Promise.resolve({}),

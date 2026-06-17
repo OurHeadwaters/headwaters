@@ -30,85 +30,29 @@ export class WebhookHandlers {
       );
     }
 
-    // ── Webhook verification + sync ───────────────────────────────────────────
+    // ── Security gate: verify signature and parse event ──────────────────────
     //
-    // Primary path: stripe-replit-sync verifies the signature using its
-    // DB-stored managed-webhook signing secret (stripe._managed_webhooks.secret)
-    // AND syncs the event to the stripe.* tables.
+    // verifyAndParseWebhookEvent calls stripe.webhooks.constructEvent() which:
+    //   • Verifies the HMAC signature against STRIPE_WEBHOOK_SECRET
+    //   • Throws StripeSignatureVerificationError on bad signature → propagates as 400
+    //   • Returns the fully-parsed Stripe.Event
     //
-    // Error handling:
-    //   • StripeSignatureVerificationError → bad signature; propagate (→ 400).
-    //   • Any other error (transient DB, network) → signature was already
-    //     verified before the sync step failed; fall back to independent
-    //     verification via verifyAndParseWebhookEvent (uses
-    //     STRIPE_WEBHOOK_SECRET_FALLBACK when set) or parse raw payload.
-    let event: Stripe.Event;
+    // This runs first — business logic below only fires on verified events.
+    const event = await verifyAndParseWebhookEvent(payload, signature);
 
-    try {
-      const sync = await getStripeSync();
-      const syncResult = await sync.processWebhook(payload, signature);
-      const raw: unknown = syncResult;
-      event = (raw && typeof raw === "object" && "type" in raw)
-        ? (raw as Stripe.Event)
-        : (JSON.parse(payload.toString()) as Stripe.Event);
-    } catch (syncErr) {
-      // Detect Stripe signature verification failures — these mean the event
-      // was not signed with a trusted secret and must be rejected outright.
-      const isSignatureError =
-        syncErr instanceof Error &&
-        (syncErr.constructor.name === "StripeSignatureVerificationError" ||
-          ("type" in syncErr &&
-            (syncErr as { type?: string }).type === "StripeSignatureVerificationError"));
-
-      if (isSignatureError) {
-        throw syncErr; // propagates → route handler returns 400
-      }
-
-      // Non-signature error (e.g. transient DB or network issue after the
-      // signature check passed).  Fall back to independent verification so
-      // purchase fulfillment is never silently dropped.
-      logger.warn(
-        { syncErr },
-        "webhookHandlers: stripe-replit-sync processWebhook error — falling back to independent verification",
-      );
-
-      try {
-        event = await verifyAndParseWebhookEvent(payload, signature);
-      } catch (verifyErr) {
-        // Production guard: if BOTH verification paths failed with configuration
-        // errors (not bad signatures), we cannot confirm the payload came from
-        // Stripe. Parsing raw bytes here would accept unverified requests.
-        // Throw so the route returns 400 and Stripe will retry later.
-        if (process.env.REPLIT_DEPLOYMENT === "1") {
-          const verifyMsg = verifyErr instanceof Error ? verifyErr.message : String(verifyErr);
-          logger.error(
-            { syncErr, verifyErr },
-            "webhookHandlers: webhook verification failed in production — refusing to process unverified payload. " +
-              "Fix: add STRIPE_WEBHOOK_SECRET to Replit Secrets (copy whsec_… from Stripe Dashboard → " +
-              "Developers → Webhooks → https://thestompingpaths.com/api/stripe/webhook → Signing secret).",
-          );
-          throw new Error(
-            `Webhook verification failed: ${verifyMsg}. ` +
-              "STRIPE_WEBHOOK_SECRET must be set in Replit Secrets for production webhook processing.",
-          );
-        }
-
-        // Development only: fall back to raw payload parsing.
-        // This path is safe in dev because stripe-replit-sync has already
-        // passed signature verification before the non-signature error (e.g.
-        // missing stripe.accounts table) was thrown.
+    // ── Background sync (best-effort) ─────────────────────────────────────────
+    //
+    // stripe-replit-sync tries to upsert into stripe.accounts which doesn't
+    // exist in this project's DB schema. Run non-blocking so a DB schema gap
+    // never delays purchase fulfillment.
+    getStripeSync()
+      .then((sync) => sync.processWebhook(payload, signature))
+      .catch((syncErr) => {
         logger.warn(
-          { verifyErr },
-          "webhookHandlers: independent verification unavailable — parsing raw payload (signature pre-verified by stripe-replit-sync; dev only)",
+          { syncErr },
+          "webhookHandlers: stripe-replit-sync background sync failed (non-fatal)",
         );
-        try {
-          event = JSON.parse(payload.toString()) as Stripe.Event;
-        } catch {
-          logger.warn("webhookHandlers: failed to parse webhook payload — skipping custom logic");
-          return;
-        }
-      }
-    }
+      });
 
     if (event.type === "checkout.session.completed") {
       await WebhookHandlers.handleCheckoutComplete(

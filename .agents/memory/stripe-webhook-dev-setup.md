@@ -23,11 +23,13 @@ A webhook endpoint (`we_1TjMrpPd6A0oJ5bAJ8EeMIfm`) is already registered for the
 Uses `stripe.webhooks.constructEvent()` directly — verifies HMAC, returns the parsed event, throws `StripeSignatureVerificationError` on bad signatures. This is the security gate.
 
 `WebhookHandlers.processWebhook` now:
-1. Calls `verifyAndParseWebhookEvent` (throws on bad signature — propagates as 400)
-2. Fires stripe-replit-sync in a non-blocking `.catch()` (best-effort background sync; `stripe.accounts` error logged as WARN, never blocks fulfillment)
+1. Calls `verifyAndParseWebhookEvent` first (throws on bad signature — propagates as 400)
+2. Fires stripe-replit-sync non-blocking `.then().catch()` — best-effort background sync; `stripe.accounts` error logged as WARN, never blocks fulfillment
 3. Processes the verified event
 
-**Why:** Keeping signature verification and DB sync separate means a missing `stripe.accounts` table never silently drops purchases.
+**Why:** stripe-replit-sync was briefly made the PRIMARY path (sync first, verify as fallback). This broke production: sync always errors on `stripe.accounts`, the fallback also failed, and the dev-only raw-parse path fired in production — causing `TypeError: Cannot read properties of undefined (reading 'object')`. The memory-documented design (verify first, sync background) was restored. If this order is ever changed again, all production test events will silently fail.
+
+**CRITICAL:** Do NOT make stripe-replit-sync the primary path. It always throws on `stripe.accounts` in this project. verifyAndParseWebhookEvent MUST be first.
 
 ## Admin endpoint auth
 `/admin/kit-purchases` uses `requireEditor` middleware. In dev (no session), pass `x-admin-secret: <ADMIN_SECRET>` header. Set `ADMIN_SECRET` in Replit Secrets to enable this path.
