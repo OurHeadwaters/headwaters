@@ -65,9 +65,13 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
   const seriesTheme = seriesSlug ? getSeriesTheme(seriesSlug) : null;
   const showFiresideBadge = hasFiresideFreedomHost(episode);
 
+  const episodeHref = transformation
+    ? `/episodes/${episode.slug}?transformation=${transformation.slug}`
+    : `/episodes/${episode.slug}`;
+
   return (
     <Link 
-      href={`/episodes/${episode.slug}`}
+      href={episodeHref}
       className={`group flex flex-col bg-card rounded-lg border border-border overflow-hidden card-lift hover:border-primary/30 ${featured ? 'md:flex-row' : ''}`}
     >
       <div className={`relative bg-muted ${featured ? 'md:w-1/3 shrink-0' : 'w-full aspect-video'}`}>

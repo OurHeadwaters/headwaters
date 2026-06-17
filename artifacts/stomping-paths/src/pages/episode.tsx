@@ -130,6 +130,7 @@ export function EpisodeDetail() {
   );
   const sharedNote = searchParams.get("note");
   const sharedFrom = searchParams.get("from");
+  const urlTransformationSlug = searchParams.get("transformation");
 
   const { data: episode, isLoading, isError } = useGetEpisode(slug, {
     query: { enabled: !!slug, queryKey: getGetEpisodeQueryKey(slug) }
@@ -161,10 +162,24 @@ export function EpisodeDetail() {
     enabled: !!slug,
   });
 
-  const matchedTransformations =
+  const contentMatchedTransformations =
     episode && transformations
       ? matchTransformations(episode.categories, transformations, episode.tags)
       : [];
+
+  const urlTransformation =
+    urlTransformationSlug && transformations
+      ? transformations.find((t) => t.slug === urlTransformationSlug) ?? null
+      : null;
+
+  const matchedTransformations = (() => {
+    if (!urlTransformation) return contentMatchedTransformations;
+    const alreadyIncluded = contentMatchedTransformations.some(
+      (t) => t.slug === urlTransformation.slug,
+    );
+    if (alreadyIncluded) return contentMatchedTransformations;
+    return [urlTransformation, ...contentMatchedTransformations];
+  })();
 
   const matchedZones: ZoneMeta[] =
     episode
