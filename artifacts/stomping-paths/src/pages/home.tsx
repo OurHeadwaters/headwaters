@@ -668,50 +668,15 @@ function ContinueLearningSkeletonRow() {
 }
 
 function ContinueLearningWidget() {
-  const { entries: activeEntries, isLoading } = useAllActiveTracksState();
+  const { entries: activeEntries, isLoading, serverReturnedEmpty } = useAllActiveTracksState();
   const { data: tracks } = useListTracks();
 
-  // No local entries means the user has never started a track on this device.
-  // Skip the skeleton entirely — a brand-new listener with nothing in localStorage
-  // (and no server progress) should see nothing, not a misleading loading state.
-  if (activeEntries.length === 0) return null;
-
-  // Local entries exist: show the skeleton while the server sync catches up.
-  if (isLoading) {
-    return (
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="relative bg-[#0c1611] pt-10 pb-0 overflow-hidden"
-      >
-        <div className="container mx-auto px-4 md:px-6 max-w-2xl">
-          <div className="rounded-2xl border border-[#D9A066]/20 bg-[#D9A066]/5 p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Footprints className="w-4 h-4 text-[#D9A066]" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D9A066]">
-                Continue Learning
-              </span>
-              <div className="ml-auto h-2.5 w-20 rounded bg-[#FDFBF7]/10 animate-pulse" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <ContinueLearningSkeletonRow />
-              <ContinueLearningSkeletonRow />
-            </div>
-          </div>
-        </div>
-      </motion.section>
-    );
-  }
-
-  if (activeEntries.length === 0 || !tracks) return null;
-
-  const trackMap = new Map(tracks.map((t) => [t.slug, t]));
-  const rows = activeEntries
-    .map((entry) => ({ entry, track: trackMap.get(entry.slug) }))
-    .filter((r): r is { entry: ActiveTrackEntry; track: TrackSummary } => !!r.track);
-
-  if (rows.length === 0) return null;
+  const trackMap = tracks ? new Map(tracks.map((t) => [t.slug, t])) : null;
+  const rows = trackMap
+    ? activeEntries
+        .map((entry) => ({ entry, track: trackMap.get(entry.slug) }))
+        .filter((r): r is { entry: ActiveTrackEntry; track: TrackSummary } => !!r.track)
+    : [];
 
   const inProgress = rows.filter(
     ({ entry, track }) => entry.doneIds.size < track.episodeCount || track.episodeCount === 0,
@@ -721,6 +686,13 @@ function ContinueLearningWidget() {
   );
   const ordered = [...inProgress, ...completed];
 
+  // Show skeleton only for returning users (local entries exist) while server sync is in-flight.
+  // Brand-new users with no local history should see nothing — not a misleading loading state.
+  const showSkeleton = isLoading && activeEntries.length > 0;
+  const showContent = !showSkeleton && ordered.length > 0;
+
+  if (serverReturnedEmpty || (!showSkeleton && !showContent)) return null;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -729,34 +701,89 @@ function ContinueLearningWidget() {
       className="relative bg-[#0c1611] pt-10 pb-0 overflow-hidden"
     >
       <div className="container mx-auto px-4 md:px-6 max-w-2xl">
-        <div className="rounded-2xl border border-[#D9A066]/20 bg-[#D9A066]/5 p-5">
+        <motion.div
+          layout
+          className="rounded-2xl border border-[#D9A066]/20 bg-[#D9A066]/5 p-5 overflow-hidden"
+          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+        >
           <div className="flex items-center gap-2 mb-4">
             <Footprints className="w-4 h-4 text-[#D9A066]" />
             <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D9A066]">
               Continue Learning
             </span>
-            <span className="ml-auto text-[11px] text-[#FDFBF7]/35">
-              {inProgress.length > 0
-                ? `${inProgress.length} track${inProgress.length !== 1 ? "s" : ""} in progress`
-                : "All tracks finished"}
-            </span>
+            <AnimatePresence mode="wait" initial={false}>
+              {showSkeleton ? (
+                <motion.div
+                  key="skeleton-count"
+                  className="ml-auto h-2.5 w-20 rounded bg-[#FDFBF7]/10 animate-pulse"
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                />
+              ) : (
+                <motion.span
+                  key="real-count"
+                  className="ml-auto text-[11px] text-[#FDFBF7]/35"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {inProgress.length > 0
+                    ? `${inProgress.length} track${inProgress.length !== 1 ? "s" : ""} in progress`
+                    : "All tracks finished"}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="flex flex-col gap-2">
-            {ordered.map(({ entry, track }) => (
-              <ContinueLearningRow key={track.slug} entry={entry} track={track} />
-            ))}
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            {showSkeleton ? (
+              <motion.div
+                key="skeleton-rows"
+                className="flex flex-col gap-2"
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <ContinueLearningSkeletonRow />
+                <ContinueLearningSkeletonRow />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="real-rows"
+                className="flex flex-col gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {ordered.map(({ entry, track }, i) => (
+                  <motion.div
+                    key={track.slug}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: i * 0.07 }}
+                  >
+                    <ContinueLearningRow entry={entry} track={track} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <div className="mt-4 text-center">
+          {/* Always reserve footer space; opacity hides it during skeleton so no height jump */}
+          <motion.div
+            className="mt-4 text-center"
+            animate={{ opacity: showSkeleton ? 0 : 1 }}
+            transition={{ duration: 0.3, delay: showSkeleton ? 0 : 0.2 }}
+          >
             <Link
               href="/tracks"
               className="text-xs text-[#FDFBF7]/35 hover:text-[#D9A066] transition-colors"
+              tabIndex={showSkeleton ? -1 : 0}
+              aria-hidden={showSkeleton}
             >
               Browse all learning tracks →
             </Link>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </motion.section>
   );
