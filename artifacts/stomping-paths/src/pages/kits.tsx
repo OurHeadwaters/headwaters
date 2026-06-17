@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { Package, Loader2, Compass, Flame, ArrowUpDown } from "lucide-react";
+import { Package, Loader2, Compass, Flame, ArrowUpDown, ArrowRight } from "lucide-react";
 import { useListKits } from "@/hooks/use-kits";
 import { useShareCounts } from "@/hooks/use-share-counts";
 import { KitCard } from "@/components/kit-card";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
+import { KIT_META } from "@/hooks/use-kits";
 
 type SortMode = "default" | "popular";
 
@@ -14,6 +15,9 @@ export default function KitsPage() {
 
   const slugs = useMemo(() => kits?.map((k) => k.slug) ?? [], [kits]);
   const shareCounts = useShareCounts("kit", slugs);
+
+  const featuredKits = useMemo(() => kits?.filter((k) => k.featured) ?? [], [kits]);
+  const featuredKit = featuredKits.length === 1 ? featuredKits[0] : null;
 
   const sortedKits = useMemo(() => {
     if (!kits) return kits;
@@ -112,6 +116,77 @@ export default function KitsPage() {
           </div>
         </div>
       </div>
+
+      {/* Featured Kit Banner — shown when exactly one kit has featured: true */}
+      {featuredKit && (() => {
+        const meta = KIT_META[featuredKit.slug] ?? { icon: "📦", color: "#6B7280" };
+        return (
+          <div className="border-b border-border" style={{ background: `${meta.color}12` }}>
+            <div className="max-w-5xl mx-auto px-6 py-8">
+              <div
+                className="relative rounded-2xl overflow-hidden border"
+                style={{
+                  borderColor: `${meta.color}40`,
+                  background: `linear-gradient(135deg, ${meta.color}18 0%, ${meta.color}08 100%)`,
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-30 pointer-events-none"
+                  style={{
+                    backgroundImage: `radial-gradient(ellipse at 90% 50%, ${meta.color}50 0%, transparent 60%)`,
+                  }}
+                />
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6 px-7 py-7">
+                  <div
+                    className="flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center text-3xl shadow-md"
+                    style={{ background: `${meta.color}22`, border: `1px solid ${meta.color}44` }}
+                  >
+                    {meta.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest mb-2 px-2.5 py-1 rounded-full"
+                      style={{
+                        color: meta.color,
+                        background: `${meta.color}20`,
+                        border: `1px solid ${meta.color}35`,
+                      }}
+                    >
+                      ✦ Featured Course
+                    </div>
+                    <h2
+                      className="font-serif text-xl sm:text-2xl font-bold leading-tight mb-1"
+                      style={{ color: "#FDFBF7" }}
+                    >
+                      {featuredKit.name}
+                    </h2>
+                    <p className="text-sm leading-relaxed mb-1" style={{ color: "#C8D4C0" }}>
+                      {featuredKit.tagline}
+                    </p>
+                    <p className="text-sm leading-relaxed max-w-2xl" style={{ color: "#8FA883" }}>
+                      {featuredKit.description}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 self-start sm:self-center">
+                    <Link
+                      href={`/kits/${featuredKit.slug}`}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all hover:-translate-y-px hover:shadow-lg whitespace-nowrap"
+                      style={{
+                        background: meta.color,
+                        color: "#fff",
+                        boxShadow: `0 4px 16px ${meta.color}50`,
+                      }}
+                    >
+                      {featuredKit.ctaLabel}
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Kit grid */}
       <div className="max-w-5xl mx-auto px-6 py-12">
