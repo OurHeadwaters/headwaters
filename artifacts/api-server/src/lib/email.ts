@@ -568,8 +568,16 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
               <p style="margin:0 0 8px;font-size:13px;color:#888888;line-height:1.5;text-align:center;">
                 Bookmark this page — it's your persistent starting point for the ${opts.kitName}.
               </p>
-              <p style="margin:0 0 28px;font-size:12px;color:#aaaaaa;word-break:break-all;text-align:center;">
+              <p style="margin:0 0 20px;font-size:12px;color:#aaaaaa;word-break:break-all;text-align:center;">
                 <a href="${welcomeUrl}" style="color:#6b7c6b;">${welcomeUrl}</a>
+              </p>
+
+              <!-- Secondary CTA: My Kits library -->
+              <p style="margin:0 0 28px;font-size:14px;text-align:center;">
+                <a href="https://www.thesurvivalpodcast.com/kits/my-purchases"
+                   style="color:#2d4a2d;text-decoration:none;font-family:'Arial',sans-serif;">
+                  See all your kits →
+                </a>
               </p>
 
               ${manualSection}

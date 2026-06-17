@@ -63,11 +63,11 @@ router.get("/kits/my-purchases", async (req, res) => {
       .select({
         id: kitPurchasesTable.id,
         kitSlug: kitPurchasesTable.kitSlug,
-        createdAt: kitPurchasesTable.createdAt,
+        createdAt: kitPurchasesTable.purchasedAt,
       })
       .from(kitPurchasesTable)
       .where(eq(kitPurchasesTable.userId, userId))
-      .orderBy(desc(kitPurchasesTable.createdAt));
+      .orderBy(desc(kitPurchasesTable.purchasedAt));
 
     const purchases = rows.map((row) => {
       const kit = kitBySlug(row.kitSlug);
