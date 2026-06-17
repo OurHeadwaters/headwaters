@@ -306,9 +306,16 @@ function PostFlameForm({
     mutationFn: postFlame,
     onSuccess: () => {
       setSubmitted(true);
-      onSuccess();
     },
   });
+
+  useEffect(() => {
+    if (!submitted) return;
+    const timer = setTimeout(() => {
+      onSuccess();
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [submitted, onSuccess]);
 
   const canSubmit =
     title.trim().length >= 3 && body.trim().length >= 10 && !mutation.isPending;
@@ -603,6 +610,7 @@ export function FiresideChats() {
     qc.invalidateQueries({ queryKey: ["fireside-flames-hot"] });
     qc.invalidateQueries({ queryKey: ["fireside-flames-new"] });
     qc.invalidateQueries({ queryKey: ["fireside-flames-preview"] });
+    setShowForm(false);
   }, [qc]);
 
   const hotFlames = hotData?.flames ?? [];
