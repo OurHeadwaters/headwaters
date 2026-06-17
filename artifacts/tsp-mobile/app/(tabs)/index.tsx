@@ -488,7 +488,7 @@ export default function HomeScreen() {
           )}
           <View style={styles.heroText}>
             <Text style={[styles.heroLabel, { color: "rgba(255,255,255,0.6)", fontFamily: "DMSans_400Regular" }]}>
-              EST. 2008 · THE STOMPING PATH
+              EST. 2009 · THE STOMPING PATH
             </Text>
             <Text style={[styles.heroHeading, { color: "#F5C842", fontFamily: "Fraunces_700Bold" }]}>
               Mobile on the{"\n"}Stomping Path

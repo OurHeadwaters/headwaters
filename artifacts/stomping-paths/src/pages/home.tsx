@@ -526,7 +526,7 @@ function HeroEntrance() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D9A066]/30 bg-[#D9A066]/10 mb-5">
             <Footprints className="w-3.5 h-3.5 text-[#D9A066]" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">Self-Reliance Since 2008</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">Self-Reliance Since 2009</span>
           </div>
         </motion.div>
         <motion.h1
@@ -1613,7 +1613,7 @@ function AboutJackSection() {
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">About Jack</span>
             </div>
             <h2 className="font-serif text-3xl md:text-4xl text-[#FDFBF7] font-bold leading-tight mb-4">
-              Jack Spirko has been doing this since 2008.
+              Jack Spirko has been doing this since 2009.
             </h2>
             <p className="text-[#FDFBF7]/65 leading-relaxed max-w-2xl mb-3">
               Jack Spirko started The Survival Podcast to challenge the bunker-and-canned-beans stereotype of preparedness. His argument: resilience and abundance aren't opposites. You can build a genuinely good life — food security, financial independence, real skills — and be prepared for the hard parts at the same time.

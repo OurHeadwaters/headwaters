@@ -295,7 +295,7 @@ export function Library() {
   useDocumentMeta({
     title: "The Library — 6,000+ TSP Episodes | The Stomping Path",
     description:
-      "Search Jack Spirko's entire Survival Podcast archive: 6,000+ episodes, articles, and videos on homesteading, permaculture, financial independence, and self-reliance. 2008 to today.",
+      "Search Jack Spirko's entire Survival Podcast archive: 6,000+ episodes, articles, and videos on homesteading, permaculture, financial independence, and self-reliance. 2009 to today.",
     ogTitle: "The Library — The Stomping Path",
     ogDescription: "Search 6,000+ episodes on homesteading, permaculture, financial independence, and self-reliance.",
   });
@@ -416,7 +416,7 @@ export function Library() {
         <div className="container mx-auto px-4 md:px-6">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">The Library</h1>
           <p className="text-lg text-muted-foreground max-w-2xl font-medium">
-            Every episode, article, and video from 2008 to today, searchable in one place.
+            Every episode, article, and video from 2009 to today, searchable in one place.
           </p>
         </div>
       </section>
@@ -436,7 +436,7 @@ export function Library() {
             </div>
             <div className="h-4 w-px bg-primary/20 hidden md:block" />
             <div>
-              2008 — {new Date().getFullYear()}
+              2009 — {new Date().getFullYear()}
             </div>
           </div>
         </div>

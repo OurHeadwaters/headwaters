@@ -21,9 +21,9 @@ export function About() {
   useDocumentMeta({
     title: "About Jack Spirko & The Survival Podcast | The Stomping Path",
     description:
-      "Jack Spirko has been hosting The Survival Podcast since 2008. Practical self-reliance, permaculture, homesteading, financial independence — 6,000+ episodes and counting.",
+      "Jack Spirko has been hosting The Survival Podcast since 2009. Practical self-reliance, permaculture, homesteading, financial independence — 6,000+ episodes and counting.",
     ogTitle: "About Jack Spirko — The Stomping Path",
-    ogDescription: "The Survival Podcast host since 2008. 6,000+ episodes on practical self-reliance, homesteading, and permaculture.",
+    ogDescription: "The Survival Podcast host since 2009. 6,000+ episodes on practical self-reliance, homesteading, and permaculture.",
   });
   const { data: feed, isLoading } = useGetFeed();
   const descriptionHtml = feed?.description
