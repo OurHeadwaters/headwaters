@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   ShieldCheck,
   RefreshCw,
+  Copy,
+  Check,
 } from "lucide-react";
 
 import { KIT_META } from "@/hooks/use-kits";
@@ -179,6 +181,48 @@ function ResendButton({
   );
 }
 
+function CopyLinkButton({ href, color }: { href: string; color: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (copied) return;
+    try {
+      const url = window.location.origin + href;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      title={copied ? "Copied!" : "Copy access link"}
+      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all hover:-translate-y-px"
+      style={{
+        color: copied ? "#8FA883" : color,
+        background: copied ? "#8FA88318" : color + "15",
+        border: `1px solid ${copied ? "#8FA88333" : color + "33"}`,
+      }}
+    >
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <Copy className="w-3.5 h-3.5" />
+          Copy link
+        </>
+      )}
+    </button>
+  );
+}
+
 const ACCESS_BADGE = {
   active: {
     label: "Access active",
@@ -294,6 +338,7 @@ function KitCard({
         <span className="text-xs text-muted-foreground/60 mr-auto truncate">
           {buyerEmail}
         </span>
+        <CopyLinkButton href={href} color={meta.color} />
         <ResendButton
           kitSlug={kitSlug}
           buyerEmail={buyerEmail}
