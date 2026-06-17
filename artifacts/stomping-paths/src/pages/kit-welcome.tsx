@@ -77,7 +77,21 @@ export default function KitWelcomePage() {
 
   const [accessEmail, setAccessEmail] = useState("");
   const [accessStatus, setAccessStatus] = useState<"idle" | "loading" | "found" | "notFound" | "error">("idle");
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const retryCountRef = useRef(0);
+  const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const MAX_RETRIES = 10;
+  const RETRY_INTERVAL = 30;
+
+  function clearRetryInterval() {
+    if (retryIntervalRef.current !== null) {
+      clearInterval(retryIntervalRef.current);
+      retryIntervalRef.current = null;
+    }
+    setRetryCountdown(null);
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1] ?? "");
@@ -89,13 +103,36 @@ export default function KitWelcomePage() {
     }
   }, [location]);
 
-  async function checkAccess(e: React.FormEvent) {
-    e.preventDefault();
-    if (!accessEmail.trim()) return;
+  useEffect(() => {
+    if (accessStatus === "notFound" && retryCountRef.current < MAX_RETRIES) {
+      setRetryCountdown(RETRY_INTERVAL);
+      let seconds = RETRY_INTERVAL;
+      retryIntervalRef.current = setInterval(() => {
+        seconds -= 1;
+        if (seconds <= 0) {
+          clearInterval(retryIntervalRef.current!);
+          retryIntervalRef.current = null;
+          setRetryCountdown(null);
+          retryCountRef.current += 1;
+          runAccessCheck(accessEmail.trim());
+        } else {
+          setRetryCountdown(seconds);
+        }
+      }, 1000);
+    } else if (accessStatus !== "notFound") {
+      clearRetryInterval();
+    }
+    return () => {
+      clearRetryInterval();
+    };
+  }, [accessStatus]);
+
+  async function runAccessCheck(email: string) {
+    if (!email) return;
     setAccessStatus("loading");
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(accessEmail.trim())}`;
+      const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Server error");
       const data = await res.json();
@@ -103,6 +140,20 @@ export default function KitWelcomePage() {
     } catch {
       setAccessStatus("error");
     }
+  }
+
+  async function checkAccess(e: React.FormEvent) {
+    e.preventDefault();
+    if (!accessEmail.trim()) return;
+    clearRetryInterval();
+    retryCountRef.current = 0;
+    await runAccessCheck(accessEmail.trim());
+  }
+
+  function retryNow() {
+    clearRetryInterval();
+    retryCountRef.current += 1;
+    runAccessCheck(accessEmail.trim());
   }
 
   if (isLoading) {
@@ -240,20 +291,42 @@ export default function KitWelcomePage() {
               ) : accessStatus === "notFound" ? (
                 <div className="space-y-3">
                   <div
-                    className="flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
+                    className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
                     style={{ background: "#F7931A18", color: "#C96A00", border: "1px solid #F7931A33" }}
                   >
-                    <XCircle className="w-4 h-4 shrink-0" />
-                    Not recorded yet — Bitcoin payments can take a minute. Wait a moment and try again.
+                    <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div>
+                      <span>Not recorded yet — Bitcoin payments can take a minute.</span>
+                      {retryCountdown !== null && retryCountRef.current < MAX_RETRIES && (
+                        <span className="block text-xs font-normal mt-1 opacity-80">
+                          Checking again in {retryCountdown}s…
+                        </span>
+                      )}
+                      {retryCountRef.current >= MAX_RETRIES && retryCountdown === null && (
+                        <span className="block text-xs font-normal mt-1 opacity-80">
+                          Auto-retry stopped after 5 minutes. Try again manually below.
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => { setAccessStatus("idle"); setAccessEmail(""); }}
-                    className="text-xs font-semibold underline underline-offset-2"
-                    style={{ color: "#F7931A" }}
-                  >
-                    Try a different email
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={retryNow}
+                      className="text-xs font-semibold underline underline-offset-2"
+                      style={{ color: "#F7931A" }}
+                    >
+                      Try again now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { clearRetryInterval(); retryCountRef.current = 0; setAccessStatus("idle"); setAccessEmail(""); }}
+                      className="text-xs font-semibold underline underline-offset-2 opacity-60"
+                      style={{ color: "#C96A00" }}
+                    >
+                      Try a different email
+                    </button>
+                  </div>
                 </div>
               ) : accessStatus === "error" ? (
                 <div className="space-y-3">
