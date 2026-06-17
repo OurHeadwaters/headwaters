@@ -17,6 +17,7 @@ import { SeriesIndex } from "@/pages/series-index";
 import { SeriesDetail } from "@/pages/series-detail";
 import ZonesPage from "@/pages/zones";
 import ZoneDetailPage from "@/pages/zone-detail";
+import ZoneEpisodesPage from "@/pages/zone-episodes";
 import TracksPage from "@/pages/tracks";
 import TrackDetailPage from "@/pages/track-detail";
 import StartPage from "@/pages/start";
@@ -88,6 +89,7 @@ function Router() {
         <Route path="/series/unloose-the-goose" component={UlgPage} />
         <Route path="/series/:slug" component={SeriesDetail} />
         <Route path="/zones" component={ZonesPage} />
+        <Route path="/zones/:slug/episodes" component={ZoneEpisodesPage} />
         <Route path="/zones/:slug" component={ZoneDetailPage} />
         <Route path="/tracks" component={TracksPage} />
         <Route path="/tracks/:slug" component={TrackDetailPage} />

@@ -1020,7 +1020,7 @@ export default function ZoneDetailPage() {
           {episodeTotal > episodes.length && (
             <div className="mt-4 text-center">
               <Link
-                href={`/zones/${zone.slug}/episodes`}
+                href={`/zones/${zone.slug}/episodes${sourceFilter !== "all" ? `?source=${sourceFilter}` : ""}`}
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
               >
                 Browse all {episodeTotal.toLocaleString()} episodes for this zone

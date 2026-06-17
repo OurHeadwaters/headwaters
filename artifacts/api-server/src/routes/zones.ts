@@ -226,9 +226,18 @@ router.get("/zones/:slug/episodes", async (req, res) => {
     const offset = safeInt(req.query.offset, 0, 0, 100_000);
     const excludeSeries = req.query.excludeSeries !== "false";
 
+    const rawSource = req.query.source;
+    const sourceFilter =
+      rawSource === "tsp" ? "tsp" :
+      rawSource === "ulg" ? "ulg" :
+      rawSource === "fireside-freedom" ? "fireside-freedom" :
+      null;
+    const sourceFragment = sourceFilter ? `source = '${esc(sourceFilter)}'` : "true";
+
     const whereFragment = zoneWhereFragment(zone.tags, zone.categories, zone.slug);
     const exclusionFragment = excludeSeries ? seriesExclusionFragment() : "true";
     const scoreFragment = zoneScoreFragment(zone.tags);
+    const combinedWhere = `(${whereFragment}) AND ${exclusionFragment} AND ${sourceFragment}`;
 
     const [rows, countRow] = await Promise.all([
       db.execute(sql.raw(`
@@ -238,14 +247,14 @@ router.get("/zones/:slug/episodes", async (req, res) => {
           audio_type, video_url, video_id, artwork_url, categories, tags,
           ${scoreFragment} AS zone_score
         FROM content_items
-        WHERE ${whereFragment} AND ${exclusionFragment}
+        WHERE ${combinedWhere}
         ORDER BY zone_score DESC, published_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `)),
       db.execute(sql.raw(`
         SELECT count(*)::int AS count
         FROM content_items
-        WHERE ${whereFragment} AND ${exclusionFragment}
+        WHERE ${combinedWhere}
       `)),
     ]);
 
