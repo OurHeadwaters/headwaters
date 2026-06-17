@@ -95,6 +95,7 @@ export default function KitWelcomePage() {
   const meta = KIT_META[slug] ?? { icon: "📦", color: "#6B7280" };
 
   const [sessionVerified, setSessionVerified] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [emailLinkVerified, setEmailLinkVerified] = useState(() => {
     if (!slug) return false;
@@ -144,8 +145,21 @@ export default function KitWelcomePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.split("?")[1] ?? "");
-    if (params.get("session_id")) {
+    const sessionId = params.get("session_id");
+    if (sessionId) {
       setSessionVerified(true);
+      (async () => {
+        try {
+          const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+          const url = `${base}/api/kits/${encodeURIComponent(slug)}/welcome-session?session_id=${encodeURIComponent(sessionId)}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.customerEmail) setSessionEmail(data.customerEmail);
+          }
+        } catch {
+        }
+      })();
     }
     if (params.get("payment")) {
       setPaymentMethod(params.get("payment"));
@@ -510,10 +524,18 @@ export default function KitWelcomePage() {
               <p className="text-sm font-semibold text-foreground mb-1">
                 Check your inbox
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                A welcome email with your kit details and access link is on its way. Check your
-                inbox (and spam folder) — it should arrive within a few minutes.
-              </p>
+              {sessionEmail ? (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  We've sent your welcome email to{" "}
+                  <span className="font-semibold text-foreground">{sessionEmail}</span>.
+                  Check your inbox (and spam folder) — it should arrive within a few minutes.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  A welcome email with your kit details and access link is on its way. Check your
+                  inbox (and spam folder) — it should arrive within a few minutes.
+                </p>
+              )}
             </div>
           </section>
         )}

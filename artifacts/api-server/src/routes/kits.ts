@@ -587,6 +587,52 @@ router.post("/kits/:slug/zaprite-checkout", async (req, res) => {
   res.json({ url: zapriteUrlWithReturn });
 });
 
+/* ─────────────────── GET /api/kits/:slug/welcome-session ──────────── */
+
+/**
+ * Returns the customer email from a completed Stripe checkout session so the
+ * welcome page can show "We've sent your welcome email to [email]".
+ *
+ * This is intentionally lightweight — it only exposes the customer_email
+ * field, nothing else from the session. The session_id itself is the
+ * caller's proof of purchase; Stripe never issues session IDs to non-payers.
+ */
+router.get("/kits/:slug/welcome-session", async (req, res) => {
+  const kit = kitBySlug(req.params.slug as string);
+  if (!kit) {
+    res.status(404).json({ error: "Kit not found" });
+    return;
+  }
+
+  const sessionId = (req.query.session_id as string | undefined)?.trim() ?? "";
+  if (!sessionId) {
+    res.status(400).json({ error: "session_id is required" });
+    return;
+  }
+
+  try {
+    const { getUncachableStripeClient } = await import("../stripeClient");
+    const stripe = await getUncachableStripeClient();
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: [],
+    });
+
+    const customerEmail =
+      session.customer_details?.email ?? session.customer_email ?? null;
+
+    res.json({ customerEmail });
+  } catch (err: unknown) {
+    const stripeErr = err as { statusCode?: number; code?: string } | null;
+    if (stripeErr?.statusCode === 404 || stripeErr?.code === "resource_missing") {
+      res.status(404).json({ error: "Session not found" });
+      return;
+    }
+    logger.error({ err, slug: kit.slug }, "kits: GET /:slug/welcome-session failed");
+    res.status(500).json({ error: "Failed to retrieve session" });
+  }
+});
+
 /* ─────────────────── GET /api/kits/:slug/access ─────────────────── */
 
 router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
