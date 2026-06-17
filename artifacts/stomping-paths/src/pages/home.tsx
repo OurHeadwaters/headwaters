@@ -16,6 +16,7 @@ import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 import { KIT_META } from "@/hooks/use-kits";
 import { useAllActiveTracksState, type ActiveTrackEntry } from "@/hooks/use-track-progress";
 import { useListTracks, useGetTrackNextUndone, type TrackSummary } from "@/hooks/use-tracks";
+import { EXTENDED_LOAD_THRESHOLD_MS } from "@/lib/constants";
 
 // ─── Daily Stomp (Imprint) local state ────────────────────────────────────────
 
@@ -666,8 +667,6 @@ function ContinueLearningSkeletonRow() {
     </div>
   );
 }
-
-const EXTENDED_LOAD_THRESHOLD_MS = 1500;
 
 function ContinueLearningWidget() {
   const { entries: activeEntries, isLoading, serverReturnedEmpty } = useAllActiveTracksState();
