@@ -53,9 +53,11 @@ app.post("/api/stripe/webhook", webhookLimiter, stripeWebhookHandler, handleStri
 app.post("/api/brigade/webhook", webhookLimiter, stripeWebhookHandler, handleStripeWebhook);
 
 // ─── Zaprite webhook — Bitcoin / Lightning / XRP / RLUSD payments ─────────────
-// Zaprite does not support HMAC signing. Secured with a secret URL token instead:
-//   POST /api/zaprite/webhook?token=<ZAPRITE_WEBHOOK_TOKEN>
-// Must be registered BEFORE express.json() so req.body stays a raw Buffer.
+// Zaprite webhooks are notification-only pings (no signing secret — confirmed
+// with Zaprite support). The handler validates the payload directly and
+// optionally re-fetches the order from the Zaprite API (ZAPRITE_API_KEY) for
+// enhanced verification. Registered BEFORE express.json() so req.body stays
+// a raw Buffer for consistent parsing.
 app.post(
   "/api/zaprite/webhook",
   webhookLimiter,
