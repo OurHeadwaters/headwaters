@@ -21,8 +21,10 @@ function getBaseUrl(req: import("express").Request): string {
 // Public: returns { isMember: false } for unauthenticated callers.
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/brigade/status", async (req, res) => {
+  const checkoutPaused = process.env.BRIGADE_CHECKOUT_PAUSED === "1";
+
   if (!req.isAuthenticated()) {
-    res.json({ isMember: false, status: null });
+    res.json({ isMember: false, status: null, checkoutPaused });
     return;
   }
 
@@ -44,7 +46,7 @@ router.get("/brigade/status", async (req, res) => {
     .limit(1);
 
   if (!membership) {
-    res.json({ isMember: false, status: null });
+    res.json({ isMember: false, status: null, checkoutPaused });
     return;
   }
 
@@ -53,6 +55,7 @@ router.get("/brigade/status", async (req, res) => {
     status: membership.status,
     plan: membership.plan,
     currentPeriodEnd: membership.currentPeriodEnd,
+    checkoutPaused,
   });
 });
 
@@ -87,6 +90,11 @@ router.get("/brigade/member-count", async (_req, res) => {
 // Body: { plan: "monthly" | "annual" }
 // ─────────────────────────────────────────────────────────────────────────────
 router.post("/brigade/checkout", async (req, res) => {
+  if (process.env.BRIGADE_CHECKOUT_PAUSED === "1") {
+    res.status(503).json({ error: "Brigade membership is coming soon — check back shortly.", paused: true });
+    return;
+  }
+
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
     return;

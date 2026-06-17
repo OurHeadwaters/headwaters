@@ -17,8 +17,6 @@ import { logger } from "./logger";
 import { KITS } from "./kits";
 
 export async function ensureKitProducts(): Promise<void> {
-  const stripe = await getUncachableStripeClient();
-
   const directKits = KITS.filter((k) => k.priceType === "direct" && k.priceCents);
 
   const envOverrides: Record<string, string> = (() => {
@@ -29,6 +27,22 @@ export async function ensureKitProducts(): Promise<void> {
       return {};
     }
   })();
+
+  // ── Fast path: all kits have pinned price IDs — skip Stripe entirely ─────────
+  const allFromEnv = directKits.every((k) => Boolean(envOverrides[k.slug]));
+  if (allFromEnv) {
+    for (const kit of directKits) {
+      kit.stripePriceId = envOverrides[kit.slug];
+      logger.info({ slug: kit.slug, priceId: kit.stripePriceId }, "kit-products: price ID loaded from env");
+    }
+    logger.info(
+      { coveredCount: directKits.length, totalCount: directKits.length },
+      "kit-products: all price IDs loaded from KIT_STRIPE_PRICE_IDS env — no Stripe API calls needed at startup",
+    );
+    return;
+  }
+
+  const stripe = await getUncachableStripeClient();
 
   for (const kit of directKits) {
     if (envOverrides[kit.slug]) {
@@ -92,21 +106,13 @@ export async function ensureKitProducts(): Promise<void> {
 
   const coveredCount = Object.keys(priceMap).length;
   const totalCount = directKits.length;
-  const allFromEnv = directKits.every((k) => Boolean(envOverrides[k.slug]));
 
-  if (allFromEnv) {
-    logger.info(
-      { coveredCount, totalCount },
-      "kit-products: all price IDs loaded from KIT_STRIPE_PRICE_IDS env — no Stripe API calls needed at startup",
-    );
-  } else {
-    logger.info(
-      {
-        coveredCount,
-        totalCount,
-        KIT_STRIPE_PRICE_IDS: JSON.stringify(priceMap),
-      },
-      "kit-products: set KIT_STRIPE_PRICE_IDS in Replit Secrets to pin these price IDs and skip Stripe lookups on cold start",
-    );
-  }
+  logger.info(
+    {
+      coveredCount,
+      totalCount,
+      KIT_STRIPE_PRICE_IDS: JSON.stringify(priceMap),
+    },
+    "kit-products: set KIT_STRIPE_PRICE_IDS in Replit Secrets to pin these price IDs and skip Stripe lookups on cold start",
+  );
 }

@@ -28,6 +28,7 @@ interface BrigadeStatus {
   status: string | null;
   plan: string | null;
   currentPeriodEnd: string | null;
+  checkoutPaused?: boolean;
 }
 
 interface MemberCountData {
@@ -211,6 +212,7 @@ export function BrigadePage() {
   });
 
   const isMember = statusData?.isMember === true;
+  const checkoutPaused = statusData?.checkoutPaused === true;
   const isLoading = authLoading || statusLoading;
 
   const handleJoin = () => {
@@ -333,60 +335,74 @@ export function BrigadePage() {
               Join The Headwaters
             </h2>
 
-            <div className="flex flex-col gap-4 mb-6">
-              <PlanCard
-                plan="monthly"
-                price="$9/mo"
-                perMonth="$9"
-                selected={selectedPlan === "monthly"}
-                onSelect={() => setSelectedPlan("monthly")}
-              />
-              <PlanCard
-                plan="annual"
-                price="$97/yr"
-                perMonth="$8.08"
-                savings="Save $11 vs monthly"
-                selected={selectedPlan === "annual"}
-                onSelect={() => setSelectedPlan("annual")}
-              />
-            </div>
-
-            {/* Wishing Well credit balance banner */}
-            {isAuthenticated && creditsData && creditsData.totalCents > 0 && (
-              <div className="flex items-start gap-3 bg-[#D9A066]/10 border border-[#D9A066]/40 rounded-xl px-4 py-3.5 mb-4">
-                <Gift className="w-4 h-4 text-[#D9A066] flex-shrink-0 mt-0.5" />
-                <p className="text-[#D9A066] text-sm">
-                  <span className="font-semibold">
-                    You have ${(creditsData.totalCents / 100).toFixed(2)} in Wishing Well credits
-                  </span>{" "}
-                  — applied automatically at checkout.
+            {checkoutPaused ? (
+              <div className="bg-[#1e3428] border border-[#D9A066]/30 rounded-2xl p-8 text-center">
+                <div className="inline-flex items-center justify-center bg-[#D9A066]/15 p-3 rounded-xl mb-4">
+                  <Shield className="w-6 h-6 text-[#D9A066]" />
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Membership Opening Soon</h3>
+                <p className="text-white/50 text-sm leading-relaxed">
+                  Brigade membership is being set up with a new offer. Check back shortly — it'll be worth the wait.
                 </p>
               </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-4 mb-6">
+                  <PlanCard
+                    plan="monthly"
+                    price="$9/mo"
+                    perMonth="$9"
+                    selected={selectedPlan === "monthly"}
+                    onSelect={() => setSelectedPlan("monthly")}
+                  />
+                  <PlanCard
+                    plan="annual"
+                    price="$97/yr"
+                    perMonth="$8.08"
+                    savings="Save $11 vs monthly"
+                    selected={selectedPlan === "annual"}
+                    onSelect={() => setSelectedPlan("annual")}
+                  />
+                </div>
+
+                {/* Wishing Well credit balance banner */}
+                {isAuthenticated && creditsData && creditsData.totalCents > 0 && (
+                  <div className="flex items-start gap-3 bg-[#D9A066]/10 border border-[#D9A066]/40 rounded-xl px-4 py-3.5 mb-4">
+                    <Gift className="w-4 h-4 text-[#D9A066] flex-shrink-0 mt-0.5" />
+                    <p className="text-[#D9A066] text-sm">
+                      <span className="font-semibold">
+                        You have ${(creditsData.totalCents / 100).toFixed(2)} in Wishing Well credits
+                      </span>{" "}
+                      — applied automatically at checkout.
+                    </p>
+                  </div>
+                )}
+
+                {checkoutMutation.isError && (
+                  <div className="flex items-start gap-2 bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-3 text-red-300 text-sm mb-4">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    {(checkoutMutation.error as Error).message}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleJoin}
+                  disabled={checkoutMutation.isPending}
+                  className="w-full bg-[#D9A066] hover:bg-[#C8904E] text-[#1a2e20] font-bold text-base py-4 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Shield className="w-5 h-5" />
+                  {checkoutMutation.isPending
+                    ? "Redirecting…"
+                    : !isAuthenticated
+                    ? "Log in to Join"
+                    : `Join The Headwaters · ${selectedPlan === "monthly" ? "$9/mo" : "$97/yr"}`}
+                </button>
+
+                <p className="text-white/30 text-xs text-center mt-4">
+                  Payments processed securely by Stripe. Cancel anytime from your account.
+                </p>
+              </>
             )}
-
-            {checkoutMutation.isError && (
-              <div className="flex items-start gap-2 bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-3 text-red-300 text-sm mb-4">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                {(checkoutMutation.error as Error).message}
-              </div>
-            )}
-
-            <button
-              onClick={handleJoin}
-              disabled={checkoutMutation.isPending}
-              className="w-full bg-[#D9A066] hover:bg-[#C8904E] text-[#1a2e20] font-bold text-base py-4 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <Shield className="w-5 h-5" />
-              {checkoutMutation.isPending
-                ? "Redirecting…"
-                : !isAuthenticated
-                ? "Log in to Join"
-                : `Join The Headwaters · ${selectedPlan === "monthly" ? "$9/mo" : "$97/yr"}`}
-            </button>
-
-            <p className="text-white/30 text-xs text-center mt-4">
-              Payments processed securely by Stripe. Cancel anytime from your account.
-            </p>
           </div>
         )}
 

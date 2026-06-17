@@ -9,7 +9,7 @@ const BRIGADE_PRODUCT_NAME = "Brigade Membership";
  *   BRIGADE_MONTHLY_PRICE_ID
  *   BRIGADE_ANNUAL_PRICE_ID
  *
- * If the env vars are set and valid, this is a fast no-op.
+ * If both env vars are set, this is a true no-op — no Stripe API calls at all.
  * If they are missing, the product/prices are created and the IDs are logged
  * so the operator can add them to the environment.
  *
@@ -19,6 +19,18 @@ export async function ensureBrigadeProducts(): Promise<{
   monthlyPriceId: string;
   annualPriceId: string;
 }> {
+  const monthlyFromEnv = process.env.BRIGADE_MONTHLY_PRICE_ID;
+  const annualFromEnv = process.env.BRIGADE_ANNUAL_PRICE_ID;
+
+  // ── Fast path: both price IDs pinned — skip Stripe entirely ─────────────────
+  if (monthlyFromEnv && annualFromEnv) {
+    logger.info(
+      { monthlyPriceId: monthlyFromEnv, annualPriceId: annualFromEnv },
+      "brigade-products: all price IDs loaded from env — no Stripe API calls needed at startup",
+    );
+    return { monthlyPriceId: monthlyFromEnv, annualPriceId: annualFromEnv };
+  }
+
   const stripe = await getUncachableStripeClient();
 
   // ── Ensure product ──────────────────────────────────────────────────────────
@@ -40,7 +52,7 @@ export async function ensureBrigadeProducts(): Promise<{
   }
 
   // ── Ensure monthly price ────────────────────────────────────────────────────
-  let monthlyPriceId = process.env.BRIGADE_MONTHLY_PRICE_ID;
+  let monthlyPriceId = monthlyFromEnv;
   if (!monthlyPriceId) {
     const prices = await stripe.prices.list({ product: productId, active: true, limit: 100 });
     const existingMonthly = prices.data.find(
@@ -59,14 +71,10 @@ export async function ensureBrigadeProducts(): Promise<{
       monthlyPriceId = created.id;
       logger.info({ monthlyPriceId }, "brigade-products: created monthly price");
     }
-    logger.warn(
-      { monthlyPriceId },
-      "brigade-products: BRIGADE_MONTHLY_PRICE_ID env var not set — add this to your environment",
-    );
   }
 
   // ── Ensure annual price ─────────────────────────────────────────────────────
-  let annualPriceId = process.env.BRIGADE_ANNUAL_PRICE_ID;
+  let annualPriceId = annualFromEnv;
   if (!annualPriceId) {
     const prices = await stripe.prices.list({ product: productId, active: true, limit: 100 });
     const existingAnnual = prices.data.find(
@@ -85,13 +93,18 @@ export async function ensureBrigadeProducts(): Promise<{
       annualPriceId = created.id;
       logger.info({ annualPriceId }, "brigade-products: created annual price");
     }
-    logger.warn(
-      { annualPriceId },
-      "brigade-products: BRIGADE_ANNUAL_PRICE_ID env var not set — add this to your environment",
-    );
   }
 
-  return { monthlyPriceId, annualPriceId };
+  // ── Startup summary — copy these into secrets to pin and skip Stripe ────────
+  logger.info(
+    {
+      BRIGADE_MONTHLY_PRICE_ID: monthlyPriceId,
+      BRIGADE_ANNUAL_PRICE_ID: annualPriceId,
+    },
+    "brigade-products: set BRIGADE_MONTHLY_PRICE_ID and BRIGADE_ANNUAL_PRICE_ID in Replit Secrets to pin these price IDs and skip Stripe lookups on cold start",
+  );
+
+  return { monthlyPriceId: monthlyPriceId!, annualPriceId: annualPriceId! };
 }
 
 /**

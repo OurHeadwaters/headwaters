@@ -106,6 +106,9 @@ KIT_STRIPE_PRICE_IDS = "{\"family-kit\":\"price_1TaSglPd6A0oJ5bADuFS0PGK\",\"pro
 COURSE1_ACCESS_URL = "https://northern-store-plan.replit.app/print-marketing/pj-kit"
 KIT_EMAIL_REPLY_TO = "Parrsjars@gmail.com"
 KIT_EMAIL_FROM = "Parr's Jars <kits@parrsjars.com>"
+BRIGADE_CHECKOUT_PAUSED = "1"
+BRIGADE_MONTHLY_PRICE_ID = "price_coming_soon"
+BRIGADE_ANNUAL_PRICE_ID = "price_coming_soon"
 
 [userenv.production]
 SITE_URL = "https://thestompingpaths.com"
