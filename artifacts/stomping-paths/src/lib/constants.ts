@@ -7,3 +7,13 @@
  * code change to the component itself.
  */
 export const EXTENDED_LOAD_THRESHOLD_MS = 1500;
+
+/**
+ * Minimum time (in milliseconds) the skeleton must remain visible before it
+ * can be swapped out for real content.  Prevents a jarring flash when the API
+ * responds very quickly.
+ *
+ * Lower this value to reduce perceived latency; raise it to make the skeleton
+ * feel more deliberate.
+ */
+export const MIN_SKELETON_DISPLAY_MS = 300;
