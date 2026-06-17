@@ -5,7 +5,7 @@ import { gsap } from "gsap";
 import {
   Compass, Search, ArrowRight, PlayCircle, Footprints,
   Mountain, Sprout, Sun, Cloud, Wind, Flame, Library as LibraryIcon,
-  Mic, ChevronRight, Send, CheckCircle2, X, Map as MapIcon, Package,
+  Mic, User, ChevronRight, Send, CheckCircle2, X, Map as MapIcon, Package,
 } from "lucide-react";
 import { useGetFeaturedEpisodes, useListZones, useListSuiteCreators, useListSuiteKits } from "@workspace/api-client-react";
 import type { SuiteCreator, SuiteKit } from "@workspace/api-client-react";
@@ -1593,9 +1593,9 @@ function StoriesSection() {
   );
 }
 
-// ─── About Jack blurb ──────────────────────────────────────────────────────────
+// ─── About Bobbie blurb ─────────────────────────────────────────────────────────
 
-function AboutJackSection() {
+function AboutBobbieSection() {
   return (
     <section className="relative bg-[#15241b] py-20 overflow-hidden border-t border-white/5">
       <div className="container mx-auto px-4 md:px-6 max-w-5xl">
@@ -1603,33 +1603,25 @@ function AboutJackSection() {
           {/* Headshot placeholder */}
           <div className="flex-shrink-0 flex justify-center md:justify-start">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#2C4A36] border-4 border-[#D9A066]/30 overflow-hidden flex items-center justify-center shadow-xl shadow-black/30">
-              <Mic className="w-14 h-14 text-[#D9A066]/50" />
+              <User className="w-14 h-14 text-[#D9A066]/50" />
             </div>
           </div>
           {/* Bio */}
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#D9A066]/20 bg-[#D9A066]/8 mb-4">
-              <Mic className="w-3 h-3 text-[#D9A066]" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">About Jack</span>
+              <User className="w-3 h-3 text-[#D9A066]" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D9A066]">About Bobbie</span>
             </div>
             <h2 className="font-serif text-3xl md:text-4xl text-[#FDFBF7] font-bold leading-tight mb-4">
-              Jack Spirko has been doing this since 2009.
+              Bobbie Parr brings the zone framework to real family life.
             </h2>
             <p className="text-[#FDFBF7]/65 leading-relaxed max-w-2xl mb-3">
-              Jack Spirko started The Stomping Path to challenge the bunker-and-canned-beans stereotype of preparedness. His argument: resilience and abundance aren't opposites. You can build a genuinely good life — food security, financial independence, real skills — and be prepared for the hard parts at the same time.
+              Bobbie is a permaculture practitioner who works with families to map their lives through the zone model — from the kitchen and the homestead out to the broader community. Her approach is hands-on and grounded: less theory, more traction.
             </p>
             <p className="text-[#FDFBF7]/50 leading-relaxed max-w-2xl mb-6">
-              Sixteen years, 6,000+ episodes, and one organizing framework: the permaculture zone model, adapted for modern life. The result is the most practical self-reliance archive on the internet.
+              She built The Stomping Paths to give families a practical guide through the archive — organized by zone, tagged by transformation, and oriented toward the changes that actually matter.
             </p>
             <div className="flex flex-wrap gap-3">
-              <a
-                href="https://thestompingpaths.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[#FDFBF7] border border-[#FDFBF7]/20 hover:bg-[#FDFBF7]/8 transition-colors"
-              >
-                TSP Website ↗
-              </a>
               <Link
                 href="/about"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[#D9A066] border border-[#D9A066]/30 hover:bg-[#D9A066]/8 transition-colors"
@@ -1851,7 +1843,7 @@ export function Home() {
         <YourPathYourWaySection />
         <div id="daily" />
         <StoriesSection />
-        <AboutJackSection />
+        <AboutBobbieSection />
         <CommunitySection />
       </motion.div>
     </div>
