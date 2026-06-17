@@ -573,7 +573,7 @@ function kitAccessKey(slug: string) {
   return `kit-access-v1:${slug}`;
 }
 
-async function loadStoredKitAccess(slug: string): Promise<{ email: string } | null> {
+async function loadStoredKitAccess(slug: string): Promise<{ email: string; savedAt: number } | null> {
   try {
     const raw = await AsyncStorage.getItem(kitAccessKey(slug));
     if (!raw) return null;
@@ -582,7 +582,7 @@ async function loadStoredKitAccess(slug: string): Promise<{ email: string } | nu
       await AsyncStorage.removeItem(kitAccessKey(slug));
       return null;
     }
-    return { email: parsed.email };
+    return { email: parsed.email, savedAt: parsed.savedAt };
   } catch {
     return null;
   }
@@ -702,6 +702,7 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [backgroundCheckWarning, setBackgroundCheckWarning] = useState(false);
   const [accessLoadedFromCache, setAccessLoadedFromCache] = useState(false);
+  const [sessionDaysRemaining, setSessionDaysRemaining] = useState<number | null>(null);
 
   const appStateRef = useRef(AppState.currentState);
   const backgroundRecheckDoneRef = useRef(false);
@@ -712,6 +713,11 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
         setVerifyEmail(cached.email);
         setHasAccess(true);
         setAccessLoadedFromCache(true);
+        const msRemaining = KIT_ACCESS_TTL_MS - (Date.now() - cached.savedAt);
+        const days = msRemaining / (24 * 60 * 60 * 1000);
+        if (days <= 2) {
+          setSessionDaysRemaining(Math.max(0, Math.ceil(days)));
+        }
       }
     });
   }, [kit.slug]);
@@ -732,6 +738,7 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
         const data = await res.json();
         if (data.hasAccess) {
           await saveStoredKitAccess(kit.slug, email);
+          setSessionDaysRemaining(null);
         } else {
           await clearStoredKitAccess(kit.slug);
           setHasAccess(false);
@@ -785,6 +792,7 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
       if (data.hasAccess) {
         setHasAccess(true);
         await saveStoredKitAccess(kit.slug, email);
+        setSessionDaysRemaining(null);
         AsyncStorage.removeItem(KIT_FINDER_REC_KEY).catch(() => {});
       } else {
         setError("No purchase found for that email. If you just paid, try again in a moment.");
@@ -821,6 +829,15 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
 
   const isDirect = kit.priceType === "direct";
 
+  const expiryLabel =
+    sessionDaysRemaining !== null
+      ? sessionDaysRemaining === 0
+        ? "Access expires today — visit again to auto-renew."
+        : sessionDaysRemaining === 1
+        ? "Access expires in 1 day — visit again to auto-renew."
+        : `Access expires in ${sessionDaysRemaining} days — visit again to auto-renew.`
+      : null;
+
   if (isDirect && hasAccess && !welcomeDismissed) {
     return (
       <>
@@ -844,33 +861,59 @@ function KitPurchaseCTA({ kit, accent }: { kit: KitDetail; accent: string }) {
             </Pressable>
           </View>
         )}
+        {expiryLabel && (
+          <View style={[expiryStyles.wrap, { backgroundColor: "#78350F08", borderColor: "#92400E2A" }]}>
+            <Ionicons name="time-outline" size={14} color="#92400E" style={{ flexShrink: 0 }} />
+            <Text style={[expiryStyles.text, { fontFamily: "DMSans_400Regular" }]}>
+              {expiryLabel}
+            </Text>
+          </View>
+        )}
         <KitWelcomeInline kit={kit} accent={accent} onDismiss={() => setWelcomeDismissed(true)} />
       </>
     );
   }
 
   if (isDirect && hasAccess && welcomeDismissed) {
-    if (!backgroundCheckWarning) return null;
+    if (!backgroundCheckWarning && !expiryLabel) return null;
     return (
-      <View
-        style={[
-          connectionWarningStyles.wrap,
-          connectionWarningStyles.standalone,
-          { backgroundColor: "#78350F0A", borderColor: "#92400E33" },
-        ]}
-      >
-        <Ionicons name="wifi-outline" size={15} color="#92400E" style={connectionWarningStyles.icon} />
-        <Text style={[connectionWarningStyles.text, { fontFamily: "DMSans_400Regular" }]}>
-          Couldn't verify your access — check your connection. Your cached access is still active.
-        </Text>
-        <Pressable
-          onPress={() => setBackgroundCheckWarning(false)}
-          hitSlop={8}
-          style={({ pressed }) => [{ opacity: pressed ? 0.5 : 0.6 }]}
-        >
-          <Ionicons name="close" size={16} color="#92400E" />
-        </Pressable>
-      </View>
+      <>
+        {backgroundCheckWarning && (
+          <View
+            style={[
+              connectionWarningStyles.wrap,
+              connectionWarningStyles.standalone,
+              { backgroundColor: "#78350F0A", borderColor: "#92400E33" },
+            ]}
+          >
+            <Ionicons name="wifi-outline" size={15} color="#92400E" style={connectionWarningStyles.icon} />
+            <Text style={[connectionWarningStyles.text, { fontFamily: "DMSans_400Regular" }]}>
+              Couldn't verify your access — check your connection. Your cached access is still active.
+            </Text>
+            <Pressable
+              onPress={() => setBackgroundCheckWarning(false)}
+              hitSlop={8}
+              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 0.6 }]}
+            >
+              <Ionicons name="close" size={16} color="#92400E" />
+            </Pressable>
+          </View>
+        )}
+        {expiryLabel && (
+          <View
+            style={[
+              expiryStyles.wrap,
+              expiryStyles.standalone,
+              { backgroundColor: "#78350F08", borderColor: "#92400E2A" },
+            ]}
+          >
+            <Ionicons name="time-outline" size={14} color="#92400E" style={{ flexShrink: 0 }} />
+            <Text style={[expiryStyles.text, { fontFamily: "DMSans_400Regular" }]}>
+              {expiryLabel}
+            </Text>
+          </View>
+        )}
+      </>
     );
   }
 
@@ -1098,6 +1141,29 @@ const connectionWarningStyles = StyleSheet.create({
     marginBottom: 16,
   },
   icon: { flexShrink: 0 },
+  text: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    color: "#92400E",
+  },
+});
+
+const expiryStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  standalone: {
+    marginBottom: 16,
+  },
   text: {
     flex: 1,
     fontSize: 12,
