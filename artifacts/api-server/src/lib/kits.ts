@@ -210,6 +210,7 @@ export const KITS: KitDef[] = [
     priceType: "direct",
     priceCents: 9700,
     ctaLabel: "Get the Course",
+    zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=parrs-jars",
     accessUrl: process.env.COURSE1_ACCESS_URL,
     userManual: {
       what: "Ten recorded sessions on food preservation from Bobbie Parr's kitchen in Dryden, Ontario. Canning, fermenting, and pantry stocking for real northern winters.",
