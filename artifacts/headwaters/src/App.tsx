@@ -31,6 +31,7 @@ import Shallows from "@/pages/shallows";
 import Overview from "@/pages/overview";
 import Print from "@/pages/print";
 import Guide from "@/pages/guide";
+import KitDetail from "@/pages/kit-detail";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ function Router() {
         <Route path="/overview" component={Overview} />
         <Route path="/print" component={Print} />
         <Route path="/guide" component={Guide} />
+        <Route path="/kit/:slug" component={KitDetail} />
 
         <Route path="*">
           <PassphraseGuard>

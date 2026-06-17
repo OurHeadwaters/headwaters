@@ -72,7 +72,7 @@ export const KITS: KitDef[] = [
       { label: "Family Privacy Guide", url: "/privacy-guide/" },
     ],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Family Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=family-kit",
     userManual: {
@@ -92,7 +92,7 @@ export const KITS: KitDef[] = [
     gearCategoryTags: [],
     externalLinks: [],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Producer Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=producer-kit",
     userManual: {
@@ -142,7 +142,7 @@ export const KITS: KitDef[] = [
     gearCategoryTags: [],
     externalLinks: [],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Care Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=care-kit",
     userManual: {
@@ -164,7 +164,7 @@ export const KITS: KitDef[] = [
       { label: "X-Buckets — Envelope Budgeting", url: "https://x-buckets-vision.replit.app/" },
     ],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Budget Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=budget-kit",
     userManual: {
@@ -184,7 +184,7 @@ export const KITS: KitDef[] = [
     gearCategoryTags: ["privacy", "digital-security"],
     externalLinks: [],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Digital Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=digital-kit",
     userManual: {
@@ -208,7 +208,7 @@ export const KITS: KitDef[] = [
       { label: "807 Food Co-operative", url: "https://807foodcoop.ca" },
     ],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Course",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=parrs-jars",
     accessUrl: process.env.COURSE1_ACCESS_URL,
@@ -229,7 +229,7 @@ export const KITS: KitDef[] = [
     gearCategoryTags: ["herbalism", "pregnancy", "baby", "home"],
     externalLinks: [],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Pregnancy Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=pregnancy-kit",
     contentKeywords: [
@@ -265,7 +265,7 @@ export const KITS: KitDef[] = [
     gearCategoryTags: ["herbalism", "baby", "kids-health", "home"],
     externalLinks: [],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Baby Health Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=baby-health-kit",
     contentKeywords: [
@@ -302,7 +302,7 @@ export const KITS: KitDef[] = [
     gearCategoryTags: ["energy", "hard-assets"],
     externalLinks: [],
     priceType: "direct",
-    priceCents: 9700,
+    priceCents: 12700,
     ctaLabel: "Get the Physical Kit",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=physical-kit",
     userManual: {

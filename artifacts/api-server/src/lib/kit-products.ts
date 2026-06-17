@@ -58,7 +58,7 @@ export async function ensureKitProducts(): Promise<void> {
 
       const prices = await stripe.prices.list({ product: productId, active: true, limit: 100 });
       const existingPrice = prices.data.find(
-        (p) => !p.recurring && p.unit_amount === kit.priceCents,
+        (p) => !p.recurring && p.unit_amount === kit.priceCents && p.currency === "cad",
       );
 
       if (existingPrice) {
@@ -67,7 +67,7 @@ export async function ensureKitProducts(): Promise<void> {
       } else {
         const created = await stripe.prices.create({
           product: productId,
-          currency: "usd",
+          currency: "cad",
           unit_amount: kit.priceCents!,
           nickname: `${kit.name} — One-Time`,
         });

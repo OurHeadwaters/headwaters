@@ -464,11 +464,27 @@ router.post("/kits/:slug/checkout", async (req, res) => {
       ? `${req.protocol}://${reqHost}`
       : `https://${fallbackDomain}`;
 
+    // Callers may supply custom redirect paths to support different artifacts
+    // (e.g. the Headwaters /kit/:slug page vs the TSP /kits/:slug page).
+    // Paths must start with "/" and are resolved against the request's base URL.
+    const rawSuccess = (req.body?.successPath as string | undefined)?.trim();
+    const rawCancel = (req.body?.cancelPath as string | undefined)?.trim();
+
+    const successPath =
+      rawSuccess && rawSuccess.startsWith("/")
+        ? rawSuccess
+        : `/kits/${kit.slug}/welcome?session_id={CHECKOUT_SESSION_ID}`;
+
+    const cancelPath =
+      rawCancel && rawCancel.startsWith("/")
+        ? rawCancel
+        : `/kits/${kit.slug}`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{ price: kit.stripePriceId, quantity: 1 }],
-      success_url: `${baseUrl}/kits/${kit.slug}/welcome?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/kits/${kit.slug}`,
+      success_url: `${baseUrl}${successPath}`,
+      cancel_url: `${baseUrl}${cancelPath}`,
       metadata: {
         kit_slug: kit.slug,
         ...(userId ? { user_id: userId } : {}),
