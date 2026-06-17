@@ -671,6 +671,32 @@ function ContinueLearningWidget() {
   const { entries: activeEntries, isLoading, serverReturnedEmpty } = useAllActiveTracksState();
   const { data: tracks } = useListTracks();
 
+  // Enforce a minimum skeleton display time (~300ms) so a fast server response
+  // doesn't cause the skeleton to flash and vanish in under 100ms.
+  // The timer starts when isLoading first becomes true and is only cleared on
+  // unmount — deliberately not cancelled when isLoading goes false — so the
+  // skeleton always stays up for the full minimum window.
+  // Brand-new unauthenticated users are unaffected: isLoading never becomes
+  // true for them, so minSkeletonActive stays false throughout.
+  const [minSkeletonActive, setMinSkeletonActive] = useState(false);
+  const minTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isLoading && minTimerRef.current === null) {
+      setMinSkeletonActive(true);
+      minTimerRef.current = setTimeout(() => {
+        setMinSkeletonActive(false);
+        minTimerRef.current = null;
+      }, 300);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (minTimerRef.current !== null) clearTimeout(minTimerRef.current);
+    };
+  }, []);
+
   const trackMap = tracks ? new Map(tracks.map((t) => [t.slug, t])) : null;
   const rows = trackMap
     ? activeEntries
@@ -687,11 +713,12 @@ function ContinueLearningWidget() {
   const ordered = [...inProgress, ...completed];
 
   // Show skeleton whenever a server fetch is in-flight (auth loading OR authenticated and awaiting
-  // the server response).  This covers returning listeners whose localStorage was cleared — they
-  // have no local entries yet but the server will return their history, so showing a brief
-  // skeleton is better than silently showing nothing and then having the widget pop in.
+  // the server response), OR the minimum display window hasn't elapsed yet.
+  // This covers returning listeners whose localStorage was cleared — they have no local entries
+  // yet but the server will return their history, so showing a brief skeleton is better than
+  // silently showing nothing and then having the widget pop in.
   // Once the server confirms zero progress (`serverReturnedEmpty`), the widget disappears.
-  const showSkeleton = isLoading;
+  const showSkeleton = isLoading || minSkeletonActive;
   const showContent = !showSkeleton && ordered.length > 0;
 
   if (serverReturnedEmpty || (!showSkeleton && !showContent)) return null;
