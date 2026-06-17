@@ -671,7 +671,13 @@ function ContinueLearningWidget() {
   const { entries: activeEntries, isLoading } = useAllActiveTracksState();
   const { data: tracks } = useListTracks();
 
-  if (isLoading && activeEntries.length === 0) {
+  // No local entries means the user has never started a track on this device.
+  // Skip the skeleton entirely — a brand-new listener with nothing in localStorage
+  // (and no server progress) should see nothing, not a misleading loading state.
+  if (activeEntries.length === 0) return null;
+
+  // Local entries exist: show the skeleton while the server sync catches up.
+  if (isLoading) {
     return (
       <motion.section
         initial={{ opacity: 0, y: 20 }}

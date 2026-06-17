@@ -416,6 +416,10 @@ export function readAllActiveTracksOrdered(): ActiveTrackEntry[] {
 export type AllActiveTracksState = {
   entries: ActiveTrackEntry[];
   isLoading: boolean;
+  /** True once the server has confirmed there are zero in-progress tracks.
+   *  Distinct from `isLoading === false` because it makes the "empty confirmed"
+   *  state explicit rather than relying on the absence of entries. */
+  serverReturnedEmpty: boolean;
 };
 
 export function useAllActiveTracksState(): AllActiveTracksState {
@@ -424,15 +428,17 @@ export function useAllActiveTracksState(): AllActiveTracksState {
     readAllActiveTracksOrdered(),
   );
   const [serverFetchDone, setServerFetchDone] = useState(false);
+  const [serverReturnedEmpty, setServerReturnedEmpty] = useState(false);
   // Keep a ref so the focus handler can read the latest auth state without
   // being re-registered every time isAuthenticated changes.
   const isAuthenticatedRef = useRef(isAuthenticated);
   isAuthenticatedRef.current = isAuthenticated;
 
-  // Reset serverFetchDone when auth state changes (e.g. login/logout)
+  // Reset server-fetch flags when auth state changes (e.g. login/logout)
   useEffect(() => {
     if (authLoading) {
       setServerFetchDone(false);
+      setServerReturnedEmpty(false);
     }
   }, [authLoading]);
 
@@ -452,6 +458,14 @@ export function useAllActiveTracksState(): AllActiveTracksState {
     try {
       const serverCounts = await fetchAllTracksProgressFromServer();
       if (!serverCounts) return;
+
+      // Server confirmed there are zero tracks with any progress — mark it so
+      // the widget can skip the skeleton without waiting for further fetches.
+      const hasAnyServerProgress = Object.values(serverCounts).some((c) => c > 0);
+      if (!hasAnyServerProgress) {
+        setServerReturnedEmpty(true);
+        return;
+      }
 
       const currentEntries = readAllActiveTracksOrdered();
       const localBySlug = new Map(currentEntries.map((e) => [e.slug, e.doneIds]));
@@ -544,5 +558,5 @@ export function useAllActiveTracksState(): AllActiveTracksState {
   //   - user is authenticated but the server fetch hasn't completed yet
   const isLoading = authLoading || (isAuthenticated && !serverFetchDone);
 
-  return { entries, isLoading };
+  return { entries, isLoading, serverReturnedEmpty };
 }
