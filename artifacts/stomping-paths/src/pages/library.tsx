@@ -692,10 +692,20 @@ export function Library() {
           )}
 
           {stats?.sync?.[0] && (
-            <div className="mt-12 text-center">
+            <div className="mt-12 text-center space-y-1">
                <p className="text-xs text-muted-foreground font-medium">
                  Library last refreshed {stats.sync[0].finishedAt ? formatDistanceToNow(parseISO(stats.sync[0].finishedAt), { addSuffix: true }) : 'recently'}.
                </p>
+               {(() => {
+                 const ct = (stats as unknown as { chapterTimestamps?: { checked: number; found: number } }).chapterTimestamps;
+                 if (!ct || ct.checked === 0) return null;
+                 const pct = Math.round((ct.found / ct.checked) * 100);
+                 return (
+                   <p className="text-xs text-muted-foreground">
+                     Chapter timestamps: {ct.found} of {ct.checked} checked episodes have a confirmed timestamp ({pct}%).
+                   </p>
+                 );
+               })()}
             </div>
           )}
         </div>

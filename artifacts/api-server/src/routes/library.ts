@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { sql, and, eq, desc, asc, ne, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { db, contentItemsTable, curatedItemsTable } from "@workspace/db";
-import { refreshAll, getSyncStatus } from "../lib/library";
+import { refreshAll, getSyncStatus, getChapterTimestampStats } from "../lib/library";
 import { invalidateTagQueryCache } from "./episodes";
 import { SERIES_REGISTRY } from "../lib/series";
 import { logger } from "../lib/logger";
@@ -187,7 +187,7 @@ router.get("/library/search", async (req, res) => {
 
 router.get("/library/stats", async (_req, res) => {
   try {
-    const [counts, byKindRows, dates, catRows, tagRows, sync] = await Promise.all([
+    const [counts, byKindRows, dates, catRows, tagRows, sync, chapterTimestamps] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(contentItemsTable),
@@ -219,6 +219,7 @@ router.get("/library/stats", async (_req, res) => {
         LIMIT 24
       `),
       getSyncStatus(),
+      getChapterTimestampStats(),
     ]);
     res.json({
       totalItems: counts[0]?.count ?? 0,
@@ -241,6 +242,7 @@ router.get("/library/stats", async (_req, res) => {
         itemsUpserted: s.lastRun?.itemsUpserted ?? null,
         errorMessage: s.lastRun?.errorMessage ?? null,
       })),
+      chapterTimestamps,
     });
   } catch (err) {
     logger.error({ err }, "library stats failed");

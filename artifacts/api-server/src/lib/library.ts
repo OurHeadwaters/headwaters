@@ -413,6 +413,26 @@ export function startBackgroundRefresh(): void {
   }, REFRESH_THROTTLE_MS).unref();
 }
 
+export async function getChapterTimestampStats(): Promise<{ checked: number; found: number }> {
+  const [checkedRow, foundRow] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contentItemsTable)
+      .where(sql`${contentItemsTable.extra}->>'historyTimestampChecked' = 'true'`),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contentItemsTable)
+      .where(
+        sql`${contentItemsTable.extra}->>'historyTimestampChecked' = 'true'
+          AND ${contentItemsTable.extra}->>'historyTimestamp' IS NOT NULL`,
+      ),
+  ]);
+  return {
+    checked: checkedRow[0]?.count ?? 0,
+    found: foundRow[0]?.count ?? 0,
+  };
+}
+
 export async function getSyncStatus(): Promise<{ source: string; lastRun: SyncRun | null }[]> {
   const sources = ["wordpress", "youtube", "ulg", "council", "fireside-freedom"];
   const results: { source: string; lastRun: SyncRun | null }[] = [];
