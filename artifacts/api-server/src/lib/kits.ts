@@ -16,6 +16,12 @@
  *
  * NOTE: Prices below are defaults. Confirm final pricing with Bobbie before
  * going live — update priceCents here and re-run ensureKitProducts().
+ *
+ * Adding a download URL for any kit:
+ *   Set the env var KIT_ACCESS_URL_<SLUG> where <SLUG> is the kit slug
+ *   uppercased with hyphens replaced by underscores.
+ *   Example: KIT_ACCESS_URL_PARRS_JARS for the "parrs-jars" kit.
+ *   No code change required.
  */
 
 export type KitUserManual = {
@@ -58,7 +64,30 @@ export type KitDef = {
   contentKeywords?: string[];
 };
 
-export const KITS: KitDef[] = [
+/**
+ * Resolves the download/access URL for a kit from environment variables.
+ *
+ * Checks KIT_ACCESS_URL_<SLUG> first (slug uppercased, hyphens → underscores).
+ * Falls back to the legacy COURSE1_ACCESS_URL alias for the "parrs-jars" kit
+ * and logs a deprecation warning so ops know to migrate.
+ */
+function resolveAccessUrl(slug: string): string | undefined {
+  const envKey = `KIT_ACCESS_URL_${slug.toUpperCase().replace(/-/g, "_")}`;
+  const val = process.env[envKey];
+  if (val) return val;
+
+  if (slug === "parrs-jars" && process.env.COURSE1_ACCESS_URL) {
+    console.warn(
+      "[kits] COURSE1_ACCESS_URL is deprecated. " +
+        "Set KIT_ACCESS_URL_PARRS_JARS instead."
+    );
+    return process.env.COURSE1_ACCESS_URL;
+  }
+
+  return undefined;
+}
+
+const RAW_KITS: KitDef[] = [
   {
     slug: "family-kit",
     name: "Family Kit",
@@ -211,7 +240,6 @@ export const KITS: KitDef[] = [
     priceCents: 12700,
     ctaLabel: "Get the Course",
     zapriteUrl: "https://pay.zaprite.com/pl_SIz91erI6c?kit_slug=parrs-jars",
-    accessUrl: process.env.COURSE1_ACCESS_URL,
     userManual: {
       what: "Ten recorded sessions on food preservation from Bobbie Parr's kitchen in Dryden, Ontario. Canning, fermenting, and pantry stocking for real northern winters.",
       first: "Watch Session 1 before you buy anything. The philosophy of stocking a real pantry matters more than which lids you use.",
@@ -312,6 +340,11 @@ export const KITS: KitDef[] = [
     },
   },
 ];
+
+export const KITS: KitDef[] = RAW_KITS.map((k) => ({
+  ...k,
+  accessUrl: resolveAccessUrl(k.slug) ?? k.accessUrl,
+}));
 
 export function kitBySlug(slug: string): KitDef | undefined {
   return KITS.find((k) => k.slug === slug);
