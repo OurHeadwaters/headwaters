@@ -96,6 +96,7 @@ export default function WorkshopsHostPage() {
   const [paidAmount, setPaidAmount] = useState("");
   const [breakEvenStr, setBreakEvenStr] = useState("");
   const [platformShare, setPlatformShare] = useState<5 | 10 | 15>(10);
+  const [familyFriendly, setFamilyFriendly] = useState(false);
 
   const canSubmit =
     title.trim().length >= 3 &&
@@ -131,6 +132,7 @@ export default function WorkshopsHostPage() {
         ticketPriceCents,
         breakEvenTickets: breakEvenStr.trim() ? Math.max(0, parseInt(breakEvenStr, 10)) : 0,
         platformSharePct: !isFree ? platformShare : null,
+        familyFriendly,
       });
       setCreatedEvent(event);
       setStep("success");
@@ -516,6 +518,27 @@ export default function WorkshopsHostPage() {
                   )}
                 </div>
               </div>
+
+              <label
+                className="flex items-start gap-3 cursor-pointer select-none rounded-xl px-4 py-3"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1.5px solid rgba(90,120,90,0.25)" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={familyFriendly}
+                  onChange={(e) => setFamilyFriendly(e.target.checked)}
+                  className="mt-0.5 flex-shrink-0"
+                  style={{ accentColor: "#6DBA8A", width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span>
+                  <span className="block text-sm font-semibold" style={{ color: "#E8E0C8" }}>
+                    👨‍👩‍👧 Good with kids / family-friendly event
+                  </span>
+                  <span className="block text-xs mt-0.5" style={{ color: "#4A6850" }}>
+                    Check this if the workshop is suitable for children and families attending together.
+                  </span>
+                </span>
+              </label>
 
               <button
                 onClick={() => void handleSubmit()}
