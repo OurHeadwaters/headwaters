@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Check, X, Plus, RefreshCw, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import { fetchAuthUser, type AuthUserResponse, AdminLoginWall } from "@/lib/admin-auth";
+import { Pencil, Trash2, Check, X, Plus, RefreshCw, ChevronDown, ChevronUp, ExternalLink, Lock } from "lucide-react";
+import { fetchAdminCheck, AdminLoginWall, AdminForbiddenWall } from "@/lib/admin-auth";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -715,9 +715,9 @@ type Tab = "experts" | "businesses";
 export function AdminCouncil() {
   const [tab, setTab] = useState<Tab>("experts");
 
-  const { data: auth, isLoading: authLoading } = useQuery({
-    queryKey: ["auth-user"],
-    queryFn: fetchAuthUser,
+  const { data: adminCheck, isLoading: authLoading } = useQuery({
+    queryKey: ["admin-check"],
+    queryFn: fetchAdminCheck,
     staleTime: 60_000,
   });
 
@@ -730,8 +730,12 @@ export function AdminCouncil() {
     );
   }
 
-  if (!auth?.user) {
+  if (!adminCheck?.authenticated) {
     return <AdminLoginWall returnTo="/admin/council" />;
+  }
+
+  if (!adminCheck?.isAdmin) {
+    return <AdminForbiddenWall />;
   }
 
   return (

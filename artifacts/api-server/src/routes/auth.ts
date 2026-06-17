@@ -20,6 +20,7 @@ import {
   type SessionData,
 } from "../lib/auth";
 import { createRouteLimiter } from "../middlewares/rateLimiter";
+import { isAdminUser } from "../middlewares/requireEditor";
 
 const authLimiter = createRouteLimiter("auth", 20, 60_000);
 
@@ -92,6 +93,14 @@ router.get("/auth/user", authLimiter, (req: Request, res: Response) => {
       user: req.isAuthenticated() ? req.user : null,
     }),
   );
+});
+
+router.get("/auth/is-admin", authLimiter, (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.json({ isAdmin: false, authenticated: false });
+    return;
+  }
+  res.json({ isAdmin: isAdminUser(req.user.id), authenticated: true });
 });
 
 router.get("/login", authLimiter, async (req: Request, res: Response) => {
