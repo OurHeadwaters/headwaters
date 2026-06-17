@@ -232,6 +232,13 @@
       "when": 1750042800000,
       "tag": "0032_creator_suggestions",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1750197600000,
+      "tag": "0034_rate_limits",
+      "breakpoints": true
     }
   ]
 }
