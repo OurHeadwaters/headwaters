@@ -871,8 +871,9 @@ export default function KitDetailPage() {
   const showFamilyWorkshops = FAMILY_HOUSEHOLD_VALUES.has(household);
   const { workshops, loading: workshopsLoading } = useFamilyWorkshops(showFamilyWorkshops);
 
-  type RsvpState = { loading: boolean; confirmed: boolean; rsvpCount: number };
+  type RsvpState = { loading: boolean; confirmed: boolean; rsvpCount: number; showForm: boolean };
   const [rsvpStates, setRsvpStates] = useState<Record<number, RsvpState>>({});
+  const [rsvpForms, setRsvpForms] = useState<Record<number, { name: string; email: string }>>({});
 
   useEffect(() => {
     if (workshops.length === 0) return;
@@ -880,42 +881,55 @@ export default function KitDetailPage() {
       const next = { ...prev };
       for (const w of workshops) {
         if (!(w.id in next)) {
-          next[w.id] = { loading: false, confirmed: !!w.hasRsvped, rsvpCount: w.rsvpCount };
+          next[w.id] = { loading: false, confirmed: !!w.hasRsvped, rsvpCount: w.rsvpCount, showForm: false };
         }
       }
       return next;
     });
   }, [workshops]);
 
-  async function handleWorkshopRsvp(workshopId: number) {
+  function handleWorkshopRsvpStart(workshopId: number) {
     setRsvpStates((prev) => ({
       ...prev,
-      [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0 }), loading: true },
+      [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0, loading: false }), showForm: true },
+    }));
+  }
+
+  async function handleWorkshopRsvpSubmit(workshopId: number, skipContact = false) {
+    const form = rsvpForms[workshopId] ?? { name: "", email: "" };
+    setRsvpStates((prev) => ({
+      ...prev,
+      [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0, showForm: false }), loading: true, showForm: false },
     }));
     try {
       const base = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
       const sessionId = getOrCreateRsvpSessionId();
+      const body: Record<string, string> = { sessionId };
+      if (!skipContact) {
+        if (form.email.trim()) body.attendeeEmail = form.email.trim();
+        if (form.name.trim()) body.attendeeName = form.name.trim();
+      }
       const res = await fetch(`${base}/api/ground-events/${workshopId}/rsvp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) {
         setRsvpStates((prev) => ({
           ...prev,
-          [workshopId]: { loading: false, confirmed: true, rsvpCount: data.rsvpCount ?? (prev[workshopId]?.rsvpCount ?? 0) + 1 },
+          [workshopId]: { loading: false, confirmed: true, rsvpCount: data.rsvpCount ?? (prev[workshopId]?.rsvpCount ?? 0) + 1, showForm: false },
         }));
       } else {
         setRsvpStates((prev) => ({
           ...prev,
-          [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0 }), loading: false },
+          [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0, showForm: false }), loading: false },
         }));
       }
     } catch {
       setRsvpStates((prev) => ({
         ...prev,
-        [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0 }), loading: false },
+        [workshopId]: { ...(prev[workshopId] ?? { confirmed: false, rsvpCount: 0, showForm: false }), loading: false },
       }));
     }
   }
@@ -1671,7 +1685,9 @@ export default function KitDetailPage() {
                           const rs = rsvpStates[w.id];
                           const confirmed = rs?.confirmed ?? false;
                           const rsvpLoading = rs?.loading ?? false;
+                          const showForm = rs?.showForm ?? false;
                           const rsvpCount = rs?.rsvpCount ?? w.rsvpCount;
+                          const formVals = rsvpForms[w.id] ?? { name: "", email: "" };
                           return confirmed ? (
                             <div className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg"
                               style={{ color: "#8FA883", background: "#8FA88320", border: "1px solid #8FA88344" }}
@@ -1682,9 +1698,57 @@ export default function KitDetailPage() {
                                 <span className="opacity-70">· {rsvpCount} going</span>
                               )}
                             </div>
+                          ) : showForm ? (
+                            <div className="w-full mt-1 rounded-xl border p-3 space-y-2"
+                              style={{ borderColor: "#8FA88344", background: "#8FA88310" }}
+                            >
+                              <p className="text-xs font-semibold text-foreground">
+                                Add your info so the host can reach you <span className="font-normal text-muted-foreground">(optional)</span>
+                              </p>
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Your name"
+                                  value={formVals.name}
+                                  onChange={(e) => setRsvpForms((prev) => ({ ...prev, [w.id]: { ...formVals, name: e.target.value } }))}
+                                  className="w-full px-2.5 py-1.5 rounded-lg border bg-background text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 transition-all"
+                                  style={{ borderColor: "#8FA88344" }}
+                                  onFocus={(e) => (e.target.style.borderColor = "#8FA883")}
+                                  onBlur={(e) => (e.target.style.borderColor = "#8FA88344")}
+                                />
+                                <input
+                                  type="email"
+                                  placeholder="Email for reminders (optional)"
+                                  value={formVals.email}
+                                  onChange={(e) => setRsvpForms((prev) => ({ ...prev, [w.id]: { ...formVals, email: e.target.value } }))}
+                                  className="w-full px-2.5 py-1.5 rounded-lg border bg-background text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 transition-all"
+                                  style={{ borderColor: "#8FA88344" }}
+                                  onFocus={(e) => (e.target.style.borderColor = "#8FA883")}
+                                  onBlur={(e) => (e.target.style.borderColor = "#8FA88344")}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 pt-0.5">
+                                <button
+                                  onClick={() => handleWorkshopRsvpSubmit(w.id)}
+                                  disabled={rsvpLoading}
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed"
+                                  style={{ color: "#fff", background: "#8FA883", boxShadow: "0 2px 12px #8FA88340" }}
+                                >
+                                  {rsvpLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                  {rsvpLoading ? "Saving…" : "Confirm RSVP"}
+                                </button>
+                                <button
+                                  onClick={() => handleWorkshopRsvpSubmit(w.id, true)}
+                                  disabled={rsvpLoading}
+                                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                                >
+                                  Skip
+                                </button>
+                              </div>
+                            </div>
                           ) : (
                             <button
-                              onClick={() => handleWorkshopRsvp(w.id)}
+                              onClick={() => handleWorkshopRsvpStart(w.id)}
                               disabled={rsvpLoading}
                               className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                               style={{
