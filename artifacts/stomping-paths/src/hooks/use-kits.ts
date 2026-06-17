@@ -46,11 +46,18 @@ export type KitEpisode = {
   tags: string[];
 };
 
+export type KitUserManual = {
+  what: string;
+  first: string;
+  next: string;
+};
+
 export type KitDetail = KitSummary & {
   transformations: Transformation[];
   tracks: KitTrack[];
   episodes: KitEpisode[];
   gear: ReviewedProduct[];
+  userManual?: KitUserManual;
 };
 
 function apiUrl(path: string): string {

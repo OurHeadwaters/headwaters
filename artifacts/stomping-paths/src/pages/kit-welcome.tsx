@@ -17,49 +17,6 @@ import {
 import { useKitDetail, KIT_META } from "@/hooks/use-kits";
 import { KIT_SESSION_TTL_MS, kitStorageKey } from "@workspace/tsp-constants";
 
-const KIT_FIRST_STEPS: Record<string, { what: string; first: string; next: string }> = {
-  "family-kit": {
-    what: "Build 30-day food and water baseline this month. Then move to the 90-day pantry rotation and home security audit.",
-    first: "Start the Prepared at Home track. The earliest episodes lay the foundation — start there before buying any gear.",
-    next: "After you've completed the core preparedness episodes, check the gear shelf for Jack's reviewed supplies that match this kit.",
-  },
-  "producer-kit": {
-    what: "Start the Mind & Money track — specifically the early episodes on financial philosophy and the debt payoff framework.",
-    first: "Get your money working for you before you try to build income from scratch. The debt-reduction framework comes first.",
-    next: "Once you have a debt-reduction plan in motion, move to the Employee → Owner transformation episodes. Identify one income stream you can build alongside your current work.",
-  },
-  "care-kit": {
-    what: "Filter the Outsourced Health → Health Sovereign episodes by earliest publish date. The philosophical foundation matters most.",
-    first: "Build one concrete home-health practice at a time. Most people start with food quality and sleep before adding herbalism or supplements.",
-    next: "Master the basics before advanced skills. Return to this kit as your situation changes and your knowledge grows.",
-  },
-  "digital-kit": {
-    what: "Start with the TradFi → Hard Assets transformation episodes. Understand the 'why' before touching a hardware wallet.",
-    first: "Set up a hardware wallet with a small amount before you hold anything significant. The gear shelf has Jack's reviewed hardware wallets.",
-    next: "Layer in the privacy tools after you've secured your digital assets. Digital security compounds over time.",
-  },
-  "physical-kit": {
-    what: "Start the When Things Get Hard track. It's short and covers the high-probability scenarios most families should prepare for.",
-    first: "Work through the Grid → Off-Grid transformation for energy independence concepts, then use the gear shelf to identify the right hardware.",
-    next: "Physical resilience is built in layers — grid independence first, then energy production, then energy storage.",
-  },
-  "budget-kit": {
-    what: "The envelope budgeting framework applies immediately to your current income. Start splitting your income into buckets this month.",
-    first: "Listen to the Mind & Money track's early episodes on financial philosophy, then set up your first budget buckets.",
-    next: "Once you have your budget structure, explore the X-Buckets tool for non-custodial stablecoin budgeting.",
-  },
-  "pregnancy-kit": {
-    what: "Filter the health sovereignty episodes by earliest publish date — the philosophical foundation matters most before you dive into protocols.",
-    first: "Start with Jack's foundational health episodes on food quality and the limits of conventional medicine. Get the framework right before the specifics.",
-    next: "Layer in the pregnancy-specific content: herbalism safety, birth prep, early infant decisions. Each decision is easier once the frame is solid.",
-  },
-  "baby-health-kit": {
-    what: "Start with the foundational child health and real-food episodes mapped to your child's age. The framework applies at every stage.",
-    first: "Build one home-health practice at a time — real food first, then basic herbalism, then illness decision frameworks.",
-    next: "Mastery compounds. What you do in year one sets the trajectory. Return to this kit as your kids grow and new challenges arise.",
-  },
-};
-
 const DEFAULT_STEPS = {
   what: "Work through the curated episodes in this kit in order. Each one builds on the previous.",
   first: "Start with the earliest episodes in your kit's transformation or track — the foundation matters more than the advanced material.",
@@ -119,8 +76,6 @@ export default function KitWelcomePage() {
 
   const { data: kit, isLoading } = useKitDetail(slug);
   const meta = KIT_META[slug] ?? { icon: "📦", color: "#6B7280" };
-
-  const steps = KIT_FIRST_STEPS[slug] ?? DEFAULT_STEPS;
 
   const [sessionVerified, setSessionVerified] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -496,7 +451,7 @@ export default function KitWelcomePage() {
                   className="text-base font-semibold mt-2"
                   style={{ color: meta.color }}
                 >
-                  Purchase confirmed — you're in.
+                  Purchase confirmed — check your inbox for your welcome email.
                 </p>
               ) : paymentMethod === "bitcoin" ? (
                 <p
@@ -524,6 +479,27 @@ export default function KitWelcomePage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-10">
+
+        {sessionVerified && (
+          <section
+            className="rounded-xl border p-5 flex items-start gap-4"
+            style={{
+              borderColor: meta.color + "44",
+              background: meta.color + "0A",
+            }}
+          >
+            <Mail className="w-5 h-5 shrink-0 mt-0.5" style={{ color: meta.color }} />
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-1">
+                Check your inbox
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A welcome email with your kit details and access link is on its way. Check your
+                inbox (and spam folder) — it should arrive within a few minutes.
+              </p>
+            </div>
+          </section>
+        )}
 
         {sessionExpired && (accessStatus === "idle" || accessStatus === "notFound" || accessStatus === "loading") && (
           <div
@@ -840,7 +816,7 @@ export default function KitWelcomePage() {
                 What this kit is for
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed pl-5">
-                {kit?.description ?? steps.what}
+                {kit?.userManual?.what ?? kit?.description ?? DEFAULT_STEPS.what}
               </p>
             </div>
 
@@ -850,7 +826,7 @@ export default function KitWelcomePage() {
                 What to do first
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed pl-5">
-                {steps.first}
+                {kit?.userManual?.first ?? DEFAULT_STEPS.first}
               </p>
             </div>
 
@@ -860,7 +836,7 @@ export default function KitWelcomePage() {
                 What to do next
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed pl-5">
-                {steps.next}
+                {kit?.userManual?.next ?? DEFAULT_STEPS.next}
               </p>
             </div>
           </div>
