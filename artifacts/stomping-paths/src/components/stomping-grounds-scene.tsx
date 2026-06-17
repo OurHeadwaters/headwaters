@@ -1275,7 +1275,7 @@ function WishingWellInlinePanel() {
   // Used to hide "Toss another" so re-opening the panel doesn't re-enable tossing.
   const restoredFromSession = useRef(getWwTossed());
   const { data: pot } = useQuery({ queryKey: ["stomping-ww-pot"], queryFn: fetchInlinePot, staleTime: 30_000 });
-  const { data: wishes = [] } = useQuery({ queryKey: ["stomping-ww-wishes"], queryFn: fetchInlineWishes, staleTime: 30_000 });
+  const { data: wishes = [], isLoading: wishesLoading } = useQuery({ queryKey: ["stomping-ww-wishes"], queryFn: fetchInlineWishes, staleTime: 30_000 });
   const tipMut = useMutation({
     mutationFn: submitMiniTip,
     onSuccess: () => {
@@ -1346,12 +1346,19 @@ function WishingWellInlinePanel() {
           </button>
         </div>
       )}
-      {topWishes.length > 0 && (
+      {(wishesLoading || topWishes.length > 0) && (
         <div className="flex flex-col gap-2">
           <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 flex items-center gap-1.5">
             <Layers className="w-3 h-3" /> Today&rsquo;s Wishes
           </div>
-          {topWishes.map((wish) => (
+          {wishesLoading ? (
+            [0, 1, 2].map((i) => (
+              <div key={i} className="rounded-lg border border-white/10 bg-white/4 p-2.5 animate-pulse">
+                <div className="h-3 rounded bg-white/10 mb-2 w-4/5" />
+                <div className="h-2.5 rounded bg-white/10 w-1/3" />
+              </div>
+            ))
+          ) : topWishes.map((wish) => (
             <div key={wish.id} className={`rounded-lg border p-2.5 text-xs ${wish.founderMatchTriggered ? "border-[#D9A066]/40 bg-[#D9A066]/8" : "border-white/10 bg-white/4"}`}>
               <p className="font-serif text-white/80 italic line-clamp-2 mb-1">&ldquo;{wish.wishText}&rdquo;</p>
               <div className="flex items-center gap-1.5 text-white/40 flex-wrap">
