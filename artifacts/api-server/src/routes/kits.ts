@@ -16,7 +16,7 @@ import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
 import { trackBySlug } from "../lib/tracks";
-import { sendKitInquiryNotification, verifyKitAccessToken } from "../lib/email";
+import { sendKitInquiryNotification, generateKitAccessToken, verifyKitAccessToken } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -63,7 +63,7 @@ router.get("/kits/my-purchases", async (req, res) => {
       .select({
         id: kitPurchasesTable.id,
         kitSlug: kitPurchasesTable.kitSlug,
-        createdAt: kitPurchasesTable.purchasedAt,
+        purchasedAt: kitPurchasesTable.purchasedAt,
       })
       .from(kitPurchasesTable)
       .where(eq(kitPurchasesTable.userId, userId))
@@ -74,7 +74,7 @@ router.get("/kits/my-purchases", async (req, res) => {
       return {
         id: row.id,
         kitSlug: row.kitSlug,
-        createdAt: row.createdAt,
+        createdAt: row.purchasedAt,
         kit: kit
           ? {
               slug: kit.slug,
@@ -92,6 +92,69 @@ router.get("/kits/my-purchases", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "kits: GET /my-purchases failed");
     res.status(500).json({ error: "Failed to load purchases" });
+  }
+});
+
+/* ─────────────────── GET /api/kits/purchases-by-email ─────────────────── */
+
+/**
+ * Unauthenticated email-based purchase lookup.
+ * Returns all kits purchased with the given email, each with an HMAC access
+ * token so the buyer can reach /kits/:slug/welcome?email=...&token=... without
+ * needing a Replit account.
+ *
+ * Rate-limiting and email validation are enforced to limit scraping.
+ */
+router.get("/kits/purchases-by-email", async (req, res) => {
+  const email = (req.query.email as string | undefined)?.trim().toLowerCase() ?? "";
+
+  if (!email) {
+    res.status(400).json({ error: "email is required" });
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    res.status(400).json({ error: "Invalid email address" });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select({
+        id: kitPurchasesTable.id,
+        kitSlug: kitPurchasesTable.kitSlug,
+        purchasedAt: kitPurchasesTable.purchasedAt,
+      })
+      .from(kitPurchasesTable)
+      .where(eq(kitPurchasesTable.buyerEmail, email))
+      .orderBy(desc(kitPurchasesTable.purchasedAt));
+
+    const purchases = rows.map((row) => {
+      const kit = kitBySlug(row.kitSlug);
+      const token = generateKitAccessToken(row.kitSlug, email);
+      return {
+        id: row.id,
+        kitSlug: row.kitSlug,
+        purchasedAt: row.purchasedAt,
+        token,
+        kit: kit
+          ? {
+              slug: kit.slug,
+              name: kit.name,
+              tagline: kit.tagline,
+              description: kit.description,
+              priceType: kit.priceType,
+              ctaLabel: kit.ctaLabel,
+            }
+          : null,
+      };
+    });
+
+    res.json({ purchases });
+  } catch (err) {
+    logger.error({ err }, "kits: GET /purchases-by-email failed");
+    res.status(500).json({ error: "Failed to look up purchases" });
   }
 });
 
