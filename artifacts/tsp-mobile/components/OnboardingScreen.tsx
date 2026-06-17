@@ -39,7 +39,7 @@ const SLIDES: Slide[] = [
   {
     id: "welcome",
     heading: "Welcome to the\nStomping Path",
-    body: "The Survival Podcast has helped over 3,000 episodes worth of listeners become more self-reliant. You're about to walk that path.",
+    body: "The Stomping Path has helped over 3,000 episodes worth of listeners become more self-reliant. You're about to walk that path.",
     gordMode: "perch",
     gordSide: "right",
     gordTop: 14,

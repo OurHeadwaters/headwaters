@@ -237,7 +237,7 @@ export function BrigadePage() {
           </h1>
 
           <p className="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-            The Survival Podcast has been independent and sponsor-free for 15+ years.
+            The Stomping Path has been independent and sponsor-free for 15+ years.
             Headwaters members keep it that way — and get the tools to go deeper.
           </p>
 

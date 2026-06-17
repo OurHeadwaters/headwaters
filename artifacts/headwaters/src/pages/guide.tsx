@@ -179,7 +179,7 @@ export default function Guide() {
         <p style={S.p}>
           This document explains every part of the Headwaters project in plain language — no
           technical background required. It covers six tools built for the 807 Food Co-operative
-          community, The Survival Podcast audience, and practitioners working in northern Ontario
+          community, The Stomping Path audience, and practitioners working in northern Ontario
           self-reliance.
         </p>
         <p style={S.p}>
@@ -191,16 +191,16 @@ export default function Guide() {
 
         <hr style={S.hr} />
 
-        {/* ── 1. The Survival Podcast / Stomping Path ── */}
+        {/* ── 1. The Stomping Path ── */}
         <div className="section-block" style={S.sectionBlock}>
-          <div style={S.sectionTitle}>1. The Survival Podcast — Stomping Path</div>
+          <div style={S.sectionTitle}>1. The Stomping Path</div>
           <span style={S.sectionTag}>A redesigned home for 6,000+ episodes, learning, and community</span>
 
           <p style={S.p}>
-            The Survival Podcast (TSP) has been running since 2009. Jack Spirko has recorded over
+            The Stomping Path has been running since 2008. Jack Spirko has recorded over
             6,000 episodes covering homesteading, food production, financial independence,
             preparedness, and community resilience. The Stomping Path is a completely rebuilt
-            version of the TSP website — faster, easier to navigate, and organized around the way
+            version of the original website — faster, easier to navigate, and organized around the way
             listeners actually use the content.
           </p>
 
@@ -245,7 +245,7 @@ export default function Guide() {
           </ul>
 
           <div style={S.callout}>
-            Who it's for: anyone who listens to The Survival Podcast and wants to get more from
+            Who it's for: anyone who listens to The Stomping Path and wants to get more from
             6,000+ episodes — find what matters, learn in order, support the show, and connect
             with the community.
           </div>
@@ -413,10 +413,10 @@ export default function Guide() {
         <div className="pb" />
         <div className="section-block" style={S.sectionBlock}>
           <div style={S.sectionTitle}>5. TSP Mobile App</div>
-          <span style={S.sectionTag}>The Survival Podcast in your pocket — episodes, kits, and V4V tipping on the go</span>
+          <span style={S.sectionTag}>The Stomping Path in your pocket — episodes, kits, and V4V tipping on the go</span>
 
           <p style={S.p}>
-            The TSP Mobile app is a companion app for Survival Podcast listeners. It brings the
+            The TSP Mobile app is a companion app for Stomping Path listeners. It brings the
             most commonly used features of the Stomping Path website into a native mobile
             experience — designed for the moments when you're not at a computer: in the truck,
             in the field, or at the kitchen table with your phone.

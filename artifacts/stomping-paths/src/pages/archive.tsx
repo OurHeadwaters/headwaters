@@ -25,7 +25,7 @@ export function Archive() {
   useDocumentMeta({
     title: "All Episodes — TSP Archive | The Stomping Path",
     description:
-      "Browse all 6,000+ episodes of The Survival Podcast — filter by zone, category, or transformation. Homesteading, permaculture, financial independence, bushcraft, and more.",
+      "Browse all 6,000+ episodes of The Stomping Path — filter by zone, category, or transformation. Homesteading, permaculture, financial independence, bushcraft, and more.",
     ogTitle: "All Episodes — The Stomping Path",
     ogDescription: "6,000+ episodes on homesteading, permaculture, financial independence, and self-reliance. Filter by zone or category.",
   });

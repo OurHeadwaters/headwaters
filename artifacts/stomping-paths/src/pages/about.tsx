@@ -19,11 +19,11 @@ function stripTagline(html: string): string {
 
 export function About() {
   useDocumentMeta({
-    title: "About Jack Spirko & The Survival Podcast | The Stomping Path",
+    title: "About Jack Spirko & The Stomping Path",
     description:
-      "Jack Spirko has been hosting The Survival Podcast since 2009. Practical self-reliance, permaculture, homesteading, financial independence — 6,000+ episodes and counting.",
+      "Jack Spirko has been hosting The Stomping Path since 2008. Practical self-reliance, permaculture, homesteading, financial independence — 6,000+ episodes and counting.",
     ogTitle: "About Jack Spirko — The Stomping Path",
-    ogDescription: "The Survival Podcast host since 2009. 6,000+ episodes on practical self-reliance, homesteading, and permaculture.",
+    ogDescription: "The Stomping Path host since 2008. 6,000+ episodes on practical self-reliance, homesteading, and permaculture.",
   });
   const { data: feed, isLoading } = useGetFeed();
   const descriptionHtml = feed?.description
@@ -99,7 +99,7 @@ export function About() {
               <p className="text-sm text-muted-foreground mb-4">Jack's main hub — forums, community resources, and more.</p>
             </div>
             <a 
-              href={feed?.link || "https://thesurvivalpodcast.com"} 
+              href={feed?.link || "https://thestompingpaths.com"} 
               target="_blank" 
               rel="noopener noreferrer"
               className="w-full py-2.5 bg-card border border-border text-foreground font-semibold rounded-md flex items-center justify-center gap-2 hover:bg-muted transition-colors mt-auto"

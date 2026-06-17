@@ -446,7 +446,7 @@ export default function WalletScreen() {
             to stream sats natively with full V4V support.
           </Text>
           <Pressable
-            onPress={() => Linking.openURL("https://podcastindex.org/podcast/thesurvivalpodcast")}
+            onPress={() => Linking.openURL("https://podcastindex.org/podcast/thestompingpaths")}
             style={[styles.p2pBtn, { borderColor: colors.woodBorder }]}
           >
             <Text style={[styles.p2pBtnText, { color: colors.primary, fontFamily: "DMSans_500Medium" }]}>

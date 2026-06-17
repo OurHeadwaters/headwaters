@@ -626,7 +626,7 @@ export default function Print() {
           <thead><tr><TH>Name</TH><TH>Role</TH><TH>Notes</TH></tr></thead>
           <tbody>
             <tr><TD>Bobbie Parr</TD><TD>Practitioner, project author</TD><TD>Owns Headwaters intake tool. Zone 1 practitioner.</TD></tr>
-            <tr><TD>Jack Spirko</TD><TD>The Survival Podcast host</TD><TD>Bitcoin-only. XRP = "shit coin." Keep XRPL off TSP pages unless explicitly asked.</TD></tr>
+            <tr><TD>Jack Spirko</TD><TD>The Stomping Path host</TD><TD>Bitcoin-only. XRP = "shit coin." Keep XRPL off TSP pages unless explicitly asked.</TD></tr>
             <tr><TD>Gord</TD><TD>AI mascot — owl/partridge</TD><TD>Deadpan. Zone 2 guide. Present on TSP and Codetry. Powered by gpt-5.</TD></tr>
           </tbody>
         </T>

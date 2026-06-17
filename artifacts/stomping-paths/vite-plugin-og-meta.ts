@@ -40,7 +40,7 @@ function buildOgHtml(opts: {
   <meta property="og:url" content="${safeUrl}" />
   ${safeImage ? `<meta property="og:image" content="${safeImage}" />` : ""}
   <meta name="twitter:card" content="${safeImage ? "summary_large_image" : "summary"}" />
-  <meta name="twitter:site" content="@survivalpodcast" />
+  <meta name="twitter:site" content="@thestompingpaths" />
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
   ${safeImage ? `<meta name="twitter:image" content="${safeImage}" />` : ""}

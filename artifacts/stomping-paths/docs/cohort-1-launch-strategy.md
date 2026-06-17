@@ -84,7 +84,7 @@ A 12-week, live, expert-led cohort for TSP listeners who are serious about movin
 - Founding pricing locks in only during the enrollment window the episode creates
 
 **What the listener CTA looks like:**
-Simple: one URL (survivalpodcast.com/cohorts/founding), an enrollment deadline (14 days after the episode airs), and a price that goes from $497 to $797 after the founding seats fill.
+Simple: one URL (thestompingpaths.com/cohorts/founding), an enrollment deadline (14 days after the episode airs), and a price that goes from $497 to $797 after the founding seats fill.
 
 **For you:**
 This positions TSP as the anchor for a real practitioner-to-community pipeline — not just content, but transformation. It's also a natural fit with the Expert Council directory that's already live on the site.
@@ -99,11 +99,11 @@ Thanks, Jack — let me know.
 
 **Primary CTA (say it twice — once mid-episode, once at the end):**
 
-> "If you want in on this, go to **survivalpodcast.com/cohorts/founding** — that's forward slash cohorts, forward slash founding. Get on the waitlist right now. When enrollment opens — and it only opens for two weeks — waitlist members get first access at the founding price, which is $300 less than what it'll cost after the seats fill. Thirty seats. That's it. After that it's closed. **survivalpodcast.com/cohorts/founding.**"
+> "If you want in on this, go to **thestompingpaths.com/cohorts/founding** — that's forward slash cohorts, forward slash founding. Get on the waitlist right now. When enrollment opens — and it only opens for two weeks — waitlist members get first access at the founding price, which is $300 less than what it'll cost after the seats fill. Thirty seats. That's it. After that it's closed. **thestompingpaths.com/cohorts/founding.**"
 
 **Shortened for mid-episode mention:**
 
-> "The link is in the show notes — survivalpodcast.com/cohorts/founding. Go grab your seat at the founding price."
+> "The link is in the show notes — thestompingpaths.com/cohorts/founding. Go grab your seat at the founding price."
 
 **Key elements the CTA always contains:**
 - Exact URL (no shortener, easy to remember while driving)
@@ -147,7 +147,7 @@ Thanks, Jack — let me know.
 - **12 weeks, live.** Weekly sessions with [Expert Name], not a self-paced course you abandon.
 - **Private cohort community.** A small group of people making the same transformation at the same time.
 - **Lifetime recordings.** Miss a session? Every call is recorded and yours to keep.
-- **Backed by The Survival Podcast.** This cohort exists because Jack believed in it enough to launch it on air.
+- **Backed by The Stomping Path.** This cohort exists because Jack believed in it enough to launch it on air.
 
 ### Urgency / Deadline Line
 > *Enrollment closes [DATE] at midnight. After that, this cohort is full and the founding price is gone.*

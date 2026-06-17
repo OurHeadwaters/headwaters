@@ -1616,14 +1616,14 @@ function AboutJackSection() {
               Jack Spirko has been doing this since 2009.
             </h2>
             <p className="text-[#FDFBF7]/65 leading-relaxed max-w-2xl mb-3">
-              Jack Spirko started The Survival Podcast to challenge the bunker-and-canned-beans stereotype of preparedness. His argument: resilience and abundance aren't opposites. You can build a genuinely good life — food security, financial independence, real skills — and be prepared for the hard parts at the same time.
+              Jack Spirko started The Stomping Path to challenge the bunker-and-canned-beans stereotype of preparedness. His argument: resilience and abundance aren't opposites. You can build a genuinely good life — food security, financial independence, real skills — and be prepared for the hard parts at the same time.
             </p>
             <p className="text-[#FDFBF7]/50 leading-relaxed max-w-2xl mb-6">
               Sixteen years, 6,000+ episodes, and one organizing framework: the permaculture zone model, adapted for modern life. The result is the most practical self-reliance archive on the internet.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
-                href="https://thesurvivalpodcast.com"
+                href="https://thestompingpaths.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[#FDFBF7] border border-[#FDFBF7]/20 hover:bg-[#FDFBF7]/8 transition-colors"

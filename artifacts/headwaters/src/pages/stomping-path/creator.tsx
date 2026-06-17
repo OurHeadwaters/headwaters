@@ -141,7 +141,7 @@ export default function StompingPathCreator() {
                   type="text"
                   value={creatorName}
                   onChange={(e) => setCreatorName(e.target.value)}
-                  placeholder="The Survival Podcast, Jack Spirko..."
+                  placeholder="The Stomping Path, Jack Spirko..."
                   className="w-full bg-transparent text-base outline-none placeholder:opacity-30 py-3"
                   style={{
                     color: "#d4c9a8",

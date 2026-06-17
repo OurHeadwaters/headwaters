@@ -111,7 +111,7 @@ export function CohortFoundingWaitlistPage() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
             Join the waitlist and get first access when enrollment opens — at the
             founding-member price that won't be offered again. Launching in partnership
-            with <strong className="text-foreground">The Survival Podcast</strong>.
+            with <strong className="text-foreground">The Stomping Path</strong>.
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground mb-10">
@@ -321,11 +321,11 @@ export function CohortFoundingWaitlistPage() {
               <Radio className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <p className="font-semibold text-foreground mb-1">Launching on The Survival Podcast</p>
+              <p className="font-semibold text-foreground mb-1">Launching on The Stomping Path</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 The official announcement — including enrollment details, founding pricing, and
                 the expert leading the cohort — will drop as a full episode on{" "}
-                <strong className="text-foreground">The Survival Podcast with Jack Spirko</strong>.
+                <strong className="text-foreground">The Stomping Path with Jack Spirko</strong>.
                 Waitlist members hear about enrollment before the episode publishes to the general
                 audience, so get on the list now.
               </p>
