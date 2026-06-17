@@ -93,11 +93,11 @@ function saveStoredAccess(kitSlug: string, email: string, elv: boolean) {
 
 function getSessionDaysRemaining(kitSlug: string): number | null {
   try {
-    const raw = localStorage.getItem(storageKey(kitSlug));
+    const raw = localStorage.getItem(kitStorageKey(kitSlug));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { savedAt?: number };
     if (!parsed.savedAt) return null;
-    const msRemaining = STORAGE_TTL_MS - (Date.now() - parsed.savedAt);
+    const msRemaining = KIT_SESSION_TTL_MS - (Date.now() - parsed.savedAt);
     if (msRemaining <= 0) return null;
     return Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
   } catch {

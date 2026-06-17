@@ -667,6 +667,8 @@ function ContinueLearningSkeletonRow() {
   );
 }
 
+const EXTENDED_LOAD_THRESHOLD_MS = 1500;
+
 function ContinueLearningWidget() {
   const { entries: activeEntries, isLoading, serverReturnedEmpty } = useAllActiveTracksState();
   const { data: tracks } = useListTracks();
@@ -694,6 +696,34 @@ function ContinueLearningWidget() {
   useEffect(() => {
     return () => {
       if (minTimerRef.current !== null) clearTimeout(minTimerRef.current);
+    };
+  }, []);
+
+  // After EXTENDED_LOAD_THRESHOLD_MS of continuous loading, fade in a soft
+  // caption so listeners know the skeleton is working, not stalled.
+  // The caption is cleared as soon as loading resolves (showSkeleton → false).
+  const [showLoadingCaption, setShowLoadingCaption] = useState(false);
+  const captionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isLoading) {
+      if (captionTimerRef.current === null) {
+        captionTimerRef.current = setTimeout(() => {
+          setShowLoadingCaption(true);
+        }, EXTENDED_LOAD_THRESHOLD_MS);
+      }
+    } else {
+      if (captionTimerRef.current !== null) {
+        clearTimeout(captionTimerRef.current);
+        captionTimerRef.current = null;
+      }
+      setShowLoadingCaption(false);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (captionTimerRef.current !== null) clearTimeout(captionTimerRef.current);
     };
   }, []);
 
@@ -801,6 +831,20 @@ function ContinueLearningWidget() {
               >
                 <ContinueLearningSkeletonRow />
                 <ContinueLearningSkeletonRow />
+                <AnimatePresence initial={false}>
+                  {showLoadingCaption && (
+                    <motion.p
+                      key="loading-caption"
+                      className="text-center text-[11px] text-[#FDFBF7]/35 mt-1 select-none"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                    >
+                      Fetching your progress…
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ) : (
               <motion.div
