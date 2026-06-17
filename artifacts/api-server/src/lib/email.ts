@@ -13,6 +13,29 @@ export interface HostConfirmationOptions {
 
 let resendClient: Resend | null = null;
 
+/**
+ * Returns the From address used for all kit-related emails.
+ *
+ * Set KIT_EMAIL_FROM in Replit Secrets to override (e.g. once you have
+ * verified a different domain in Resend):
+ *
+ *   KIT_EMAIL_FROM="TSP Kits <kits@thestompingpaths.com>"
+ *
+ * Falls back to the legacy thesurvivalpodcast.com address which requires
+ * that domain to be verified in Resend → https://resend.com/domains
+ */
+function getKitEmailFrom(): string {
+  return process.env.KIT_EMAIL_FROM ?? "TSP Kits <kits@thesurvivalpodcast.com>";
+}
+
+/**
+ * Returns the reply-to address for kit emails.
+ * Set KIT_EMAIL_REPLY_TO in Replit Secrets to override.
+ */
+function getKitEmailReplyTo(): string | undefined {
+  return process.env.KIT_EMAIL_REPLY_TO;
+}
+
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -422,7 +445,7 @@ export async function sendKitInquiryNotification(opts: KitInquiryNotificationOpt
 
   try {
     const { error } = await client.emails.send({
-      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      from: getKitEmailFrom(),
       to: [to],
       replyTo: opts.email,
       subject: `Kit Inquiry — ${opts.kitName} from ${opts.name}`,
@@ -621,8 +644,9 @@ export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise
 
   try {
     const { error } = await client.emails.send({
-      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      from: getKitEmailFrom(),
       to: [opts.buyerEmail],
+      replyTo: getKitEmailReplyTo(),
       subject: `Welcome to your ${opts.kitName} — here's how to get started`,
       html: buildKitWelcomeHtml(opts),
     });
@@ -853,8 +877,9 @@ export async function sendKitAccessEmail(
 
   try {
     const { error } = await client.emails.send({
-      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      from: getKitEmailFrom(),
       to: [opts.buyerEmail],
+      replyTo: getKitEmailReplyTo(),
       subject,
       html: buildKitAccessEmailHtml(opts),
     });
@@ -980,8 +1005,9 @@ export async function sendKitExpiryReminderEmail(
 
   try {
     const { error } = await client.emails.send({
-      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      from: getKitEmailFrom(),
       to: [opts.buyerEmail],
+      replyTo: getKitEmailReplyTo(),
       subject: `Your ${opts.kitName} access expires tomorrow — one click to renew`,
       html: buildKitExpiryReminderHtml(opts),
     });
