@@ -10,6 +10,7 @@ import {
   Mail,
   Bitcoin,
   XCircle,
+  Clock,
 } from "lucide-react";
 import { useKitDetail, KIT_META } from "@/hooks/use-kits";
 
@@ -290,25 +291,35 @@ export default function KitWelcomePage() {
                 </div>
               ) : accessStatus === "notFound" ? (
                 <div className="space-y-3">
-                  <div
-                    className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
-                    style={{ background: "#F7931A18", color: "#C96A00", border: "1px solid #F7931A33" }}
-                  >
-                    <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <div>
-                      <span>Not recorded yet — Bitcoin payments can take a minute.</span>
-                      {retryCountdown !== null && retryCountRef.current < MAX_RETRIES && (
-                        <span className="block text-xs font-normal mt-1 opacity-80">
+                  {retryCountdown !== null && retryCountRef.current < MAX_RETRIES ? (
+                    <div
+                      className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
+                      style={{ background: "#6B728018", color: "#4B5563", border: "1px solid #6B728033" }}
+                    >
+                      <Clock className="w-4 h-4 shrink-0 mt-0.5 animate-pulse" />
+                      <div>
+                        <span>Not recorded yet — Bitcoin payments can take a minute.</span>
+                        <span className="flex items-center gap-1.5 text-xs font-normal mt-1 opacity-70 animate-pulse">
                           Checking again in {retryCountdown}s…
                         </span>
-                      )}
-                      {retryCountRef.current >= MAX_RETRIES && retryCountdown === null && (
-                        <span className="block text-xs font-normal mt-1 opacity-80">
-                          Auto-retry stopped after 5 minutes. Try again manually below.
-                        </span>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm font-semibold"
+                      style={{ background: "#F7931A18", color: "#C96A00", border: "1px solid #F7931A33" }}
+                    >
+                      <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <span>Not recorded yet — Bitcoin payments can take a minute.</span>
+                        {retryCountRef.current >= MAX_RETRIES && (
+                          <span className="block text-xs font-normal mt-1 opacity-80">
+                            Auto-retry stopped after 5 minutes. Try again manually below.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-4">
                     <button
                       type="button"
