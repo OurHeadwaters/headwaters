@@ -6,7 +6,7 @@ import { syncWordPressArchive } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
 import { syncUlg, correctUlgDiscoveredDates } from "./sources/ulg";
 import { syncFiresideFreedom } from "./sources/fireside-freedom";
-import { parseChannel } from "./rss";
+import { parseChannel, getFeedCached } from "./rss";
 import { findUlgCrossLink, findExpertLink } from "./history-enrichment";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
@@ -86,7 +86,21 @@ async function recordRun(
 }
 
 async function syncWordPress(): Promise<{ itemsSeen: number; itemsUpserted: number }> {
+  let chaptersSlugMap: Map<string, string> | undefined;
+  try {
+    const feed = await getFeedCached();
+    chaptersSlugMap = new Map(
+      feed.episodes
+        .filter((ep) => ep.chaptersJsonUrl != null)
+        .map((ep) => [ep.slug, ep.chaptersJsonUrl as string]),
+    );
+    logger.info({ chaptersSlugMapSize: chaptersSlugMap.size }, "Built chapters slug map from RSS feed");
+  } catch (err) {
+    logger.warn({ err }, "Failed to fetch RSS feed for chapters slug map; proceeding without it");
+  }
+
   const { itemsSeen, itemsUpserted, failedPages } = await syncWordPressArchive({
+    chaptersSlugMap,
     upsertPage: (items) => upsertBatch(items),
     getExistingExtras: async (sourceIds) => {
       if (sourceIds.length === 0) return new Map();
