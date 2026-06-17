@@ -10,6 +10,8 @@ import {
   ShoppingBag,
   Mail,
   Search,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
 
 import { KIT_META } from "@/hooks/use-kits";
@@ -56,72 +58,170 @@ function usePurchases(enabled: boolean) {
   });
 }
 
+function ResendButton({
+  kitSlug,
+  buyerEmail,
+  color,
+}: {
+  kitSlug: string;
+  buyerEmail: string;
+  color: string;
+}) {
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  async function handleResend(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (status === "loading" || status === "sent") return;
+    setStatus("loading");
+    setErrorMsg(null);
+    try {
+      const res = await fetch(apiUrl(`/kits/${kitSlug}/resend-access`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: buyerEmail }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Something went wrong — please try again.");
+      }
+      setStatus("sent");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
+      setStatus("error");
+    }
+  }
+
+  if (status === "sent") {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+        style={{
+          color: "#8FA883",
+          background: "#8FA88318",
+          border: "1px solid #8FA88333",
+        }}
+      >
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Link sent to {buyerEmail}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <button
+        onClick={handleResend}
+        disabled={status === "loading"}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+        style={{
+          color: color,
+          background: color + "15",
+          border: `1px solid ${color}33`,
+        }}
+      >
+        {status === "loading" ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Send className="w-3.5 h-3.5" />
+        )}
+        {status === "loading" ? "Sending…" : "Re-send access link"}
+      </button>
+      {status === "error" && errorMsg && (
+        <span className="text-xs text-destructive pl-1">{errorMsg}</span>
+      )}
+    </div>
+  );
+}
+
 function KitCard({
   kitSlug,
   kitName,
   kitTagline,
+  buyerEmail,
   purchasedAt,
   href,
 }: {
   kitSlug: string;
   kitName: string;
   kitTagline: string;
+  buyerEmail: string;
   purchasedAt: string;
   href: string;
 }) {
   const meta = KIT_META[kitSlug] ?? { icon: "📦", color: "#6B7280" };
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between gap-5 p-6 rounded-xl border bg-card hover:shadow-md transition-all duration-200 group"
+    <div
+      className="rounded-xl border overflow-hidden"
       style={{
         borderColor: meta.color + "33",
         background: meta.color + "08",
       }}
     >
-      <div className="flex items-center gap-5 min-w-0">
-        <div
-          className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-          style={{
-            background: meta.color + "18",
-            border: `1px solid ${meta.color}33`,
-          }}
-        >
-          {meta.icon}
-        </div>
-        <div className="min-w-0">
-          <p className="font-serif font-bold text-base text-foreground leading-snug">
-            {kitName}
-          </p>
-          {kitTagline && (
-            <p className="text-sm text-muted-foreground mt-0.5 leading-snug line-clamp-1">
-              {kitTagline}
+      <Link
+        href={href}
+        className="flex items-center justify-between gap-5 p-6 hover:bg-white/5 transition-all duration-200 group"
+      >
+        <div className="flex items-center gap-5 min-w-0">
+          <div
+            className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+            style={{
+              background: meta.color + "18",
+              border: `1px solid ${meta.color}33`,
+            }}
+          >
+            {meta.icon}
+          </div>
+          <div className="min-w-0">
+            <p className="font-serif font-bold text-base text-foreground leading-snug">
+              {kitName}
             </p>
-          )}
-          <p className="text-xs text-muted-foreground/60 mt-1.5">
-            Purchased{" "}
-            {new Date(purchasedAt).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
+            {kitTagline && (
+              <p className="text-sm text-muted-foreground mt-0.5 leading-snug line-clamp-1">
+                {kitTagline}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground/60 mt-1.5">
+              Purchased{" "}
+              {new Date(purchasedAt).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+          </div>
         </div>
-      </div>
-      <div className="shrink-0 flex items-center gap-2">
-        <span
-          className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
-          style={{
-            color: meta.color,
-            background: meta.color + "18",
-            border: `1px solid ${meta.color}33`,
-          }}
-        >
-          Open kit
+        <div className="shrink-0 flex items-center gap-2">
+          <span
+            className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+            style={{
+              color: meta.color,
+              background: meta.color + "18",
+              border: `1px solid ${meta.color}33`,
+            }}
+          >
+            Open kit
+          </span>
+          <ArrowRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+        </div>
+      </Link>
+
+      <div
+        className="flex items-center gap-3 px-6 py-3 border-t"
+        style={{ borderColor: meta.color + "22" }}
+      >
+        <Mail className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40" />
+        <span className="text-xs text-muted-foreground/60 mr-auto truncate">
+          {buyerEmail}
         </span>
-        <ArrowRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+        <ResendButton
+          kitSlug={kitSlug}
+          buyerEmail={buyerEmail}
+          color={meta.color}
+        />
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -364,7 +464,8 @@ export default function MyPurchasesPage() {
             Your Purchases
           </h1>
           <p className="text-base leading-relaxed max-w-xl" style={{ color: "#C8D4C0" }}>
-            Every kit you've bought lives here. Click any kit to go straight to your welcome page and content.
+            Every kit you've bought lives here. Click any kit to open it, or re-send
+            the access link to your email with one click.
           </p>
         </div>
       </div>
@@ -430,6 +531,7 @@ export default function MyPurchasesPage() {
                   kitSlug={purchase.kitSlug}
                   kitName={kitName}
                   kitTagline={kitTagline}
+                  buyerEmail={purchase.buyerEmail}
                   purchasedAt={purchase.purchasedAt}
                   href={href}
                 />
