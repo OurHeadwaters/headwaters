@@ -2,3 +2,4 @@
 - [Stomping-paths type quirks](stomping-paths-type-fixes.md) — EpisodeDetail/historySegment, ZoneSummary fields, LibraryPage schema, SyncStatus.bySource, expo-file-system v19 legacy, TS7030 useEffect pattern
 - [Kit Fundamentals](kit-fundamentals.md) — $127 price lock, Heart/Hands structure, Moments philosophy, agent rules, life stages arc
 - [Stripe webhook dev setup](stripe-webhook-dev-setup.md) — how webhook verification works in dev (no webhook_secret in integration); STRIPE_WEBHOOK_SECRET_FALLBACK pattern; verifyAndParseWebhookEvent decoupling
+- [Stripe env var scoping](stripe-env-scoping.md) — KIT_STRIPE_PRICE_IDS must be dev-only (test IDs) and prod-only (live IDs); never share; production missing webhook secret blocks all purchase activation

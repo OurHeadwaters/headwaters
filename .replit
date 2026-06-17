@@ -102,7 +102,6 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-KIT_STRIPE_PRICE_IDS = "{\"family-kit\":\"price_1TjORAPd6A0oJ5bAZeOhKIQm\",\"producer-kit\":\"price_1TjORBPd6A0oJ5bAswxlhMRb\",\"care-kit\":\"price_1TjORBPd6A0oJ5bAuy2QHiM0\",\"budget-kit\":\"price_1TjORBPd6A0oJ5bAhMRnX69o\",\"digital-kit\":\"price_1TjORCPd6A0oJ5bAJbVURrRu\",\"parrs-jars\":\"price_1TjORCPd6A0oJ5bAucTqOu0K\",\"pregnancy-kit\":\"price_1TjORCPd6A0oJ5bAIVmpH1G2\",\"baby-health-kit\":\"price_1TjORCPd6A0oJ5bAdXYrgxss\",\"physical-kit\":\"price_1TjORDPd6A0oJ5bAxnQ9R4KH\"}"
 COURSE1_ACCESS_URL = "https://northern-store-plan.replit.app/print-marketing/pj-kit"
 KIT_EMAIL_REPLY_TO = "Parrsjars@gmail.com"
 KIT_EMAIL_FROM = "Parr's Jars <kits@parrsjars.com>"
@@ -112,3 +111,7 @@ BRIGADE_ANNUAL_PRICE_ID = "price_coming_soon"
 
 [userenv.production]
 SITE_URL = "https://thestompingpaths.com"
+KIT_STRIPE_PRICE_IDS = "{\"family-kit\":\"price_1TjQLjDxDmIHquL0Qh9pJctr\",\"producer-kit\":\"price_1TjQLkDxDmIHquL0GLdquMpM\",\"care-kit\":\"price_1TjQLkDxDmIHquL0SVmPIuUl\",\"budget-kit\":\"price_1TjQLlDxDmIHquL0CrcNJyYE\",\"digital-kit\":\"price_1TjQLlDxDmIHquL0tc8GZ21b\",\"parrs-jars\":\"price_1TjQLlDxDmIHquL0DXeOrUom\",\"pregnancy-kit\":\"price_1TjQLmDxDmIHquL0iv96VxdU\",\"baby-health-kit\":\"price_1TjQLmDxDmIHquL0Z6MzFEDE\",\"physical-kit\":\"price_1TjQLnDxDmIHquL09qYlFNuK\"}"
+
+[userenv.development]
+KIT_STRIPE_PRICE_IDS = "{\"family-kit\":\"price_1TjORAPd6A0oJ5bAZeOhKIQm\",\"producer-kit\":\"price_1TjORBPd6A0oJ5bAswxlhMRb\",\"care-kit\":\"price_1TjORBPd6A0oJ5bAuy2QHiM0\",\"budget-kit\":\"price_1TjORBPd6A0oJ5bAhMRnX69o\",\"digital-kit\":\"price_1TjORCPd6A0oJ5bAJbVURrRu\",\"parrs-jars\":\"price_1TjORCPd6A0oJ5bAucTqOu0K\",\"pregnancy-kit\":\"price_1TjORCPd6A0oJ5bAIVmpH1G2\",\"baby-health-kit\":\"price_1TjORCPd6A0oJ5bAdXYrgxss\",\"physical-kit\":\"price_1TjORDPd6A0oJ5bAxnQ9R4KH\"}"

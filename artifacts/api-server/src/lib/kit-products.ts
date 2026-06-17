@@ -96,9 +96,13 @@ export async function ensureKitProducts(): Promise<void> {
     }
   }
 
-  // ── Startup summary — copy this JSON into KIT_STRIPE_PRICE_IDS secret ──────
-  // Once set, the server skips all Stripe API calls at startup and uses these
-  // pinned IDs directly. No more auto-creation of duplicate products/prices.
+  // ── Startup summary ─────────────────────────────────────────────────────────
+  // Pin these IDs to skip Stripe lookups on every cold start.
+  //
+  // DEV:  set KIT_STRIPE_PRICE_IDS in the "development" environment variable.
+  // PROD: set KIT_STRIPE_PRICE_IDS in the "production" environment variable.
+  //       (NOT in Replit Secrets — use a scoped env var so dev and prod can
+  //        have different sets of IDs: test-mode for dev, live-mode for prod.)
   const priceMap: Record<string, string> = {};
   for (const kit of directKits) {
     if (kit.stripePriceId) priceMap[kit.slug] = kit.stripePriceId;
@@ -107,12 +111,16 @@ export async function ensureKitProducts(): Promise<void> {
   const coveredCount = Object.keys(priceMap).length;
   const totalCount = directKits.length;
 
+  const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
+  const envTarget = isProduction ? "PRODUCTION" : "DEVELOPMENT";
+
   logger.info(
     {
       coveredCount,
       totalCount,
+      envTarget,
       KIT_STRIPE_PRICE_IDS: JSON.stringify(priceMap),
     },
-    "kit-products: set KIT_STRIPE_PRICE_IDS in Replit Secrets to pin these price IDs and skip Stripe lookups on cold start",
+    `kit-products: copy KIT_STRIPE_PRICE_IDS above into the ${envTarget} environment variable to pin these price IDs and skip Stripe lookups on cold start`,
   );
 }
