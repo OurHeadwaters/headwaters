@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 
 import { useQuery } from "@tanstack/react-query";
@@ -846,8 +846,22 @@ function ZoneTeaserPage({
 export default function ZoneDetailPage() {
   const [, params] = useRoute("/zones/:slug");
   const slug = params?.slug ?? "";
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>(() => {
+    try {
+      const stored = localStorage.getItem("tsp_zone_source_filter");
+      if (stored === "tsp" || stored === "ulg" || stored === "fireside-freedom") return stored;
+    } catch {
+    }
+    return "all";
+  });
   const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("tsp_zone_source_filter", sourceFilter);
+    } catch {
+    }
+  }, [sourceFilter]);
 
   const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
   const { data, isLoading, isError } = useZoneResources(slug, apiSource);
