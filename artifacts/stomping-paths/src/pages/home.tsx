@@ -12,6 +12,8 @@ import type { SuiteCreator, SuiteKit } from "@workspace/api-client-react";
 import { useTransformations } from "@/hooks/use-transformations";
 import { StompingGroundsScene } from "@/components/stomping-grounds-scene";
 import { KIT_META } from "@/hooks/use-kits";
+import { useAllActiveTracksState, type ActiveTrackEntry } from "@/hooks/use-track-progress";
+import { useListTracks, useGetTrackNextUndone, type TrackSummary } from "@/hooks/use-tracks";
 
 // ─── Daily Stomp (Imprint) local state ────────────────────────────────────────
 
@@ -575,6 +577,140 @@ function HeroEntrance() {
       {/* Bottom fog */}
       <div className="absolute inset-x-0 bottom-0 h-[15%] bg-gradient-to-t from-[#0c1611] to-transparent pointer-events-none" />
     </section>
+  );
+}
+
+// ─── Continue Learning Widget ──────────────────────────────────────────────────
+
+function ContinueLearningRow({
+  entry,
+  track,
+}: {
+  entry: ActiveTrackEntry;
+  track: TrackSummary;
+}) {
+  const { doneIds } = entry;
+  const doneCount = doneIds.size;
+  const isComplete = track.episodeCount > 0 && doneCount >= track.episodeCount;
+  const pct = track.episodeCount > 0 ? Math.min(100, (doneCount / track.episodeCount) * 100) : 0;
+
+  const { data: nextUndone } = useGetTrackNextUndone(
+    isComplete ? null : track.slug,
+    doneIds,
+  );
+  const nextEp = nextUndone?.item ?? null;
+  const href = nextEp?.slug ? `/episodes/${nextEp.slug}` : `/tracks/${track.slug}`;
+
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3.5 px-4 py-3 rounded-xl border border-white/8 bg-white/[0.03] hover:border-[#D9A066]/40 hover:bg-white/[0.06] transition-all"
+    >
+      <span className="text-2xl leading-none shrink-0">{track.icon}</span>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-sm font-semibold text-[#FDFBF7] truncate leading-tight">
+            {track.title}
+          </span>
+          {isComplete ? (
+            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#22c55e]">
+              <CheckCircle2 className="w-2.5 h-2.5" />
+              Finished
+            </span>
+          ) : (
+            <span className="shrink-0 text-[11px] text-[#FDFBF7]/45 font-medium">
+              {doneCount.toLocaleString()} / {track.episodeCount.toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        <div className="h-1 rounded-full bg-white/10 overflow-hidden mb-1.5">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${pct}%`,
+              background: isComplete ? "#22c55e" : track.color,
+            }}
+          />
+        </div>
+
+        {!isComplete && nextEp && (
+          <p className="text-[11px] text-[#FDFBF7]/40 truncate leading-tight">
+            Next: {nextEp.title}
+          </p>
+        )}
+        {isComplete && (
+          <p className="text-[11px] text-[#FDFBF7]/40 leading-tight">
+            Review this track
+          </p>
+        )}
+      </div>
+
+      <ArrowRight className="w-4 h-4 text-[#FDFBF7]/25 group-hover:text-[#D9A066] transition-colors shrink-0" />
+    </Link>
+  );
+}
+
+function ContinueLearningWidget() {
+  const activeEntries = useAllActiveTracksState();
+  const { data: tracks } = useListTracks();
+
+  if (activeEntries.length === 0 || !tracks) return null;
+
+  const trackMap = new Map(tracks.map((t) => [t.slug, t]));
+  const rows = activeEntries
+    .map((entry) => ({ entry, track: trackMap.get(entry.slug) }))
+    .filter((r): r is { entry: ActiveTrackEntry; track: TrackSummary } => !!r.track);
+
+  if (rows.length === 0) return null;
+
+  const inProgress = rows.filter(
+    ({ entry, track }) => entry.doneIds.size < track.episodeCount || track.episodeCount === 0,
+  );
+  const completed = rows.filter(
+    ({ entry, track }) => track.episodeCount > 0 && entry.doneIds.size >= track.episodeCount,
+  );
+  const ordered = [...inProgress, ...completed];
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.3 }}
+      className="relative bg-[#0c1611] pt-10 pb-0 overflow-hidden"
+    >
+      <div className="container mx-auto px-4 md:px-6 max-w-2xl">
+        <div className="rounded-2xl border border-[#D9A066]/20 bg-[#D9A066]/5 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Footprints className="w-4 h-4 text-[#D9A066]" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#D9A066]">
+              Continue Learning
+            </span>
+            <span className="ml-auto text-[11px] text-[#FDFBF7]/35">
+              {inProgress.length > 0
+                ? `${inProgress.length} track${inProgress.length !== 1 ? "s" : ""} in progress`
+                : "All tracks finished"}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {ordered.map(({ entry, track }) => (
+              <ContinueLearningRow key={track.slug} entry={entry} track={track} />
+            ))}
+          </div>
+
+          <div className="mt-4 text-center">
+            <Link
+              href="/tracks"
+              className="text-xs text-[#FDFBF7]/35 hover:text-[#D9A066] transition-colors"
+            >
+              Browse all learning tracks →
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.section>
   );
 }
 
@@ -1376,6 +1512,7 @@ export function Home() {
       <DailyStompOrb />
 
       <HeroEntrance />
+      <ContinueLearningWidget />
       <StormToBloomSection />
       <JourneyMapSection />
       <CuratedPathsSection />

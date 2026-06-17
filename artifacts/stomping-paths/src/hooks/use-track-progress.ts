@@ -322,3 +322,65 @@ export function useLastActiveTrack(): string | null {
 
   return slug;
 }
+
+export type ActiveTrackEntry = {
+  slug: string;
+  doneIds: Set<number>;
+};
+
+export function readAllActiveTracksOrdered(): ActiveTrackEntry[] {
+  try {
+    const lastActive = localStorage.getItem(LAST_ACTIVE_KEY);
+    const result: ActiveTrackEntry[] = [];
+    const seen = new Set<string>();
+
+    if (lastActive) {
+      const ids = loadDoneIds(lastActive);
+      if (ids.size > 0) {
+        result.push({ slug: lastActive, doneIds: ids });
+        seen.add(lastActive);
+      }
+    }
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("tsp_track_progress_")) {
+        const slug = key.slice("tsp_track_progress_".length);
+        if (!seen.has(slug)) {
+          const ids = loadDoneIds(slug);
+          if (ids.size > 0) {
+            result.push({ slug, doneIds: ids });
+            seen.add(slug);
+          }
+        }
+      }
+    }
+
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+export function useAllActiveTracksState(): ActiveTrackEntry[] {
+  const [entries, setEntries] = useState<ActiveTrackEntry[]>(() =>
+    readAllActiveTracksOrdered(),
+  );
+
+  useEffect(() => {
+    setEntries(readAllActiveTracksOrdered());
+
+    function refresh() {
+      setEntries(readAllActiveTracksOrdered());
+    }
+
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
+
+  return entries;
+}
