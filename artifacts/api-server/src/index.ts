@@ -11,6 +11,7 @@ import { startNostrIngestion } from "./lib/nostr-ingestion";
 import { startYouTubeIngestion } from "./lib/youtube-ingestion";
 import { startXrpRateRefresh } from "./lib/xrp-rate";
 import { getSiteUrl } from "./lib/config";
+import { KITS } from "./lib/kits";
 
 const rawPort = process.env["PORT"];
 
@@ -114,6 +115,18 @@ const server = app.listen(port, (err) => {
     .catch((err) =>
       logger.warn({ err }, "rate-limits: boot-time prune failed (non-fatal)"),
     );
+
+  // Warn for any direct-sale kit that has no accessUrl resolved.
+  // Missing URLs mean welcome email download buttons will be empty.
+  for (const kit of KITS) {
+    if (kit.priceType === "direct" && !kit.accessUrl) {
+      const envKey = `KIT_ACCESS_URL_${kit.slug.toUpperCase().replace(/-/g, "_")}`;
+      logger.warn(
+        { kitSlug: kit.slug, envKey },
+        `kits: ${envKey} not set — welcome email button will be empty`,
+      );
+    }
+  }
 
   validateSeriesRegistry();
   startBackgroundRefresh();
