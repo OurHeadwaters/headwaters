@@ -17,11 +17,17 @@ import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
 import { trackBySlug } from "../lib/tracks";
 import { sendKitInquiryNotification, sendKitAccessEmail, generateKitAccessToken, verifyKitAccessToken } from "../lib/email";
+import { createRateLimiter } from "../middlewares/rateLimiter";
 
 const router: IRouter = Router();
 
-/* ─────────────────── In-memory rate limiter ─────────────────── */
+/* ─── Rate limiters for the send-access-email endpoint ─────────────────── */
 
+/* IP-based: 5 requests / 60 s per IP — blocks one source cycling many emails */
+const emailLookupRateLimit = createRateLimiter(5, 60_000);
+
+/* Email-based: 3 requests / 15 min per address — blocks hammering one address
+   from rotating IPs */
 const RATE_LIMIT_MAX = 3;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -40,7 +46,6 @@ function checkRateLimit(email: string): boolean {
     (ts) => ts > cutoff,
   );
   if (timestamps.length >= RATE_LIMIT_MAX) {
-    // Keep the pruned list so the next check sees the accurate count.
     accessEmailRateLimitStore.set(email, timestamps);
     return false;
   }
@@ -151,7 +156,7 @@ router.get("/kits/my-purchases", async (req, res) => {
  * Always responds 200 regardless of whether the email matched any purchases
  * to prevent email enumeration.
  */
-router.post("/kits/send-access-email", async (req, res) => {
+router.post("/kits/send-access-email", emailLookupRateLimit, async (req, res) => {
   const email = (req.body?.email as string | undefined)?.trim().toLowerCase() ?? "";
 
   if (!email) {
