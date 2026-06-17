@@ -63,6 +63,7 @@ router.get("/kits/my-purchases", async (req, res) => {
       .select({
         id: kitPurchasesTable.id,
         kitSlug: kitPurchasesTable.kitSlug,
+        buyerEmail: kitPurchasesTable.buyerEmail,
         purchasedAt: kitPurchasesTable.purchasedAt,
       })
       .from(kitPurchasesTable)
@@ -71,9 +72,12 @@ router.get("/kits/my-purchases", async (req, res) => {
 
     const purchases = rows.map((row) => {
       const kit = kitBySlug(row.kitSlug);
+      const token = generateKitAccessToken(row.kitSlug, row.buyerEmail);
       return {
         id: row.id,
         kitSlug: row.kitSlug,
+        buyerEmail: row.buyerEmail,
+        token,
         purchasedAt: row.purchasedAt,
         kit: kit
           ? {

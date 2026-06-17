@@ -22,7 +22,9 @@ function apiUrl(path: string): string {
 interface PurchasedKit {
   id: number;
   kitSlug: string;
-  createdAt: string;
+  buyerEmail: string;
+  token: string | null;
+  purchasedAt: string;
   kit: {
     slug: string;
     name: string;
@@ -405,14 +407,19 @@ export default function MyPurchasesPage() {
                 purchase.kit?.name ??
                 purchase.kitSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
               const kitTagline = purchase.kit?.tagline ?? "";
+              const params = new URLSearchParams({
+                email: purchase.buyerEmail,
+                ...(purchase.token ? { token: purchase.token } : {}),
+              });
+              const href = `/kits/${purchase.kitSlug}/welcome?${params.toString()}`;
               return (
                 <KitCard
                   key={purchase.id}
                   kitSlug={purchase.kitSlug}
                   kitName={kitName}
                   kitTagline={kitTagline}
-                  purchasedAt={purchase.createdAt}
-                  href={`/kits/${purchase.kitSlug}/welcome`}
+                  purchasedAt={purchase.purchasedAt}
+                  href={href}
                 />
               );
             })}
