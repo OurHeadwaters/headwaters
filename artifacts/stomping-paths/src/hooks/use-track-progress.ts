@@ -424,21 +424,10 @@ export function useAllActiveTracksState(): AllActiveTracksState {
     readAllActiveTracksOrdered(),
   );
   const [serverFetchDone, setServerFetchDone] = useState(false);
-
-  useEffect(() => {
-    setEntries(readAllActiveTracksOrdered());
-
-    function refresh() {
-      setEntries(readAllActiveTracksOrdered());
-    }
-
-    window.addEventListener("storage", refresh);
-    window.addEventListener("focus", refresh);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("focus", refresh);
-    };
-  }, []);
+  // Keep a ref so the focus handler can read the latest auth state without
+  // being re-registered every time isAuthenticated changes.
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  isAuthenticatedRef.current = isAuthenticated;
 
   // Reset serverFetchDone when auth state changes (e.g. login/logout)
   useEffect(() => {
@@ -447,55 +436,108 @@ export function useAllActiveTracksState(): AllActiveTracksState {
     }
   }, [authLoading]);
 
-  // When authenticated, merge server-persisted slugs that aren't in localStorage.
-  // This ensures the Continue Learning widget reflects progress made on other
-  // devices or after localStorage has been cleared.
-  useEffect(() => {
-    if (authLoading || !isAuthenticated) return;
+  // Merge server progress into state.  Runs on initial auth resolve and on
+  // every window-focus event so the widget stays current when the user marks
+  // an episode done in another tab or on another device.
+  //
+  // Strategy:
+  //   1. Fetch the lightweight count summary (/api/track-progress).
+  //   2. Identify slugs that are new (not in localStorage) OR whose server
+  //      count differs from the current local doneIds size — both need a full
+  //      episode-ID fetch.
+  //   3. Fetch full episode IDs for those slugs in parallel.
+  //   4. Backfill localStorage and update React state.
+  //   5. Always mark serverFetchDone so the loading state clears.
+  const mergeFromServer = useCallback(async () => {
+    try {
+      const serverCounts = await fetchAllTracksProgressFromServer();
+      if (!serverCounts) return;
 
-    fetchAllTracksProgressFromServer().then(async (serverCounts) => {
-      try {
-        if (!serverCounts) return;
+      const currentEntries = readAllActiveTracksOrdered();
+      const localBySlug = new Map(currentEntries.map((e) => [e.slug, e.doneIds]));
 
-        // Find slugs on the server that localStorage doesn't know about
-        const localSlugs = new Set(readAllActiveTracksOrdered().map((e) => e.slug));
-        const serverOnlySlugs = Object.keys(serverCounts).filter(
-          (slug) => serverCounts[slug] > 0 && !localSlugs.has(slug),
-        );
+      // Collect slugs that need a full fetch: new ones and stale ones
+      const slugsToFetch = Object.keys(serverCounts).filter((slug) => {
+        if (serverCounts[slug] === 0) return false;
+        const local = localBySlug.get(slug);
+        // New slug not in localStorage, OR server count differs from local count
+        return local === undefined || local.size !== serverCounts[slug];
+      });
 
-        if (serverOnlySlugs.length > 0) {
-          // Fetch full episode IDs for each server-only slug
-          const fetched = await Promise.all(
-            serverOnlySlugs.map(async (slug) => {
-              const ids = await fetchServerProgress(slug);
-              if (ids === null || ids.length === 0) return null;
-              return { slug, doneIds: new Set(ids) } satisfies ActiveTrackEntry;
-            }),
-          );
+      if (slugsToFetch.length === 0) return;
 
-          const newEntries = fetched.filter(
-            (e): e is ActiveTrackEntry => e !== null,
-          );
+      const fetched = await Promise.all(
+        slugsToFetch.map(async (slug) => {
+          const ids = await fetchServerProgress(slug);
+          if (ids === null || ids.length === 0) return null;
+          return { slug, doneIds: new Set(ids) } satisfies ActiveTrackEntry;
+        }),
+      );
 
-          if (newEntries.length > 0) {
-            // Backfill localStorage so future page loads (and cross-tab events) pick
-            // these up without another server round-trip
-            for (const { slug, doneIds } of newEntries) {
-              saveDoneIds(slug, doneIds);
-            }
+      const resolved = fetched.filter((e): e is ActiveTrackEntry => e !== null);
+      if (resolved.length === 0) return;
 
-            setEntries((prev) => {
-              const prevSlugs = new Set(prev.map((e) => e.slug));
-              const toAdd = newEntries.filter((e) => !prevSlugs.has(e.slug));
-              return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
-            });
+      // Backfill localStorage so future page loads and cross-tab events pick
+      // these up without another server round-trip
+      for (const { slug, doneIds } of resolved) {
+        saveDoneIds(slug, doneIds);
+      }
+
+      setEntries((prev) => {
+        const prevBySlug = new Map(prev.map((e) => [e.slug, e]));
+        let changed = false;
+        const next = prev.map((e) => {
+          const updated = resolved.find((r) => r.slug === e.slug);
+          if (updated && updated.doneIds.size !== e.doneIds.size) {
+            changed = true;
+            return updated;
+          }
+          return e;
+        });
+        // Append any brand-new slugs not already in state
+        for (const entry of resolved) {
+          if (!prevBySlug.has(entry.slug)) {
+            next.push(entry);
+            changed = true;
           }
         }
-      } finally {
-        setServerFetchDone(true);
+        return changed ? next : prev;
+      });
+    } finally {
+      setServerFetchDone(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    setEntries(readAllActiveTracksOrdered());
+
+    function onStorage() {
+      setEntries(readAllActiveTracksOrdered());
+    }
+
+    function onFocus() {
+      // Refresh local state from localStorage first (catches same-device
+      // cross-tab changes even without a server round-trip)
+      setEntries(readAllActiveTracksOrdered());
+      // Then re-sync from the server for cross-device / cleared-localStorage
+      if (isAuthenticatedRef.current) {
+        void mergeFromServer();
       }
-    });
-  }, [isAuthenticated, authLoading]);
+    }
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [mergeFromServer]);
+
+  // Initial server merge once auth is known
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    void mergeFromServer();
+  }, [isAuthenticated, authLoading, mergeFromServer]);
 
   // isLoading is true while we don't yet have a definitive answer:
   //   - auth check is still in flight, OR
