@@ -1,12 +1,19 @@
 /**
- * Storage files route — read-only file listing from Arc object storage.
+ * Storage files route — file listing from Arc object storage with DB metadata.
  *
- * GET  /api/storage/files   — list all uploaded files (public, no auth required)
+ * GET  /api/storage/files          — list all uploaded files with metadata (public)
+ * GET  /api/storage/files/:key     — stream a single file (public)
+ * PUT  /api/admin/storage/files/metadata
+ *   Body: { fileKey, title?, description?, category?, tags? }
+ *   Upserts metadata for a file. Requires editor auth.
  */
 
 import { Router, type IRouter } from "express";
 import { objectStorageClient } from "../lib/objectStorage";
 import { logger } from "../lib/logger";
+import { db, fileMetadataTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
 
@@ -26,6 +33,8 @@ function inferFileType(name: string): "pdf" | "video" | "image" | "other" {
   return "other";
 }
 
+/* ── GET /api/storage/files ─────────────────────────────────────────────── */
+
 router.get("/storage/files", async (_req, res) => {
   if (!bucketId) {
     res.status(503).json({ error: "Object storage not configured" });
@@ -33,13 +42,19 @@ router.get("/storage/files", async (_req, res) => {
   }
 
   try {
-    const bucket = objectStorageClient.bucket(bucketId);
-    const [files] = await bucket.getFiles();
+    const [filesResult, metaRows] = await Promise.all([
+      objectStorageClient.bucket(bucketId).getFiles(),
+      db.select().from(fileMetadataTable),
+    ]);
+
+    const [files] = filesResult;
+    const metaByKey = new Map(metaRows.map((m) => [m.fileKey, m]));
 
     const items = files.map((file) => {
       const meta = file.metadata;
       const sizeBytes = parseInt(String(meta.size ?? "0"), 10);
       const name = file.name.split("/").pop() ?? file.name;
+      const dbMeta = metaByKey.get(file.name);
       return {
         key: file.name,
         name,
@@ -49,6 +64,10 @@ router.get("/storage/files", async (_req, res) => {
         contentType: meta.contentType ?? "application/octet-stream",
         uploadedAt: meta.timeCreated ?? null,
         url: `/api/storage/files/${encodeURIComponent(file.name)}`,
+        title: dbMeta?.title ?? null,
+        description: dbMeta?.description ?? null,
+        category: dbMeta?.category ?? null,
+        tags: dbMeta?.tags ?? [],
       };
     });
 
@@ -64,6 +83,69 @@ router.get("/storage/files", async (_req, res) => {
     res.status(500).json({ error: "Failed to list files" });
   }
 });
+
+/* ── PUT /api/admin/storage/files/metadata ──────────────────────────────── */
+
+router.put("/admin/storage/files/metadata", requireEditor, async (req, res) => {
+  const { fileKey, title, description, category, tags } = req.body as {
+    fileKey?: string;
+    title?: string;
+    description?: string;
+    category?: string;
+    tags?: string[];
+  };
+
+  if (!fileKey || typeof fileKey !== "string" || !fileKey.trim()) {
+    res.status(400).json({ error: "fileKey is required" });
+    return;
+  }
+
+  try {
+    const [row] = await db
+      .insert(fileMetadataTable)
+      .values({
+        fileKey: fileKey.trim(),
+        title: title?.trim() || null,
+        description: description?.trim() || null,
+        category: category?.trim() || null,
+        tags: Array.isArray(tags) ? tags.map((t) => t.trim()).filter(Boolean) : [],
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: fileMetadataTable.fileKey,
+        set: {
+          title: title?.trim() || null,
+          description: description?.trim() || null,
+          category: category?.trim() || null,
+          tags: Array.isArray(tags) ? tags.map((t) => t.trim()).filter(Boolean) : [],
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    res.json(row);
+  } catch (err) {
+    logger.error({ err }, "Failed to upsert file metadata");
+    res.status(500).json({ error: "Failed to save metadata" });
+  }
+});
+
+/* ── DELETE /api/admin/storage/files/metadata/:key ──────────────────────── */
+
+router.delete("/admin/storage/files/metadata/:key", requireEditor, async (req, res) => {
+  const fileKey = decodeURIComponent(req.params.key);
+  try {
+    await db
+      .delete(fileMetadataTable)
+      .where(eq(fileMetadataTable.fileKey, fileKey));
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error({ err }, "Failed to delete file metadata");
+    res.status(500).json({ error: "Failed to delete metadata" });
+  }
+});
+
+/* ── GET /api/storage/files/:key (stream) ───────────────────────────────── */
 
 router.use("/storage/files", async (req, res, next) => {
   if (req.method !== "GET") {

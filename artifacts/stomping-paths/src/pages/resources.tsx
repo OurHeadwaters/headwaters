@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
-import { FileText, Video, Image, File, Loader2, ExternalLink, Filter } from "lucide-react";
+import {
+  FileText, Video, Image, File, Loader2, ExternalLink, Filter, Search, Tag,
+} from "lucide-react";
 import { useStorageFiles, type FileType, type StorageFile } from "@/hooks/use-storage-files";
 
 function apiUrl(path: string): string {
@@ -40,8 +42,25 @@ function TypeBadge({ type }: { type: FileType }) {
   );
 }
 
+function CategoryBadge({ category }: { category: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+      style={{
+        background: "#6B9DBF18",
+        color: "#6B9DBF",
+        border: "1px solid #6B9DBF30",
+      }}
+    >
+      <Tag className="w-2.5 h-2.5" />
+      {category}
+    </span>
+  );
+}
+
 function FileCard({ file }: { file: StorageFile }) {
   const fileUrl = apiUrl(`/storage/files/${encodeURIComponent(file.key)}`);
+  const displayTitle = file.title || file.name;
   const uploadedDate = file.uploadedAt
     ? new Date(file.uploadedAt).toLocaleDateString("en-US", {
         year: "numeric",
@@ -51,8 +70,8 @@ function FileCard({ file }: { file: StorageFile }) {
     : null;
 
   return (
-    <div className="rounded-xl border border-border bg-card transition-all hover:-translate-y-px hover:shadow-md">
-      <div className="p-5">
+    <div className="rounded-xl border border-border bg-card transition-all hover:-translate-y-px hover:shadow-md flex flex-col">
+      <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-muted">
             <FileTypeIcon type={file.type} />
@@ -61,10 +80,16 @@ function FileCard({ file }: { file: StorageFile }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <h3 className="text-sm font-semibold leading-snug break-words text-foreground">
-                {file.name}
+                {displayTitle}
               </h3>
               <TypeBadge type={file.type} />
             </div>
+
+            {file.category && (
+              <div className="mb-1.5">
+                <CategoryBadge category={file.category} />
+              </div>
+            )}
 
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>{file.sizeLabel}</span>
@@ -77,6 +102,26 @@ function FileCard({ file }: { file: StorageFile }) {
             </div>
           </div>
         </div>
+
+        {file.description && (
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground line-clamp-3">
+            {file.description}
+          </p>
+        )}
+
+        {file.tags && file.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1">
+            {file.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)" }}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="mt-4">
           <a
@@ -110,12 +155,33 @@ const FILTER_OPTIONS: { value: FilterMode; label: string }[] = [
 export default function ResourcesPage() {
   const { data: files, isLoading, isError } = useStorageFiles();
   const [filter, setFilter] = useState<FilterMode>("all");
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  const categories = useMemo(() => {
+    if (!files) return [];
+    const cats = new Set<string>();
+    files.forEach((f) => { if (f.category) cats.add(f.category); });
+    return Array.from(cats).sort();
+  }, [files]);
 
   const filtered = useMemo(() => {
     if (!files) return [];
-    if (filter === "all") return files;
-    return files.filter((f) => f.type === filter);
-  }, [files, filter]);
+    let result = files;
+    if (filter !== "all") result = result.filter((f) => f.type === filter);
+    if (categoryFilter !== "all") result = result.filter((f) => f.category === categoryFilter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((f) => {
+        const title = (f.title || f.name).toLowerCase();
+        const desc = (f.description ?? "").toLowerCase();
+        const cat = (f.category ?? "").toLowerCase();
+        const tags = (f.tags ?? []).join(" ").toLowerCase();
+        return title.includes(q) || desc.includes(q) || cat.includes(q) || tags.includes(q);
+      });
+    }
+    return result;
+  }, [files, filter, categoryFilter, search]);
 
   const counts = useMemo(() => {
     if (!files) return {} as Record<FilterMode, number>;
@@ -127,6 +193,8 @@ export default function ResourcesPage() {
       other: files.filter((f) => f.type === "other").length,
     };
   }, [files]);
+
+  const hasActiveFilter = filter !== "all" || categoryFilter !== "all" || search.trim() !== "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,18 +235,35 @@ export default function ResourcesPage() {
           </h1>
 
           <p className="text-lg leading-relaxed max-w-2xl" style={{ color: "#C8D4C0" }}>
-            PDFs, guides, and reference materials uploaded to the Arc's Media Library — 
-            browse and open them directly from here.
+            PDFs, guides, and reference materials — browse and open them directly from here.
           </p>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 py-12">
+        {/* Search bar */}
+        {files && files.length > 0 && (
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by title, description, or tag…"
+                className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Filter bar */}
         {files && files.length > 0 && (
-          <div className="flex items-center gap-2 mb-8 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 mb-8">
             <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+
+            {/* File type filters */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {FILTER_OPTIONS.map((opt) => {
                 const count = counts[opt.value] ?? 0;
@@ -213,6 +298,48 @@ export default function ResourcesPage() {
                 );
               })}
             </div>
+
+            {/* Category filters */}
+            {categories.length > 0 && (
+              <>
+                <span className="text-muted-foreground/40 text-xs px-1">|</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setCategoryFilter("all")}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={
+                      categoryFilter === "all"
+                        ? { background: "#6B9DBF", color: "#fff" }
+                        : {
+                            background: "rgba(255,255,255,0.05)",
+                            color: "rgba(255,255,255,0.55)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                          }
+                    }
+                  >
+                    All Topics
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(cat === categoryFilter ? "all" : cat)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      style={
+                        categoryFilter === cat
+                          ? { background: "#6B9DBF", color: "#fff" }
+                          : {
+                              background: "rgba(255,255,255,0.05)",
+                              color: "rgba(255,255,255,0.55)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }
+                      }
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -253,9 +380,15 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        {files && files.length > 0 && filtered.length === 0 && filter !== "all" && (
+        {files && files.length > 0 && filtered.length === 0 && hasActiveFilter && (
           <div className="py-16 text-center text-muted-foreground text-sm">
-            No {filter} files found.
+            No files match your current filters.{" "}
+            <button
+              onClick={() => { setFilter("all"); setCategoryFilter("all"); setSearch(""); }}
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Clear filters
+            </button>
           </div>
         )}
       </div>
