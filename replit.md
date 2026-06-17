@@ -175,6 +175,34 @@ All five secrets must be set in Replit Secrets before real money can flow. Missi
 
 ---
 
+## Admin API Access (scriptable, no browser login needed)
+
+The `requireEditor` middleware accepts two auth paths in order:
+
+1. **Browser session** — user must be authenticated and their Replit user ID must appear in `ADMIN_USER_IDS`.
+2. **Secret header** — any request with `x-admin-secret: <ADMIN_SECRET>` passes if `ADMIN_SECRET` is set.
+
+Both secrets (`ADMIN_SECRET`, `ADMIN_USER_IDS`) are now set in Replit Secrets.
+
+**Quick spot-check (replace `<secret>` with the value from Replit Secrets):**
+```bash
+# All purchases, newest first
+curl -H "x-admin-secret: <secret>" https://thestompingpaths.com/api/admin/kit-purchases
+
+# Filter to one kit
+curl -H "x-admin-secret: <secret>" "https://thestompingpaths.com/api/admin/kit-purchases?kitSlug=parrs-jars"
+
+# Counts + revenue by kit
+curl -H "x-admin-secret: <secret>" https://thestompingpaths.com/api/admin/kit-purchases/stats
+
+# Inquiry form submissions
+curl -H "x-admin-secret: <secret>" https://thestompingpaths.com/api/admin/kit-inquiries
+```
+
+Relevant files: `artifacts/api-server/src/middlewares/requireEditor.ts`, `artifacts/api-server/src/routes/admin-kit-purchases.ts`
+
+---
+
 ## Environment Variables (API Server)
 
 | Variable | Default | Description |
