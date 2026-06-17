@@ -21,7 +21,7 @@
 import type { Request, Response } from "express";
 import { db, kitPurchasesTable } from "@workspace/db";
 import { logger } from "./lib/logger";
-import { sendKitWelcomeEmail } from "./lib/email";
+import { sendKitWelcomeEmail, sendKitPurchaseAdminNotification } from "./lib/email";
 import { kitBySlug } from "./lib/kits";
 
 interface ZapriteOrderPayload {
@@ -185,7 +185,7 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
         "zaprite webhook: kit purchase recorded",
       );
 
-      await sendKitWelcomeEmail({
+      const welcomeResult = await sendKitWelcomeEmail({
         buyerEmail,
         buyerName,
         kitName: kit?.name ?? kitSlug,
@@ -193,6 +193,19 @@ export async function handleZapriteWebhook(req: Request, res: Response): Promise
         userManual: kit?.userManual,
         accessUrl: kit?.accessUrl,
       });
+
+      sendKitPurchaseAdminNotification({
+        kitName: kit?.name ?? kitSlug,
+        kitSlug,
+        buyerEmail,
+        buyerName,
+        amountPaidCents,
+        paymentMethod: "zaprite",
+        welcomeEmailSent: welcomeResult.sent,
+        welcomeEmailError: welcomeResult.error,
+      }).catch((err) =>
+        logger.warn({ err, kitSlug }, "zaprite webhook: purchase admin notification failed (non-fatal)"),
+      );
     } else {
       logger.info(
         { orderId: order.id, kitSlug },

@@ -637,11 +637,11 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
 </html>`;
 }
 
-export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise<void> {
+export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise<{ sent: boolean; error?: string }> {
   const client = getResendClient();
   if (!client) {
     logger.warn({ kitSlug: opts.kitSlug }, "email: RESEND_API_KEY not set — skipping kit welcome email");
-    return;
+    return { sent: false, error: "RESEND_API_KEY not configured" };
   }
 
   const displayName = opts.buyerName ?? opts.buyerEmail;
@@ -657,11 +657,160 @@ export async function sendKitWelcomeEmail(opts: KitWelcomeEmailOptions): Promise
 
     if (error) {
       logger.error({ error, buyerEmail: opts.buyerEmail, kitSlug: opts.kitSlug }, "email: kit welcome email failed");
-    } else {
-      logger.info({ kitSlug: opts.kitSlug, buyerEmail: displayName }, "email: kit welcome email sent");
+      return { sent: false, error: String(error) };
     }
+
+    logger.info({ kitSlug: opts.kitSlug, buyerEmail: displayName }, "email: kit welcome email sent");
+    return { sent: true };
   } catch (err) {
     logger.error({ err, kitSlug: opts.kitSlug }, "email: kit welcome email threw unexpectedly");
+    return { sent: false, error: String(err) };
+  }
+}
+
+export interface KitPurchaseAdminNotificationOptions {
+  kitName: string;
+  kitSlug: string;
+  buyerEmail: string;
+  buyerName: string | null;
+  amountPaidCents: number;
+  paymentMethod: "stripe" | "zaprite";
+  welcomeEmailSent: boolean;
+  welcomeEmailError?: string;
+}
+
+function buildKitPurchaseAdminHtml(opts: KitPurchaseAdminNotificationOptions): string {
+  const siteUrl = getSiteUrl();
+  const dollars = (opts.amountPaidCents / 100).toFixed(2);
+  const displayName = opts.buyerName ?? opts.buyerEmail;
+  const now = new Date().toLocaleString("en-CA", {
+    timeZone: "America/Winnipeg",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+
+  const emailStatusColor = opts.welcomeEmailSent ? "#2d7a2d" : "#c0392b";
+  const emailStatusLabel = opts.welcomeEmailSent ? "✓ Sent successfully" : "✗ Failed to send";
+  const emailStatusNote = opts.welcomeEmailSent
+    ? `The buyer's welcome email was delivered to <strong>${opts.buyerEmail}</strong>.`
+    : `<strong>Action needed:</strong> The welcome email did not send${opts.welcomeEmailError ? ` — ${opts.welcomeEmailError}` : ""}. You may want to send a manual follow-up to <a href="mailto:${opts.buyerEmail}" style="color:#2d4a2d;">${opts.buyerEmail}</a>.`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Kit Purchase: ${opts.kitName}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f0eb;font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#1A2A20;padding:28px 40px;">
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
+              <h1 style="margin:8px 0 0;font-size:22px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">New Purchase: ${opts.kitName}</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+
+              <!-- Purchase info -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;border-left:4px solid #1A2A20;border-radius:4px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Buyer</p>
+                    <p style="margin:0 0 16px;font-size:17px;color:#1a2e1a;font-weight:bold;">${displayName}</p>
+
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Email</p>
+                    <p style="margin:0 0 16px;font-size:15px;color:#1a2e1a;"><a href="mailto:${opts.buyerEmail}" style="color:#2d4a2d;text-decoration:none;">${opts.buyerEmail}</a></p>
+
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Amount Paid</p>
+                    <p style="margin:0 0 16px;font-size:20px;color:#1a2e1a;font-weight:bold;">$${dollars} USD</p>
+
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Payment Method</p>
+                    <p style="margin:0 0 16px;font-size:15px;color:#1a2e1a;">${opts.paymentMethod === "zaprite" ? "Bitcoin / Lightning / XRP (Zaprite)" : "Credit card (Stripe)"}</p>
+
+                    <p style="margin:0 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Timestamp</p>
+                    <p style="margin:0;font-size:15px;color:#1a2e1a;">${now}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Welcome email status -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${opts.welcomeEmailSent ? "#f0f7f0" : "#fff5f5"};border:1px solid ${opts.welcomeEmailSent ? "#c8dfc8" : "#f0c0c0"};border-radius:4px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 8px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#4a6b4a;font-family:'Arial',sans-serif;">Welcome Email Status</p>
+                    <p style="margin:0 0 8px;font-size:16px;color:${emailStatusColor};font-weight:bold;font-family:'Arial',sans-serif;">${emailStatusLabel}</p>
+                    <p style="margin:0;font-size:14px;color:#444444;line-height:1.6;">${emailStatusNote}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;">
+                View all purchases: <a href="${siteUrl}/api/admin/kit-purchases?kitSlug=${opts.kitSlug}" style="color:#2d4a2d;">${siteUrl}/api/admin/kit-purchases?kitSlug=${opts.kitSlug}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
+              <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
+                Sent by The Stomping Paths Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendKitPurchaseAdminNotification(opts: KitPurchaseAdminNotificationOptions): Promise<void> {
+  const client = getResendClient();
+  if (!client) {
+    logger.warn({ kitSlug: opts.kitSlug }, "email: RESEND_API_KEY not set — skipping purchase admin notification");
+    return;
+  }
+
+  const to = process.env.KIT_INQUIRY_EMAIL;
+  if (!to) {
+    logger.warn({ kitSlug: opts.kitSlug }, "email: KIT_INQUIRY_EMAIL not set — skipping purchase admin notification");
+    return;
+  }
+
+  const dollars = (opts.amountPaidCents / 100).toFixed(2);
+
+  try {
+    const { error } = await client.emails.send({
+      from: getKitEmailFrom(),
+      to: [to],
+      replyTo: opts.buyerEmail,
+      subject: `New purchase: ${opts.kitName} — $${dollars} — welcome email ${opts.welcomeEmailSent ? "✓ sent" : "✗ FAILED"}`,
+      html: buildKitPurchaseAdminHtml(opts),
+    });
+
+    if (error) {
+      logger.error({ error, kitSlug: opts.kitSlug }, "email: purchase admin notification failed");
+    } else {
+      logger.info({ kitSlug: opts.kitSlug, buyerEmail: opts.buyerEmail }, "email: purchase admin notification sent");
+    }
+  } catch (err) {
+    logger.error({ err, kitSlug: opts.kitSlug }, "email: purchase admin notification threw unexpectedly");
   }
 }
 

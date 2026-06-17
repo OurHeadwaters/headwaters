@@ -1,26 +1,33 @@
 /**
  * Admin — Kit Purchases view
  *
- * GET /api/admin/kit-purchases       — all purchases, newest first
- * GET /api/admin/kit-purchases/stats — count by kit slug
- * GET /api/admin/kit-inquiries       — all inquiry submissions, newest first
+ * GET /api/admin/kit-purchases               — all purchases, newest first
+ * GET /api/admin/kit-purchases?kitSlug=foo   — filtered to one kit (e.g. parrs-jars)
+ * GET /api/admin/kit-purchases/stats         — count by kit slug
+ * GET /api/admin/kit-inquiries               — all inquiry submissions, newest first
  */
 
 import { Router, type IRouter } from "express";
 import { db, kitPurchasesTable, kitInquiriesTable } from "@workspace/db";
-import { desc, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireEditor } from "../middlewares/requireEditor";
 
 const router: IRouter = Router();
 
-router.get("/admin/kit-purchases", requireEditor, async (_req, res) => {
+router.get("/admin/kit-purchases", requireEditor, async (req, res) => {
   try {
-    const rows = await db
+    const kitSlug = typeof req.query.kitSlug === "string" ? req.query.kitSlug : null;
+
+    const query = db
       .select()
       .from(kitPurchasesTable)
-      .orderBy(desc(kitPurchasesTable.purchasedAt))
-      .limit(500);
+      .$dynamic();
+
+    const rows = await (kitSlug
+      ? query.where(eq(kitPurchasesTable.kitSlug, kitSlug)).orderBy(desc(kitPurchasesTable.purchasedAt)).limit(500)
+      : query.orderBy(desc(kitPurchasesTable.purchasedAt)).limit(500));
+
     res.json(rows);
   } catch (err) {
     logger.error({ err }, "admin-kit-purchases: GET failed");

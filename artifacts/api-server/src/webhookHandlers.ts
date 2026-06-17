@@ -13,7 +13,7 @@ import {
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
-import { sendKitWelcomeEmail, sendGordTipNotificationEmail } from "./lib/email";
+import { sendKitWelcomeEmail, sendKitPurchaseAdminNotification, sendGordTipNotificationEmail } from "./lib/email";
 import { kitBySlug } from "./lib/kits";
 import type Stripe from "stripe";
 
@@ -253,7 +253,7 @@ export class WebhookHandlers {
       );
 
       const kit = kitBySlug(kitSlug);
-      await sendKitWelcomeEmail({
+      const welcomeResult = await sendKitWelcomeEmail({
         buyerEmail,
         buyerName: buyerName,
         kitName: kit?.name ?? kitSlug,
@@ -261,6 +261,19 @@ export class WebhookHandlers {
         userManual: kit?.userManual,
         accessUrl: kit?.accessUrl,
       });
+
+      sendKitPurchaseAdminNotification({
+        kitName: kit?.name ?? kitSlug,
+        kitSlug,
+        buyerEmail,
+        buyerName,
+        amountPaidCents: amountPaid,
+        paymentMethod: "stripe",
+        welcomeEmailSent: welcomeResult.sent,
+        welcomeEmailError: welcomeResult.error,
+      }).catch((err) =>
+        logger.warn({ err, kitSlug }, "webhookHandlers: purchase admin notification failed (non-fatal)"),
+      );
 
       // Notify the Arc so it can record the purchase and send its own
       // delivery email. Non-blocking — a failure here never fails the
