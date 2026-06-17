@@ -150,6 +150,8 @@ export default function KitWelcomePage() {
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
   const [backgroundCheckWarning, setBackgroundCheckWarning] = useState(false);
   const [backgroundRecheckInFlight, setBackgroundRecheckInFlight] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resendRateLimited, setResendRateLimited] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const retryCountRef = useRef(0);
   const retryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -339,7 +341,32 @@ export default function KitWelcomePage() {
     if (!accessEmail.trim()) return;
     clearRetryInterval();
     retryCountRef.current = 0;
+    setResendStatus("idle");
+    setResendRateLimited(false);
     await runAccessCheck(accessEmail.trim());
+  }
+
+  async function handleResend() {
+    if (!accessEmail.trim() || resendStatus === "sending" || resendStatus === "sent") return;
+    setResendStatus("sending");
+    setResendRateLimited(false);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/kits/${encodeURIComponent(slug)}/resend-access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: accessEmail.trim() }),
+      });
+      if (res.status === 429) {
+        setResendRateLimited(true);
+        setResendStatus("idle");
+        return;
+      }
+      if (!res.ok) throw new Error("Server error");
+      setResendStatus("sent");
+    } catch {
+      setResendStatus("error");
+    }
   }
 
   function retryNow() {
@@ -488,7 +515,7 @@ export default function KitWelcomePage() {
 
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-10">
 
-        {sessionExpired && accessStatus === "idle" && (
+        {sessionExpired && (accessStatus === "idle" || accessStatus === "notFound" || accessStatus === "loading") && (
           <div
             className="rounded-xl border px-5 py-4 text-sm space-y-3"
             style={{
@@ -507,7 +534,12 @@ export default function KitWelcomePage() {
                 ref={emailInputRef}
                 type="email"
                 value={accessEmail}
-                onChange={(e) => setAccessEmail(e.target.value)}
+                onChange={(e) => {
+                  setAccessEmail(e.target.value);
+                  if (accessStatus === "notFound") setAccessStatus("idle");
+                  if (resendStatus !== "idle") setResendStatus("idle");
+                  setResendRateLimited(false);
+                }}
                 placeholder="you@example.com"
                 required
                 className="flex-1 min-w-0 rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2"
@@ -515,13 +547,67 @@ export default function KitWelcomePage() {
               />
               <button
                 type="submit"
-                disabled={!accessEmail.trim()}
+                disabled={!accessEmail.trim() || accessStatus === "loading"}
                 className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: "#F59E0B", color: "#fff" }}
               >
-                Restore access
+                {accessStatus === "loading" ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" />Checking…</>
+                ) : (
+                  "Restore access"
+                )}
               </button>
             </form>
+
+            {accessStatus === "notFound" && resendStatus !== "sent" && (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs" style={{ color: "#92400E" }}>
+                  No purchase found for that email — double-check the address you used at checkout.
+                </p>
+                {resendRateLimited ? (
+                  <p className="text-xs text-muted-foreground">
+                    Too many requests — please wait 15 minutes and try again.
+                  </p>
+                ) : resendStatus === "error" ? (
+                  <p className="text-xs" style={{ color: "#B91C1C" }}>
+                    Could not send — please try again in a moment.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Lost your welcome email?{" "}
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={resendStatus === "sending"}
+                      className="underline underline-offset-2 font-semibold transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ color: "#F59E0B" }}
+                    >
+                      {resendStatus === "sending" ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Sending…
+                        </span>
+                      ) : (
+                        "Re-send my access link"
+                      )}
+                    </button>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {resendStatus === "sent" && (
+              <div
+                className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+                style={{ background: "#16A34A10", border: "1px solid #16A34A33", color: "#15803D" }}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  If that email matches a purchase, you'll receive a new access link shortly.
+                  Check your inbox (and spam folder).
+                </span>
+              </div>
+            )}
           </div>
         )}
 
