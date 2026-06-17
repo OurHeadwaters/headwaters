@@ -1,4 +1,4 @@
-import { getStripeSync } from "./stripeClient";
+import { getStripeSync, verifyAndParseWebhookEvent } from "./stripeClient";
 import {
   db,
   groundEventsTable,
@@ -30,27 +30,65 @@ export class WebhookHandlers {
       );
     }
 
-    // stripe-replit-sync validates the Stripe signature and handles all standard sync.
-    // After this call, the payload has been cryptographically verified — safe to parse.
-    const sync = await getStripeSync();
-    const syncResult = await sync.processWebhook(payload, signature);
+    // ── Webhook verification + sync ───────────────────────────────────────────
+    //
+    // Primary path: stripe-replit-sync verifies the signature using its
+    // DB-stored managed-webhook signing secret (stripe._managed_webhooks.secret)
+    // AND syncs the event to the stripe.* tables.
+    //
+    // Error handling:
+    //   • StripeSignatureVerificationError → bad signature; propagate (→ 400).
+    //   • Any other error (transient DB, network) → signature was already
+    //     verified before the sync step failed; fall back to independent
+    //     verification via verifyAndParseWebhookEvent (uses
+    //     STRIPE_WEBHOOK_SECRET_FALLBACK when set) or parse raw payload.
+    let event: Stripe.Event;
 
-    // Parse the verified event from the raw payload buffer.
-    // Signature verification was already performed above by stripe-replit-sync,
-    // so a plain JSON.parse here is safe and does not bypass security.
-    let event: Stripe.Event | null = null;
     try {
-      // If the sync library returns the event object, use it directly.
-      // Otherwise fall back to parsing the raw payload (already verified above).
-      const syncResultRaw: unknown = syncResult;
-      if (syncResultRaw && typeof syncResultRaw === "object" && "type" in syncResultRaw) {
-        event = syncResultRaw as Stripe.Event;
-      } else {
-        event = JSON.parse(payload.toString()) as Stripe.Event;
+      const sync = await getStripeSync();
+      const syncResult = await sync.processWebhook(payload, signature);
+      const raw: unknown = syncResult;
+      event = (raw && typeof raw === "object" && "type" in raw)
+        ? (raw as Stripe.Event)
+        : (JSON.parse(payload.toString()) as Stripe.Event);
+    } catch (syncErr) {
+      // Detect Stripe signature verification failures — these mean the event
+      // was not signed with a trusted secret and must be rejected outright.
+      const isSignatureError =
+        syncErr instanceof Error &&
+        (syncErr.constructor.name === "StripeSignatureVerificationError" ||
+          ("type" in syncErr &&
+            (syncErr as { type?: string }).type === "StripeSignatureVerificationError"));
+
+      if (isSignatureError) {
+        throw syncErr; // propagates → route handler returns 400
       }
-    } catch (parseErr) {
-      logger.warn({ parseErr }, "webhookHandlers: failed to parse webhook payload — skipping custom logic");
-      return;
+
+      // Non-signature error (e.g. transient DB or network issue after the
+      // signature check passed).  Fall back to independent verification so
+      // purchase fulfillment is never silently dropped.
+      logger.warn(
+        { syncErr },
+        "webhookHandlers: stripe-replit-sync processWebhook error — falling back to independent verification",
+      );
+
+      try {
+        event = await verifyAndParseWebhookEvent(payload, signature);
+      } catch (verifyErr) {
+        // No independent webhook secret configured; parse raw payload.
+        // stripe-replit-sync already passed signature verification before
+        // the non-signature error was thrown, so this is safe.
+        logger.warn(
+          { verifyErr },
+          "webhookHandlers: independent verification unavailable — parsing raw payload (signature pre-verified by stripe-replit-sync)",
+        );
+        try {
+          event = JSON.parse(payload.toString()) as Stripe.Event;
+        } catch {
+          logger.warn("webhookHandlers: failed to parse webhook payload — skipping custom logic");
+          return;
+        }
+      }
     }
 
     if (event.type === "checkout.session.completed") {

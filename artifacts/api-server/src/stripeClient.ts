@@ -89,27 +89,23 @@ async function getStripeCredentials(): Promise<{
     );
   }
 
-  if (!settings.webhook_secret) {
-    // Development only — production throws above.
-    // Log clearly so the operator knows signature verification is disabled.
+  // Fall back to STRIPE_WEBHOOK_SECRET_FALLBACK when the integration doesn't
+  // carry a webhook_secret (common in dev before a webhook endpoint is registered
+  // in the Stripe Dashboard).  Never used in production — the guard above fires first.
+  const webhookSecret =
+    settings.webhook_secret ??
+    (!isProduction ? process.env.STRIPE_WEBHOOK_SECRET_FALLBACK : undefined);
+
+  if (!isProduction && !webhookSecret) {
     logger.warn(
-      { environment: targetEnvironment },
-      "stripe: webhook_secret not set — signature verification is DISABLED. " +
-        "Stripe webhooks will be rejected with 400 until you add the signing secret. " +
-        "Steps: Stripe Dashboard → Developers → Webhooks → select the endpoint → " +
-        "Signing secret → paste the whsec_… value into " +
-        "Integrations → Stripe → " + targetEnvironment + " environment → webhook_secret field.",
-    );
-  } else {
-    logger.info(
-      { environment: targetEnvironment },
-      "stripe: webhook_secret configured — signature verification enabled",
+      "stripe: no webhook secret available — set STRIPE_WEBHOOK_SECRET_FALLBACK to enable " +
+        "webhook verification in development (run: stripe listen --forward-to ... to get a whsec_ value)",
     );
   }
 
   return {
     secretKey: settings.secret,
-    webhookSecret: settings.webhook_secret,
+    webhookSecret,
   };
 }
 
@@ -138,4 +134,30 @@ export async function getStripeSync(): Promise<StripeSync> {
     stripeSecretKey: secretKey,
     stripeWebhookSecret: webhookSecret ?? "",
   });
+}
+
+/**
+ * Verifies a Stripe webhook signature and returns the parsed event.
+ * Throws a StripeSignatureVerificationError if the signature is invalid.
+ * This is the security gate — call this before any business logic.
+ *
+ * Separate from stripe-replit-sync's processWebhook so that DB sync
+ * failures (stripe.accounts table, etc.) never block webhook processing.
+ */
+export async function verifyAndParseWebhookEvent(
+  payload: Buffer,
+  signature: string,
+): Promise<Stripe.Event> {
+  const { secretKey, webhookSecret } = await getStripeCredentials();
+  if (!webhookSecret) {
+    throw new Error(
+      "Stripe webhook secret is not configured. " +
+        "Set STRIPE_WEBHOOK_SECRET_FALLBACK in dev, or add webhook_secret to " +
+        "the Stripe integration connection in the Integrations tab.",
+    );
+  }
+  const stripe = new Stripe(secretKey);
+  // constructEvent verifies the HMAC signature and parses the event payload.
+  // Throws Stripe.errors.StripeSignatureVerificationError on invalid signature.
+  return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
 }
