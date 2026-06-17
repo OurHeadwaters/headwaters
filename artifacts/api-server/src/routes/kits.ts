@@ -10,7 +10,7 @@
  */
 
 import { Router, type IRouter } from "express";
-import { db, reviewedProductsTable, kitPurchasesTable, kitInquiriesTable } from "@workspace/db";
+import { db, pool, reviewedProductsTable, kitPurchasesTable, kitInquiriesTable } from "@workspace/db";
 import { eq, and, or, desc, sql, ilike } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
@@ -27,46 +27,47 @@ const router: IRouter = Router();
 const emailLookupRateLimit = createRateLimiter(5, 60_000);
 
 /* Email-based: 3 requests / 15 min per address — blocks hammering one address
-   from rotating IPs */
+   from rotating IPs.  Stored in the shared `rate_limits` Postgres table so
+   counters survive server restarts and are consistent across multiple instances. */
 const RATE_LIMIT_MAX = 3;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-/** timestamps of recent requests keyed by lowercase email */
-const accessEmailRateLimitStore = new Map<string, number[]>();
+/** Key prefix scoping email-based limits inside the shared rate_limits table. */
+const EMAIL_RATE_LIMIT_PREFIX = "kit-access-email";
 
 /**
  * Returns true when the caller is within the allowed rate, false when they've
- * exceeded it.  Prunes stale timestamps on every call; expired keys are swept
- * by the background interval to keep Map cardinality bounded.
+ * exceeded it.  Uses a single atomic UPSERT against the shared `rate_limits`
+ * Postgres table — counters survive restarts and scale across multiple API
+ * instances.  Fails open on any DB error so a transient hiccup never locks out
+ * legitimate users.
  */
-function checkRateLimit(email: string): boolean {
-  const now = Date.now();
-  const cutoff = now - RATE_LIMIT_WINDOW_MS;
-  const timestamps = (accessEmailRateLimitStore.get(email) ?? []).filter(
-    (ts) => ts > cutoff,
-  );
-  if (timestamps.length >= RATE_LIMIT_MAX) {
-    accessEmailRateLimitStore.set(email, timestamps);
-    return false;
+async function checkRateLimit(email: string): Promise<boolean> {
+  const key = `${email}:${EMAIL_RATE_LIMIT_PREFIX}`;
+  try {
+    const result = await pool.query<{ count: number; reset_at: Date }>(
+      `INSERT INTO rate_limits (key, count, reset_at)
+       VALUES ($1, 1, NOW() + ($2::bigint || ' milliseconds')::interval)
+       ON CONFLICT (key) DO UPDATE SET
+         count    = CASE
+                      WHEN rate_limits.reset_at <= NOW() THEN 1
+                      ELSE rate_limits.count + 1
+                    END,
+         reset_at = CASE
+                      WHEN rate_limits.reset_at <= NOW()
+                        THEN NOW() + ($2::bigint || ' milliseconds')::interval
+                      ELSE rate_limits.reset_at
+                    END
+       RETURNING count, reset_at`,
+      [key, RATE_LIMIT_WINDOW_MS],
+    );
+    const row = result.rows[0];
+    return !row || row.count <= RATE_LIMIT_MAX;
+  } catch (err) {
+    logger.error({ err, email }, "kits: email rate-limit DB error — failing open");
+    return true;
   }
-  timestamps.push(now);
-  accessEmailRateLimitStore.set(email, timestamps);
-  return true;
 }
-
-/** Evict entries whose window has fully expired to bound Map memory. */
-function evictExpiredRateLimitEntries(): void {
-  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS;
-  for (const [key, timestamps] of accessEmailRateLimitStore) {
-    if (timestamps.every((ts) => ts <= cutoff)) {
-      accessEmailRateLimitStore.delete(key);
-    }
-  }
-}
-
-// Sweep expired entries every 15 minutes so memory stays bounded even under
-// high-cardinality random-email traffic from bots.
-setInterval(evictExpiredRateLimitEntries, RATE_LIMIT_WINDOW_MS).unref();
 
 /* ─────────────────── Helpers ─────────────────── */
 
@@ -170,7 +171,7 @@ router.post("/kits/send-access-email", emailLookupRateLimit, async (req, res) =>
     return;
   }
 
-  if (!checkRateLimit(email)) {
+  if (!(await checkRateLimit(email))) {
     res.status(429).json({
       error: "Too many requests. Please wait 15 minutes before requesting another access email.",
     });
@@ -512,7 +513,7 @@ router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
 
   // Per-email rate limit: even if the caller rotates IPs, each individual
   // address is limited to RATE_LIMIT_MAX token checks per RATE_LIMIT_WINDOW_MS.
-  if (email && !checkRateLimit(email.toLowerCase())) {
+  if (email && !(await checkRateLimit(email.toLowerCase()))) {
     res.status(429).json({ error: "Too many requests for this email address. Please try again later." });
     return;
   }
