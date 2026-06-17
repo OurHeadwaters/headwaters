@@ -1147,6 +1147,18 @@ export default function KitDetailPage() {
                   </Link>
                 </p>
               )}
+              {kit.priceType === "direct" && (
+                <div className="mt-3">
+                  <a
+                    href={`/headwaters/kit/${slug}`}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
+                    style={{ color: "#8FA883" }}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    Get this kit
+                  </a>
+                </div>
+              )}
             </div>
             <Link
               href="/kits/find"
