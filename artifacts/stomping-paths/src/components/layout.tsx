@@ -28,6 +28,21 @@ function useBrigadeStatus(isAuthenticated: boolean) {
   });
 }
 
+function useKitPurchaseCount(isAuthenticated: boolean) {
+  return useQuery({
+    queryKey: ["kit-purchase-count"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/kits/my-purchases"), { credentials: "include" });
+      if (!res.ok) return 0;
+      const data = await res.json() as unknown[];
+      return Array.isArray(data) ? data.length : 0;
+    },
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 const landmarkItems = [
   { href: "/start", label: "Find Your Path", desc: "New here? 5 questions → recommendation" },
   { href: "/tracks", label: "Learning Tracks", desc: "7 structured paths by permaculture zone" },
@@ -225,6 +240,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const { data: brigadeData } = useBrigadeStatus(isAuthenticated);
   const isBrigadeMember = brigadeData?.isMember === true;
+  const { data: kitCount = 0 } = useKitPurchaseCount(isAuthenticated);
 
   const adminPaths = adminItems.map((i) => i.href);
   const landmarkPaths = landmarkItems.map((i) => i.href);
@@ -309,11 +325,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <Shield className="w-2.5 h-2.5" />
                       </span>
                     )}
-                    {user?.profileImageUrl ? (
-                      <img src={user.profileImageUrl} alt="Profile" className="w-7 h-7 rounded-full border border-white/30 object-cover" />
-                    ) : (
-                      <User className="w-5 h-5" />
-                    )}
+                    <span className="relative inline-flex">
+                      {user?.profileImageUrl ? (
+                        <img src={user.profileImageUrl} alt="Profile" className="w-7 h-7 rounded-full border border-white/30 object-cover" />
+                      ) : (
+                        <User className="w-5 h-5" />
+                      )}
+                      {kitCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-[#D9A066] text-[#1a2d1e] text-[9px] font-bold rounded-full px-0.5 leading-none shadow-sm" aria-label={`${kitCount} kit${kitCount === 1 ? "" : "s"} purchased`}>
+                          {kitCount > 9 ? "9+" : kitCount}
+                        </span>
+                      )}
+                    </span>
                     <ChevronDown className={`w-3 h-3 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
                   </button>
                   {userMenuOpen && (
