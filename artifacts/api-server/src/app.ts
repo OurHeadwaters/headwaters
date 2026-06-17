@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { createRateLimiter } from "./middlewares/rateLimiter";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
@@ -108,7 +109,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
 
-app.use("/api", router);
+app.use("/api", createRateLimiter(100, 60_000, "global"), router);
 
 // ─── Headwaters — dev proxy or static SPA ────────────────────────────────────
 // In development: proxy to the Vite dev server (hot reload, instant edits).
