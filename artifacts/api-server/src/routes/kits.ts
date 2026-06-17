@@ -271,11 +271,17 @@ router.post("/kits/:slug/resend-access", emailLookupRateLimit, async (req, res) 
     if (rows.length > 0) {
       const row = rows[0];
       const buyerName = row.buyerName ?? null;
+      const emailDomain = email.split("@")[1] ?? "unknown";
 
       await db
         .update(kitPurchasesTable)
         .set({ lastResendAt: new Date() })
         .where(eq(kitPurchasesTable.id, row.id));
+
+      logger.info(
+        { kitSlug: kit.slug, emailDomain, resendAt: new Date().toISOString() },
+        "kits: resend-access requested for known buyer",
+      );
 
       sendKitWelcomeEmail({
         buyerEmail: email,
