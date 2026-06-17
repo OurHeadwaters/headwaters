@@ -110,7 +110,7 @@ async function fetchWikipediaImage(
     url.searchParams.set("origin", "*");
 
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": "TSP-Site/1.0 (https://thesurvivalpodcast.com)" },
+      headers: { "User-Agent": "TSP-Site/1.0 (https://thestompingpaths.com)" },
       signal: AbortSignal.timeout(4000),
     });
 
@@ -153,7 +153,7 @@ async function fetchWikipediaSourceLinks(
     url.searchParams.set("origin", "*");
 
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": "TSP-Site/1.0 (https://thesurvivalpodcast.com)" },
+      headers: { "User-Agent": "TSP-Site/1.0 (https://thestompingpaths.com)" },
       signal: AbortSignal.timeout(4000),
     });
 

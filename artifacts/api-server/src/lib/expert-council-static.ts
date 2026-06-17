@@ -119,9 +119,9 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
   {
     id: "jack-spirko",
     name: "Jack Spirko",
-    role: "Host — The Survival Podcast",
+    role: "Contributing Expert — The Stomping Paths",
     description:
-      "Jack Spirko has been teaching modern survivalism since 2008 — practical self-reliance, permaculture, financial independence, and building a life so good it's worth protecting.",
+      "Jack Spirko has been teaching modern survivalism since 2008 — practical self-reliance, permaculture, financial independence, and building a life so good it's worth protecting. His archive is the backbone of The Stomping Paths platform.",
     url: getSiteUrl(),
     xHandle: "JackSpirok",
     zones: ["zone-0", "zone-1", "zone-2", "zone-3", "zone-4", "zone-5"],

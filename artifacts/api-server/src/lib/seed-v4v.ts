@@ -16,7 +16,7 @@ export async function seedV4V(): Promise<void> {
         role: "host",
         walletType: "lightning",
         walletAddress: "jack@spirko.me",
-        bio: "Host and founder of The Survival Podcast — the largest permaculture, prepping, and self-reliance podcast in the world.",
+        bio: "Contributing expert and founding voice of The Stomping Paths — a platform for permaculture, preparedness, and self-reliant living.",
       })
       .returning();
 

@@ -40,7 +40,7 @@ export const CREATORS: Creator[] = [
   {
     slug: "jack-spirko",
     name: "Jack Spirko",
-    bio: "Host of The Survival Podcast since 2008. Jack has produced 3,800+ episodes covering permaculture, preparedness, personal finance, entrepreneurship, and individual sovereignty — the full spectrum of self-reliant living. His archive is the backbone of every transformation path on this platform.",
+    bio: "Contributing expert and founding voice on The Stomping Paths. Jack has produced 3,800+ episodes covering permaculture, preparedness, personal finance, entrepreneurship, and individual sovereignty — the full spectrum of self-reliant living. His archive is the backbone of every transformation path on this platform.",
     avatarUrl: "https://ui-avatars.com/api/?name=Jack+Spirko&size=256&background=2d5a3d&color=fdf8f0&bold=true&rounded=true",
     websiteUrl: S,
     podcastUrl: `${S}/feed/mp3`,

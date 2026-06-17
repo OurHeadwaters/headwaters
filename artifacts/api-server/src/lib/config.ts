@@ -1,6 +1,6 @@
 import { logger } from "./logger";
 
-const PRODUCTION_SITE_URL = "https://www.thesurvivalpodcast.com";
+const PRODUCTION_SITE_URL = "https://www.thestompingpaths.com";
 
 if (!process.env.SITE_URL) {
   logger.warn(
@@ -18,8 +18,8 @@ if (!process.env.SITE_URL) {
  * preserved, but a warning is logged at startup so the gap is visible.
  *
  * @example
- *   getSiteUrl()           // "https://www.thesurvivalpodcast.com"
- *   `${getSiteUrl()}/kits` // "https://www.thesurvivalpodcast.com/kits"
+ *   getSiteUrl()           // "https://www.thestompingpaths.com"
+ *   `${getSiteUrl()}/kits` // "https://www.thestompingpaths.com/kits"
  */
 export function getSiteUrl(): string {
   return (process.env.SITE_URL ?? PRODUCTION_SITE_URL).replace(/\/$/, "");

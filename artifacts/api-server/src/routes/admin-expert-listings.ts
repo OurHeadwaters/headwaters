@@ -166,7 +166,7 @@ router.post("/admin/expert-listings/:id/approve", requireEditor, async (req, res
               product_data: {
                 name: "Expert Council Featured Listing",
                 description:
-                  "Monthly featured listing on The Survival Podcast Expert Council directory",
+                  "Monthly featured listing on The Stomping Paths Expert Council directory",
               },
             },
             quantity: 1,

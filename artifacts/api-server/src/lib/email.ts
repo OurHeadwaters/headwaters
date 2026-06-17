@@ -21,11 +21,11 @@ let resendClient: Resend | null = null;
  *
  *   KIT_EMAIL_FROM="TSP Kits <kits@thestompingpaths.com>"
  *
- * Falls back to the legacy thesurvivalpodcast.com address which requires
+ * Falls back to the thestompingpaths.com address which requires
  * that domain to be verified in Resend → https://resend.com/domains
  */
 function getKitEmailFrom(): string {
-  return process.env.KIT_EMAIL_FROM ?? "TSP Kits <kits@thesurvivalpodcast.com>";
+  return process.env.KIT_EMAIL_FROM ?? "TSP Kits <kits@thestompingpaths.com>";
 }
 
 /**
@@ -88,7 +88,7 @@ function buildRsvpEmailHtml(opts: RsvpNotificationOptions): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#2d4a2d;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:22px;color:#ffffff;font-weight:normal;font-family:'Georgia',serif;">New Workshop RSVP</h1>
             </td>
           </tr>
@@ -136,7 +136,7 @@ function buildRsvpEmailHtml(opts: RsvpNotificationOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Ground Events &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths Ground Events &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -174,7 +174,7 @@ function buildListingApprovalHtml(opts: ListingApprovalEmailOptions): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#2d4a2d;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:22px;color:#ffffff;font-weight:normal;font-family:'Georgia',serif;">Expert Council Application Approved</h1>
             </td>
           </tr>
@@ -219,7 +219,7 @@ function buildListingApprovalHtml(opts: ListingApprovalEmailOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Expert Council &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths Expert Council &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -263,7 +263,7 @@ function buildHostConfirmationEmailHtml(opts: HostConfirmationOptions): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#2d4a2d;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:22px;color:#ffffff;font-weight:normal;font-family:'Georgia',serif;">Your Workshop Is Listed</h1>
             </td>
           </tr>
@@ -321,7 +321,7 @@ function buildHostConfirmationEmailHtml(opts: HostConfirmationOptions): string {
               </table>
 
               <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
-                Questions? Reply to this email or reach out at <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a>.
+                Questions? Reply to this email or reach out at <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thestompingpaths.com</a>.
               </p>
             </td>
           </tr>
@@ -330,7 +330,7 @@ function buildHostConfirmationEmailHtml(opts: HostConfirmationOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Ground Events &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths Ground Events &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -354,7 +354,7 @@ export async function sendListingApprovalEmail(
 
   try {
     const { error } = await client.emails.send({
-      from: "The Survival Podcast Expert Council <expert-council@thesurvivalpodcast.com>",
+      from: "The Stomping Paths Expert Council <expert-council@thestompingpaths.com>",
       to: [opts.applicantEmail],
       subject: "Your Expert Council listing is approved — activate now",
       html: buildListingApprovalHtml(opts),
@@ -385,7 +385,7 @@ export async function sendHostConfirmationEmail(opts: HostConfirmationOptions): 
 
   try {
     const { error } = await client.emails.send({
-      from: "The Survival Podcast Ground Events <ground-events@thesurvivalpodcast.com>",
+      from: "The Stomping Paths Ground Events <ground-events@thestompingpaths.com>",
       to: [opts.hostEmail],
       subject: `Your workshop "${opts.eventTitle}" is listed — here's your dashboard link`,
       html: buildHostConfirmationEmailHtml(opts),
@@ -419,7 +419,11 @@ export async function sendKitInquiryNotification(opts: KitInquiryNotificationOpt
     return;
   }
 
-  const to = process.env.KIT_INQUIRY_EMAIL ?? "jack@thesurvivalpodcast.com";
+  const to = process.env.KIT_INQUIRY_EMAIL;
+  if (!to) {
+    logger.warn({ kitSlug: opts.kitSlug }, "email: KIT_INQUIRY_EMAIL not set — skipping kit inquiry notification");
+    return;
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8" /><title>Kit Inquiry</title></head>
@@ -436,7 +440,7 @@ export async function sendKitInquiryNotification(opts: KitInquiryNotificationOpt
           <p style="margin:0 0 12px;color:#333;font-size:15px;"><strong>Kit:</strong> ${opts.kitName} (<code>${opts.kitSlug}</code>)</p>
           ${opts.notes ? `<p style="margin:16px 0 0;color:#333;font-size:15px;"><strong>Notes:</strong></p><p style="margin:8px 0 0;color:#555;font-size:14px;line-height:1.6;border-left:3px solid #D9A066;padding-left:12px;">${opts.notes}</p>` : ""}
           <hr style="border:none;border-top:1px solid #e8e2d8;margin:24px 0;" />
-          <p style="margin:0;color:#888;font-size:12px;">Submitted via thesurvivalpodcast.com/kits/${opts.kitSlug}</p>
+          <p style="margin:0;color:#888;font-size:12px;">Submitted via thestompingpaths.com/kits/${opts.kitSlug}</p>
         </td></tr>
       </table>
     </td></tr>
@@ -566,7 +570,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#1A2A20;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:24px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">Welcome to your ${opts.kitName}</h1>
             </td>
           </tr>
@@ -611,7 +615,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
               ${manualSection}
 
               <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
-                Questions? Visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a> or reply to this email.
+                Questions? Visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thestompingpaths.com</a> or reply to this email.
               </p>
             </td>
           </tr>
@@ -620,7 +624,7 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -688,7 +692,7 @@ function buildGordTipNotificationHtml(opts: GordTipNotificationOptions): string 
           <!-- Header -->
           <tr>
             <td style="background-color:#2d4a2d;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:22px;color:#ffffff;font-weight:normal;font-family:'Georgia',serif;">Someone just sent you a tip 🎉</h1>
             </td>
           </tr>
@@ -724,7 +728,7 @@ function buildGordTipNotificationHtml(opts: GordTipNotificationOptions): string 
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -744,13 +748,17 @@ export async function sendGordTipNotificationEmail(opts: GordTipNotificationOpti
     return;
   }
 
-  const to = process.env.GORD_TIP_EMAIL ?? "jack@thesurvivalpodcast.com";
+  const to = process.env.GORD_TIP_EMAIL;
+  if (!to) {
+    logger.warn("email: GORD_TIP_EMAIL not set — skipping Gord tip notification");
+    return;
+  }
   const displayName = opts.tipperName ?? opts.tipperEmail ?? "Someone";
   const dollars = (opts.amountCents / 100).toFixed(2);
 
   try {
     const { error } = await client.emails.send({
-      from: "The Survival Podcast <tips@thesurvivalpodcast.com>",
+      from: "The Stomping Paths <tips@thestompingpaths.com>",
       to: [to],
       subject: `New tip from ${displayName} — $${dollars}`,
       html: buildGordTipNotificationHtml(opts),
@@ -820,7 +828,7 @@ function buildKitAccessEmailHtml(opts: KitAccessEmailOptions): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#1A2A20;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:24px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">Your kit access links</h1>
             </td>
           </tr>
@@ -838,7 +846,7 @@ function buildKitAccessEmailHtml(opts: KitAccessEmailOptions): string {
               ${kitRows}
 
               <p style="margin:24px 0 0;font-size:14px;color:#666666;line-height:1.6;">
-                Questions? Reply to this email or visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a>.
+                Questions? Reply to this email or visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thestompingpaths.com</a>.
               </p>
             </td>
           </tr>
@@ -847,7 +855,7 @@ function buildKitAccessEmailHtml(opts: KitAccessEmailOptions): string {
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -932,7 +940,7 @@ function buildKitExpiryReminderHtml(opts: KitExpiryReminderEmailOptions): string
           <!-- Header -->
           <tr>
             <td style="background-color:#1A2A20;padding:28px 40px;">
-              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Stomping Paths</p>
               <h1 style="margin:8px 0 0;font-size:24px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">Your kit access expires tomorrow</h1>
             </td>
           </tr>
@@ -969,7 +977,7 @@ function buildKitExpiryReminderHtml(opts: KitExpiryReminderEmailOptions): string
               </p>
 
               <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
-                Questions? Visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a> or reply to this email.
+                Questions? Visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thestompingpaths.com</a> or reply to this email.
               </p>
             </td>
           </tr>
@@ -978,7 +986,7 @@ function buildKitExpiryReminderHtml(opts: KitExpiryReminderEmailOptions): string
           <tr>
             <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
               <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
-                Sent by The Survival Podcast Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+                Sent by The Stomping Paths Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thestompingpaths.com</a>
               </p>
             </td>
           </tr>
@@ -1045,7 +1053,7 @@ export async function sendRsvpNotification(opts: RsvpNotificationOptions): Promi
 
   try {
     const { error } = await client.emails.send({
-      from: "The Survival Podcast Ground Events <ground-events@thesurvivalpodcast.com>",
+      from: "The Stomping Paths Ground Events <ground-events@thestompingpaths.com>",
       to: [opts.hostEmail],
       subject: `New RSVP: ${displayName} signed up for "${opts.eventTitle}"`,
       html: buildRsvpEmailHtml(opts),

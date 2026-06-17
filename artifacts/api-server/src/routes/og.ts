@@ -152,8 +152,8 @@ router.get("/og/episodes/:slug", async (req, res) => {
     const epLabel = ep.episodeNumber ? `Episode ${ep.episodeNumber}` : "Episode";
 
     const html = buildOgHtml({
-      title: `${ep.title} — The Survival Podcast`,
-      description: ep.summary || `${epLabel} of The Survival Podcast`,
+      title: `${ep.title} — The Stomping Paths`,
+      description: ep.summary || `${epLabel} of The Stomping Paths`,
       image: ep.artworkUrl ?? undefined,
       url: pageUrl,
     });
