@@ -221,6 +221,57 @@ function SignPostMarker({ isOpen }: { isOpen: boolean }) {
   );
 }
 
+function WorkshopMarker({ isOpen }: { isOpen: boolean }) {
+  return (
+    <svg viewBox="0 0 60 72" className="w-full h-full" aria-hidden="true">
+      {/* Ground shadow */}
+      <ellipse cx="30" cy="67" rx="22" ry="4" fill="#1A0D04" opacity="0.35" />
+      {/* Main barn body */}
+      <rect x="6" y="34" width="48" height="30" rx="2" fill="#7A3A1A" />
+      <rect x="6" y="34" width="48" height="4" rx="1" fill="#9A5030" opacity="0.5" />
+      {/* Siding lines */}
+      <line x1="6" y1="44" x2="54" y2="44" stroke="#5A2A10" strokeWidth="0.8" opacity="0.5" />
+      <line x1="6" y1="54" x2="54" y2="54" stroke="#5A2A10" strokeWidth="0.8" opacity="0.5" />
+      {/* Roof gable */}
+      <polygon points="2,34 30,10 58,34" fill="#5A2808" />
+      <polygon points="2,34 30,10 58,34" fill="#7A3A18" opacity="0.35" />
+      {/* Roof ridge */}
+      <line x1="2" y1="34" x2="30" y2="10" stroke="#3A1808" strokeWidth="1.5" />
+      <line x1="58" y1="34" x2="30" y2="10" stroke="#3A1808" strokeWidth="1.5" />
+      {/* Loft window */}
+      <rect x="22" y="17" width="16" height="11" rx="2" fill="#1A0D04" />
+      <rect x="23" y="18" width="14" height="9" rx="1.5"
+        fill={isOpen ? "#FFD58040" : "#2A1A0830"}
+        style={isOpen ? { animation: "lantern-flicker 3.4s ease-in-out infinite" } : undefined}
+      />
+      <line x1="30" y1="18" x2="30" y2="27" stroke="#3A2010" strokeWidth="0.8" />
+      <line x1="23" y1="22.5" x2="37" y2="22.5" stroke="#3A2010" strokeWidth="0.8" />
+      {/* Barn door */}
+      <rect x="18" y="44" width="24" height="20" rx="1.5" fill="#4A2008" />
+      <rect x="19" y="45" width="10.5" height="18" rx="1" fill="#5A2A10" opacity="0.7" />
+      <rect x="30.5" y="45" width="10.5" height="18" rx="1" fill="#5A2A10" opacity="0.7" />
+      {/* Door gap */}
+      <line x1="30" y1="45" x2="30" y2="63" stroke="#2A1008" strokeWidth="1" />
+      {/* Door hinge bolts */}
+      <circle cx="22" cy="50" r="1.2" fill="#8A6030" />
+      <circle cx="22" cy="58" r="1.2" fill="#8A6030" />
+      <circle cx="38" cy="50" r="1.2" fill="#8A6030" />
+      <circle cx="38" cy="58" r="1.2" fill="#8A6030" />
+      {/* Tool glow on open */}
+      {isOpen && (
+        <ellipse cx="30" cy="55" rx="10" ry="7"
+          fill="#D9A066"
+          opacity="0.12"
+          style={{ animation: "campfire-glow 2.2s ease-in-out infinite" }}
+        />
+      )}
+      {/* Weathervane */}
+      <line x1="30" y1="10" x2="30" y2="4" stroke="#6A3A18" strokeWidth="1.2" />
+      <polygon points="30,4 34,7 30,6 26,7" fill="#8A5028" />
+    </svg>
+  );
+}
+
 function CampfireMarker({ isOpen }: { isOpen: boolean }) {
   return (
     <svg viewBox="0 0 52 72" className="w-full h-full" aria-hidden="true">
@@ -487,6 +538,7 @@ function ThematicHotspot({
         {station.id === "transform" && <SignPostMarker isOpen={isOpen} />}
         {station.id === "water-wheel" && <MillWheelMarker spinning={spinning ?? false} />}
         {station.id === "campfire" && <CampfireMarker isOpen={isOpen} />}
+        {station.id === "workshop" && <WorkshopMarker isOpen={isOpen} />}
 
         {/* Badge */}
         {station.badge != null && (
@@ -1521,9 +1573,102 @@ function FiresideChatsInlinePanel() {
   );
 }
 
+// ─── Workshop inline panel ───────────────────────────────────────────────────
+
+interface InlineWorkshop {
+  id: number;
+  title: string;
+  hostName: string | null;
+  scheduledAt: string | null;
+  status: string;
+}
+
+async function fetchUpcomingWorkshops(): Promise<InlineWorkshop[]> {
+  const res = await fetch(apiUrl("/ground-events?limit=50"));
+  if (!res.ok) return [];
+  const data: { events?: InlineWorkshop[] } = await res.json();
+  const now = new Date().toISOString();
+  return (data.events ?? [])
+    .filter((e) => e.status === "approved" && (e.scheduledAt == null || e.scheduledAt >= now))
+    .slice(0, 3);
+}
+
+function WorkshopInlinePanel() {
+  const [, navigate] = useLocation();
+  const { data: upcoming = [], isLoading } = useQuery({
+    queryKey: ["stomping-workshops-preview"],
+    queryFn: fetchUpcomingWorkshops,
+    staleTime: 60_000,
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        className="flex items-center gap-3 p-3 rounded-xl"
+        style={{ background: "rgba(122,58,26,0.18)", border: "1px solid rgba(192,120,60,0.25)" }}
+      >
+        <span className="text-2xl leading-none">🔨</span>
+        <div>
+          <div className="text-lg font-bold text-white font-serif leading-none">
+            {isLoading ? "—" : upcoming.length}
+            <span className="text-sm font-sans font-normal text-white/60 ml-1.5">upcoming workshops</span>
+          </div>
+          <div className="text-[10px] text-white/50 mt-0.5">Community-run skill sessions</div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-12 rounded-lg animate-pulse" style={{ background: "rgba(122,58,26,0.12)" }} />
+          ))}
+        </div>
+      ) : upcoming.length === 0 ? (
+        <p className="text-sm text-center py-3" style={{ color: "rgba(255,200,130,0.45)" }}>
+          No workshops scheduled yet — be the first to host one.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {upcoming.map((w) => (
+            <div
+              key={w.id}
+              className="rounded-xl p-3"
+              style={{ background: "rgba(122,58,26,0.10)", border: "1px solid rgba(192,120,60,0.18)" }}
+            >
+              <p
+                className="text-sm font-semibold leading-snug line-clamp-2"
+                style={{ color: "#F2CA8C", fontFamily: "Georgia, serif" }}
+              >
+                {w.title}
+              </p>
+              {w.hostName && (
+                <p className="text-[10px] mt-1" style={{ color: "rgba(255,200,130,0.45)" }}>
+                  Hosted by {w.hostName}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={() => navigate("/stomping-grounds?tab=workshop")}
+        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
+        style={{
+          background: "linear-gradient(135deg, rgba(122,58,26,0.7) 0%, rgba(90,40,8,0.7) 100%)",
+          color: "#F2CA8C",
+          border: "1.5px solid rgba(192,120,60,0.4)",
+        }}
+      >
+        🔨 Host a Workshop <ArrowRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Station content router ───────────────────────────────────────────────────
 
-export type StationId = "wisdom-dig" | "wishing-well" | "transform" | "water-wheel" | "campfire";
+export type StationId = "wisdom-dig" | "wishing-well" | "transform" | "water-wheel" | "campfire" | "workshop";
 
 export function StationContent({
   stationId,
@@ -1541,6 +1686,7 @@ export function StationContent({
   }
   if (stationId === "water-wheel") return <WaterWheelPanel />;
   if (stationId === "campfire") return <FiresideChatsInlinePanel />;
+  if (stationId === "workshop") return <WorkshopInlinePanel />;
   return null;
 }
 
@@ -1552,6 +1698,7 @@ const STATION_TEASERS: Record<string, { headline: string; teaser: string }> = {
   "transform":    { headline: "Transformation Trail", teaser: "Six paths of change — find the one that fits your life." },
   "water-wheel":  { headline: "Water Wheel",          teaser: "Let your drops accumulate and sweep them to your bucket." },
   "campfire":     { headline: "Fireside Chats",       teaser: "Community flames sparked by Fireside Freedom episodes. Fan the fire." },
+  "workshop":     { headline: "Workshop Board",        teaser: "Community-run skill sessions. Browse upcoming workshops or host your own." },
 };
 
 function WoodenSignSVG() {
@@ -1682,6 +1829,9 @@ const HEADER_TEXTURES: Record<string, string> = {
   "water-wheel":
     "repeating-linear-gradient(95deg, transparent 0px, transparent 6px, rgba(44,106,138,0.08) 6px, rgba(44,106,138,0.08) 7px), " +
     "repeating-linear-gradient(5deg, transparent 0px, transparent 18px, rgba(0,0,0,0.05) 18px, rgba(0,0,0,0.05) 19px)",
+  "workshop":
+    "repeating-linear-gradient(93deg, transparent 0px, transparent 8px, rgba(122,58,26,0.07) 8px, rgba(122,58,26,0.07) 9px), " +
+    "radial-gradient(ellipse at 30% 60%, rgba(192,120,60,0.10) 0%, transparent 55%)",
 };
 
 function IronLatchButton({ onClick }: { onClick: () => void }) {
@@ -2002,6 +2152,17 @@ export function StompingGroundsScene({ compact = false }: { compact?: boolean })
       position: { top: "38%", left: "58%" },
       mobileOrder: 4,
     },
+    {
+      id: "workshop",
+      icon: "🔨",
+      label: "Workshop Board",
+      description: "Community-run skill sessions — browse or host a workshop.",
+      badge: null,
+      color: "#7A3A1A",
+      glowColor: "#C0783C",
+      position: { top: "26%", left: "28%" },
+      mobileOrder: 5,
+    },
   ];
 
   const currentStation = stations.find((s) => s.id === openStation);
@@ -2141,7 +2302,7 @@ export function StompingGroundsScene({ compact = false }: { compact?: boolean })
           className="text-white/45 text-xs text-center mb-4"
           style={{ fontFamily: "Georgia, serif", letterSpacing: "0.04em" }}
         >
-          Five stations — tap to open
+          Six stations — tap to open
         </p>
         <div className="flex flex-col">
           {[...stations]
