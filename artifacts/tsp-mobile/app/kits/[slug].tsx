@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import * as Crypto from "expo-crypto";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import React, { useState, useEffect, useRef } from "react";
@@ -25,6 +26,7 @@ import { KIT_FINDER_REC_KEY } from "./find";
 
 const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 const MINI_PLAYER_HEIGHT = 64;
+const RSVP_SESSION_KEY = "rsvp_session_id";
 
 const KIT_META: Record<string, { emoji: string; accent: string }> = {
   "family-kit":      { emoji: "🏠", accent: "#5D9E6C" },
@@ -82,6 +84,22 @@ type KitDetail = {
   gear: KitGear[];
 };
 
+type GroundEvent = {
+  id: number;
+  title: string;
+  description: string | null;
+  hostName: string;
+  eventDate: string;
+  location: string | null;
+  isOnline: boolean;
+  priceDisplay: string | null;
+  ticketPriceCents: number | null;
+  rsvpCount: number;
+  seats: number | null;
+  familyFriendly: boolean;
+  hasRsvped?: boolean;
+};
+
 function useKit(slug: string) {
   return useQuery<KitDetail>({
     queryKey: ["kits", slug],
@@ -94,6 +112,253 @@ function useKit(slug: string) {
     enabled: !!slug,
   });
 }
+
+function useWorkshops(sessionId: string | null) {
+  return useQuery<GroundEvent[]>({
+    queryKey: ["ground-events", "family", sessionId],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        familyFriendly: "true",
+        status: "upcoming",
+        limit: "3",
+      });
+      if (sessionId) params.set("sessionId", sessionId);
+      const res = await fetch(`${API_BASE}/api/ground-events?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to load workshops");
+      const data = await res.json();
+      return (data.events ?? []).filter(
+        (e: GroundEvent) => !e.ticketPriceCents,
+      );
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+function formatEventDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+}
+
+function WorkshopCard({
+  event,
+  accent,
+  sessionId,
+  onRsvp,
+}: {
+  event: GroundEvent;
+  accent: string;
+  sessionId: string | null;
+  onRsvp: (eventId: number) => void;
+}) {
+  const colors = useColors();
+  const [rsvping, setRsvping] = useState(false);
+  const [confirmed, setConfirmed] = useState(event.hasRsvped ?? false);
+  const [localCount, setLocalCount] = useState(event.rsvpCount);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleRsvp() {
+    if (confirmed || !sessionId) return;
+    setRsvping(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/ground-events/${event.id}/rsvp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "RSVP failed");
+      }
+      setConfirmed(true);
+      setLocalCount((n) => n + 1);
+      onRsvp(event.id);
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong");
+    } finally {
+      setRsvping(false);
+    }
+  }
+
+  return (
+    <View style={[workshopStyles.card, { backgroundColor: colors.card, borderColor: colors.woodBorder }]}>
+      <View style={workshopStyles.cardBody}>
+        <Text style={[workshopStyles.title, { color: colors.foreground, fontFamily: "DMSans_600SemiBold" }]}>
+          {event.title}
+        </Text>
+        <Text style={[workshopStyles.host, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+          Hosted by {event.hostName}
+        </Text>
+
+        <View style={workshopStyles.metaRow}>
+          <Ionicons name="calendar-outline" size={12} color={colors.mutedForeground} />
+          <Text style={[workshopStyles.metaText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            {formatEventDate(event.eventDate)}
+          </Text>
+        </View>
+
+        <View style={workshopStyles.metaRow}>
+          <Ionicons name={event.isOnline ? "globe-outline" : "location-outline"} size={12} color={colors.mutedForeground} />
+          <Text style={[workshopStyles.metaText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
+            {event.isOnline ? "Online" : (event.location ?? "Location TBD")}
+          </Text>
+        </View>
+
+        {localCount > 0 && (
+          <View style={workshopStyles.metaRow}>
+            <Ionicons name="people-outline" size={12} color={accent} />
+            <Text style={[workshopStyles.metaText, { color: accent, fontFamily: "DMSans_500Medium" }]}>
+              {localCount} going
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={[workshopStyles.footer, { borderTopColor: colors.woodBorder }]}>
+        {error ? (
+          <Text style={[workshopStyles.errorText, { color: "#ef4444", fontFamily: "DMSans_400Regular" }]}>
+            {error}
+          </Text>
+        ) : null}
+        {confirmed ? (
+          <View style={[workshopStyles.confirmedBadge, { backgroundColor: accent + "18", borderColor: accent + "44" }]}>
+            <Ionicons name="checkmark-circle" size={14} color={accent} />
+            <Text style={[workshopStyles.confirmedText, { color: accent, fontFamily: "DMSans_600SemiBold" }]}>
+              You're in!
+            </Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={handleRsvp}
+            disabled={rsvping || !sessionId}
+            style={({ pressed }) => [
+              workshopStyles.rsvpBtn,
+              { backgroundColor: rsvping || pressed ? accent + "bb" : accent, opacity: rsvping ? 0.7 : 1 },
+            ]}
+          >
+            <Ionicons name="hand-left-outline" size={13} color="#fff" />
+            <Text style={[workshopStyles.rsvpBtnText, { fontFamily: "DMSans_700Bold" }]}>
+              {rsvping ? "Reserving…" : "RSVP — Free"}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const workshopStyles = StyleSheet.create({
+  card: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  cardBody: { padding: 14, gap: 6 },
+  title: { fontSize: 14, lineHeight: 20 },
+  host: { fontSize: 12, lineHeight: 16 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  metaText: { fontSize: 12 },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  rsvpBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  rsvpBtnText: { fontSize: 13, color: "#fff" },
+  confirmedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  confirmedText: { fontSize: 13 },
+  errorText: { fontSize: 11, marginBottom: 6 },
+});
+
+function WorkshopsSection({
+  accent,
+  sessionId,
+  onRsvp,
+}: {
+  accent: string;
+  sessionId: string | null;
+  onRsvp: (eventId: number) => void;
+}) {
+  const colors = useColors();
+  const { data: workshops, isLoading } = useWorkshops(sessionId);
+
+  if (isLoading) {
+    return (
+      <View style={workshopSectionStyles.section}>
+        <Text style={[workshopSectionStyles.label, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+          UPCOMING WORKSHOPS
+        </Text>
+        <ActivityIndicator color={accent} size="small" style={{ marginTop: 8 }} />
+      </View>
+    );
+  }
+
+  if (!workshops || workshops.length === 0) return null;
+
+  return (
+    <View style={workshopSectionStyles.section}>
+      <View style={workshopSectionStyles.headerRow}>
+        <Text style={[workshopSectionStyles.label, { color: colors.mutedForeground, fontFamily: "DMSans_600SemiBold" }]}>
+          UPCOMING WORKSHOPS
+        </Text>
+        <View style={[workshopSectionStyles.badge, { backgroundColor: accent + "18" }]}>
+          <Text style={[workshopSectionStyles.badgeText, { color: accent, fontFamily: "DMSans_600SemiBold" }]}>
+            Free
+          </Text>
+        </View>
+      </View>
+      {workshops.map((event) => (
+        <WorkshopCard
+          key={event.id}
+          event={event}
+          accent={accent}
+          sessionId={sessionId}
+          onRsvp={onRsvp}
+        />
+      ))}
+    </View>
+  );
+}
+
+const workshopSectionStyles = StyleSheet.create({
+  section: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+    paddingTop: 4,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  label: {
+    fontSize: 10,
+    letterSpacing: 0.9,
+  },
+  badge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 20,
+  },
+  badgeText: { fontSize: 10, letterSpacing: 0.3 },
+});
 
 function resolveUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -912,6 +1177,19 @@ export default function KitDetailScreen() {
   const [familyEdition, setFamilyEdition] = useState<"general" | "homeschool">("general");
   const [storedRec, setStoredRec] = useState<{ reason: string; secondary?: string } | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [rsvpSessionId, setRsvpSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(RSVP_SESSION_KEY).then(async (existing) => {
+      if (existing) {
+        setRsvpSessionId(existing);
+      } else {
+        const id = Crypto.randomUUID();
+        await AsyncStorage.setItem(RSVP_SESSION_KEY, id).catch(() => {});
+        setRsvpSessionId(id);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     setBannerDismissed(false);
@@ -1033,6 +1311,17 @@ export default function KitDetailScreen() {
             <Text style={[infoStyles.noteText, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
               The Homeschool edition includes additional resources for families who educate at home. Look for homeschool-tagged episodes and the Family Privacy Guide for digital safety guidance.
             </Text>
+          </View>
+        )}
+
+        {/* ── Upcoming Workshops (Family Kit only) ── */}
+        {isFamilyKit && (
+          <View style={[infoStyles.workshopsWrap, { borderTopColor: colors.woodBorder }]}>
+            <WorkshopsSection
+              accent={accent}
+              sessionId={rsvpSessionId}
+              onRsvp={() => {}}
+            />
           </View>
         )}
 
@@ -1203,6 +1492,11 @@ const infoStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     gap: 8,
+  },
+  workshopsWrap: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 20,
+    marginTop: 4,
   },
   sectionRow: {
     flexDirection: "row",
