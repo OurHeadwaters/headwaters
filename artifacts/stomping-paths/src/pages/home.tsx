@@ -1600,10 +1600,14 @@ function AboutBobbieSection() {
     <section className="relative bg-[#15241b] py-20 overflow-hidden border-t border-white/5">
       <div className="container mx-auto px-4 md:px-6 max-w-5xl">
         <div className="grid md:grid-cols-[auto_1fr] gap-10 items-center">
-          {/* Headshot placeholder */}
+          {/* Headshot */}
           <div className="flex-shrink-0 flex justify-center md:justify-start">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#2C4A36] border-4 border-[#D9A066]/30 overflow-hidden flex items-center justify-center shadow-xl shadow-black/30">
-              <User className="w-14 h-14 text-[#D9A066]/50" />
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#D9A066]/30 overflow-hidden shadow-xl shadow-black/30">
+              <img
+                src="/bobbie.jpg"
+                alt="Bobbie Parr"
+                className="w-full h-full object-cover object-top"
+              />
             </div>
           </div>
           {/* Bio */}
