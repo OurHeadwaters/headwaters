@@ -96,6 +96,8 @@ async function buildAll() {
       "wrangler",
       "zeromq",
       "zeromq-prebuilt",
+      "stripe-replit-sync",
+      "pg-node-migrations",
       "playwright",
       "puppeteer",
       "puppeteer-core",
