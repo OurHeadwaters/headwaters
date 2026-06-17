@@ -49,6 +49,7 @@ import suggestionsRouter from "./suggestions";
 import sharesRouter from "./shares";
 import storageFilesRouter from "./storage-files";
 import adminArtworkBackfillRouter from "./admin-artwork-backfill";
+import adminKitExpiryRemindersRouter from "./admin-kit-expiry-reminders";
 
 const router: IRouter = Router();
 
@@ -102,5 +103,6 @@ router.use(suggestionsRouter);
 router.use(sharesRouter);
 router.use(storageFilesRouter);
 router.use(adminArtworkBackfillRouter);
+router.use(adminKitExpiryRemindersRouter);
 
 export default router;

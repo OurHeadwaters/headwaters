@@ -872,6 +872,142 @@ export async function sendKitAccessEmail(
   }
 }
 
+export interface KitExpiryReminderEmailOptions {
+  buyerEmail: string;
+  buyerName: string | null;
+  kitName: string;
+  kitSlug: string;
+  accessUrl?: string;
+}
+
+function buildKitExpiryReminderHtml(opts: KitExpiryReminderEmailOptions): string {
+  const displayName = opts.buyerName ?? "there";
+  const siteUrl = getSiteUrl();
+  const baseWelcomeUrl =
+    opts.accessUrl ?? `${siteUrl}/kits/${opts.kitSlug}/welcome`;
+
+  const token = generateKitAccessToken(opts.kitSlug, opts.buyerEmail);
+  const welcomeUrl = token
+    ? `${baseWelcomeUrl}?email=${encodeURIComponent(opts.buyerEmail)}&token=${token}`
+    : baseWelcomeUrl;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your ${opts.kitName} access expires tomorrow</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f0eb;font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#1A2A20;padding:28px 40px;">
+              <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a8c5a0;font-family:'Arial',sans-serif;">The Survival Podcast</p>
+              <h1 style="margin:8px 0 0;font-size:24px;color:#D9A066;font-weight:normal;font-family:'Georgia',serif;">Your kit access expires tomorrow</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="margin:0 0 20px;font-size:16px;color:#333333;line-height:1.6;">
+                Hi ${displayName},
+              </p>
+              <p style="margin:0 0 24px;font-size:16px;color:#333333;line-height:1.6;">
+                Your access to the <strong>${opts.kitName}</strong> expires in about 24 hours
+                because you haven't visited recently. Just open the kit to automatically
+                extend your access for another 7 days — no action beyond visiting is needed.
+              </p>
+
+              <!-- CTA button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${welcomeUrl}"
+                       style="display:inline-block;padding:14px 32px;background-color:#2d4a2d;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-family:'Arial',sans-serif;font-weight:bold;">
+                      Keep My Access →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 8px;font-size:13px;color:#888888;line-height:1.5;text-align:center;">
+                One click renews your 7-day session automatically.
+              </p>
+              <p style="margin:0 0 24px;font-size:12px;color:#aaaaaa;word-break:break-all;text-align:center;">
+                <a href="${welcomeUrl}" style="color:#6b7c6b;">${welcomeUrl}</a>
+              </p>
+
+              <p style="margin:0;font-size:14px;color:#666666;line-height:1.6;">
+                Questions? Visit <a href="${siteUrl}" style="color:#2d4a2d;text-decoration:none;">thesurvivalpodcast.com</a> or reply to this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f5f0eb;padding:20px 40px;border-top:1px solid #e0d8d0;">
+              <p style="margin:0;font-size:12px;color:#999999;text-align:center;font-family:'Arial',sans-serif;">
+                Sent by The Survival Podcast Kits &mdash; <a href="${siteUrl}" style="color:#6b7c6b;text-decoration:none;">thesurvivalpodcast.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendKitExpiryReminderEmail(
+  opts: KitExpiryReminderEmailOptions,
+): Promise<{ sent: boolean; error?: string }> {
+  const client = getResendClient();
+  if (!client) {
+    logger.warn(
+      { kitSlug: opts.kitSlug, buyerEmail: opts.buyerEmail },
+      "email: RESEND_API_KEY not set — skipping kit expiry reminder",
+    );
+    return { sent: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  try {
+    const { error } = await client.emails.send({
+      from: "TSP Kits <kits@thesurvivalpodcast.com>",
+      to: [opts.buyerEmail],
+      subject: `Your ${opts.kitName} access expires tomorrow — one click to renew`,
+      html: buildKitExpiryReminderHtml(opts),
+    });
+
+    if (error) {
+      logger.error(
+        { error, buyerEmail: opts.buyerEmail, kitSlug: opts.kitSlug },
+        "email: kit expiry reminder failed",
+      );
+      return { sent: false, error: String(error) };
+    }
+
+    logger.info(
+      { kitSlug: opts.kitSlug, buyerEmail: opts.buyerEmail },
+      "email: kit expiry reminder sent",
+    );
+    return { sent: true };
+  } catch (err) {
+    logger.error(
+      { err, kitSlug: opts.kitSlug, buyerEmail: opts.buyerEmail },
+      "email: kit expiry reminder threw unexpectedly",
+    );
+    return { sent: false, error: String(err) };
+  }
+}
+
 export async function sendRsvpNotification(opts: RsvpNotificationOptions): Promise<void> {
   const client = getResendClient();
   if (!client) {

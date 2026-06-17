@@ -11,7 +11,7 @@
 
 import { Router, type IRouter } from "express";
 import { db, reviewedProductsTable, kitPurchasesTable, kitInquiriesTable } from "@workspace/db";
-import { eq, and, or, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, sql, ilike } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { KITS, kitBySlug } from "../lib/kits";
 import { transformationBySlug } from "../lib/transformations";
@@ -529,6 +529,18 @@ router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
   // access (i.e. a real purchase already recorded).
   if (!userId && email) {
     if (token && verifyKitAccessToken(kit.slug, email, token)) {
+      // Stamp lastVerifiedAt so the expiry-reminder job can track activity.
+      db.update(kitPurchasesTable)
+        .set({ lastVerifiedAt: new Date() })
+        .where(
+          and(
+            eq(kitPurchasesTable.kitSlug, kit.slug),
+            eq(kitPurchasesTable.buyerEmail, email.toLowerCase()),
+          ),
+        )
+        .catch((err: unknown) =>
+          logger.warn({ err, kitSlug: kit.slug, email }, "kits: failed to stamp lastVerifiedAt (non-fatal)"),
+        );
       res.json({ hasAccess: true, isAuthenticated: false, tokenVerified: true });
     } else {
       res.json({ hasAccess: false, isAuthenticated: false });
@@ -538,6 +550,17 @@ router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
 
   // Authenticated path: token fast-path first, then DB lookup by userId.
   if (email && token && verifyKitAccessToken(kit.slug, email, token)) {
+    db.update(kitPurchasesTable)
+      .set({ lastVerifiedAt: new Date() })
+      .where(
+        and(
+          eq(kitPurchasesTable.kitSlug, kit.slug),
+          eq(kitPurchasesTable.buyerEmail, email.toLowerCase()),
+        ),
+      )
+      .catch((err: unknown) =>
+        logger.warn({ err, kitSlug: kit.slug, email }, "kits: failed to stamp lastVerifiedAt (non-fatal)"),
+      );
     res.json({ hasAccess: true, isAuthenticated: true, tokenVerified: true });
     return;
   }
@@ -554,7 +577,24 @@ router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
       )
       .limit(1);
 
-    res.json({ hasAccess: rows.length > 0, isAuthenticated: true });
+    const hasAccess = rows.length > 0;
+
+    // Stamp lastVerifiedAt so activity is tracked for expiry-reminder purposes.
+    if (hasAccess) {
+      db.update(kitPurchasesTable)
+        .set({ lastVerifiedAt: new Date() })
+        .where(
+          and(
+            eq(kitPurchasesTable.kitSlug, kit.slug),
+            eq(kitPurchasesTable.userId, userId!),
+          ),
+        )
+        .catch((err: unknown) =>
+          logger.warn({ err, kitSlug: kit.slug }, "kits: failed to stamp lastVerifiedAt for userId path (non-fatal)"),
+        );
+    }
+
+    res.json({ hasAccess, isAuthenticated: true });
   } catch (err) {
     logger.error({ err, slug: kit.slug }, "kits: GET /access failed");
     res.status(500).json({ error: "Failed to check access" });

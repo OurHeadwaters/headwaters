@@ -253,6 +253,13 @@
       "when": 1781740800000,
       "tag": "0036_rate_limits_reset_at_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1750370400000,
+      "tag": "0036_kit_purchases_activity_tracking",
+      "breakpoints": true
     }
   ]
 }
