@@ -48,9 +48,15 @@ function getTileContent(ep: ThisDayEpisode): { headline: string; body: string | 
   return { headline: decodeHtml(ep.title), body: lessonText };
 }
 
+function formatFullDate(pubDate: string): string {
+  const d = new Date(pubDate);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+
 function HistoryTile({ ep }: { ep: ThisDayEpisode }) {
   const year = new Date(ep.pubDate).getUTCFullYear();
   const ago = yearsAgo(year);
+  const fullDate = formatFullDate(ep.pubDate);
   const { headline, body } = getTileContent(ep);
 
   const segment = ep.historySegment;
@@ -90,8 +96,11 @@ function HistoryTile({ ep }: { ep: ThisDayEpisode }) {
             <span className="text-4xl font-serif font-bold text-[#D9A066] leading-none drop-shadow-lg">
               {year}
             </span>
+            <p className="text-xs text-[#D9A066]/90 font-medium mt-0.5">
+              {fullDate}
+            </p>
             {ago >= 1 && (
-              <p className="text-xs text-[#D9A066]/70 font-medium mt-0.5">
+              <p className="text-xs text-[#D9A066]/60 font-medium">
                 {ago === 1 ? "1 year ago" : `${ago} years ago`}
               </p>
             )}
@@ -203,6 +212,7 @@ function HistoryTile({ ep }: { ep: ThisDayEpisode }) {
 function SegmentPendingTile({ ep }: { ep: ThisDayEpisode }) {
   const year = new Date(ep.pubDate).getUTCFullYear();
   const ago = yearsAgo(year);
+  const fullDate = formatFullDate(ep.pubDate);
 
   return (
     <div
@@ -216,8 +226,11 @@ function SegmentPendingTile({ ep }: { ep: ThisDayEpisode }) {
             <span className="text-4xl font-serif font-bold text-[#D9A066]/50 leading-none">
               {year}
             </span>
+            <p className="text-xs text-[#D9A066]/45 font-medium mt-0.5">
+              {fullDate}
+            </p>
             {ago >= 1 && (
-              <p className="text-xs text-[#D9A066]/35 font-medium mt-0.5">
+              <p className="text-xs text-[#D9A066]/30 font-medium">
                 {ago === 1 ? "1 year ago" : `${ago} years ago`}
               </p>
             )}

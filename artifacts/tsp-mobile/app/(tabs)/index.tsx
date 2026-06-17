@@ -142,11 +142,17 @@ function yearsAgo(year: number): number {
   return new Date().getFullYear() - year;
 }
 
+function formatFullDate(pubDate: string): string {
+  const d = new Date(pubDate);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+
 function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
   const colors = useColors();
   const { play, seek } = usePlayer();
   const year = new Date(episode.pubDate).getUTCFullYear();
   const ago = yearsAgo(year);
+  const fullDate = formatFullDate(episode.pubDate);
 
   const handlePlay = async () => {
     if (!episode.audioUrl) return;
@@ -182,6 +188,9 @@ function ThisDayCard({ episode }: { episode: ThisDayEpisode }) {
               </View>
             )}
           </View>
+          <Text style={[styles.thisDayFullDate, { color: colors.amberGold, fontFamily: "DMSans_500Medium" }]}>
+            {fullDate}
+          </Text>
           {ago > 0 && (
             <Text style={[styles.thisDayAgoText, { color: colors.mutedForeground, fontFamily: "DMSans_400Regular" }]}>
               {ago === 1 ? "1 year ago" : `${ago} years ago`}
@@ -758,6 +767,7 @@ const styles = StyleSheet.create({
   thisDayCardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   thisDayYearCol: { flexDirection: "column", gap: 2, flex: 1 },
   thisDayYearRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  thisDayFullDate: { fontSize: 11, lineHeight: 14, opacity: 0.9 },
   thisDayAgoText: { fontSize: 10, lineHeight: 13 },
   thisDayYear: { fontSize: 20, lineHeight: 24 },
   thisDayEpBadge: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 6, paddingVertical: 2 },
