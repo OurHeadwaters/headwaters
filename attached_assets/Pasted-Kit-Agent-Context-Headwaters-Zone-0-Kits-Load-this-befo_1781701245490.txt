@@ -1,0 +1,83 @@
+Kit Agent Context — Headwaters Zone 0 Kits
+Load this before any work on kit development, kit surfacing, or kit-adjacent features. This is not a feature spec. It is orientation.
+
+What a Kit Is
+A kit is a trade instrument. Not a program, not a service, not a subscription. Like a carpenter's kit — learnable, named, passable across a threshold. Every piece has a purpose. The whole can be handed to someone who wasn't there when it was first built.
+
+Every kit is folded the same way:
+
+Heart side — a named, bounded container for the grief, weight, or fear the person is already carrying. Named. Witnessed. Bounded — it has a bottom. Not permanent residence. Passage.
+
+Hands side — practical, learnable moves. A loop, not a checklist. Something a practitioner can hold and transfer.
+
+Kits are Gate-compliant by design. They don't demand the person cross a vocabulary they don't have. They carry protected meaning in plain form. They work in the room, with the person, in the language both people already have.
+
+Kits are not crisis tools. They are used in the aftermath, or before the season arrives. They build the floor before it's needed.
+
+The Business Model
+The apps are free. Complete. Full value. A family can spend a decade inside this ecosystem without paying a cent and get everything it has to give.
+
+The kits are the easy button — curated depth for people who want to go further without building from scratch.
+
+Every kit costs $147. Every kit includes:
+
+A printable packet (the heart side — doctrine, named moves, context)
+A companion digital tool (the hands side — the app or guided experience)
+Kits live and are sold at headwaters.ca. Inside the free apps, they are surfaced at the right moment — never pushed, never paywalled. A single link out, at a crossing.
+
+The Moments Philosophy
+The core surfacing principle: every kit has a moment.
+
+Not a marketing moment. A life moment. A crossing.
+
+"Moments of Joy" — the dementia care philosophy of meeting someone exactly where they are in time and space, without forcing them to cross into yours — is the north star for how kits appear inside the apps.
+
+Frictionless. Right where the family already is. Carrying more value than should logically fit in the hand.
+
+Think of it like an ant: moving value through small passages, delivering it whole to the person who needs it, then going back for more. The load is always bigger than it looks. The path is always shorter than expected, if you know the gate.
+
+When a family reaches a crossing — a diagnosis, a transition, a season ending, a child moving through a rite of passage — the app surfaces one thing: "There's a kit for this." One link. No pressure. The family decides.
+
+The Ladder Analogy
+The old model of help is everyone on the same ladder, fighting for the same rungs, pulling others down by accident in the climb. Chaos. Entropy. The snake at every landing bites the person above you because the ladder was never designed for more than one.
+
+Codetry figured out the carabiner.
+
+Somehow, through source work, the practitioner got dropped at the top — not by earning it in the conventional sense, but by doing the prior work of self-location (knowing your zone, naming your saltbox, building the gate). From the top, they can shimmy up and down freely, handing individual ladders to every person they meet in the game of life — right where that person stands.
+
+The kits are the ladders.
+
+Each one is designed for one rung — one life stage, one crossing, one kind of weight. The practitioner doesn't pull the person up. They hand them a ladder that fits where they are, a carabiner already clipped, and shimmy back up to get the next one.
+
+Along the way: a machete. Not for the person — for the path. The snakes get deadheaded before the family even sees them. This is what makes the game of Snakes and Ladders into something new: not a different game, but everyone finally playing with their own board. Individual sovereignty. The snakes are still there — but the practitioner has already cleared the square the family is about to step on.
+
+Life Stages and Rites of Passage
+Kits are organized by life crossings, not topics.
+
+The string that connects them is the lifecycle arc: prenatal → birth → naming → first blood → apprenticeship → union → loss → elderhood → dying.
+
+Every kit lives somewhere on that arc. Some span multiple crossings. Some are for the caregivers standing beside the person crossing, not the crosser themselves.
+
+This is the sociophysics principle underneath: without an arch and an eave at every crossing, people cannot leap as individuals into better frequencies. The arch holds the weight of the transition. The eave channels what flows out of it. Without those structures, the crossing either doesn't happen or it damages the people on either side.
+
+The kits are the arches. The apps are the eave.
+
+The Goodbye Kit — The Exemplar Moment
+The Goodbye Kit is the model for how all kits surface.
+
+Its moment in The Eave app: before a circle closes.
+
+When a household reaches a dissolve decision — a loved one diagnosed, a caregiver stepping back, a support circle completing its work — the app surfaces the Goodbye Kit before the circle closes.
+
+Not after. Before. At the moment of intention, when the person still has time to decide whether to walk through it alone or ask a friend to literally hold their hand on the other side.
+
+This is the moment. "Seize the moment. Every moment. Frictionless."
+
+When building kit-surfacing features, return to this. The question is never "where can we mention the kit?" The question is: what is the crossing, and when does the person know they are about to make it? That is the moment. Surface the kit there, and only there.
+
+For Agents Working on Kits
+Never add a kit surface that isn't attached to a named life moment or crossing.
+Never gate app features behind kit purchase. The app is always complete and free.
+The kit link is always a single, calm pointer outward. No banners. No upsells. No urgency language.
+The tone is practitioner — warm, quiet competence, grounded. Never promotional.
+The apps are the eave. The kits are the arch. They work together. They are not the same thing.
