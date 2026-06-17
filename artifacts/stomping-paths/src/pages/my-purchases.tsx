@@ -90,17 +90,22 @@ function usePurchases(enabled: boolean) {
   });
 }
 
+const AMBER = "#F59E0B";
+
 function ResendButton({
   kitSlug,
   buyerEmail,
   color,
   lastResendAt: initialLastResendAt,
+  isExpiring = false,
 }: {
   kitSlug: string;
   buyerEmail: string;
   color: string;
   lastResendAt: string | null;
+  isExpiring?: boolean;
 }) {
+  const btnColor = isExpiring ? AMBER : color;
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lastResendAt, setLastResendAt] = useState<string | null>(initialLastResendAt);
@@ -157,9 +162,9 @@ function ResendButton({
         disabled={status === "loading"}
         className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         style={{
-          color: color,
-          background: color + "15",
-          border: `1px solid ${color}33`,
+          color: btnColor,
+          background: btnColor + "15",
+          border: `1px solid ${btnColor}33`,
         }}
       >
         {status === "loading" ? (
@@ -172,6 +177,11 @@ function ResendButton({
       {lastResendAt && (
         <span className="text-[11px] text-muted-foreground/50 pr-1">
           Last sent: {formatRelativeTime(lastResendAt)}
+        </span>
+      )}
+      {isExpiring && status === "idle" && (
+        <span className="text-[11px] text-muted-foreground/60 pl-1 leading-snug">
+          Your access link is older than 90 days — re-send to get a fresh one
         </span>
       )}
       {status === "error" && errorMsg && (
@@ -344,6 +354,7 @@ function KitCard({
           buyerEmail={buyerEmail}
           color={meta.color}
           lastResendAt={lastResendAt}
+          isExpiring={status === "expiring"}
         />
       </div>
     </div>
