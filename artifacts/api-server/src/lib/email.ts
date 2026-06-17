@@ -493,8 +493,9 @@ export function verifyKitAccessToken(
 
 function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
   const displayName = opts.buyerName ?? "there";
+  const siteUrl = (process.env.SITE_URL ?? "https://www.thesurvivalpodcast.com").replace(/\/$/, "");
   const baseWelcomeUrl =
-    opts.accessUrl ?? `https://www.thesurvivalpodcast.com/kits/${opts.kitSlug}/welcome`;
+    opts.accessUrl ?? `${siteUrl}/kits/${opts.kitSlug}/welcome`;
 
   const token = generateKitAccessToken(opts.kitSlug, opts.buyerEmail);
   const welcomeUrl = token

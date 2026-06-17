@@ -74,7 +74,7 @@ router.get("/kits/my-purchases", async (req, res) => {
       return {
         id: row.id,
         kitSlug: row.kitSlug,
-        createdAt: row.purchasedAt,
+        purchasedAt: row.purchasedAt,
         kit: kit
           ? {
               slug: kit.slug,
