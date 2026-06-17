@@ -1,2 +1,3 @@
 - [Full Context Pack](watershed-context-pack.md) — complete project inventory: zones, artifacts, routes, DB schema, API, constitutional rules, open items
 - [Stomping-paths type quirks](stomping-paths-type-fixes.md) — EpisodeDetail/historySegment, ZoneSummary fields, LibraryPage schema, SyncStatus.bySource, expo-file-system v19 legacy, TS7030 useEffect pattern
+- [Kit Fundamentals](kit-fundamentals.md) — $127 price lock, Heart/Hands structure, Moments philosophy, agent rules, life stages arc
