@@ -45,6 +45,7 @@ async function fetchAllTracksProgressFromServer(): Promise<Record<string, number
 
 const storageKey = (slug: string) => `tsp_track_progress_${slug}`;
 const LAST_ACTIVE_KEY = "tsp_track_last_active";
+const RECENCY_ORDER_KEY = "tsp_track_recency_order";
 
 function loadDoneIds(slug: string): Set<number> {
   try {
@@ -66,6 +67,20 @@ function saveDoneIds(slug: string, ids: Set<number>) {
 
 function recordLastActive(slug: string) {
   try {
+    // Maintain a recency-ordered array of slugs (most recent first)
+    let order: string[] = [];
+    const raw = localStorage.getItem(RECENCY_ORDER_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) order = parsed as string[];
+      } catch {
+      }
+    }
+    // Move slug to front, deduplicated
+    order = [slug, ...order.filter((s) => s !== slug)];
+    localStorage.setItem(RECENCY_ORDER_KEY, JSON.stringify(order));
+    // Keep legacy key in sync for any old code that might read it
     localStorage.setItem(LAST_ACTIVE_KEY, slug);
   } catch {
   }
@@ -344,18 +359,39 @@ export type ActiveTrackEntry = {
 
 export function readAllActiveTracksOrdered(): ActiveTrackEntry[] {
   try {
-    const lastActive = localStorage.getItem(LAST_ACTIVE_KEY);
     const result: ActiveTrackEntry[] = [];
     const seen = new Set<string>();
 
-    if (lastActive) {
-      const ids = loadDoneIds(lastActive);
-      if (ids.size > 0) {
-        result.push({ slug: lastActive, doneIds: ids });
-        seen.add(lastActive);
+    // Build the ordered slug list from the recency array, with graceful
+    // fallback to the legacy single-slug key for old-format data.
+    let orderedSlugs: string[] = [];
+    const recencyRaw = localStorage.getItem(RECENCY_ORDER_KEY);
+    if (recencyRaw) {
+      try {
+        const parsed = JSON.parse(recencyRaw);
+        if (Array.isArray(parsed)) orderedSlugs = parsed as string[];
+      } catch {
       }
     }
 
+    if (orderedSlugs.length === 0) {
+      // Old-format fallback: single slug → treat as first position
+      const legacy = localStorage.getItem(LAST_ACTIVE_KEY);
+      if (legacy) orderedSlugs = [legacy];
+    }
+
+    // First pass: emit slugs in recency order (most recent first)
+    for (const slug of orderedSlugs) {
+      if (seen.has(slug)) continue;
+      const ids = loadDoneIds(slug);
+      if (ids.size > 0) {
+        result.push({ slug, doneIds: ids });
+        seen.add(slug);
+      }
+    }
+
+    // Second pass: pick up any tracks that have progress but aren't in the
+    // recency list yet (e.g. data written before this update was deployed)
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith("tsp_track_progress_")) {
