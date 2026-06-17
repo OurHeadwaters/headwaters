@@ -326,6 +326,11 @@ export default function KitWelcomePage() {
               </button>
             )}
           </div>
+          {accessStatus === "found" && accessEmail && (
+            <p className="text-xs mb-4 -mt-1" style={{ color: "#8FA883" }}>
+              Signed in as {accessEmail}
+            </p>
+          )}
 
           <div className="flex items-start gap-4 mb-4">
             <span className="text-4xl leading-none mt-1">{meta.icon}</span>
