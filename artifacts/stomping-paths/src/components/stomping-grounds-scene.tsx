@@ -1398,8 +1398,7 @@ function WishingWellInlinePanel() {
           </button>
         </div>
       )}
-      {(wishesLoading || topWishes.length > 0) && (
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
           <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 flex items-center gap-1.5">
             <Layers className="w-3 h-3" /> Today&rsquo;s Wishes
           </div>
@@ -1410,6 +1409,8 @@ function WishingWellInlinePanel() {
                 <div className="h-2.5 rounded bg-white/10 w-1/3" />
               </div>
             ))
+          ) : topWishes.length === 0 ? (
+            <p className="font-serif italic text-white/40 text-xs px-1">No wishes yet — be the first!</p>
           ) : topWishes.map((wish) => (
             <div key={wish.id} className={`rounded-lg border p-2.5 text-xs ${wish.founderMatchTriggered ? "border-[#D9A066]/40 bg-[#D9A066]/8" : "border-white/10 bg-white/4"}`}>
               <p className="font-serif text-white/80 italic line-clamp-2 mb-1">&ldquo;{wish.wishText}&rdquo;</p>
@@ -1422,7 +1423,6 @@ function WishingWellInlinePanel() {
             </div>
           ))}
         </div>
-      )}
       <button
         onClick={() => navigate("/stomping-grounds?tab=well")}
         className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white/80 border border-white/20 hover:border-white/40 hover:text-white transition-all"
