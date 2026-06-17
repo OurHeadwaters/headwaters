@@ -341,12 +341,34 @@ export default function HomeScreen() {
     return () => clearInterval(id);
   }, []);
 
+  const SKELETON_MIN_MS = 300;
+  const skeletonMountTime = useRef(Date.now());
+  const skeletonAnimGen = useRef(0);
+  const [skeletonVisible, setSkeletonVisible] = useState(() => !historyReady);
+  const skeletonFadeAnim = useRef(new Animated.Value(historyReady ? 0 : 1)).current;
   const skeletonOpacity = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     if (historyReady) {
       skeletonOpacity.setValue(1);
-      return;
+      const gen = ++skeletonAnimGen.current;
+      const elapsed = Date.now() - skeletonMountTime.current;
+      const delay = Math.max(0, SKELETON_MIN_MS - elapsed);
+      const timer = setTimeout(() => {
+        Animated.timing(skeletonFadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          if (skeletonAnimGen.current === gen) setSkeletonVisible(false);
+        });
+      }, delay);
+      return () => clearTimeout(timer);
     }
+    skeletonAnimGen.current++;
+    skeletonFadeAnim.setValue(1);
+    skeletonMountTime.current = Date.now();
+    setSkeletonVisible(true);
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(skeletonOpacity, { toValue: 0.35, duration: 700, useNativeDriver: true }),
@@ -545,33 +567,35 @@ export default function HomeScreen() {
       </View>
 
       {/* Continue Listening — tool station */}
-      {!historyReady ? (
-        <View style={[styles.section, { paddingHorizontal: 16 }]}>
-          <View style={styles.sectionHeaderRow}>
-            <Ionicons name="headset" size={15} color={colors.woodBrown} />
-            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
-              Continue Listening
-            </Text>
-          </View>
-          <Animated.View style={{ opacity: skeletonOpacity }}>
-            {[0, 1].map((i) => (
-              <View key={i} style={[styles.continueSkeletonRow, { backgroundColor: colors.muted }]}>
-                <View style={[styles.continueSkeletonArt, { backgroundColor: colors.woodBorder }]} />
-                <View style={styles.continueSkeletonInfo}>
-                  <View style={[styles.continueSkeletonLine, { width: "60%", backgroundColor: colors.woodBorder }]} />
-                  <View style={[styles.continueSkeletonLine, { width: "85%", backgroundColor: colors.woodBorder, marginTop: 6 }]} />
-                  <View style={[styles.continueSkeletonBar, { backgroundColor: colors.woodBorder }]} />
+      {skeletonVisible ? (
+        <Animated.View style={{ opacity: skeletonFadeAnim }}>
+          <View style={[styles.section, { paddingHorizontal: 16 }]}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="headset" size={15} color={colors.woodBrown} />
+              <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "DMSans_700Bold" }]}>
+                Continue Listening
+              </Text>
+            </View>
+            <Animated.View style={{ opacity: skeletonOpacity }}>
+              {[0, 1].map((i) => (
+                <View key={i} style={[styles.continueSkeletonRow, { backgroundColor: colors.muted }]}>
+                  <View style={[styles.continueSkeletonArt, { backgroundColor: colors.woodBorder }]} />
+                  <View style={styles.continueSkeletonInfo}>
+                    <View style={[styles.continueSkeletonLine, { width: "60%", backgroundColor: colors.woodBorder }]} />
+                    <View style={[styles.continueSkeletonLine, { width: "85%", backgroundColor: colors.woodBorder, marginTop: 6 }]} />
+                    <View style={[styles.continueSkeletonBar, { backgroundColor: colors.woodBorder }]} />
+                  </View>
+                  <View style={[styles.continueSkeletonBtn, { backgroundColor: colors.woodBorder }]} />
                 </View>
-                <View style={[styles.continueSkeletonBtn, { backgroundColor: colors.woodBorder }]} />
-              </View>
-            ))}
-          </Animated.View>
-          {showProgressHint && (
-            <Animated.Text style={[styles.progressHintLabel, { opacity: progressHintOpacity, color: colors.woodBrown }]}>
-              Fetching your progress…
-            </Animated.Text>
-          )}
-        </View>
+              ))}
+            </Animated.View>
+            {showProgressHint && (
+              <Animated.Text style={[styles.progressHintLabel, { opacity: progressHintOpacity, color: colors.woodBrown }]}>
+                Fetching your progress…
+              </Animated.Text>
+            )}
+          </View>
+        </Animated.View>
       ) : continueListening.length > 0 ? (
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
           <View style={styles.sectionHeaderRow}>
