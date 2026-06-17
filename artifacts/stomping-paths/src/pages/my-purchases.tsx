@@ -20,6 +20,21 @@ import { KIT_META } from "@/hooks/use-kits";
 
 const TOKEN_TTL_DAYS = 90;
 
+function formatRelativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  if (diffSecs < 60) return "just now";
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths}mo ago`;
+  return `${Math.floor(diffMonths / 12)}y ago`;
+}
+
 type AccessStatus = "active" | "expiring";
 
 function getAccessStatus(purchasedAt: string): AccessStatus {
@@ -41,6 +56,7 @@ interface PurchasedKit {
   buyerEmail: string;
   token: string | null;
   purchasedAt: string;
+  lastResendAt: string | null;
   kit: {
     slug: string;
     name: string;
@@ -76,13 +92,16 @@ function ResendButton({
   kitSlug,
   buyerEmail,
   color,
+  lastResendAt: initialLastResendAt,
 }: {
   kitSlug: string;
   buyerEmail: string;
   color: string;
+  lastResendAt: string | null;
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lastResendAt, setLastResendAt] = useState<string | null>(initialLastResendAt);
 
   async function handleResend(e: React.MouseEvent) {
     e.preventDefault();
@@ -100,6 +119,7 @@ function ResendButton({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Something went wrong — please try again.");
       }
+      setLastResendAt(new Date().toISOString());
       setStatus("sent");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
@@ -109,22 +129,27 @@ function ResendButton({
 
   if (status === "sent") {
     return (
-      <span
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
-        style={{
-          color: "#8FA883",
-          background: "#8FA88318",
-          border: "1px solid #8FA88333",
-        }}
-      >
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        Link sent to {buyerEmail}
-      </span>
+      <div className="flex flex-col items-end gap-1">
+        <span
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+          style={{
+            color: "#8FA883",
+            background: "#8FA88318",
+            border: "1px solid #8FA88333",
+          }}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Link sent to {buyerEmail}
+        </span>
+        <span className="text-[11px] text-muted-foreground/50 pr-1">
+          Last sent: just now
+        </span>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
+    <div className="flex flex-col items-end gap-1">
       <button
         onClick={handleResend}
         disabled={status === "loading"}
@@ -142,6 +167,11 @@ function ResendButton({
         )}
         {status === "loading" ? "Sending…" : "Re-send access link"}
       </button>
+      {lastResendAt && (
+        <span className="text-[11px] text-muted-foreground/50 pr-1">
+          Last sent: {formatRelativeTime(lastResendAt)}
+        </span>
+      )}
       {status === "error" && errorMsg && (
         <span className="text-xs text-destructive pl-1">{errorMsg}</span>
       )}
@@ -172,6 +202,7 @@ function KitCard({
   kitTagline,
   buyerEmail,
   purchasedAt,
+  lastResendAt,
   href,
 }: {
   kitSlug: string;
@@ -179,6 +210,7 @@ function KitCard({
   kitTagline: string;
   buyerEmail: string;
   purchasedAt: string;
+  lastResendAt: string | null;
   href: string;
 }) {
   const meta = KIT_META[kitSlug] ?? { icon: "📦", color: "#6B7280" };
@@ -266,6 +298,7 @@ function KitCard({
           kitSlug={kitSlug}
           buyerEmail={buyerEmail}
           color={meta.color}
+          lastResendAt={lastResendAt}
         />
       </div>
     </div>
@@ -580,6 +613,7 @@ export default function MyPurchasesPage() {
                   kitTagline={kitTagline}
                   buyerEmail={purchase.buyerEmail}
                   purchasedAt={purchase.purchasedAt}
+                  lastResendAt={purchase.lastResendAt}
                   href={href}
                 />
               );

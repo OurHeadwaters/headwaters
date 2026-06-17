@@ -35,6 +35,7 @@ export const kitPurchasesTable = pgTable(
     purchasedAt: timestamp("purchased_at", { withTimezone: true }).notNull().defaultNow(),
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
     expiryReminderSentAt: timestamp("expiry_reminder_sent_at", { withTimezone: true }),
+    lastResendAt: timestamp("last_resend_at", { withTimezone: true }),
   },
   (t) => [
     index("kit_purchases_kit_slug_idx").on(t.kitSlug),

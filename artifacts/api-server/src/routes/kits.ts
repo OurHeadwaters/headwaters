@@ -114,6 +114,7 @@ router.get("/kits/my-purchases", async (req, res) => {
         kitSlug: kitPurchasesTable.kitSlug,
         buyerEmail: kitPurchasesTable.buyerEmail,
         purchasedAt: kitPurchasesTable.purchasedAt,
+        lastResendAt: kitPurchasesTable.lastResendAt,
       })
       .from(kitPurchasesTable)
       .where(eq(kitPurchasesTable.userId, userId))
@@ -128,6 +129,7 @@ router.get("/kits/my-purchases", async (req, res) => {
         buyerEmail: row.buyerEmail,
         token,
         purchasedAt: row.purchasedAt,
+        lastResendAt: row.lastResendAt ?? null,
         kit: kit
           ? {
               slug: kit.slug,
@@ -267,7 +269,14 @@ router.post("/kits/:slug/resend-access", emailLookupRateLimit, async (req, res) 
       .limit(1);
 
     if (rows.length > 0) {
-      const buyerName = rows[0].buyerName ?? null;
+      const row = rows[0];
+      const buyerName = row.buyerName ?? null;
+
+      await db
+        .update(kitPurchasesTable)
+        .set({ lastResendAt: new Date() })
+        .where(eq(kitPurchasesTable.id, row.id));
+
       sendKitWelcomeEmail({
         buyerEmail: email,
         buyerName,
