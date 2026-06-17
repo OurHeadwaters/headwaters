@@ -1258,11 +1258,15 @@ function FinderBanner({
   secondary,
   accent,
   onDismiss,
+  priceType,
+  kitSlug,
 }: {
   reason: string;
   secondary?: string;
   accent: string;
   onDismiss: () => void;
+  priceType?: string;
+  kitSlug?: string;
 }) {
   const colors = useColors();
   const FINDER_GREEN = "#4A8C5C";
@@ -1304,6 +1308,22 @@ function FinderBanner({
       <Text style={[finderBannerStyles.reason, { color: colors.foreground, fontFamily: "DMSans_400Regular" }]}>
         {reason}
       </Text>
+
+      {priceType === "direct" && kitSlug && (
+        <Pressable
+          onPress={() => Linking.openURL(`https://${process.env.EXPO_PUBLIC_DOMAIN}/headwaters/kit/${encodeURIComponent(kitSlug)}`).catch(() => {})}
+          style={({ pressed }) => [
+            finderBannerStyles.getKitRow,
+            { backgroundColor: FINDER_GREEN + "22", opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Ionicons name="bag-handle-outline" size={14} color={FINDER_GREEN} />
+          <Text style={[finderBannerStyles.getKitText, { color: FINDER_GREEN, fontFamily: "DMSans_600SemiBold" }]}>
+            Get this kit
+          </Text>
+          <Ionicons name="arrow-forward" size={13} color={FINDER_GREEN} style={{ marginLeft: "auto" }} />
+        </Pressable>
+      )}
 
       {secondary && KIT_NAMES[secondary] && (
         <Pressable
@@ -1362,6 +1382,15 @@ const finderBannerStyles = StyleSheet.create({
     padding: 2,
   },
   reason: { fontSize: 13, lineHeight: 20 },
+  getKitRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  getKitText: { fontSize: 13 },
   secondaryRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1502,7 +1531,14 @@ export default function KitDetailScreen() {
 
         {/* ── Kit Finder recommendation banner ── */}
         {fromFinder && bannerReason && (
-          <FinderBanner reason={bannerReason} secondary={bannerSecondary} accent={accent} onDismiss={handleDismissBanner} />
+          <FinderBanner
+            reason={bannerReason}
+            secondary={bannerSecondary}
+            accent={accent}
+            onDismiss={handleDismissBanner}
+            priceType={kit.priceType}
+            kitSlug={slug}
+          />
         )}
 
         {/* ── Purchase / Inquiry CTA ── */}
