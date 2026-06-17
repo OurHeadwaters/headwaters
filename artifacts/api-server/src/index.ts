@@ -116,14 +116,17 @@ const server = app.listen(port, (err) => {
       logger.warn({ err }, "rate-limits: boot-time prune failed (non-fatal)"),
     );
 
-  // Warn for any direct-sale kit that has no accessUrl resolved.
-  // Missing URLs mean welcome email download buttons will be empty.
+  // Log kits that have no external access URL configured.
+  // These kits send buyers to the TSP /kits/:slug/welcome page (a valid
+  // fallback) instead of an external platform.  This is informational only —
+  // no button will be broken or empty.  Set KIT_ACCESS_URL_<SLUG> when the
+  // kit's content is hosted externally (e.g. a video course platform).
   for (const kit of KITS) {
     if (kit.priceType === "direct" && !kit.accessUrl) {
       const envKey = `KIT_ACCESS_URL_${kit.slug.toUpperCase().replace(/-/g, "_")}`;
-      logger.warn(
+      logger.info(
         { kitSlug: kit.slug, envKey },
-        `kits: ${envKey} not set — welcome email button will be empty`,
+        `kits: ${envKey} not set — welcome email will link to TSP kit page (no external access URL configured)`,
       );
     }
   }
