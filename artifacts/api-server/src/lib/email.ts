@@ -525,13 +525,23 @@ export function verifyKitAccessToken(
 function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
   const displayName = opts.buyerName ?? "there";
   const siteUrl = getSiteUrl();
-  const baseWelcomeUrl =
-    opts.accessUrl ?? `${siteUrl}/kits/${opts.kitSlug}/welcome`;
 
   const token = generateKitAccessToken(opts.kitSlug, opts.buyerEmail);
-  const welcomeUrl = token
-    ? `${baseWelcomeUrl}?email=${encodeURIComponent(opts.buyerEmail)}&token=${token}`
-    : baseWelcomeUrl;
+
+  // The TSP welcome page is always the re-access landing; it handles email+token
+  // verification to let returning buyers confirm their purchase without re-entering
+  // details.
+  const tspWelcomeBase = `${siteUrl}/kits/${opts.kitSlug}/welcome`;
+  const tspWelcomeUrl = token
+    ? `${tspWelcomeBase}?email=${encodeURIComponent(opts.buyerEmail)}&token=${token}`
+    : tspWelcomeBase;
+
+  // When a kit has an external accessUrl (e.g. a video course platform), that URL
+  // is the direct delivery link — use it clean, without appending TSP token params
+  // that the external platform doesn't understand.  The TSP welcome page is kept as
+  // a secondary re-access route.
+  const hasExternalAccess = !!opts.accessUrl;
+  const primaryUrl = opts.accessUrl ?? tspWelcomeUrl;
 
   const manualSection = opts.userManual
     ? `
@@ -553,6 +563,33 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
                 </tr>
               </table>`
     : "";
+
+  // When the kit has an external access URL, show the direct link prominently and
+  // add a secondary "re-access" block pointing to the TSP welcome page so buyers
+  // can always return via email verification.
+  const reAccessSection = hasExternalAccess
+    ? `
+              <!-- Re-access block (external kits only) -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;border:1px solid #e0d8d0;border-radius:6px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 6px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7c6b;font-family:'Arial',sans-serif;">Need to return later?</p>
+                    <p style="margin:0 0 12px;font-size:14px;color:#444444;line-height:1.6;">
+                      Bookmark the link above. You can also verify your purchase any time through your TSP kit page:
+                    </p>
+                    <p style="margin:0;font-size:13px;word-break:break-all;">
+                      <a href="${tspWelcomeUrl}" style="color:#2d4a2d;text-decoration:none;">${tspWelcomeUrl}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>`
+    : `
+              <p style="margin:0 0 8px;font-size:13px;color:#888888;line-height:1.5;text-align:center;">
+                Bookmark this page — it's your persistent starting point for the ${opts.kitName}.
+              </p>
+              <p style="margin:0 0 20px;font-size:12px;color:#aaaaaa;word-break:break-all;text-align:center;">
+                <a href="${primaryUrl}" style="color:#6b7c6b;">${primaryUrl}</a>
+              </p>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -582,27 +619,22 @@ function buildKitWelcomeHtml(opts: KitWelcomeEmailOptions): string {
                 Hi ${displayName},
               </p>
               <p style="margin:0 0 24px;font-size:16px;color:#333333;line-height:1.6;">
-                Your purchase is confirmed. Your kit is ready — here's everything you need to get started.
+                Your purchase is confirmed. ${hasExternalAccess ? "Click the button below for instant access." : "Your kit is ready — here's everything you need to get started."}
               </p>
 
-              <!-- CTA button -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <!-- Primary CTA button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
                 <tr>
                   <td align="center">
-                    <a href="${welcomeUrl}"
+                    <a href="${primaryUrl}"
                        style="display:inline-block;padding:14px 32px;background-color:#2d4a2d;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-family:'Arial',sans-serif;font-weight:bold;">
-                      Open Your Kit →
+                      ${hasExternalAccess ? "Access Your Content →" : "Open Your Kit →"}
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="margin:0 0 8px;font-size:13px;color:#888888;line-height:1.5;text-align:center;">
-                Bookmark this page — it's your persistent starting point for the ${opts.kitName}.
-              </p>
-              <p style="margin:0 0 20px;font-size:12px;color:#aaaaaa;word-break:break-all;text-align:center;">
-                <a href="${welcomeUrl}" style="color:#6b7c6b;">${welcomeUrl}</a>
-              </p>
+              ${reAccessSection}
 
               <!-- Secondary CTA: My Kits library -->
               <p style="margin:0 0 28px;font-size:14px;text-align:center;">
