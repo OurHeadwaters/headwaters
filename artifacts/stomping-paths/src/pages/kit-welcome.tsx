@@ -247,6 +247,27 @@ export default function KitWelcomePage() {
     })();
   }, [slug]);
 
+  useEffect(() => {
+    if (!backgroundCheckWarning || !slug || !accessEmail) return;
+    const email = accessEmail;
+    const handleOnline = async () => {
+      try {
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+        const url = `${base}/api/kits/${encodeURIComponent(slug)}/access?email=${encodeURIComponent(email)}`;
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.hasAccess) {
+          saveStoredAccess(slug, email, data.tokenVerified ? true : emailLinkVerified);
+          setBackgroundCheckWarning(false);
+        }
+      } catch {
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [backgroundCheckWarning, slug, accessEmail, emailLinkVerified]);
+
   async function runAccessCheck(email: string, token?: string) {
     if (!email) return;
     setAccessStatus("loading");
