@@ -498,8 +498,8 @@ router.post("/kits/:slug/zaprite-checkout", async (req, res) => {
 
 /* ─────────────────── GET /api/kits/:slug/access ─────────────────── */
 
-router.get("/kits/:slug/access", async (req, res) => {
-  const kit = kitBySlug(req.params.slug);
+router.get("/kits/:slug/access", emailLookupRateLimit, async (req, res) => {
+  const kit = kitBySlug(req.params.slug as string);
   if (!kit) {
     res.status(404).json({ error: "Kit not found" });
     return;
