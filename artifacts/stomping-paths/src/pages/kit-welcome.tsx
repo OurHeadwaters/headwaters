@@ -63,6 +63,44 @@ const DEFAULT_STEPS = {
   next: "Return to this kit as your situation changes. The content compounds over time.",
 };
 
+const STORAGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function storageKey(kitSlug: string) {
+  return `kit-access-v1:${kitSlug}`;
+}
+
+function loadStoredAccess(kitSlug: string): { email: string; emailLinkVerified: boolean } | null {
+  try {
+    const raw = localStorage.getItem(storageKey(kitSlug));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { email: string; emailLinkVerified: boolean; savedAt: number };
+    if (Date.now() - parsed.savedAt > STORAGE_TTL_MS) {
+      localStorage.removeItem(storageKey(kitSlug));
+      return null;
+    }
+    return { email: parsed.email, emailLinkVerified: parsed.emailLinkVerified };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredAccess(kitSlug: string, email: string, elv: boolean) {
+  try {
+    localStorage.setItem(
+      storageKey(kitSlug),
+      JSON.stringify({ email, emailLinkVerified: elv, savedAt: Date.now() }),
+    );
+  } catch {
+  }
+}
+
+function clearStoredAccess(kitSlug: string) {
+  try {
+    localStorage.removeItem(storageKey(kitSlug));
+  } catch {
+  }
+}
+
 export default function KitWelcomePage() {
   const [, params] = useRoute("/kits/:slug/welcome");
   const [location] = useLocation();
@@ -75,10 +113,20 @@ export default function KitWelcomePage() {
 
   const [sessionVerified, setSessionVerified] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-  const [emailLinkVerified, setEmailLinkVerified] = useState(false);
+  const [emailLinkVerified, setEmailLinkVerified] = useState(() => {
+    if (!slug) return false;
+    return loadStoredAccess(slug)?.emailLinkVerified ?? false;
+  });
 
-  const [accessEmail, setAccessEmail] = useState("");
-  const [accessStatus, setAccessStatus] = useState<"idle" | "loading" | "found" | "notFound" | "error">("idle");
+  const [accessEmail, setAccessEmail] = useState(() => {
+    if (!slug) return "";
+    return loadStoredAccess(slug)?.email ?? "";
+  });
+  const [accessStatus, setAccessStatus] = useState<"idle" | "loading" | "found" | "notFound" | "error">(() => {
+    if (!slug) return "idle";
+    const stored = loadStoredAccess(slug);
+    return stored ? "found" : "idle";
+  });
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const retryCountRef = useRef(0);
@@ -134,6 +182,12 @@ export default function KitWelcomePage() {
       clearRetryInterval();
     };
   }, [accessStatus]);
+
+  useEffect(() => {
+    if (accessStatus === "found" && slug && accessEmail) {
+      saveStoredAccess(slug, accessEmail, emailLinkVerified);
+    }
+  }, [accessStatus, slug, accessEmail, emailLinkVerified]);
 
   async function runAccessCheck(email: string, token?: string) {
     if (!email) return;
@@ -359,7 +413,7 @@ export default function KitWelcomePage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { clearRetryInterval(); retryCountRef.current = 0; setAccessStatus("idle"); setAccessEmail(""); }}
+                      onClick={() => { clearRetryInterval(); retryCountRef.current = 0; setAccessStatus("idle"); setAccessEmail(""); clearStoredAccess(slug); }}
                       className="text-xs font-semibold underline underline-offset-2 opacity-60"
                       style={{ color: "#C96A00" }}
                     >
