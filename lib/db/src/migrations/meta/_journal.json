@@ -239,6 +239,13 @@
       "when": 1750197600000,
       "tag": "0034_rate_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1750284000000,
+      "tag": "0035_rate_limits_prune_cron",
+      "breakpoints": true
     }
   ]
 }

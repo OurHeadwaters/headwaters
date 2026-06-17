@@ -1,5 +1,6 @@
 import app, { hwDevProxy } from "./app";
 import { logger } from "./lib/logger";
+import { pool } from "@workspace/db";
 import { startBackgroundRefresh } from "./lib/library";
 import { startGearSchedule } from "./routes/gear";
 import { getFeedCached } from "./lib/rss";
@@ -94,6 +95,21 @@ const server = app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Purge any expired rate-limit rows left over from before this process started.
+  // This covers deploy-cycle gaps where the previous process' setInterval never
+  // fired because traffic was low.  Non-blocking and non-fatal.
+  pool
+    .query("DELETE FROM rate_limits WHERE reset_at < NOW()")
+    .then((r) =>
+      logger.info(
+        { rowCount: r.rowCount },
+        "rate-limits: boot-time prune complete",
+      ),
+    )
+    .catch((err) =>
+      logger.warn({ err }, "rate-limits: boot-time prune failed (non-fatal)"),
+    );
 
   validateSeriesRegistry();
   startBackgroundRefresh();
