@@ -79,9 +79,11 @@ export function EpisodeCard({ slug, title, pubDate, episodeNumber, durationSecon
               contentFit="cover"
             />
           ) : (
-            <View style={[styles.artwork, compact && styles.artworkCompact, { backgroundColor: colors.forestMid, borderRadius: 6 }]}>
-              <Ionicons name="radio" size={compact ? 18 : 24} color={colors.amberGold} />
-            </View>
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={[styles.artwork, compact && styles.artworkCompact, styles.artworkFallback]}
+              contentFit="contain"
+            />
           )}
           <View style={styles.content}>
             <View style={styles.meta}>
@@ -164,6 +166,9 @@ const styles = StyleSheet.create({
   artworkCompact: {
     width: 56,
     height: 56,
+  },
+  artworkFallback: {
+    backgroundColor: "#1a2b1a",
   },
   content: {
     flex: 1,
