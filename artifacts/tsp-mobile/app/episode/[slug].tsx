@@ -393,9 +393,11 @@ export default function EpisodeDetailScreen() {
                 contentFit="cover"
               />
             ) : (
-              <View style={[styles.artwork, { backgroundColor: colors.primaryForeground, opacity: 0.15 }]}>
-                <Ionicons name="radio" size={48} color={colors.primaryForeground} />
-              </View>
+              <Image
+                source={require("@/assets/images/icon.png")}
+                style={[styles.artwork, styles.artworkFallback]}
+                contentFit="contain"
+              />
             )}
           </View>
         </View>
@@ -752,6 +754,9 @@ const styles = StyleSheet.create({
     maxWidth: 280,
     alignItems: "center",
     justifyContent: "center",
+  },
+  artworkFallback: {
+    backgroundColor: "#1a2b1a",
   },
   playerSection: {
     padding: 20,
