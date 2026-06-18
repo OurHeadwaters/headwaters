@@ -1,13 +1,14 @@
-import { sql, eq, and, desc, lt, gte, inArray } from "drizzle-orm";
+import { sql, eq, and, desc, lt, gte, inArray, isNull } from "drizzle-orm";
 import { db, contentItemsTable, syncRunsTable, expertCouncilTable } from "@workspace/db";
 import type { InsertContentItem, SyncRun } from "@workspace/db";
 import { logger } from "./logger";
-import { syncWordPressArchive } from "./sources/wordpress";
+import { syncWordPressArchive, fetchFeaturedImageBySlug } from "./sources/wordpress";
 import { fetchYouTubeChannel } from "./sources/youtube";
 import { syncUlg, correctUlgDiscoveredDates } from "./sources/ulg";
 import { syncFiresideFreedom } from "./sources/fireside-freedom";
 import { parseChannel, getFeedCached } from "./rss";
 import { findUlgCrossLink, findExpertLink } from "./history-enrichment";
+import { pMap } from "./id3-chapters";
 
 const REFRESH_THROTTLE_MS = 6 * 60 * 60 * 1000;
 const STARTUP_DELAY_MS = 45_000;
@@ -307,6 +308,62 @@ async function precomputeHistoryCrossLinks(): Promise<void> {
   logger.info({ processed, updated }, "precomputeHistoryCrossLinks: complete");
 }
 
+const ARTWORK_BACKFILL_BATCH = 50;
+const ARTWORK_BACKFILL_CONCURRENCY = 4;
+
+/**
+ * After each WordPress sync, sweep through any rows that still have a null
+ * artwork_url and attempt to fill them from the WordPress featured-image API.
+ *
+ * Runs in small batches so it never hammers the WP API.  Results are cached
+ * in-memory by `fetchFeaturedImageBySlug` so repeated sweeps are cheap.
+ */
+async function backfillMissingArtwork(): Promise<void> {
+  const rows = await db
+    .select({ id: contentItemsTable.id, slug: contentItemsTable.slug })
+    .from(contentItemsTable)
+    .where(
+      and(
+        isNull(contentItemsTable.artworkUrl),
+        eq(contentItemsTable.source, "wordpress"),
+      ),
+    )
+    .orderBy(sql`${contentItemsTable.publishedAt} DESC`)
+    .limit(ARTWORK_BACKFILL_BATCH);
+
+  if (rows.length === 0) {
+    logger.debug("backfillMissingArtwork: nothing to backfill");
+    return;
+  }
+
+  let updated = 0;
+  let skipped = 0;
+
+  await pMap(
+    rows,
+    async (row) => {
+      try {
+        const imageUrl = await fetchFeaturedImageBySlug(row.slug);
+        if (!imageUrl) {
+          skipped += 1;
+          return;
+        }
+        await db
+          .update(contentItemsTable)
+          .set({ artworkUrl: imageUrl, updatedAt: new Date() })
+          .where(eq(contentItemsTable.id, row.id));
+        updated += 1;
+      } catch (err) {
+        logger.warn({ err, slug: row.slug }, "backfillMissingArtwork: failed for row");
+        skipped += 1;
+      }
+    },
+    ARTWORK_BACKFILL_CONCURRENCY,
+  );
+
+  logger.info({ updated, skipped, batchSize: rows.length }, "backfillMissingArtwork: complete");
+}
+
 export type RefreshSummary = {
   wordpress: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
   youtube: { status: string; itemsSeen: number; itemsUpserted: number; error?: string };
@@ -396,6 +453,15 @@ export async function refreshAll(options: { force?: boolean } = {}): Promise<Ref
     precomputeHistoryCrossLinks().catch((err) => {
       logger.warn({ err }, "precomputeHistoryCrossLinks failed");
     });
+
+    // After each WordPress sync, sweep for any episodes still missing artwork
+    // and fill them from the WP featured-image API. Runs in the background so
+    // it never delays the sync response.
+    if (wp.status !== "skipped") {
+      backfillMissingArtwork().catch((err) => {
+        logger.warn({ err }, "backfillMissingArtwork failed");
+      });
+    }
 
     return { wordpress: wp, youtube: yt, ulg, council, firesideFreedom };
   })();
