@@ -158,12 +158,26 @@ function Router() {
   );
 }
 
+const STOMPING_PATHS_PREFIX = "/stomping-paths";
+
+function StompingPathsRedirect() {
+  useEffect(() => {
+    const { pathname, search, hash } = window.location;
+    if (pathname.startsWith(STOMPING_PATHS_PREFIX + "/") || pathname === STOMPING_PATHS_PREFIX) {
+      const stripped = pathname.slice(STOMPING_PATHS_PREFIX.length) || "/";
+      window.location.replace(stripped + search + hash);
+    }
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SelectedTransformationProvider>
           <PlayerProvider>
+            <StompingPathsRedirect />
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <Router />
               <GordChat />
