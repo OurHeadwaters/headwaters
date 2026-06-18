@@ -2,6 +2,8 @@ import { XMLParser } from "fast-xml-parser";
 import { logger } from "./logger";
 import { fetchFeaturedImageBySlug } from "./sources/wordpress";
 import { pMap } from "./id3-chapters";
+import { db, contentItemsTable } from "@workspace/db";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 const FEED_URL =
   process.env.TSP_FEED_URL ?? "https://www.thesurvivalpodcast.com/feed/podcast";
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -342,7 +344,8 @@ const RSS_ARTWORK_CONCURRENCY = 5;
  * After the feed is fetched and cached, fire a background task to enrich any
  * episodes that lack artworkUrl with the WordPress featured image. Results are
  * stored back into the in-memory feed cache so subsequent requests within the
- * TTL window see the enriched URLs. The WP slug lookup is itself cached
+ * TTL window see the enriched URLs. Newly-resolved URLs are also persisted to
+ * the DB so they survive server restarts. The WP slug lookup is itself cached
  * per-process so this never hits WP twice for the same episode.
  */
 function enrichFeedArtworkInBackground(feed: RssFeed): void {
@@ -358,6 +361,13 @@ function enrichFeedArtworkInBackground(feed: RssFeed): void {
         const imageUrl = await fetchFeaturedImageBySlug(episode.slug);
         if (imageUrl) {
           episode.artworkUrl = imageUrl;
+          // Persist to DB so this survives server restarts
+          db.update(contentItemsTable)
+            .set({ artworkUrl: imageUrl })
+            .where(eq(contentItemsTable.slug, episode.slug))
+            .catch((err) => {
+              logger.debug({ err, slug: episode.slug }, "RSS artwork enrichment: DB persist failed");
+            });
         }
       } catch {
         // Silently ignore — logo fallback handles this on the client
@@ -370,6 +380,44 @@ function enrichFeedArtworkInBackground(feed: RssFeed): void {
   }).catch(() => {
     // Background enrichment failure is non-fatal
   });
+}
+
+/**
+ * Bulk-applies any artwork URLs already persisted in the DB onto RSS feed
+ * episodes that are still missing artwork. This pre-populates the in-memory
+ * cache on startup (or after a cache miss) so the very first response shows
+ * real artwork for episodes we've seen before, without waiting for WordPress.
+ */
+async function applyDbArtworkToFeed(feed: RssFeed): Promise<void> {
+  const missingSlugs = feed.episodes
+    .filter((e) => !e.artworkUrl)
+    .map((e) => e.slug);
+  if (missingSlugs.length === 0) return;
+
+  try {
+    const rows = await db
+      .select({ slug: contentItemsTable.slug, artworkUrl: contentItemsTable.artworkUrl })
+      .from(contentItemsTable)
+      .where(
+        and(
+          inArray(contentItemsTable.slug, missingSlugs),
+          isNotNull(contentItemsTable.artworkUrl),
+        ),
+      );
+
+    if (rows.length === 0) return;
+
+    const slugToArtwork = new Map(rows.map((r) => [r.slug, r.artworkUrl!]));
+    for (const episode of feed.episodes) {
+      if (!episode.artworkUrl) {
+        const url = slugToArtwork.get(episode.slug);
+        if (url) episode.artworkUrl = url;
+      }
+    }
+    logger.debug({ applied: rows.length }, "RSS feed: pre-populated artwork from DB");
+  } catch (err) {
+    logger.warn({ err }, "RSS feed: DB artwork pre-population failed; background enrichment will fill gaps");
+  }
 }
 
 async function fetchFeed(): Promise<RssFeed> {
@@ -405,9 +453,13 @@ export async function getFeedCached(): Promise<RssFeed> {
   inflight = (async () => {
     try {
       const data = await fetchFeed();
+      // Pre-populate artwork from DB before caching so the first response
+      // is already enriched for episodes we've seen before.
+      await applyDbArtworkToFeed(data);
       cache = { fetchedAt: Date.now(), data };
       refreshAutoDescriptions(data);
-      // Enrich episodes missing artwork from WordPress (fire-and-forget)
+      // Enrich any remaining episodes missing artwork from WordPress (fire-and-forget)
+      // and persist newly-resolved URLs back to DB.
       enrichFeedArtworkInBackground(data);
       return data;
     } catch (err) {
