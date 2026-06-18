@@ -1,3 +1,11 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <!-- Shield shape -->
+  <path d="M90 30 L140 52 L140 98 C140 128 90 152 90 152 C90 152 40 128 40 98 L40 52 Z" fill="white"/>
+  <!-- Lock body -->
+  <rect x="74" y="96" width="32" height="26" rx="5" fill="#FF3C00"/>
+  <!-- Lock shackle -->
+  <path d="M80 96 L80 84 C80 74 100 74 100 84 L100 96" stroke="#FF3C00" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <!-- Keyhole dot -->
+  <circle cx="90" cy="109" r="5" fill="white"/>
 </svg>

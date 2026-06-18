@@ -1,3 +1,7 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <!-- Water drop: teardrop shape — circle bottom + pointed top -->
+  <path d="M90 36 C90 36 44 88 44 112 C44 138 65 152 90 152 C115 152 136 138 136 112 C136 88 90 36 90 36 Z" fill="white"/>
+  <!-- Highlight for depth -->
+  <ellipse cx="74" cy="108" rx="9" ry="14" fill="#FF3C00" opacity="0.25"/>
 </svg>
