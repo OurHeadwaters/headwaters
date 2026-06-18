@@ -17,6 +17,21 @@ const webhookLimiter = createRouteLimiter("webhook", 30, 60_000);
 const app: Express = express();
 app.set("trust proxy", 1);
 
+// ─── 301 redirect: /stomping-paths/* → /* ─────────────────────────────────────
+// Old URLs (e.g. thestompingpaths.com/stomping-paths/episodes) were shared
+// before the path prefix was removed. Search engines and link previewers that
+// don't execute JavaScript would receive a 404 without this server-side rule.
+app.use((req, res, next) => {
+  const LEGACY_PREFIX = "/stomping-paths";
+  if (req.path === LEGACY_PREFIX || req.path.startsWith(LEGACY_PREFIX + "/")) {
+    const newPath = req.path.slice(LEGACY_PREFIX.length) || "/";
+    const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+    res.redirect(301, newPath + qs);
+    return;
+  }
+  next();
+});
+
 // ─── Stripe webhook — MUST be registered BEFORE express.json() ────────────────
 // Stripe requires the raw Buffer body to verify the webhook signature.
 // express.json() would parse it into an object, breaking signature verification.
