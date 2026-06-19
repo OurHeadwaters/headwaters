@@ -69,6 +69,7 @@ import { SuggestCreatorPage } from "@/pages/suggest-creator";
 import ResourcesPage from "@/pages/resources";
 import { AdminFiles } from "@/pages/admin-files";
 import { AdminMediaLibrary } from "@/pages/admin-media-library";
+import CryptoCastlePage from "@/pages/crypto-castle";
 
 const queryClient = new QueryClient();
 
@@ -152,6 +153,7 @@ function Router() {
         <Route path="/suggest-creator" component={SuggestCreatorPage} />
         <Route path="/resources" component={ResourcesPage} />
         <Route path="/admin/media-library" component={AdminMediaLibrary} />
+        <Route path="/crypto-castle" component={CryptoCastlePage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

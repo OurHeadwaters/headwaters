@@ -133,6 +133,8 @@ function MapTeaser() {
             primaryZone={null}
             visitedZones={[]}
             onZoneClick={() => login()}
+            onCastleClick={() => login()}
+            onShipClick={() => login()}
           />
           {/* Bottom-fade CTA overlay */}
           <div
@@ -929,6 +931,7 @@ function MapView({
   const shownZones = filteredZones(ZONES, map.entryMode, map.riskProfile ?? null, primaryZone, secondaryZone);
 
   const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
+  const [, navigate] = useLocation();
 
   const handleBubbleMapZoneClick = useCallback((slug: string) => {
     setHighlightedZone(slug);
@@ -1147,6 +1150,8 @@ function MapView({
               primaryZone={isGuided ? (primaryZone ?? null) : null}
               visitedZones={visitedZones}
               onZoneClick={handleBubbleMapZoneClick}
+              onCastleClick={() => navigate("/crypto-castle")}
+              onShipClick={() => navigate("/headwaters")}
             />
           </div>
 

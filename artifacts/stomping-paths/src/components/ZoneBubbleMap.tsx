@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { useLocation } from "wouter";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -177,15 +178,23 @@ type Props = {
   visitedZones?: string[];
   /** called when a zone bubble or gate is clicked — scroll target */
   onZoneClick?: (slug: string) => void;
+  /** called when the Castle landmark is clicked; defaults to navigating to /crypto-castle */
+  onCastleClick?: () => void;
+  /** called when the Ship landmark is clicked; defaults to navigating to /headwaters */
+  onShipClick?: () => void;
 };
 
 export default function ZoneBubbleMap({
   primaryZone,
   visitedZones = [],
   onZoneClick,
+  onCastleClick,
+  onShipClick,
 }: Props) {
+  const [, navigate] = useLocation();
   const [hoveredGateId, setHoveredGateId] = useState<string | null>(null);
   const [flashedSlug, setFlashedSlug] = useState<string | null>(null);
+  const [hoveredLandmark, setHoveredLandmark] = useState<string | null>(null);
 
   const handleGateClick = useCallback(
     (gate: GateDef) => {
@@ -263,6 +272,24 @@ export default function ZoneBubbleMap({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <filter id="zbm-cyan-glow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="zbm-orange-glow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <radialGradient id="zbm-xrpl-window" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#00BFDF" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#00BFDF" stopOpacity="0" />
+            </radialGradient>
 
             {/* Per-zone radial gradients: dark core → zone color glow at rim */}
             <radialGradient id="zbm-fill-z0" cx="50%" cy="50%" r="50%">
@@ -530,6 +557,129 @@ export default function ZoneBubbleMap({
               </g>
             );
           })}
+
+          {/* ── Castle & Ship landmarks — top-right arc of Zone 5 ── */}
+
+          {/* Castle landmark — links to /crypto-castle */}
+          <g
+            onClick={() => onCastleClick ? onCastleClick() : navigate("/crypto-castle")}
+            onMouseEnter={() => setHoveredLandmark("castle")}
+            onMouseLeave={() => setHoveredLandmark(null)}
+            style={{ cursor: "pointer" }}
+            aria-label="Crypto Castle — enter the faction hub"
+            transform="translate(734, 68)"
+          >
+            {/* Ambient glow */}
+            <circle
+              r="26"
+              fill="#D4621A"
+              opacity={hoveredLandmark === "castle" ? 0.18 : 0.09}
+              filter="url(#zbm-orange-glow)"
+            />
+            {/* Left flanking tower */}
+            <rect x="-22" y="-2" width="8" height="18" rx="1" fill="#1a2c20" stroke="#D4621A" strokeWidth="0.7" opacity="0.95" />
+            {[-22, -19].map((x, i) => <rect key={i} x={x} y="-7" width="3" height="6" rx="0.5" fill="#1a2c20" stroke="#D4621A" strokeWidth="0.5" />)}
+            {/* Right flanking tower */}
+            <rect x="14" y="-2" width="8" height="18" rx="1" fill="#1a2c20" stroke="#D4621A" strokeWidth="0.7" opacity="0.95" />
+            {[14, 17].map((x, i) => <rect key={i} x={x} y="-7" width="3" height="6" rx="0.5" fill="#1a2c20" stroke="#D4621A" strokeWidth="0.5" />)}
+            {/* Curtain walls */}
+            <rect x="-14" y="4" width="10" height="12" fill="#162218" stroke="#D4621A" strokeWidth="0.5" opacity="0.8" />
+            <rect x="4" y="4" width="10" height="12" fill="#162218" stroke="#D4621A" strokeWidth="0.5" opacity="0.8" />
+            {/* Central keep */}
+            <rect x="-12" y="-18" width="24" height="26" rx="1" fill="#1a2c20" stroke="#D4621A" strokeWidth="0.8" opacity="0.97" />
+            {[-12, -7, -2, 3, 8].map((x, i) => <rect key={i} x={x} y="-25" width="4" height="8" rx="0.5" fill="#1a2c20" stroke="#D4621A" strokeWidth="0.5" />)}
+            {/* Gate arch */}
+            <rect x="-5" y="0" width="10" height="10" fill="#0c1611" />
+            <ellipse cx="0" cy="0" rx="5" ry="2.5" fill="#0c1611" />
+            {/* Center XRPL window */}
+            <rect x="-5" y="-16" width="10" height="13" rx="1.5" fill="#0a120e" />
+            <ellipse cx="0" cy="-10" rx="4" ry="5" fill="url(#zbm-xrpl-window)" />
+            {/* Torch glows */}
+            <circle cx="-9" cy="1" r="2.2" fill="#D4621A" opacity="0.85" filter="url(#zbm-orange-glow)" />
+            <circle cx="9" cy="1" r="2.2" fill="#D4621A" opacity="0.85" filter="url(#zbm-orange-glow)" />
+            {/* Hover tooltip label */}
+            {hoveredLandmark === "castle" && (
+              <g style={{ pointerEvents: "none" }}>
+                <rect x="-34" y="-44" width="68" height="16" rx="4" fill="#1A0A04" stroke="#D4621A44" strokeWidth="1" />
+                <text x="0" y="-33" textAnchor="middle" fill="#D4621A" fontSize="8" fontWeight="700" letterSpacing="0.06em" style={{ fontFamily: "system-ui", userSelect: "none" }}>
+                  Crypto Castle
+                </text>
+              </g>
+            )}
+            {/* Standing label */}
+            <text
+              x="0" y="26"
+              textAnchor="middle"
+              fill="#D4621A"
+              fontSize="6.5"
+              fontWeight="700"
+              letterSpacing="0.07em"
+              opacity={0.85}
+              style={{ fontFamily: "system-ui", userSelect: "none" }}
+            >
+              CASTLE
+            </text>
+          </g>
+
+          {/* Ship landmark — links to /headwaters */}
+          <g
+            onClick={() => onShipClick ? onShipClick() : navigate("/headwaters")}
+            onMouseEnter={() => setHoveredLandmark("ship")}
+            onMouseLeave={() => setHoveredLandmark(null)}
+            style={{ cursor: "pointer" }}
+            aria-label="Headwaters Ship — practitioner intake"
+            transform="translate(794, 100)"
+          >
+            {/* Ambient glow */}
+            <circle
+              r="22"
+              fill="#00BFDF"
+              opacity={hoveredLandmark === "ship" ? 0.18 : 0.09}
+              filter="url(#zbm-cyan-glow)"
+            />
+            {/* Hull */}
+            <path
+              d="M-13 6 Q-13 14 0 16 Q13 14 13 6 L11 -1 L-11 -1 Z"
+              fill="#162830"
+              stroke="#00BFDF"
+              strokeWidth="0.9"
+              opacity="0.95"
+            />
+            {/* Deck line */}
+            <line x1="-11" y1="-1" x2="11" y2="-1" stroke="#2C4A5A" strokeWidth="0.8" />
+            {/* Mast */}
+            <line x1="0" y1="-2" x2="0" y2="-18" stroke="#5A3A1A" strokeWidth="1.3" />
+            {/* Boom */}
+            <line x1="0" y1="-14" x2="10" y2="-10" stroke="#5A3A1A" strokeWidth="0.8" opacity="0.7" />
+            {/* Sail */}
+            <path d="M0 -17 L11 -9 L0 -3 Z" fill="#00BFDF" opacity={hoveredLandmark === "ship" ? 0.85 : 0.65} />
+            {/* Fore flag */}
+            <path d="M0 -18 L5 -21 L0 -24 Z" fill="#00BFDF" opacity="0.9" />
+            {/* Porthole */}
+            <circle cx="-5" cy="6" r="2" fill="#0a120e" stroke="#00BFDF" strokeWidth="0.6" opacity="0.8" />
+            {/* Hover tooltip label */}
+            {hoveredLandmark === "ship" && (
+              <g style={{ pointerEvents: "none" }}>
+                <rect x="-38" y="-38" width="76" height="16" rx="4" fill="#041018" stroke="#00BFDF44" strokeWidth="1" />
+                <text x="0" y="-27" textAnchor="middle" fill="#00BFDF" fontSize="8" fontWeight="700" letterSpacing="0.06em" style={{ fontFamily: "system-ui", userSelect: "none" }}>
+                  Headwaters Ship
+                </text>
+              </g>
+            )}
+            {/* Standing label */}
+            <text
+              x="0" y="26"
+              textAnchor="middle"
+              fill="#00BFDF"
+              fontSize="6.5"
+              fontWeight="700"
+              letterSpacing="0.07em"
+              opacity={0.85}
+              style={{ fontFamily: "system-ui", userSelect: "none" }}
+            >
+              SHIP
+            </text>
+          </g>
 
           {/* "You are here" marker */}
           {primaryDef && (
