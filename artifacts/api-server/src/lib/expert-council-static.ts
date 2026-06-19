@@ -59,16 +59,6 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     zones: ["zone-2", "zone-3"],
   },
   {
-    id: "dr-joseph-mercola",
-    name: "Dr. Joseph Mercola",
-    role: "Natural Health & Nutrition",
-    description:
-      "Physician and natural health advocate. Dr. Mercola focuses on taking ownership of your health through nutrition, supplementation, and avoiding the pitfalls of conventional medicine.",
-    url: "https://www.mercola.com",
-    xHandle: "mercola",
-    zones: ["zone-0", "zone-1"],
-  },
-  {
     id: "joel-salatin",
     name: "Joel Salatin",
     role: "Regenerative Farming",
