@@ -16,7 +16,7 @@ const ZONE_ACCENT_COLORS = [
   "#7FAF7F",
   "#5BA3C9",
 ];
-import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode } from "@/hooks/use-zone-resources";
+import { useZoneResources, type ZoneExpert, type ZoneBusiness, type ZoneResourceEpisode, type ZoneCluster } from "@/hooks/use-zone-resources";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { ProductShelfSection, type ReviewedProduct } from "@/components/product-shelf";
 import { DebtFreedomCoachPanel } from "@/components/debt-freedom-coach";
@@ -371,6 +371,43 @@ function ExpertCard({ expert, isZone0 }: { expert: ZoneExpert; isZone0?: boolean
   }
 
   return <div>{cardInner}</div>;
+}
+
+function TopicClusterSection({
+  cluster,
+  accentColor,
+  isZone0,
+}: {
+  cluster: ZoneCluster;
+  accentColor: string;
+  isZone0?: boolean;
+}) {
+  if (cluster.experts.length === 0) return null;
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex-1 h-px" style={{ background: `${accentColor}25` }} />
+        <div
+          className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border"
+          style={{ color: accentColor, borderColor: `${accentColor}40`, background: `${accentColor}08` }}
+        >
+          <span>{cluster.emoji}</span>
+          <span>{cluster.label}</span>
+        </div>
+        <div className="flex-1 h-px" style={{ background: `${accentColor}25` }} />
+      </div>
+      {cluster.description && (
+        <p className="text-xs text-muted-foreground mb-4 text-center max-w-xl mx-auto leading-relaxed">
+          {cluster.description}
+        </p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {cluster.experts.map((expert) => (
+          <ExpertCard key={expert.id} expert={expert} isZone0={isZone0} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function BusinessCard({ biz }: { biz: ZoneBusiness }) {
@@ -906,7 +943,7 @@ export default function ZoneDetailPage() {
     return <ZoneTeaserPage data={data} onLogin={login} />;
   }
 
-  const { zone, episodes, episodeTotal, experts, businesses, councilEpisodes = [] } = data;
+  const { zone, episodes, episodeTotal, experts, businesses, councilEpisodes = [], clusters = [] } = data;
 
   const idx = zone.number;
   const ringColor = ZONE_RING_COLORS[idx] ?? "border-primary";
@@ -1060,13 +1097,40 @@ export default function ZoneDetailPage() {
             <p className="text-sm text-muted-foreground py-6 text-center">
               No Expert Council members tagged for this zone yet.
             </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {experts.map((expert) => (
-                <ExpertCard key={expert.id} expert={expert} isZone0={isZone0} />
-              ))}
-            </div>
-          )}
+          ) : (() => {
+            const clusteredIds = new Set(clusters.flatMap((c) => c.experts.map((e) => e.id)));
+            const remainingExperts = experts.filter((e) => !clusteredIds.has(e.id));
+            return (
+              <>
+                {clusters.map((cluster) => (
+                  <TopicClusterSection
+                    key={cluster.id}
+                    cluster={cluster}
+                    accentColor={accentColor}
+                    isZone0={isZone0}
+                  />
+                ))}
+                {remainingExperts.length > 0 && (
+                  <>
+                    {clusters.length > 0 && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex-1 h-px bg-border/60" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">
+                          All experts
+                        </span>
+                        <div className="flex-1 h-px bg-border/60" />
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {remainingExperts.map((expert) => (
+                        <ExpertCard key={expert.id} expert={expert} isZone0={isZone0} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            );
+          })()}
         </section>
 
         {/* Member Episodes (Council feed) */}

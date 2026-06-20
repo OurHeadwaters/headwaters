@@ -47,6 +47,16 @@ export type ZoneResourceEpisode = {
   zoneScore: number;
 };
 
+export type ZoneCluster = {
+  id: string;
+  label: string;
+  description: string;
+  emoji: string;
+  zones: string[];
+  expertSlugs: string[];
+  experts: ZoneExpert[];
+};
+
 export type ZoneResources = {
   zone: ZoneResourceInfo;
   episodes: ZoneResourceEpisode[];
@@ -54,6 +64,7 @@ export type ZoneResources = {
   experts: ZoneExpert[];
   businesses: ZoneBusiness[];
   councilEpisodes: ZoneResourceEpisode[];
+  clusters: ZoneCluster[];
 };
 
 async function fetchZoneResources(slug: string, source?: "tsp" | "ulg" | "fireside-freedom"): Promise<ZoneResources> {

@@ -9,6 +9,7 @@ import {
   expertCountByZone,
   businessCountByZone,
 } from "../lib/expert-council";
+import { clustersForZone } from "../lib/topic-clusters";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -401,6 +402,8 @@ router.get("/zones/:slug/resources", async (req, res) => {
     const episodes = (episodeRows.rows as EpRow[]).map(mapEpisode);
     const councilEpisodes = (councilRows.rows as EpRow[]).map(mapEpisode);
 
+    const clusters = clustersForZone(zone.slug, experts);
+
     res.json({
       zone: {
         number: zone.number,
@@ -416,6 +419,7 @@ router.get("/zones/:slug/resources", async (req, res) => {
       experts,
       businesses,
       councilEpisodes,
+      clusters,
     });
   } catch (err) {
     logger.error({ err }, "zone resources failed");
