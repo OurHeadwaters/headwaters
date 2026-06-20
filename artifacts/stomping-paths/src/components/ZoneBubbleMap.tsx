@@ -738,6 +738,8 @@ export default function ZoneBubbleMap({
           { color: "#7ABF5E", label: "Eave Flow  (Z0→Z1)" },
           { color: "#6A9A55", label: "Gate membrane — click to go to zone" },
           { color: "#CC3333", label: "⊘  Z1→Z3 — no direct crossing" },
+          { color: "#D4621A", label: "🏰 Crypto Castle — faction hub" },
+          { color: "#00BFDF", label: "⛵ Headwaters Ship — practitioner intake" },
           ...(primaryZone ? [{ color: zoneBySlug(primaryZone).color, label: "● You are here" }] : []),
         ].map((item) => (
           <span key={item.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
