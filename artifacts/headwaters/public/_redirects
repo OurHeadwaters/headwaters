@@ -1,0 +1,13 @@
+# Cloudflare Pages — redirect rules
+# Headwaters Practitioner Intake Tool (artifacts/headwaters)
+# Deployed root: thestompingpaths.com/headwaters/
+# As a standalone CF Pages project, all paths below are relative to its own root (/).
+#
+# STUB — committed for migration readiness. Review before deploying.
+
+# ── API proxy → Fly.io API server ─────────────────────────────────────────────
+# Headwaters API calls go to /api/headwaters/* on the shared API server.
+/api/* https://headwaters-watershed-api.fly.dev/api/:splat 200
+
+# ── SPA fallback — must be last ───────────────────────────────────────────────
+/* /index.html 200

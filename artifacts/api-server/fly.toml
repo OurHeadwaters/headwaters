@@ -1,0 +1,70 @@
+# fly.toml — Headwaters Watershed API Server
+# Target: Fly.io (https://fly.io)
+# Primary region: yyz (Toronto — closest to Dryden, Ontario)
+#
+# STUB — committed for migration readiness. Not yet deployed.
+# Deploy instructions: see MIGRATION.md Step 2.
+#
+# Pre-deploy checklist:
+#   1. `fly launch --no-deploy --config fly.toml` to register the app
+#   2. `fly secrets import < secrets.env` to set all required secrets (see ENV_VAR_MAP.md)
+#   3. Write Dockerfile at artifacts/api-server/Dockerfile (see MIGRATION.md Step 2.1)
+#   4. `fly deploy --dockerfile Dockerfile --build-context ../..`
+
+app = "headwaters-watershed-api"
+primary_region = "yyz"
+
+[build]
+  # Build context is the monorepo root so workspace packages resolve.
+  # Dockerfile: artifacts/api-server/Dockerfile
+  # Deploy command:
+  #   fly deploy --dockerfile artifacts/api-server/Dockerfile --build-context .
+  # (run from repo root)
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  LOG_LEVEL = "info"
+
+# All secrets (DATABASE_URL, STRIPE_WEBHOOK_SECRET, etc.) are set via:
+#   fly secrets set KEY=value
+#   fly secrets import < secrets.env
+# Never commit secret values to this file. See ENV_VAR_MAP.md for the full list.
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/healthz"
+    timeout = "5s"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# Scale up after traffic confirms stability:
+#   fly scale vm shared-cpu-2x --app headwaters-watershed-api
+#   fly scale count 2 --app headwaters-watershed-api
+#   fly scale memory 1024 --app headwaters-watershed-api
+
+# Note: run drizzle-kit push against DATABASE_URL_DIRECT (non-pooled Neon URL)
+# BEFORE deploying to Fly.io. The API server does not auto-migrate on startup.
+# See MIGRATION.md Step 1.2 for the exact command.
+
+[[statics]]
+  # No static file serving — all static assets are on Cloudflare Pages.
+  # The API only serves /api/* routes.

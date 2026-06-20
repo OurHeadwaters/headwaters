@@ -1,0 +1,18 @@
+# Cloudflare Pages — redirect rules
+# The Stomping Paths (artifacts/stomping-paths)
+# Deployed root: thestompingpaths.com/
+#
+# STUB — committed for migration readiness. Review before deploying.
+#
+# Rules are evaluated top-to-bottom. First match wins.
+
+# ── API proxy → Fly.io API server ─────────────────────────────────────────────
+# Route all /api/* requests to the Fly.io API server.
+# Requires Cloudflare Worker or Pages Function — _redirects proxying is limited.
+# For full proxy support, use a Cloudflare Worker (see MIGRATION.md Step 3.1).
+# Placeholder rule below:
+/api/* https://headwaters-watershed-api.fly.dev/api/:splat 200
+
+# ── SPA fallback — must be last ───────────────────────────────────────────────
+# All unmatched routes serve index.html so client-side routing (wouter) works.
+/* /index.html 200

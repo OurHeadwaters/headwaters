@@ -1,0 +1,12 @@
+# Cloudflare Pages — redirect rules
+# Codetry — Digital Self-Reliance (artifacts/codetry)
+# Deployed root: thestompingpaths.com/codetry/
+# As a standalone CF Pages project, all paths below are relative to its own root (/).
+#
+# STUB — committed for migration readiness. Review before deploying.
+
+# ── API proxy → Fly.io API server ─────────────────────────────────────────────
+/api/* https://headwaters-watershed-api.fly.dev/api/:splat 200
+
+# ── SPA fallback — must be last ───────────────────────────────────────────────
+/* /index.html 200

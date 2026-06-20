@@ -1,0 +1,35 @@
+# Cloudflare Pages — HTTP response headers
+# The Stomping Paths (artifacts/stomping-paths)
+# Deployed root: thestompingpaths.com/
+#
+# STUB — committed for migration readiness. Review before deploying.
+
+# ── Security headers (all pages) ──────────────────────────────────────────────
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# ── Immutable static assets (Vite content-hashed filenames) ──────────────────
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ── Audio files (served from TSP CDN, not here — but if self-hosted) ─────────
+/audio/*
+  Cache-Control: public, max-age=86400
+
+# ── Open Graph images ─────────────────────────────────────────────────────────
+/og/*
+  Cache-Control: public, max-age=3600
+
+# ── Service Worker / manifest ─────────────────────────────────────────────────
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/manifest.json
+  Cache-Control: public, max-age=3600
+
+# ── HTML entry point — never cache ───────────────────────────────────────────
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
