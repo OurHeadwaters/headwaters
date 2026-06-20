@@ -95,7 +95,7 @@ const WINGS: Wing[] = [
       "Conviction lives here. This wing is for those who have already chosen their path and carry it quietly — sharing strength with the shared hall without demanding anyone follow.",
     icon: Shield,
     accentColor: TORCH_ORANGE,
-    href: "/zones/zone-0",
+    href: "/crypto-castle/bitcoin-keep",
     buttonLabel: "Enter this wing",
   },
   {
@@ -106,7 +106,7 @@ const WINGS: Wing[] = [
       "Builders, tokenizers, and Hook writers. XRPL rails run through every wing of the castle — this is where the infrastructure gets hammered out and the tools are made.",
     icon: Hammer,
     accentColor: XRPL_CYAN,
-    href: "/zones/zone-0",
+    href: "/crypto-castle/xrpl-forge",
     buttonLabel: "Enter this wing",
   },
   {
@@ -117,7 +117,7 @@ const WINGS: Wing[] = [
       "Where all factions meet, trade skills, and run Fireside Chats. The Hall belongs to everyone in the castle. You don't have to agree on money to share a meal.",
     icon: Users,
     accentColor: "#8BAD78",
-    href: "/stomping-grounds",
+    href: "/crypto-castle/community-hall",
     buttonLabel: "Enter this wing",
   },
   {
@@ -128,7 +128,7 @@ const WINGS: Wing[] = [
       "Balance intelligence. The Tower reads across all wings and flags where the system is drifting — keeping the castle oriented when the outside world loses its bearings.",
     icon: Compass,
     accentColor: "#C4A05A",
-    href: "/map",
+    href: "/crypto-castle/gyroscope-tower",
     buttonLabel: "Enter this wing",
   },
 ];

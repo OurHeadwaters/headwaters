@@ -70,6 +70,10 @@ import ResourcesPage from "@/pages/resources";
 import { AdminFiles } from "@/pages/admin-files";
 import { AdminMediaLibrary } from "@/pages/admin-media-library";
 import CryptoCastlePage from "@/pages/crypto-castle";
+import BitcoinKeepPage from "@/pages/castle-bitcoin-keep";
+import XrplForgePage from "@/pages/castle-xrpl-forge";
+import CommunityHallPage from "@/pages/castle-community-hall";
+import GyroscopeTowerPage from "@/pages/castle-gyroscope-tower";
 
 const queryClient = new QueryClient();
 
@@ -154,6 +158,10 @@ function Router() {
         <Route path="/resources" component={ResourcesPage} />
         <Route path="/admin/media-library" component={AdminMediaLibrary} />
         <Route path="/crypto-castle" component={CryptoCastlePage} />
+        <Route path="/crypto-castle/bitcoin-keep" component={BitcoinKeepPage} />
+        <Route path="/crypto-castle/xrpl-forge" component={XrplForgePage} />
+        <Route path="/crypto-castle/community-hall" component={CommunityHallPage} />
+        <Route path="/crypto-castle/gyroscope-tower" component={GyroscopeTowerPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
