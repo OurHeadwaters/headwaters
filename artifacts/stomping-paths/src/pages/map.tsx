@@ -103,8 +103,77 @@ const QUESTIONNAIRE_STEPS = [
   },
 ];
 
+const LANDMARK_INFO = {
+  castle: {
+    label: "Crypto Castle",
+    icon: "🏰",
+    color: "#D4621A",
+    colorBg: "#D4621A18",
+    colorBorder: "#D4621A33",
+    desc: "The faction hub for digital self-reliance, crypto, and financial sovereignty — members only.",
+  },
+  ship: {
+    label: "Headwaters Ship",
+    icon: "⛵",
+    color: "#00BFDF",
+    colorBg: "#00BFDF18",
+    colorBorder: "#00BFDF33",
+    desc: "Connect with a practitioner for a personalized zone placement on your Lifestyle Map.",
+  },
+} as const;
+
+function LandmarkLoginPrompt({
+  landmark,
+  onLogin,
+  onClose,
+}: {
+  landmark: keyof typeof LANDMARK_INFO;
+  onLogin: () => void;
+  onClose: () => void;
+}) {
+  const info = LANDMARK_INFO[landmark];
+  return (
+    <div
+      className="absolute inset-x-4 top-4 z-10 rounded-2xl border px-5 py-4 flex items-start gap-4 shadow-2xl"
+      style={{ background: "#0D1A10", borderColor: info.colorBorder }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Log in to access ${info.label}`}
+    >
+      <span className="text-2xl leading-none mt-0.5" aria-hidden="true">{info.icon}</span>
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest mb-1"
+          style={{ color: info.color }}
+        >
+          Members only
+        </p>
+        <p className="font-serif text-sm font-bold text-foreground mb-1">{info.label}</p>
+        <p className="text-xs leading-snug text-muted-foreground mb-3">{info.desc}</p>
+        <button
+          onClick={onLogin}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition-all hover:opacity-90 active:scale-[0.97]"
+          style={{ background: info.color, color: "#FDFBF7" }}
+        >
+          Log in to continue
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <button
+        onClick={onClose}
+        aria-label="Dismiss"
+        className="shrink-0 p-1 rounded-lg transition-colors hover:bg-white/10 mt-0.5"
+        style={{ color: "#6B9E5099" }}
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 function MapTeaser() {
   const { login } = useAuth();
+  const [landmarkPrompt, setLandmarkPrompt] = useState<keyof typeof LANDMARK_INFO | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,12 +198,19 @@ function MapTeaser() {
 
         {/* Map + CTA overlay */}
         <div className="relative rounded-2xl overflow-hidden mb-8">
+          {landmarkPrompt && (
+            <LandmarkLoginPrompt
+              landmark={landmarkPrompt}
+              onLogin={login}
+              onClose={() => setLandmarkPrompt(null)}
+            />
+          )}
           <ZoneBubbleMap
             primaryZone={null}
             visitedZones={[]}
             onZoneClick={() => login()}
-            onCastleClick={() => login()}
-            onShipClick={() => login()}
+            onCastleClick={() => setLandmarkPrompt("castle")}
+            onShipClick={() => setLandmarkPrompt("ship")}
           />
           {/* Bottom-fade CTA overlay */}
           <div
