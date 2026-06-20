@@ -1178,6 +1178,149 @@ export default function TrackDetailPage() {
             </p>
           </div>
 
+          {/* Vessel Sovereignty: Seed Playlist — 5 curated starting episodes */}
+          {slug === "vessel-sovereignty" && (
+            <div className="print:hidden max-w-2xl mb-4 rounded-xl border p-5 space-y-3"
+              style={{ borderColor: "#7B5EA740", background: "#7B5EA70A" }}
+            >
+              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#7B5EA7" }}>
+                Start Here — 5 Episodes to Begin the Track
+              </div>
+              <p className="text-xs text-muted-foreground">
+                New to this zone? These five episodes form the core framework. Work through them in order before exploring the full archive.
+              </p>
+              <div className="space-y-2">
+                {[
+                  {
+                    num: "1",
+                    slug: "understanding-the-mind-of-a-modern-survivalist",
+                    title: "Episode 280 — Understanding the Mind of a Modern Survivalist",
+                    desc: "The foundational episode. What separates reactive fear-based thinking from grounded situational awareness.",
+                  },
+                  {
+                    num: "2",
+                    slug: "1166-mentality-of-survivalism",
+                    title: "Episode 1166 — The Fundamental Mentality of Modern Survivalism",
+                    desc: "How the sovereignty mindset differs from survivalist culture — internal locus of control, not bunker logic.",
+                  },
+                  {
+                    num: "3",
+                    slug: "critical-thinking-issue-analysis",
+                    title: "Episode 1336 — Critical Thinking and Issue Analysis",
+                    desc: "A framework for evaluating any claim: how to separate signal from noise in a high-noise environment.",
+                  },
+                  {
+                    num: "4",
+                    slug: "free-your-mind",
+                    title: "Episode 1438 — Free Your Mind and the Rest Will Follow",
+                    desc: "The mental model update: how to recognize and interrupt inherited programs without losing your bearings.",
+                  },
+                  {
+                    num: "5",
+                    slug: "resisting-social-engineering",
+                    title: "Episode 2748 — A High Level View of Resisting Social Engineering",
+                    desc: "Applied vessel sovereignty: how to recognize, name, and resist behavioral manipulation in real time.",
+                  },
+                ].map((ep) => (
+                  <Link
+                    key={ep.num}
+                    href={`/library/${ep.slug}`}
+                    className="flex items-start gap-3 rounded-lg p-3 border border-border bg-card hover:border-[#7B5EA760] hover:-translate-y-0.5 transition-all block"
+                  >
+                    <div
+                      className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
+                      style={{ background: "#7B5EA720", color: "#7B5EA7", border: "1px solid #7B5EA740" }}
+                    >
+                      {ep.num}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground leading-snug">{ep.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{ep.desc}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground italic">
+                Search the archive below using keywords like "mindset", "media literacy", "conditioning", or "neuroplasticity" to find related episodes.
+              </p>
+            </div>
+          )}
+
+          {/* Vessel Sovereignty: Human Alternatives section */}
+          {slug === "vessel-sovereignty" && (
+            <div className="print:hidden max-w-2xl mb-4 rounded-xl border p-5 space-y-4"
+              style={{ borderColor: "#7B5EA740", background: "#7B5EA70A" }}
+            >
+              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#7B5EA7" }}>
+                Human-Program Alternatives — Reframing common conspiratorial claims
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Many claims in the conspiratorial space reach for supernatural or non-human explanations for observable human behavior. The framework below offers a grounded alternative for each: not dismissing the underlying concern, but rerouting it through mechanisms we can actually study, test, and act on.
+              </p>
+              <div className="space-y-3">
+                {[
+                  {
+                    claim: "Reptilian elites control global systems",
+                    reframe: "Elite capture of institutions is real and well documented. Concentrated wealth produces concentrated influence. You don't need non-humans — incentive structures and power law distributions explain the rest.",
+                  },
+                  {
+                    claim: "Humans are spiritually asleep / under a spell",
+                    reframe: "Chronic stress, dopamine hijacking, filter bubbles, and decision fatigue are neurologically real. The 'spell' is behavioral conditioning — and it can be interrupted.",
+                  },
+                  {
+                    claim: "A hidden force is suppressing human consciousness",
+                    reframe: "Algorithmic engagement optimization is designed to suppress deliberative thinking in favor of reactive emotional response. This is documented, studied, and publicly disclosed in platform patents.",
+                  },
+                  {
+                    claim: "Non-human entities implant thoughts and desires",
+                    reframe: "Advertising, social proof, manufactured scarcity, and influencer marketing are industrial-scale systems for inserting desires into human minds without consent. No non-humans required.",
+                  },
+                  {
+                    claim: "The control system is ancient and cosmic in scale",
+                    reframe: "Power hierarchies with cross-generational continuity exist and do show structural patterns across centuries. Institutional inertia and cultural transmission explain the persistence — no cosmic coordination needed.",
+                  },
+                  {
+                    claim: "Humans are being harvested energetically",
+                    reframe: "Attention is the resource being harvested. It is quantified, sold, and traded. This is the attention economy — not metaphor.",
+                  },
+                  {
+                    claim: "The masses are in a trance they can't escape",
+                    reframe: "Social conformity bias, availability heuristics, and sunk cost thinking are powerful but not permanent. Neuroplasticity means the vessel can be reprogrammed — by you, deliberately.",
+                  },
+                  {
+                    claim: "A fundamental deception runs through modern reality",
+                    reframe: "Manufactured consent, regulatory capture, and media consolidation produce systematic distortions in the shared informational environment. Chomsky documented this in 1988. It's structural, not mystical.",
+                  },
+                ].map((item) => (
+                  <div key={item.claim} className="rounded-lg border border-border bg-card p-3.5">
+                    <div className="text-xs font-semibold text-muted-foreground mb-1 line-through opacity-60">
+                      "{item.claim}"
+                    </div>
+                    <div className="text-sm text-foreground leading-relaxed">
+                      {item.reframe}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <a
+                  href="/tools/sliding-trust-scale"
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ color: "#7B5EA7", background: "#7B5EA715", border: "1px solid #7B5EA740" }}
+                >
+                  Evaluate a claim → Sliding Trust Scale
+                </a>
+                <a
+                  href="/tools/input-sovereignty"
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ color: "#7B5EA7", background: "#7B5EA715", border: "1px solid #7B5EA740" }}
+                >
+                  Audit your inputs → Input Sovereignty
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Progress bar */}
           <div className="print:hidden">
             <ProgressBar doneCount={displayDoneCount} total={total} color={track.color} />

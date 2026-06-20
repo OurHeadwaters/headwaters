@@ -15,6 +15,7 @@ export type StorageFile = {
   description: string | null;
   category: string | null;
   tags: string[];
+  evidenceTier: number | null;
 };
 
 function apiUrl(path: string): string {

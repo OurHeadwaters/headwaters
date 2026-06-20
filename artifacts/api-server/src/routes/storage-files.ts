@@ -146,6 +146,7 @@ router.get("/storage/files", async (_req, res) => {
         description: dbMeta?.description ?? null,
         category: dbMeta?.category ?? null,
         tags: dbMeta?.tags ?? [],
+        evidenceTier: dbMeta?.evidenceTier ?? null,
       };
     });
 
@@ -165,12 +166,13 @@ router.get("/storage/files", async (_req, res) => {
 /* ── PUT /api/admin/storage/files/metadata ──────────────────────────────── */
 
 router.put("/admin/storage/files/metadata", requireEditor, async (req, res) => {
-  const { fileKey, title, description, category, tags } = req.body as {
+  const { fileKey, title, description, category, tags, evidenceTier } = req.body as {
     fileKey?: string;
     title?: string;
     description?: string;
     category?: string;
     tags?: string[];
+    evidenceTier?: number | null;
   };
 
   if (!fileKey || typeof fileKey !== "string" || !fileKey.trim()) {
@@ -179,6 +181,11 @@ router.put("/admin/storage/files/metadata", requireEditor, async (req, res) => {
   }
 
   try {
+    const tierValue =
+      typeof evidenceTier === "number" && evidenceTier >= 0 && evidenceTier <= 4
+        ? evidenceTier
+        : null;
+
     const [row] = await db
       .insert(fileMetadataTable)
       .values({
@@ -187,6 +194,7 @@ router.put("/admin/storage/files/metadata", requireEditor, async (req, res) => {
         description: description?.trim() || null,
         category: category?.trim() || null,
         tags: Array.isArray(tags) ? tags.map((t) => t.trim()).filter(Boolean) : [],
+        evidenceTier: tierValue,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -196,6 +204,7 @@ router.put("/admin/storage/files/metadata", requireEditor, async (req, res) => {
           description: description?.trim() || null,
           category: category?.trim() || null,
           tags: Array.isArray(tags) ? tags.map((t) => t.trim()).filter(Boolean) : [],
+          evidenceTier: tierValue,
           updatedAt: new Date(),
         },
       })

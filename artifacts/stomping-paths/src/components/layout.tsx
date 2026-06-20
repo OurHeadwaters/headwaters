@@ -122,6 +122,8 @@ const landmarkItems = [
   { href: "/library", label: "The Archive", desc: `${TSP_EPISODE_COUNT} episodes — search everything` },
   { href: "/council", label: "Expert Council", desc: "Practitioners and advisors" },
   { href: "/headwaters", label: "The Headwaters", desc: "Member area — community and resources" },
+  { href: "/tools/sliding-trust-scale", label: "Sliding Trust Scale", desc: "Score any claim across 6 evidence criteria" },
+  { href: "/tools/input-sovereignty", label: "Input Sovereignty", desc: "Audit your information diet & kill the algorithm" },
   { href: "/privacy-guide/", label: "Family Kit", desc: "Privacy guide for families", external: true },
   { href: "/codetry/", label: "The Arch", desc: "Digital sovereignty — Codetry", external: true },
   { href: "/resources", label: "Resources", desc: "PDFs, guides, and media files" },

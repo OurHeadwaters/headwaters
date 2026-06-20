@@ -3,6 +3,7 @@ import {
   FileText, Video, Image, File, Loader2, ExternalLink, Filter, Search, Tag,
 } from "lucide-react";
 import { useStorageFiles, type FileType, type StorageFile } from "@/hooks/use-storage-files";
+import { EvidenceTierBadge, type EvidenceTier } from "@/components/evidence-tier-badge";
 
 function apiUrl(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -85,11 +86,12 @@ function FileCard({ file }: { file: StorageFile }) {
               <TypeBadge type={file.type} />
             </div>
 
-            {file.category && (
-              <div className="mb-1.5">
-                <CategoryBadge category={file.category} />
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+              {file.category && <CategoryBadge category={file.category} />}
+              {file.evidenceTier !== null && file.evidenceTier !== undefined && (
+                <EvidenceTierBadge tier={file.evidenceTier as EvidenceTier} />
+              )}
+            </div>
 
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>{file.sizeLabel}</span>

@@ -1089,6 +1089,99 @@ export default function ZoneDetailPage() {
           </section>
         )}
 
+        {/* Zone 0: Tools & Paths — Vessel Sovereignty */}
+        {isZone0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="flex-1 h-px" style={{ background: `${accentColor}30` }} />
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border"
+                style={{ color: accentColor, borderColor: `${accentColor}40`, background: `${accentColor}08` }}
+              >
+                Tools &amp; Paths
+              </div>
+              <div className="flex-1 h-px" style={{ background: `${accentColor}30` }} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Vessel Sovereignty Track */}
+              <Link
+                href="/tracks/vessel-sovereignty"
+                className="group rounded-xl border p-5 flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all"
+                style={{ borderColor: "#7B5EA740", background: "#7B5EA70A", borderTop: "3px solid #7B5EA7" }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl leading-none">🧠</span>
+                  <div>
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "#7B5EA7" }}>
+                      Learning Track
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm leading-snug group-hover:text-primary transition-colors">
+                      Vessel Sovereignty
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1">
+                  Reclaim your mind from behavioral conditioning, algorithmic manipulation, and manufactured consensus.
+                </p>
+                <span className="text-xs font-semibold" style={{ color: "#7B5EA7" }}>
+                  Start track →
+                </span>
+              </Link>
+
+              {/* Sliding Trust Scale Tool */}
+              <Link
+                href="/tools/sliding-trust-scale"
+                className="group rounded-xl border p-5 flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all"
+                style={{ borderColor: "#7B5EA740", background: "#7B5EA70A", borderTop: "3px solid #7B5EA7" }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl leading-none">⚖️</span>
+                  <div>
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "#7B5EA7" }}>
+                      Interactive Tool
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm leading-snug group-hover:text-primary transition-colors">
+                      Sliding Trust Scale
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1">
+                  Score any claim across 6 evidence criteria. Know what tier of confidence it actually deserves.
+                </p>
+                <span className="text-xs font-semibold" style={{ color: "#7B5EA7" }}>
+                  Open tool →
+                </span>
+              </Link>
+
+              {/* Input Sovereignty Tool */}
+              <Link
+                href="/tools/input-sovereignty"
+                className="group rounded-xl border p-5 flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all"
+                style={{ borderColor: "#7B5EA740", background: "#7B5EA70A", borderTop: "3px solid #7B5EA7" }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl leading-none">🛡️</span>
+                  <div>
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "#7B5EA7" }}>
+                      Module
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm leading-snug group-hover:text-primary transition-colors">
+                      Input Sovereignty
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1">
+                  Audit your information diet, kill the algorithm, and build conscious communication practices.
+                </p>
+                <span className="text-xs font-semibold" style={{ color: "#7B5EA7" }}>
+                  Open module →
+                </span>
+              </Link>
+            </div>
+          </section>
+        )}
+
         {/* Debt Freedom Coach — Zone 0 only */}
         {isZone0 && (
           <section>

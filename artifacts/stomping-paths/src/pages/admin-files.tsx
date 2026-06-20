@@ -20,12 +20,22 @@ async function fetchFiles(): Promise<StorageFile[]> {
   return res.json();
 }
 
+const EVIDENCE_TIER_OPTIONS = [
+  { value: -1, label: "— Not set —" },
+  { value: 0, label: "T0 · Foundational" },
+  { value: 1, label: "T1 · Strong" },
+  { value: 2, label: "T2 · Moderate" },
+  { value: 3, label: "T3 · Emerging" },
+  { value: 4, label: "T4 · Not Yet Reliable" },
+];
+
 async function saveMetadata(data: {
   fileKey: string;
   title: string;
   description: string;
   category: string;
   tags: string[];
+  evidenceTier?: number | null;
 }): Promise<StorageFile> {
   const res = await fetch(apiUrl("/admin/storage/files/metadata"), {
     method: "PUT",
@@ -51,6 +61,7 @@ interface EditState {
   description: string;
   category: string;
   tagsRaw: string;
+  evidenceTier: number;
 }
 
 function FileRow({ file, onSaved }: { file: StorageFile; onSaved: () => void }) {
@@ -60,6 +71,7 @@ function FileRow({ file, onSaved }: { file: StorageFile; onSaved: () => void }) 
     description: file.description ?? "",
     category: file.category ?? "",
     tagsRaw: (file.tags ?? []).join(", "),
+    evidenceTier: file.evidenceTier ?? -1,
   });
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -81,6 +93,7 @@ function FileRow({ file, onSaved }: { file: StorageFile; onSaved: () => void }) 
       description: file.description ?? "",
       category: file.category ?? "",
       tagsRaw: (file.tags ?? []).join(", "),
+      evidenceTier: file.evidenceTier ?? -1,
     });
     setSaveError(null);
     setEditing(true);
@@ -97,6 +110,7 @@ function FileRow({ file, onSaved }: { file: StorageFile; onSaved: () => void }) 
       description: form.description,
       category: form.category,
       tags,
+      evidenceTier: form.evidenceTier >= 0 ? form.evidenceTier : null,
     });
   }
 
@@ -154,6 +168,19 @@ function FileRow({ file, onSaved }: { file: StorageFile; onSaved: () => void }) 
             )}
           </div>
 
+          {file.evidenceTier != null && (
+            <div className="mt-1.5">
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded"
+                style={{
+                  background: file.evidenceTier === 0 ? "#22c55e18" : file.evidenceTier === 1 ? "#3b82f618" : file.evidenceTier === 2 ? "#f59e0b18" : file.evidenceTier === 3 ? "#f9731618" : "#ef444418",
+                  color: file.evidenceTier === 0 ? "#22c55e" : file.evidenceTier === 1 ? "#3b82f6" : file.evidenceTier === 2 ? "#f59e0b" : file.evidenceTier === 3 ? "#f97316" : "#ef4444",
+                }}
+              >
+                {EVIDENCE_TIER_OPTIONS.find(o => o.value === file.evidenceTier)?.label ?? `T${file.evidenceTier}`}
+              </span>
+            </div>
+          )}
           {file.description && (
             <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{file.description}</p>
           )}
@@ -225,6 +252,21 @@ function FileRow({ file, onSaved }: { file: StorageFile; onSaved: () => void }) 
               className="w-full px-3 py-2 rounded-lg text-sm bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-muted-foreground mb-1">
+            Evidence Tier <span className="font-normal opacity-60">(how well-supported is this resource?)</span>
+          </label>
+          <select
+            value={form.evidenceTier}
+            onChange={(e) => setForm((f) => ({ ...f, evidenceTier: Number(e.target.value) }))}
+            className="w-full px-3 py-2 rounded-lg text-sm bg-card border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            {EVIDENCE_TIER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import {
   pgTable,
   serial,
   text,
+  integer,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
@@ -15,6 +16,7 @@ export const fileMetadataTable = pgTable(
     description: text("description"),
     category: text("category"),
     tags: text("tags").array(),
+    evidenceTier: integer("evidence_tier"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
