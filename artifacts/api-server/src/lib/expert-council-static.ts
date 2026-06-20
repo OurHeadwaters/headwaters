@@ -15,6 +15,7 @@ export type ExpertCouncilMember = {
   zones: string[];
   comingSoon?: boolean;
   crew?: string;
+  photoUrl?: string;
 };
 
 export type UlgBusiness = {
@@ -183,6 +184,76 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.drberry.com",
     xHandle: "KenDBerryMD",
     zones: ["zone-0"],
+  },
+  {
+    id: "dr-joseph-mercola",
+    name: "Dr. Joseph Mercola",
+    role: "Natural Health & Nutrition",
+    description:
+      "Physician and natural health advocate. Dr. Mercola focuses on taking ownership of your health through nutrition, supplementation, and avoiding the pitfalls of conventional medicine.",
+    url: "https://www.mercola.com",
+    zones: ["zone-0", "zone-1"],
+    photoUrl: "https://media.mercola.com/themes/mercola/images/drmercola-image.png",
+  },
+  {
+    id: "clint-ober",
+    name: "Clint Ober",
+    role: "Grounding & Earthing Research",
+    description:
+      "The pioneer of earthing research. Clint discovered that reconnecting the human body to the Earth's natural electric field has profound anti-inflammatory and health benefits — and spent two decades funding the science to prove it. His work is the foundation of the entire earthing movement.",
+    url: "https://www.earthinginstitute.net",
+    zones: ["zone-0", "zone-1"],
+    photoUrl: "https://earthinginstitute.net/wp-content/uploads/2020/01/Clint-6.jpg",
+  },
+  {
+    id: "dr-stephen-sinatra",
+    name: "Dr. Stephen Sinatra",
+    role: "Integrative Cardiology & Earthing",
+    description:
+      "Integrative cardiologist and co-author of the book Earthing. Dr. Sinatra was one of the first mainstream physicians to advocate grounding as a clinical intervention — he documented its effects on cardiovascular health, inflammation, and sleep and helped bring earthing into credible medical discussion.",
+    url: "https://www.drsinatra.com",
+    zones: ["zone-0", "zone-1"],
+    photoUrl: "https://vitaminretailer.com/wp-content/uploads/2022/06/Sinatra-headshot-300x300.png",
+  },
+  {
+    id: "dr-james-oschman",
+    name: "Dr. James Oschman",
+    role: "Biophysics & Energy Medicine",
+    description:
+      "Biophysicist and author of Energy Medicine: The Scientific Basis. Dr. Oschman's peer-reviewed research provided the biological framework explaining how the Earth's electrons reduce inflammation — the foundational science under the entire earthing movement.",
+    url: "https://www.earthinginstitute.net",
+    zones: ["zone-0"],
+    photoUrl: "https://earthinginstitute.net/wp-content/uploads/2016/05/JamesOshmanPhD-150x150.jpg",
+  },
+  {
+    id: "dr-gaetan-chevalier",
+    name: "Dr. Gaétan Chevalier",
+    role: "Earthing Science & Bioelectromagnetics",
+    description:
+      "Physicist and research director at the Earthing Institute. Dr. Chevalier has published more peer-reviewed earthing studies than anyone in the field — covering blood viscosity, inflammation markers, sleep, and autonomic nervous system response to ground contact.",
+    url: "https://www.earthinginstitute.net",
+    zones: ["zone-0"],
+    photoUrl: "https://earthinginstitute.net/wp-content/uploads/2016/07/HeadshotGaetan.jpg",
+  },
+  {
+    id: "dr-laura-koniver",
+    name: "Dr. Laura Koniver",
+    role: "Grounding Medicine & Integrative Health",
+    description:
+      "Physician and author known as The Intuition Physician. Dr. Koniver integrates grounding into a whole-body approach to everyday health and has become one of the most accessible communicators of earthing's clinical benefits — translating the research into practical habits anyone can adopt.",
+    url: "https://www.intuition-physician.com",
+    zones: ["zone-0", "zone-1"],
+    photoUrl: "https://i.dailymail.co.uk/1s/2023/07/20/12/73399377-12316639-Dr_Laura_Koniver_49_shared_her_top_seven_holistic_anti_aging_tip-a-36_1689851355663.jpg",
+  },
+  {
+    id: "dr-zach-bush",
+    name: "Dr. Zach Bush",
+    role: "Soil Health, Microbiome & Regenerative Medicine",
+    description:
+      "Triple-board-certified physician bridging soil science, gut health, and environmental medicine. Dr. Bush's work on the microbiome and our disconnection from living soil makes the biological case for grounding, regenerative food, and reconnecting the human body to the land.",
+    url: "https://zachbushmd.com",
+    zones: ["zone-0", "zone-1", "zone-2"],
+    photoUrl: "https://www.hoffmaninstitute.org/wp-content/uploads/2024/09/ZachBushMD-Hoffman-Podcast-Featured-PhotoCredit-LeiaVita.jpg",
   },
   {
     id: "dave-ramsey",

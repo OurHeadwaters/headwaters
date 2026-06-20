@@ -51,6 +51,9 @@ export async function seedCouncilPodcastFeeds(): Promise<number> {
  * Inserts new rows and updates url, description, role, and zones
  * for existing rows (matched by slug). Admin-managed fields
  * (podcastFeedUrl, rssSlug, sortOrder) are never overwritten.
+ * photoUrl from the static registry is written on insert and on
+ * conflict only when the existing row has no photo yet — so an
+ * admin-uploaded photo is never overwritten by a re-seed.
  * Returns the number of rows inserted or updated.
  */
 export async function seedExpertCouncil(): Promise<number> {
@@ -68,6 +71,7 @@ export async function seedExpertCouncil(): Promise<number> {
         zones: m.zones,
         crew: m.crew ?? null,
         sortOrder: i,
+        photoUrl: m.photoUrl ?? null,
       })
       .onConflictDoUpdate({
         target: expertCouncilTable.slug,
@@ -78,6 +82,8 @@ export async function seedExpertCouncil(): Promise<number> {
           url: sql`excluded.url`,
           zones: sql`excluded.zones`,
           crew: sql`excluded.crew`,
+          // Only backfill photo when the row has none — never overwrite admin-set photos
+          photoUrl: sql`COALESCE(${expertCouncilTable.photoUrl}, excluded.photo_url)`,
           updatedAt: sql`now()`,
         },
       })

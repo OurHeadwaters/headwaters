@@ -329,23 +329,37 @@ function scrollToDebtCoach() {
 function ExpertCard({ expert, isZone0 }: { expert: ZoneExpert; isZone0?: boolean }) {
   const hasUrl = !!expert.url;
   const isRamsey = expert.id === "dave-ramsey";
+  const initials = expert.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
 
   const cardInner = (
     <div className={`flex flex-col gap-2 p-5 rounded-xl border border-border bg-card transition-all ${hasUrl && !isRamsey ? "hover:shadow-md hover:border-primary/30 group" : ""}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className={`font-semibold text-foreground ${hasUrl && !isRamsey ? "group-hover:text-primary transition-colors" : ""}`}>
-            {expert.name}
-          </p>
-          <p className="text-xs font-medium text-muted-foreground mt-0.5">{expert.role}</p>
-        </div>
-        {hasUrl ? (
-          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+      <div className="flex items-start gap-3">
+        {expert.photoUrl ? (
+          <img
+            src={expert.photoUrl}
+            alt={expert.name}
+            className="w-10 h-10 rounded-full object-cover shrink-0 border border-border"
+          />
         ) : (
-          <span className="text-[10px] font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
-            site coming soon
-          </span>
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm border border-border">
+            {initials}
+          </div>
         )}
+        <div className="flex items-start justify-between gap-2 flex-1 min-w-0">
+          <div className="min-w-0">
+            <p className={`font-semibold text-foreground leading-tight ${hasUrl && !isRamsey ? "group-hover:text-primary transition-colors" : ""}`}>
+              {expert.name}
+            </p>
+            <p className="text-xs font-medium text-muted-foreground mt-0.5">{expert.role}</p>
+          </div>
+          {hasUrl ? (
+            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary/60 transition-colors" />
+          ) : (
+            <span className="text-[10px] font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
+              site coming soon
+            </span>
+          )}
+        </div>
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
         {expert.description}

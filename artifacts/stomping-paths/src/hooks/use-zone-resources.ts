@@ -17,6 +17,7 @@ export type ZoneExpert = {
   description: string;
   url: string;
   zones: string[];
+  photoUrl: string | null;
 };
 
 export type ZoneBusiness = {

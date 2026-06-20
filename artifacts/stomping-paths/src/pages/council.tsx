@@ -42,6 +42,7 @@ interface Expert {
   crew: string | null;
   podcastFeedUrl: string | null;
   rssSlug: string | null;
+  photoUrl: string | null;
 }
 
 interface FeaturedExpert {
@@ -178,14 +179,23 @@ function ExpertCard({ expert }: { expert: Expert }) {
   const [, navigate] = useLocation();
   const hasUrl = !!expert.url;
   const isRamsey = expert.slug === "dave-ramsey";
+  const initials = expert.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
 
   return (
     <div className="group flex flex-col rounded-xl border border-border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
       <div className="p-5 flex flex-col gap-3 flex-1">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm">
-            {expert.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-          </div>
+          {expert.photoUrl ? (
+            <img
+              src={expert.photoUrl}
+              alt={expert.name}
+              className="w-10 h-10 rounded-full object-cover shrink-0 border-2 border-primary/20"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm">
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div>
