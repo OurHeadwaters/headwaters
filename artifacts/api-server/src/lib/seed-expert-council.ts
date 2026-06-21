@@ -84,6 +84,9 @@ export async function seedExpertCouncil(): Promise<number> {
           crew: sql`excluded.crew`,
           // Only backfill photo when the row has none — never overwrite admin-set photos
           photoUrl: sql`COALESCE(${expertCouncilTable.photoUrl}, excluded.photo_url)`,
+          // consultUrl and contactEmail are intentionally excluded from this set.
+          // They are set by the admin panel and/or the Stripe webhook flow (paid listings)
+          // and must never be overwritten by a re-seed.
           updatedAt: sql`now()`,
         },
       })
