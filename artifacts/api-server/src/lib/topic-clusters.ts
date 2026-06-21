@@ -40,6 +40,40 @@ export const TOPIC_CLUSTERS: TopicCluster[] = [
     ],
     filterTags: ["grounding", "earthing", "earthing institute"],
   },
+  {
+    id: "permaculture-food-systems",
+    label: "Permaculture & Food Systems",
+    description:
+      "Joel Salatin, Paul Wheaton, Marjory Wildcraft, and Ben Falk have each built decades of practice around the idea that land, food, and community are inseparable. TSP's permaculture thread spans backyard gardens to full-scale farm design, with episodes on soil biology, forest gardens, aquaponics, livestock integration, and the ethics of permanent agriculture.",
+    emoji: "🌿",
+    zones: ["zone-2", "zone-3"],
+    expertSlugs: [
+      "joel-salatin",
+      "paul-wheaton",
+      "marjory-wildcraft",
+      "ben-falk",
+      "jack-spirko",
+      "nate-erin-lamaster",
+      "sam-nowak",
+    ],
+    filterTags: ["permaculture", "homesteading", "gardening", "aquaponics"],
+  },
+  {
+    id: "personal-finance-resilience",
+    label: "Personal Finance & Economic Resilience",
+    description:
+      "Debt freedom, sound money, and income diversification are foundational to every zone — but they're the whole game in Zone 0. Dave Ramsey's debt snowball, Chris Martenson's crash course on exponential money, and Chuck Taylor's practical investing lens give listeners a multi-angle attack on financial dependence that TSP has reinforced across hundreds of episodes.",
+    emoji: "💰",
+    zones: ["zone-0"],
+    expertSlugs: [
+      "dave-ramsey",
+      "chris-martenson",
+      "chuck-taylor",
+      "steven-fowkes",
+      "jack-spirko",
+    ],
+    filterTags: ["debt", "economics", "money", "investing", "economy"],
+  },
 ];
 
 /**
