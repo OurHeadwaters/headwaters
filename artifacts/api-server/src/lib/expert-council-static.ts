@@ -16,6 +16,12 @@ export type ExpertCouncilMember = {
   comingSoon?: boolean;
   crew?: string;
   photoUrl?: string;
+  /**
+   * Set to true when a photo has been actively searched for but no publicly
+   * available headshot could be found. Distinguishes a deliberate "no photo"
+   * from an entry that simply hasn't been looked up yet.
+   */
+  noPhotoAvailable?: boolean;
 };
 
 export type UlgBusiness = {
@@ -38,6 +44,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.1234energy.com",
     xHandle: "1234energy",
     zones: ["zone-1", "zone-3"],
+    photoUrl: "https://www.thesurvivalpodcast.com/wp-content/uploads/2011/08/steveharris.png",
   },
   {
     id: "marjory-wildcraft",
@@ -48,6 +55,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.thegrownetwork.com",
     xHandle: "MarjoryWildcraft",
     zones: ["zone-2", "zone-3"],
+    photoUrl: "https://swiftnlift.com/wp-content/uploads/2025/01/WhatsApp-Image-2025-01-28-at-2.06.49-PM.jpeg",
   },
   {
     id: "paul-wheaton",
@@ -58,6 +66,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.permies.com",
     xHandle: "paulwheaton",
     zones: ["zone-2", "zone-3"],
+    photoUrl: "https://permies.com/t/68930/a/114605/thumb-340_paul-wheaton-return-to-old-paths.jpg",
   },
   {
     id: "joel-salatin",
@@ -68,6 +77,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.polyfacefarms.com",
     xHandle: "JoelSalatin",
     zones: ["zone-3"],
+    photoUrl: "https://www.shepherdess.com/wp-content/uploads/2022/10/Salad-Bar-Beef-Joel-Salatin-at-Poly-Face-Farms-2022-768x1024.jpg",
   },
   {
     id: "karen-m-black",
@@ -77,6 +87,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Author and community resilience strategist. Karen works at the intersection of personal preparedness and neighborhood-scale resilience — building the human network that makes everything else work.",
     url: "https://www.ithunderbird.com",
     zones: ["zone-0", "zone-5"],
+    photoUrl: "https://www.karenmblack.com/image-files/xkmbphoto2.jpg.pagespeed.ic.I8nKShfJb_.jpg",
   },
   {
     id: "john-lovell",
@@ -87,6 +98,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.warriorpoetsociety.us",
     xHandle: "JohnBLovell",
     zones: ["zone-1", "zone-5"],
+    photoUrl: "https://greathomeschoolconventions.com/images/speakers/_500x500_crop_center-center_90_none/John-Lovell-Headshot.png",
   },
   {
     id: "chris-martenson",
@@ -97,6 +109,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.peakprosperity.com",
     xHandle: "ChrisMartenson",
     zones: ["zone-0"],
+    photoUrl: "https://www.climateone.org/files/styles/square_1x/public/images/person/4.24.12.Crash-Course.Climate-One-10-Martenson-web.png?itok=J1PIje86",
   },
   {
     id: "sam-nowak",
@@ -106,6 +119,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Commercial aquaponics operator and educator. Sam builds and teaches closed-loop food production systems that combine fish and vegetables for maximum yield with minimal inputs.",
     url: "https://www.backyardaquaponics.com",
     zones: ["zone-2"],
+    noPhotoAvailable: true,
   },
   {
     id: "jack-spirko",
@@ -116,6 +130,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: getSiteUrl(),
     xHandle: "JackSpirok",
     zones: ["zone-0", "zone-1", "zone-2", "zone-3", "zone-4", "zone-5"],
+    photoUrl: "https://m.media-amazon.com/images/M/MV5BZGE0ZDhjNGItNmEwZC00ZDBhLTgwMDAtYjE2MDExZDM5NDgzXkEyXkFqcGc@.jpg",
   },
   {
     id: "dr-scott-graves",
@@ -125,6 +140,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Functional medicine practitioner focused on root-cause health — gut health, nutrition, and the kind of care that builds genuine long-term resilience rather than managing symptoms.",
     url: "https://www.integrativenutritiontherapies.com",
     zones: ["zone-0", "zone-1"],
+    noPhotoAvailable: true,
   },
   {
     id: "nicholas-de-hart",
@@ -155,6 +171,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.wholesystemsdesign.com",
     xHandle: "WholeSystemsD",
     zones: ["zone-2", "zone-3", "zone-4"],
+    photoUrl: "https://regenerativeskills.com/wp-content/uploads/2020/04/ben-falk-headshot-jeb-wallace-1170x777.jpg",
   },
   {
     id: "steven-fowkes",
@@ -164,6 +181,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Biochemist and author specializing in the chemistry of peak cognition and brain health. Steven's work on nootropics, nutrition, and neurological resilience is unlike anything else in the TSP archive.",
     url: "https://www.projectwellbeing.com",
     zones: ["zone-0"],
+    photoUrl: "https://secure.gravatar.com/avatar/bf75eb61278122673f0b4b07f43d0f330655335410e04f07c6660e5127fe4c36?s=400",
   },
   {
     id: "prof-cj-kilmer",
@@ -184,6 +202,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.drberry.com",
     xHandle: "KenDBerryMD",
     zones: ["zone-0"],
+    photoUrl: "https://www.primalhealthcoach.com/wp-content/uploads/2024/03/HCR_PHCI_KB2.jpg",
   },
   {
     id: "dr-joseph-mercola",
@@ -263,6 +282,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
       "Creator of the 7 Baby Steps — the proven, step-by-step path to getting out of debt, building a $1,000 starter emergency fund, and achieving financial peace. Dave's zero-based budgeting and debt snowball methods have helped millions stop living paycheck to paycheck.",
     url: "https://www.ramseysolutions.com",
     zones: ["zone-0"],
+    photoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Dave_Ramsey_by_Gage_Skidmore.jpg",
   },
   {
     id: "brian-aleksivich",
@@ -273,6 +293,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.thelotsproject.com",
     zones: ["zone-0", "zone-2"],
     crew: "fireside-freedom",
+    photoUrl: "https://thetinyhouse.net/wp-content/uploads/2023/03/266778331_213462627517885_8705611978729629400_n-1024x1024.jpg",
   },
   {
     id: "lettie-loo",
@@ -283,6 +304,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://libertyallday.home.blog",
     zones: ["zone-0", "zone-1"],
     crew: "fireside-freedom",
+    noPhotoAvailable: true,
   },
   {
     id: "tim-toolman-cook",
@@ -293,6 +315,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.toolmantim.co",
     zones: ["zone-3"],
     crew: "fireside-freedom",
+    photoUrl: "https://livingfreeintennessee.com/wp-content/uploads/Get-Going-with-Toolman-Tim-Cook-and-John-Willis-1.png",
   },
   {
     id: "ken-eash",
@@ -303,6 +326,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.kennetheash.com",
     zones: ["zone-3"],
     crew: "fireside-freedom",
+    photoUrl: "https://assets.captivate.fm/2df646da-0692-4e27-8e46-a1d70f4746cf/asset/98764707-c415-4a17-9a07-563727b224b0/U341OMGlfHsz51QxaaDDtpad.png",
   },
   {
     id: "nate-erin-lamaster",
@@ -313,6 +337,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.twochickshomestead.com",
     zones: ["zone-2", "zone-3"],
     crew: "fireside-freedom",
+    photoUrl: "https://melissaknorris.com/wp-content/uploads/2022/08/Nate_Erin_MKN.jpg",
   },
   {
     id: "amy-fireside",
@@ -323,6 +348,7 @@ export const EXPERT_COUNCIL: ExpertCouncilMember[] = [
     url: "https://www.afarmishkindoflife.com",
     zones: ["zone-2"],
     crew: "fireside-freedom",
+    photoUrl: "https://afarmishkindoflife.com/wp-content/uploads/2024/03/3-1024x1024.jpg",
   },
   {
     id: "hawkins-j",
