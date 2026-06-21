@@ -17,8 +17,8 @@ export type TopicCluster = {
   zones: string[];
   /** Expert council slugs that belong to this cluster */
   expertSlugs: string[];
-  /** Optional episode tag filters for the "Find episodes" deep-link */
-  filterTags?: string[];
+  /** Episode tag filters for the "Find episodes" deep-link (required for all clusters) */
+  filterTags: string[];
 };
 
 export const TOPIC_CLUSTERS: TopicCluster[] = [

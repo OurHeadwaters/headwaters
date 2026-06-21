@@ -56,7 +56,7 @@ export type ZoneCluster = {
   zones: string[];
   expertSlugs: string[];
   experts: ZoneExpert[];
-  filterTags?: string[];
+  filterTags: string[];
 };
 
 export type ZoneResources = {
