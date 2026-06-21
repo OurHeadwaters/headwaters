@@ -180,6 +180,11 @@ function parseSourceParam(raw: string | null): SourceFilter {
   return "all";
 }
 
+function parseTagsParam(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw.split(",").map((t) => t.trim()).filter(Boolean);
+}
+
 export default function ZoneEpisodesPage() {
   const [, params] = useRoute("/zones/:slug/episodes");
   const slug = params?.slug ?? "";
@@ -189,7 +194,9 @@ export default function ZoneEpisodesPage() {
     typeof window !== "undefined" ? window.location.search : ""
   );
   const initialSource = parseSourceParam(searchParams.get("source"));
+  const initialTags = parseTagsParam(searchParams.get("tags"));
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>(initialSource);
+  const [tagFilter, setTagFilter] = useState<string[]>(initialTags);
   const [page, setPage] = useState(0);
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -197,18 +204,19 @@ export default function ZoneEpisodesPage() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (sourceFilter !== "all") params.set("source", sourceFilter);
+    if (tagFilter.length > 0) params.set("tags", tagFilter.join(","));
     const qs = params.toString();
     const newPath = `/zones/${slug}/episodes${qs ? `?${qs}` : ""}`;
     if (location !== newPath) {
       setLocation(newPath, { replace: true });
     }
     setPage(0);
-  }, [sourceFilter, slug]);
+  }, [sourceFilter, tagFilter, slug]);
 
   const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
 
   const { data, isLoading, isError } = useQuery<EpisodesResponse>({
-    queryKey: ["zone-episodes-full", slug, apiSource, page],
+    queryKey: ["zone-episodes-full", slug, apiSource, tagFilter, page],
     queryFn: async () => {
       const url = new URL(
         `${base}/api/zones/${encodeURIComponent(slug)}/episodes`,
@@ -218,6 +226,7 @@ export default function ZoneEpisodesPage() {
       url.searchParams.set("offset", String(page * PAGE_SIZE));
       url.searchParams.set("excludeSeries", "false");
       if (apiSource) url.searchParams.set("source", apiSource);
+      if (tagFilter.length > 0) url.searchParams.set("tags", tagFilter.join(","));
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error("Failed to load episodes");
       return res.json();
@@ -337,7 +346,7 @@ export default function ZoneEpisodesPage() {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 py-10">
         {/* Back link + filter row */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
           <Link
             href={`/zones/${slug}`}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
@@ -367,6 +376,30 @@ export default function ZoneEpisodesPage() {
           </div>
         </div>
 
+        {/* Active tag filter badge */}
+        {tagFilter.length > 0 && (
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <span className="text-xs text-muted-foreground">Scoped to:</span>
+            {tagFilter.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
+                style={{ color: accentColor, borderColor: `${accentColor}50`, background: `${accentColor}10` }}
+              >
+                {tag}
+              </span>
+            ))}
+            <button
+              onClick={() => setTagFilter([])}
+              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors ml-1"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+
+        {tagFilter.length === 0 && <div className="mb-6" />}
+
         {/* Header row */}
         <div className="flex items-center gap-3 mb-4">
           <div
@@ -376,7 +409,9 @@ export default function ZoneEpisodesPage() {
             <Headphones className="w-4 h-4" />
           </div>
           <h2 className="font-serif text-xl font-bold text-foreground">
-            {sourceFilter === "all"
+            {tagFilter.length > 0
+              ? "Filtered Episodes"
+              : sourceFilter === "all"
               ? "All Episodes"
               : sourceFilter === "tsp"
               ? "TSP Episodes"

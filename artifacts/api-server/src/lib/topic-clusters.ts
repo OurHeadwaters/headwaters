@@ -17,6 +17,8 @@ export type TopicCluster = {
   zones: string[];
   /** Expert council slugs that belong to this cluster */
   expertSlugs: string[];
+  /** Optional episode tag filters for the "Find episodes" deep-link */
+  filterTags?: string[];
 };
 
 export const TOPIC_CLUSTERS: TopicCluster[] = [
@@ -36,6 +38,7 @@ export const TOPIC_CLUSTERS: TopicCluster[] = [
       "dr-joseph-mercola",
       "dr-zach-bush",
     ],
+    filterTags: ["grounding", "earthing", "earthing institute"],
   },
 ];
 

@@ -391,12 +391,20 @@ function TopicClusterSection({
   cluster,
   accentColor,
   isZone0,
+  zoneSlug,
 }: {
   cluster: ZoneCluster;
   accentColor: string;
   isZone0?: boolean;
+  zoneSlug: string;
 }) {
   if (cluster.experts.length === 0) return null;
+
+  const episodesHref =
+    cluster.filterTags && cluster.filterTags.length > 0
+      ? `/zones/${zoneSlug}/episodes?tags=${cluster.filterTags.map(encodeURIComponent).join(",")}`
+      : null;
+
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-4">
@@ -411,9 +419,21 @@ function TopicClusterSection({
         <div className="flex-1 h-px" style={{ background: `${accentColor}25` }} />
       </div>
       {cluster.description && (
-        <p className="text-xs text-muted-foreground mb-4 text-center max-w-xl mx-auto leading-relaxed">
+        <p className="text-xs text-muted-foreground mb-3 text-center max-w-xl mx-auto leading-relaxed">
           {cluster.description}
         </p>
+      )}
+      {episodesHref && (
+        <div className="flex justify-center mb-4">
+          <Link
+            href={episodesHref}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors hover:bg-muted"
+            style={{ color: accentColor, borderColor: `${accentColor}40` }}
+          >
+            <Headphones className="w-3.5 h-3.5" />
+            Find episodes →
+          </Link>
+        </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {cluster.experts.map((expert) => (
@@ -1122,6 +1142,7 @@ export default function ZoneDetailPage() {
                     cluster={cluster}
                     accentColor={accentColor}
                     isZone0={isZone0}
+                    zoneSlug={slug}
                   />
                 ))}
                 {remainingExperts.length > 0 && (

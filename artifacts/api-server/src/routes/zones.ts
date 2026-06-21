@@ -235,10 +235,18 @@ router.get("/zones/:slug/episodes", async (req, res) => {
       null;
     const sourceFragment = sourceFilter ? `source = '${esc(sourceFilter)}'` : "true";
 
+    const rawTags = req.query.tags;
+    const tagFilter: string[] = typeof rawTags === "string"
+      ? rawTags.split(",").map((t) => t.trim()).filter(Boolean)
+      : [];
+    const tagFragment = tagFilter.length > 0
+      ? tagFilter.map((t) => `(tags @> '["${esc(t)}"]'::jsonb)`).join(" OR ")
+      : "true";
+
     const whereFragment = zoneWhereFragment(zone.tags, zone.categories, zone.slug);
     const exclusionFragment = excludeSeries ? seriesExclusionFragment() : "true";
     const scoreFragment = zoneScoreFragment(zone.tags);
-    const combinedWhere = `(${whereFragment}) AND ${exclusionFragment} AND ${sourceFragment}`;
+    const combinedWhere = `(${whereFragment}) AND ${exclusionFragment} AND ${sourceFragment} AND (${tagFragment})`;
 
     const [rows, countRow] = await Promise.all([
       db.execute(sql.raw(`
