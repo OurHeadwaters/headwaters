@@ -431,7 +431,9 @@ function TopicClusterSection({
             style={{ color: accentColor, borderColor: `${accentColor}40` }}
           >
             <Headphones className="w-3.5 h-3.5" />
-            Find episodes →
+            {cluster.episodeCount != null
+              ? `Find ${cluster.episodeCount.toLocaleString()} episodes →`
+              : "Find episodes →"}
           </Link>
         </div>
       )}

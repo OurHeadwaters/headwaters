@@ -412,6 +412,25 @@ router.get("/zones/:slug/resources", async (req, res) => {
 
     const clusters = clustersForZone(zone.slug, experts);
 
+    const clusterCounts = await Promise.all(
+      clusters.map(async (cluster) => {
+        if (!cluster.filterTags || cluster.filterTags.length === 0) return null;
+        const tagFragment = cluster.filterTags
+          .map((t) => `(tags @> '["${esc(t)}"]'::jsonb)`)
+          .join(" OR ");
+        const row = await db.execute(sql.raw(`
+          SELECT count(*)::int AS count FROM content_items
+          WHERE (${whereFragment}) AND (${tagFragment})
+        `));
+        return (row.rows[0] as { count: number }).count;
+      }),
+    );
+
+    const clustersWithCounts = clusters.map((cluster, i) => ({
+      ...cluster,
+      episodeCount: clusterCounts[i] ?? null,
+    }));
+
     res.json({
       zone: {
         number: zone.number,
@@ -427,7 +446,7 @@ router.get("/zones/:slug/resources", async (req, res) => {
       experts,
       businesses,
       councilEpisodes,
-      clusters,
+      clusters: clustersWithCounts,
     });
   } catch (err) {
     logger.error({ err }, "zone resources failed");
