@@ -3,4 +3,5 @@
 - [Kit Fundamentals](kit-fundamentals.md) — $127 price lock, Heart/Hands structure, Moments philosophy, agent rules, life stages arc
 - [Stripe webhook dev setup](stripe-webhook-dev-setup.md) — how webhook verification works in dev (no webhook_secret in integration); STRIPE_WEBHOOK_SECRET_FALLBACK pattern; verifyAndParseWebhookEvent decoupling
 - [Stripe env var scoping](stripe-env-scoping.md) — KIT_STRIPE_PRICE_IDS must be dev-only (test IDs) and prod-only (live IDs); never share; production missing webhook secret blocks all purchase activation
-- [TSP RSS feed source](tsp-rss-feed-source.md) — episode content comes from thesurvivalpodcast.com, not from our own domain; FEED_URL misconfiguration pattern to avoid
+- [TSP RSS feed source](tsp-rss-feed-source.md) — episode content comes from thesurvivalpodcast.com, not our own domain; FEED_URL misconfiguration pattern to avoid
+- [Vite preview SPA routing](vite-preview-spa-fallback.md) — vite preview has no history-API fallback by default; client-side routes 404 in production; fix via spa-preview-fallback plugin in configurePreviewServer

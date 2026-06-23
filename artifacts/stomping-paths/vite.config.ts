@@ -34,6 +34,18 @@ export default defineConfig({
     tailwindcss(),
     runtimeErrorOverlay(),
     ogMetaPlugin(basePath),
+    {
+      name: "spa-preview-fallback",
+      configurePreviewServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          const url = req.url ?? "/";
+          if (!url.includes(".") && url !== "/") {
+            req.url = "/";
+          }
+          next();
+        });
+      },
+    },
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
