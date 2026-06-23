@@ -1153,7 +1153,7 @@ export default function ZoneDetailPage() {
                       <div className="flex items-center gap-2 mb-4">
                         <div className="flex-1 h-px bg-border/60" />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">
-                          All experts
+                          Other Experts
                         </span>
                         <div className="flex-1 h-px bg-border/60" />
                       </div>
