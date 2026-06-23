@@ -9,7 +9,7 @@ import {
   expertCountByZone,
   businessCountByZone,
 } from "../lib/expert-council";
-import { clustersForZone } from "../lib/topic-clusters";
+import { clustersForZone, TOPIC_CLUSTERS } from "../lib/topic-clusters";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -452,6 +452,23 @@ router.get("/zones/:slug/resources", async (req, res) => {
     logger.error({ err }, "zone resources failed");
     res.status(500).json({ error: "Failed to load zone resources" });
   }
+});
+
+/**
+ * GET /api/topic-clusters
+ * Returns all topic cluster definitions so the frontend can match against
+ * active tag filters without duplicating the canonical TOPIC_CLUSTERS data.
+ */
+router.get("/topic-clusters", (_req, res) => {
+  res.json(
+    TOPIC_CLUSTERS.map((c) => ({
+      id: c.id,
+      label: c.label,
+      emoji: c.emoji,
+      description: c.description,
+      filterTags: c.filterTags,
+    }))
+  );
 });
 
 export default router;

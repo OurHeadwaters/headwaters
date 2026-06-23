@@ -6,6 +6,27 @@ import {
   ExternalLink, ChevronRight, ArrowLeft,
 } from "lucide-react";
 
+type TopicClusterDef = {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+  filterTags: string[];
+};
+
+function matchCluster(tagFilter: string[], clusters: TopicClusterDef[]): TopicClusterDef | null {
+  if (tagFilter.length === 0 || clusters.length === 0) return null;
+  const active = new Set(tagFilter.map((t) => t.toLowerCase()));
+  for (const cluster of clusters) {
+    const clusterSet = new Set(cluster.filterTags.map((t) => t.toLowerCase()));
+    const isMatch =
+      active.size === clusterSet.size &&
+      [...active].every((t) => clusterSet.has(t));
+    if (isMatch) return cluster;
+  }
+  return null;
+}
+
 type SourceFilter = "all" | "tsp" | "ulg" | "fireside-freedom";
 
 type ZoneInfo = {
@@ -215,6 +236,16 @@ export default function ZoneEpisodesPage() {
 
   const apiSource = sourceFilter === "all" ? undefined : sourceFilter;
 
+  const { data: clustersData } = useQuery<TopicClusterDef[]>({
+    queryKey: ["topic-clusters"],
+    queryFn: async () => {
+      const res = await fetch(`${base}/api/topic-clusters`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+
   const { data, isLoading, isError } = useQuery<EpisodesResponse>({
     queryKey: ["zone-episodes-full", slug, apiSource, tagFilter, page],
     queryFn: async () => {
@@ -251,6 +282,7 @@ export default function ZoneEpisodesPage() {
   ];
 
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
+  const matchedCluster = matchCluster(tagFilter, clustersData ?? []);
 
   if (isLoading && !data) {
     return (
@@ -375,6 +407,33 @@ export default function ZoneEpisodesPage() {
             })}
           </div>
         </div>
+
+        {/* Cluster banner — shown when active tags match a known topic cluster */}
+        {matchedCluster && (
+          <div
+            className="rounded-xl border p-4 mb-5 flex items-start gap-4"
+            style={{
+              borderColor: `${accentColor}44`,
+              background: `linear-gradient(135deg, ${accentColor}12 0%, ${accentColor}05 100%)`,
+            }}
+          >
+            <span className="text-3xl leading-none shrink-0 mt-0.5">{matchedCluster.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                style={{ color: accentColor }}
+              >
+                Topic Cluster
+              </div>
+              <h2 className="font-serif font-bold text-lg text-foreground leading-tight mb-1">
+                {matchedCluster.label}
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {matchedCluster.description}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Active tag filter badge */}
         {tagFilter.length > 0 && (
