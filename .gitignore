@@ -1,12 +1,29 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
+# Environment / secrets — never commit these
+.env
+.env.local
+.env.*.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
 # compiled output
 dist
+.next
 tmp
 out-tsc
 *.tsbuildinfo
+
+# Expo
 .expo
 .expo-shared
+
+# Drizzle generated snapshots (meta directory produced by drizzle-kit)
+**/migrations/meta
 
 # dependencies
 node_modules
