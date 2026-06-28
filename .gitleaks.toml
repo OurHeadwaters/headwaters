@@ -1,0 +1,50 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "jwt-secret"
+description = "JWT secret or signing key"
+regex = '''(?i)(jwt[_\-]?secret|jwt[_\-]?key|signing[_\-]?secret)\s*[=:]\s*['"]?[A-Za-z0-9+/=_\-]{16,}['"]?'''
+tags = ["jwt", "secret"]
+
+[[rules]]
+id = "database-url"
+description = "Database connection string with credentials"
+regex = '''(postgres|postgresql|mysql|mongodb):\/\/[^:]+:[^@]+@'''
+tags = ["database", "url"]
+
+[[rules]]
+id = "stripe-key"
+description = "Stripe secret or restricted key"
+regex = '''sk_(live|test)_[0-9a-zA-Z]{24,}'''
+tags = ["stripe", "payment"]
+
+[[rules]]
+id = "stripe-webhook-secret"
+description = "Stripe webhook signing secret"
+regex = '''whsec_[0-9a-zA-Z]{32,}'''
+tags = ["stripe", "webhook"]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API key"
+regex = '''sk-[a-zA-Z0-9\-_]{32,}'''
+tags = ["openai", "ai"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key assignment"
+regex = '''(?i)(api[_\-]?key|apikey|api[_\-]?secret|api[_\-]?token)\s*[=:]\s*['"]?[A-Za-z0-9+/=_\-]{20,}['"]?'''
+tags = ["api", "key"]
+
+[allowlist]
+description = "Global allowlist"
+regexes = [
+  '''STRIPE_SECRET_KEY\s*=\s*["']?\$\{''',
+  '''process\.env\.[A-Z_]+''',
+  '''import\.meta\.env\.[A-Z_]+''',
+]
+paths = [
+  "replit.md",
+  ".gitleaks.toml",
+]

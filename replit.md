@@ -213,6 +213,20 @@ Relevant files: `artifacts/api-server/src/middlewares/requireEditor.ts`, `artifa
 
 ---
 
+## Secret Scanning (CI)
+
+A GitHub Actions workflow runs on every push and pull request to detect secrets before they reach the remote repo.
+
+- **Workflow:** `.github/workflows/secret-scan.yml` — uses [Gitleaks](https://github.com/gitleaks/gitleaks) (`gitleaks/gitleaks-action@v2`)
+- **Config:** `.gitleaks.toml` — extends Gitleaks defaults and adds explicit rules for JWT secrets, database URLs, Stripe keys (live + test + webhook), OpenAI keys, and generic API key assignments
+- **What it catches:** Stripe `sk_live_*` / `sk_test_*` keys, `whsec_*` webhook secrets, `postgres://user:pass@host` URLs, JWT signing secrets, OpenAI keys, and generic `API_KEY=...` patterns
+- **Allowlist:** `process.env.*` and `import.meta.env.*` references are ignored (env var lookups, not hardcoded values)
+- **Result:** The workflow fails the check if any matching secret is found; the push or PR is blocked until the secret is removed from history
+
+If you get a false positive on a legitimate test value or fixture, add a regex to the `[allowlist]` section of `.gitleaks.toml`.
+
+---
+
 ## Gotchas
 
 - RSS has duplicate-cased categories ("friday flashbacks" vs "Friday Flashbacks"). Upstream data; surfaced as-is.
