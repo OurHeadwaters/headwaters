@@ -3,6 +3,8 @@
 
 > **New to this repo? Read `HANDOFF.md` first.** It is the hempcrete brief — the single load-bearing document that carries the ethos, the built system, the constitutional rules, and the build direction in one place. This file supplements it with operational detail.
 
+**GitHub:** https://github.com/OurHeadwaters/headwaters — full codebase is published here. The `github` git remote is configured in this Repl. To push future changes: configure the Replit GitHub integration in the dashboard (Settings → Git) to auto-sync, or run a manual push via the connector token.
+
 
 ---
 
