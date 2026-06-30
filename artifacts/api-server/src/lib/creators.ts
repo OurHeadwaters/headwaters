@@ -84,14 +84,20 @@ export const CREATORS: Creator[] = [
     bio: "Northern Ontario homesteader, food preservationist, and co-founder of the 807 Food Co-operative in Dryden. Bobbie has been canning, fermenting, and stocking a real northern pantry since 2020. Her Parr's Jars course is the definitive guide to food preservation for Canadian winters.",
     avatarUrl: "https://ui-avatars.com/api/?name=Bobbie+Parr&size=256&background=2d5a3d&color=fdf8f0&bold=true&rounded=true",
     websiteUrl: "https://parrsjars.ca",
+    podcastUrl: "https://www.youtube.com/watch?v=QnrDanwjU3E",
     status: "live",
     transformationSlugs: [],
     kitSlugs: ["family-kit", "parrs-jars", "care-kit"],
     curatedLinks: [
       {
+        title: "Community vs. Collapse — YouTube",
+        url: "https://www.youtube.com/watch?v=QnrDanwjU3E",
+        type: "video",
+      },
+      {
         title: "Parr's Jars — Food Preservation Course",
         url: "https://parrsjars.ca",
-        type: "video",
+        type: "article",
       },
       {
         title: "807 Food Co-operative",
