@@ -18,22 +18,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "typecheck"
+args = "Sync to GitHub"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Sync to GitHub"
-
-[[workflows.workflow]]
-name = "typecheck"
-author = "agent"
-
-[workflows.workflow.metadata]
-isValidation = true
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm run typecheck"
+args = "Sync to Stomping-Paths GitHub"
 
 [[workflows.workflow]]
 name = "Sync to GitHub"
@@ -42,6 +31,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "bash scripts/sync-github.sh"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Sync to Stomping-Paths GitHub"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/sync-github-stomping-paths.sh"
 
 [workflows.workflow.metadata]
 outputType = "console"

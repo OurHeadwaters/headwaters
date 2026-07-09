@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+rm -f "$(git rev-parse --git-dir 2>/dev/null || echo .git)/config.lock" 2>/dev/null || true
+
 REPO_URL="https://github.com/OurHeadwaters/Stomping-Paths.git"
 REMOTE_NAME="github-stomping-paths"
 
