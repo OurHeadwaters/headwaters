@@ -1,0 +1,32 @@
+1. Stomping-Paths (Content / Media Broadcaster)What is the core purpose of Stomping-Paths right now? Is it primarily:A public-facing content site for The Survival Podcast (TSP) community?
+A broader regenerative/co-operative storytelling platform?
+Something else?
+How much of it should be automated or generated vs manually created? (e.g. should it pull from other artifacts or be mostly hand-crafted content?)
+Should Stomping-Paths be able to pull content from the 807 circular economy work, Codetry, or other parts of the watershed?
+Do you want Stomping-Paths to eventually have its own broadcasting/scheduling logic, or should that live in the Ritual Engine / API server?
+
+2. Zone System ClarificationThe zone chain is locked. Can you confirm the current mapping of artifacts to zones (especially Stomping-Paths)?
+You mentioned not to confuse this with the TSP listener journey zones (Z0 Self → Z5 Wild). Are there any places where these two zone systems currently overlap or cause confusion in the codebase?
+How strictly should the Eave Rule (Zone 3 wallet ≠ Zone 1 household) be enforced across all artifacts?
+
+3. Dashboard & Personalization VisionWhen you say the dashboard should be built from a user’s Codetry ledger during onboarding, what exactly should the dashboard do differently based on someone’s ledger?Change language/terminology?
+Change what content is shown/hidden?
+Change the structure or priority of sections?
+Something more perceptual (what the user can “hold” without overwhelm)?
+Should the dashboard eventually be able to pull and display content from Stomping-Paths in a personalized way?
+How do you want to handle the tension between “showing everything that’s relevant” vs “protecting the user from overwhelm” (the Doors of Perception angle)?
+
+4. Integration & ArchitectureShould Stomping-Paths eventually become a first-class consumer of the existing engines (Codetry for translation, Rituals for scheduling, Benefit scoring for impact, etc.)?
+Is there a plan for content to flow between artifacts (e.g. 807 project updates appearing in Stomping-Paths, or Codetry examples appearing in the TSP site)?
+The 7-artifact limit is in effect. If Stomping-Paths needs new functionality, should it live inside the existing survival-podcast artifact, or are there exceptions?
+
+5. Technical & Process QuestionsFor any new Stomping-Paths features, do you want us to follow the same strict rules (run codegen after OpenAPI changes, run db:push after schema changes, etc.)?
+Is there a preferred way content should be gated or access-controlled in Stomping-Paths (e.g. using the existing kit content-gating API)?
+How important is Bitcoin-only / Zaprite integration on the Stomping-Paths side right now?
+
+6. Content & Narrative StrategyWhat kind of content do you want Stomping-Paths to prioritize in the near term? (e.g. 807 circular economy stories, TSP-related content, broader regenerative watershed stories, etc.)
+Should Stomping-Paths have its own Codetry ledger (separate from personal user ledgers) for translating between different audience “tongues”?
+
+7. Bigger PictureIs Stomping-Paths mainly meant to serve the existing TSP audience, or is it also meant to bring new people into the wider Headwaters watershed?
+How closely should Stomping-Paths be tied to the 807 Food Co-operative work vs staying more general?
+
