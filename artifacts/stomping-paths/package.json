@@ -53,6 +53,7 @@
     "@workspace/api-client-react": "workspace:*",
     "@workspace/gord-bird": "workspace:*",
     "@workspace/replit-auth-web": "workspace:*",
+    "@workspace/topic-clusters": "workspace:*",
     "@workspace/tsp-constants": "workspace:*",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",

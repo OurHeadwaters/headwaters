@@ -5,27 +5,12 @@ import {
   Loader2, Headphones, Play, Mic, FileText, PlaySquare,
   ExternalLink, ChevronRight, ArrowLeft,
 } from "lucide-react";
+import { matchCluster, type TopicCluster } from "@workspace/topic-clusters";
 
-type TopicClusterDef = {
-  id: string;
-  label: string;
-  emoji: string;
-  description: string;
-  filterTags: string[];
-};
-
-function matchCluster(tagFilter: string[], clusters: TopicClusterDef[]): TopicClusterDef | null {
-  if (tagFilter.length === 0 || clusters.length === 0) return null;
-  const active = new Set(tagFilter.map((t) => t.toLowerCase()));
-  for (const cluster of clusters) {
-    const clusterSet = new Set(cluster.filterTags.map((t) => t.toLowerCase()));
-    const isMatch =
-      active.size === clusterSet.size &&
-      [...active].every((t) => clusterSet.has(t));
-    if (isMatch) return cluster;
-  }
-  return null;
-}
+type TopicClusterDef = Pick<
+  TopicCluster,
+  "id" | "label" | "emoji" | "description" | "filterTags"
+>;
 
 type SourceFilter = "all" | "tsp" | "ulg" | "fireside-freedom";
 

@@ -2,10 +2,15 @@
  * Topic clusters for zone resource pages.
  * Each cluster groups a named set of expert slugs under a thematic label.
  * The cluster section renders on the zone detail page when at least one
- * matching expert is present in that zone.
+ * matching expert is present in that zone, and the cluster banner renders
+ * on the episodes page when the active tag filters match a cluster.
  *
  * To add or remove experts from a cluster, update the `expertSlugs` array.
  * Expert slugs must match the `slug` column in the expert_council table.
+ *
+ * This is the single source of truth for cluster data — the api-server and
+ * stomping-paths frontend both import from here so cluster definitions
+ * (especially `filterTags`) never drift out of sync.
  */
 
 export type TopicCluster = {
@@ -95,4 +100,26 @@ export function clustersForZone(
       return { ...cluster, experts: clusterExperts };
     })
     .filter((c) => c.experts.length > 0);
+}
+
+/**
+ * Find the cluster whose filterTags exactly match the given set of active
+ * tag filters (order-independent, case-insensitive). Used to show a cluster
+ * banner on the episodes page when a listener's active filters line up with
+ * a known topic cluster.
+ */
+export function matchCluster(
+  tagFilter: string[],
+  clusters: Pick<TopicCluster, "filterTags">[] = TOPIC_CLUSTERS,
+): TopicCluster | null {
+  if (tagFilter.length === 0 || clusters.length === 0) return null;
+  const active = new Set(tagFilter.map((t) => t.toLowerCase()));
+  for (const cluster of clusters as TopicCluster[]) {
+    const clusterSet = new Set(cluster.filterTags.map((t) => t.toLowerCase()));
+    const isMatch =
+      active.size === clusterSet.size &&
+      [...active].every((t) => clusterSet.has(t));
+    if (isMatch) return cluster;
+  }
+  return null;
 }

@@ -5,3 +5,4 @@
 - [Stripe env var scoping](stripe-env-scoping.md) — KIT_STRIPE_PRICE_IDS must be dev-only (test IDs) and prod-only (live IDs); never share; production missing webhook secret blocks all purchase activation
 - [TSP RSS feed source](tsp-rss-feed-source.md) — episode content comes from thesurvivalpodcast.com, not our own domain; FEED_URL misconfiguration pattern to avoid
 - [Vite preview SPA routing](vite-preview-spa-fallback.md) — vite preview has no history-API fallback by default; client-side routes 404 in production; fix via spa-preview-fallback plugin in configurePreviewServer
+- [Shared constants convention](shared-workspace-constants.md) — cross-artifact constant/type sets belong in lib/<name> (@workspace/<name>), not duplicated per-artifact; see lib/topic-clusters as the pattern

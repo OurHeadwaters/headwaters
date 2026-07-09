@@ -188,6 +188,9 @@ importers:
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server
+      '@workspace/topic-clusters':
+        specifier: workspace:*
+        version: link:../../lib/topic-clusters
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -1208,6 +1211,9 @@ importers:
       '@workspace/replit-auth-web':
         specifier: workspace:*
         version: link:../../lib/replit-auth-web
+      '@workspace/topic-clusters':
+        specifier: workspace:*
+        version: link:../../lib/topic-clusters
       '@workspace/tsp-constants':
         specifier: workspace:*
         version: link:../../lib/tsp-constants
@@ -1532,6 +1538,8 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 7.3.3(@types/node@25.6.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(tsx@4.21.0)(yaml@2.8.4)
+
+  lib/topic-clusters: {}
 
   lib/tsp-constants: {}
 

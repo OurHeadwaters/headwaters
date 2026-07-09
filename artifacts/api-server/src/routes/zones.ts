@@ -9,7 +9,7 @@ import {
   expertCountByZone,
   businessCountByZone,
 } from "../lib/expert-council";
-import { clustersForZone, TOPIC_CLUSTERS } from "../lib/topic-clusters";
+import { clustersForZone, TOPIC_CLUSTERS } from "@workspace/topic-clusters";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
