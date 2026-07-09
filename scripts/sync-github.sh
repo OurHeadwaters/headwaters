@@ -27,6 +27,23 @@ fi
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
 
+echo "Fetching '$BRANCH' from $REPO_URL ..."
+git fetch "$REMOTE_NAME" "$BRANCH"
+
+if git merge-base --is-ancestor "$REMOTE_NAME/$BRANCH" HEAD 2>/dev/null; then
+  echo "Local branch already contains all remote commits."
+else
+  echo "Remote has commits not in this workspace — merging them in first ..."
+  if ! git -c user.name="Replit Agent" -c user.email="agent@replit.com" merge "$REMOTE_NAME/$BRANCH" --no-edit -m "Merge remote-tracking branch '$REMOTE_NAME/$BRANCH' (auto-sync)"; then
+    git merge --abort 2>/dev/null || true
+    git remote set-url "$REMOTE_NAME" "$REPO_URL"
+    echo ""
+    echo "ERROR: Merge conflict between this workspace and GitHub. Aborted the merge."
+    echo "This needs manual resolution — pull the remote changes, resolve conflicts, and re-run this sync."
+    exit 1
+  fi
+fi
+
 echo "Pushing branch '$BRANCH' to $REPO_URL ..."
 git push "$REMOTE_NAME" "$BRANCH" --tags
 
