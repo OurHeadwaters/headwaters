@@ -6,3 +6,4 @@
 - [TSP RSS feed source](tsp-rss-feed-source.md) — episode content comes from thesurvivalpodcast.com, not our own domain; FEED_URL misconfiguration pattern to avoid
 - [Vite preview SPA routing](vite-preview-spa-fallback.md) — vite preview has no history-API fallback by default; client-side routes 404 in production; fix via spa-preview-fallback plugin in configurePreviewServer
 - [Shared constants convention](shared-workspace-constants.md) — cross-artifact constant/type sets belong in lib/<name> (@workspace/<name>), not duplicated per-artifact; see lib/topic-clusters as the pattern
+- [TSP zone framework distinction](tsp-zone-framework-distinction.md) — two zone systems: Headwaters watershed zones (architecture) vs TSP practitioner zones (content); stomping-paths is HW-Z2 infrastructure for TSP-Z4 content
