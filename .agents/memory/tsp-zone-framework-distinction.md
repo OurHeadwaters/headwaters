@@ -28,7 +28,7 @@ The Stomping Paths **platform** is Headwaters Zone 2 (Workbench / Worn Path). Th
 
 Platform copy and framing should use Worn Path / Zone 2 language throughout. Episode zone badges use the TSP practitioner zone system for classification — this is an internal tool, not a contradiction of the platform's Zone 2 identity.
 
-**Why:** Early in this session the owner said "it's Zone 4 media" meaning the content territory is Zone 4 (The Forest), but Grok and the HANDOFF.md both confirm the platform position is Headwaters Zone 2. The correct synthesis: Zone 2 platform, content spanning TSP Z0–Z5 with Z4 (Forest/wild/bushcraft) being the dominant character of the archive.
+**Why:** The owner clarified that the content territory is Zone 4 (The Forest — hunting, foraging, wildcrafting), but Grok and the HANDOFF.md both confirm the platform position is Headwaters Zone 2. The correct synthesis: Zone 2 platform, content spanning TSP Z0–Z5 with Z4 (Forest/wild/bushcraft) being the dominant character of the archive.
 
 **How to apply:**
 - Platform copy (hero, kits, daily stomp, nav descriptions): use Worn Path / Workbench / Zone 2 language
