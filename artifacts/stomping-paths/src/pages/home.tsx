@@ -574,6 +574,13 @@ function HeroEntrance() {
             <Compass className="w-5 h-5" />
             Find my kit
           </Link>
+          <Link
+            href="/daily-stomp"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-semibold text-[#D9A066]/70 border border-[#D9A066]/20 hover:border-[#D9A066]/55 hover:text-[#D9A066] transition-all backdrop-blur-sm text-sm"
+          >
+            <Footprints className="w-4 h-4" />
+            Daily Stomp
+          </Link>
         </motion.div>
       </motion.div>
 
@@ -749,7 +756,7 @@ function ContinueLearningWidget() {
   // Once the server confirms zero progress (`serverReturnedEmpty`), the widget disappears.
   const showSkeleton = isLoading || minSkeletonActive;
   const showContent = !showSkeleton && ordered.length > 0;
-  const hasContent = !serverReturnedEmpty && (showSkeleton || showContent);
+  const hasContent = showSkeleton || showContent || serverReturnedEmpty;
 
   // Two-phase exit: keep the section mounted while the last row's exit animation plays,
   // then animate the section itself out.
@@ -767,12 +774,8 @@ function ContinueLearningWidget() {
     if (hasContent) setWidgetVisible(true);
   }, [hasContent]);
 
-  // Hide immediately when the server confirms there are zero tracks — there are no rows
-  // to animate so onExitComplete never fires; this is the only case that needs a direct
-  // setWidgetVisible(false) outside of the row AnimatePresence callback.
-  useEffect(() => {
-    if (serverReturnedEmpty) setWidgetVisible(false);
-  }, [serverReturnedEmpty]);
+  // When serverReturnedEmpty, we no longer collapse the widget — we show a start-here
+  // callout so new listeners see an invitation rather than an empty gap.
 
   return (
     <AnimatePresence>
@@ -880,6 +883,26 @@ function ContinueLearningWidget() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {!showSkeleton && serverReturnedEmpty && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="flex flex-col items-center gap-3 py-4 text-center"
+            >
+              <p className="text-sm text-[#FDFBF7]/55 leading-relaxed max-w-xs">
+                No tracks started yet. The path begins wherever you are.
+              </p>
+              <Link
+                href="/start"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D9A066] hover:text-[#e8b06b] transition-colors"
+              >
+                <Footprints className="w-3.5 h-3.5" />
+                Find your starting zone →
+              </Link>
+            </motion.div>
+          )}
 
           {/* Always reserve footer space; opacity hides it during skeleton so no height jump */}
           <motion.div

@@ -8,7 +8,7 @@ import { useShareCounts } from "@/hooks/use-share-counts";
 import { OdysseyBridge } from "@/components/odyssey-bridge";
 import { BookOpen, ChevronRight, Loader2, CheckCircle2, Flame, ArrowUpDown } from "lucide-react";
 
-const ZONE_LABELS = ["Zone 0", "Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5"];
+const ZONE_LABELS = ["The Self", "The Home", "The Garden", "The Homestead", "The Forest", "The Wild"];
 
 type SortMode = "default" | "popular";
 

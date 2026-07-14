@@ -18,6 +18,7 @@ export function KitCard({ kit, shareCount = 0 }: KitCardProps) {
       href={`/kits/${kit.slug}`}
       className="group flex flex-col bg-card border border-border rounded-xl overflow-hidden hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 transition-all duration-200"
     >
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${meta.color}, ${meta.color}66)` }} />
       <div
         className="px-6 py-5 flex items-start justify-between gap-4"
         style={{

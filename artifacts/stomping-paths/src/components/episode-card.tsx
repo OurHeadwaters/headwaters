@@ -6,6 +6,7 @@ import tspLogo from "@assets/tsp/tsp-logo.jpeg";
 import { detectSeriesSlug, getSeriesMeta } from "@/lib/detect-series";
 import { getSeriesTheme } from "@/lib/seriesTheme";
 import { useSelectedTransformation } from "@/hooks/use-selected-transformation";
+import { matchZones } from "@/lib/zones";
 
 const FIRESIDE_FREEDOM_URL = "https://www.firesidefreedompodcast.com";
 
@@ -65,6 +66,7 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
   const seriesMeta = seriesSlug ? getSeriesMeta(seriesSlug) : null;
   const seriesTheme = seriesSlug ? getSeriesTheme(seriesSlug) : null;
   const showFiresideBadge = hasFiresideFreedomHost(episode);
+  const primaryZone = matchZones(episode.tags ?? [], episode.categories ?? [])[0] ?? null;
 
   const episodeHref = transformation
     ? `/episodes/${episode.slug}?transformation=${transformation.slug}`
@@ -77,7 +79,10 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
     <Link 
       href={episodeHref}
       className={`group flex flex-col bg-card rounded-lg border overflow-hidden card-lift hover:border-primary/30 ${featured ? 'md:flex-row' : ''} ${isYourPath ? 'border-[color:var(--your-path-color,hsl(var(--primary)/0.4))]' : 'border-border'}`}
-      style={isYourPath && transformation ? { borderColor: transformation.color + "55" } : undefined}
+      style={{
+        ...(isYourPath && transformation ? { borderColor: transformation.color + "55" } : {}),
+        ...(primaryZone && !isYourPath ? { borderLeftColor: primaryZone.color, borderLeftWidth: "3px" } : {}),
+      }}
     >
       <div className={`relative bg-muted ${featured ? 'md:w-1/3 shrink-0' : 'w-full aspect-video'}`}>
         <img 
@@ -130,6 +135,18 @@ export function EpisodeCard({ episode, featured = false, seriesPosition, seriesT
           ) : null}
           {isRecent && !featured && (
             <span className="text-destructive font-semibold">New</span>
+          )}
+          {primaryZone && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-auto"
+              style={{
+                color: primaryZone.color,
+                background: primaryZone.color + "15",
+                border: `1px solid ${primaryZone.color}40`,
+              }}
+            >
+              Z{primaryZone.number} · {primaryZone.name}
+            </span>
           )}
         </div>
         

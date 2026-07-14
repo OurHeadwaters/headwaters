@@ -76,6 +76,7 @@ import CommunityHallPage from "@/pages/castle-community-hall";
 import GyroscopeTowerPage from "@/pages/castle-gyroscope-tower";
 import SlidingTrustScalePage from "@/pages/tools-sliding-trust-scale";
 import InputSovereigntyPage from "@/pages/tools-input-sovereignty";
+import DailyStompPage from "@/pages/daily-stomp";
 
 const queryClient = new QueryClient();
 
@@ -166,6 +167,7 @@ function Router() {
         <Route path="/crypto-castle/gyroscope-tower" component={GyroscopeTowerPage} />
         <Route path="/tools/sliding-trust-scale" component={SlidingTrustScalePage} />
         <Route path="/tools/input-sovereignty" component={InputSovereigntyPage} />
+        <Route path="/daily-stomp" component={DailyStompPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

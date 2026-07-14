@@ -12,12 +12,12 @@ function apiUrl(path: string): string {
 }
 
 const ZONE_LABELS: Record<string, string> = {
-  "zone-0": "Mind & Money",
-  "zone-1": "Home & Prepared",
-  "zone-2": "Garden",
-  "zone-3": "Homestead",
-  "zone-4": "Wild Harvest",
-  "zone-5": "Community",
+  "zone-0": "The Self",
+  "zone-1": "The Home",
+  "zone-2": "The Garden",
+  "zone-3": "The Homestead",
+  "zone-4": "The Forest",
+  "zone-5": "The Wild",
 };
 
 const ZONE_COLORS: Record<string, string> = {
