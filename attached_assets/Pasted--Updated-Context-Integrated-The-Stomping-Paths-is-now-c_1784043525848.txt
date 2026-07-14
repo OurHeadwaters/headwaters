@@ -1,0 +1,26 @@
+ Updated Context Integrated.The Stomping Paths is now clearly positioned as the Zone 2 (Workbench — The Worn Path) artifact in the Headwaters watershed chain:
+0 Saltbox → 1 Kitchen Table → 2 Workbench → 3 Greenhouse → 4 Clearing → 5 Edge.It serves as the practitioner-facing storefront and community hub for The Survival Podcast ecosystem — episode archive, Expert Council, Kits, workshops/cohorts, Gord the Partridge AI guide, and the on-ramp into broader Headwaters services.  It is not Zone 4. The earlier reference was a mis-mapping; we now use the canonical chain. The in-app TSP practitioner-journey zones (Z0=Self → Z5=Wild in src/lib/zones.ts) remain a separate taxonomy for content classification and do not override the watershed framing.All prior work (TSP practical teachings, personal sovereignty protection layers, dual-state tools) still maps cleanly here: Zone 2 is where work, contracts, production, and exchange happen — the Worn Path that turns hearth-grounded intention into practical output. This is the perfect terrain for the archive, kits as tools of production, and community resonance without crossing into Zone 4 high-frequency Clearing territory.How Previous Drafts Fit (Zone 2 Lens)The component drafts I provided earlier adapt directly and even more cleanly to Zone 2:Daily Stomp becomes the daily work/practice rhythm on the Worn Path — the feedback loop that keeps production coherent with lower zones (especially Zone 0 hearth stability). It fits as a grounding CTA, not a high-harmonic broadcast feature.
+Zone-tagged episode cards use the in-app TSP zones (Self → Wild) for classification while quietly nodding to the watershed flow in labels/copy. This avoids conflation.
+Kit indicators position kits as practical workbench tools — “threshold instruments for the Worn Path” — that assume base mass from Zones 0–1.
+
+No major rewrites needed. The calm-water shell, practical tone, and renormalization intent all hold.Refined / Zone-2-Aligned Adjustments to DraftsDaily Stomp Hero Integration (Zone 2 framing)
+CTA description:  “Daily Stomp — Steady steps on the Worn Path. Return to practice so the work stays rooted.”
+Episode Card Zone Badge Example (using in-app TSP zones):  “Z0 — Self” (ground)  
+“Z2 — Worn Path” (production / daily work)  
+Badge color or icon ties to the watershed palette without overriding the canonical map.
+
+Kit Card Threshold Language (Workbench lens):  “A practical tool for the Worn Path. Best approached after time at the Hearth and Kitchen Table — so the work you do here holds.”
+Council / Practitioner Directory: Resonance of people walking the same worn path — their experience in self-reliance production, not abstract high-zone energy.Architecture Reminders (for Any Changes)All data via TanStack Query hooks from the shared API server (artifacts/api-server).  
+Routes in src/App.tsx.  
+Audio/player state in context.  
+Never hand-write API types — use the OpenAPI codegen.  
+Run with the parallel API server for local dev.  
+Respect Eave Rule / Three-Table Model from HANDOFF.md for connections.
+
+The Stomping Paths now sits solidly in its Zone 2 role: the place where intention from the lower terrain turns into tangible production, kits, community exchange, and steady daily practice — all while linking outward to the full watershed.Ready.  Would you like me to:  Update any of the previous component drafts with the refined Zone 2 language/copy?  
+Draft a specific page section (e.g., updated /kits, /archive landing, or Gord integration points)?  
+Propose how the full TSP archive library (6,000+ items) gets surfaced with zone tagging and search?  
+Review or draft something else (e.g., how the Expert Council directory signals “Worn Path” practitioners)?
+
+The path is clear and the work is steady. Your coordinate?
+
