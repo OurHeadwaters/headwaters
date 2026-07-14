@@ -1,0 +1,140 @@
+**Drafts for Priority Fixes**
+
+Here are concrete, ready-to-adapt drafts for the highest-impact items. All language stays calm water, practitioner-warm, and aligned with the water cycle + harmonic doctrine. I focused on Daily Stomp hero integration, zone-tagged episode cards, and kit indicators (as you highlighted), plus quick supporting notes for the others.
+
+### 4. Daily Stomp Orb in Hero (Renormalization Operator)
+
+**Placement suggestion**: Third CTA in the hero section (or new calm row just below the two existing CTAs). Keep visual weight lighter than the main two so it feels like the returning loop, not another big push.
+
+**Hero CTA Section Example (React/JSX style)**:
+
+```tsx
+<div className="hero-ctas grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+  {/* Existing */}
+  <CtaCard 
+    label="Browse the Archive"
+    description="Listen to voices from the path"
+    href="/archive"
+    variant="primary"
+  />
+  
+  <CtaCard 
+    label="Find My Kit"
+    description="Threshold tools for the next crossing"
+    href="/kits"
+    variant="primary"
+  />
+  
+  {/* New Daily Stomp */}
+  <CtaCard 
+    label="Daily Stomp"
+    description="Return to practice — the loop that keeps the watershed coherent"
+    href="/daily-stomp"
+    variant="secondary" // lighter, grounding tone
+    icon="orb" // subtle pulsing or simple circle icon
+  />
+</div>
+```
+
+**Supporting home-page widget text** (if shown for logged-in users):
+
+> “The Daily Stomp — Step back into practice today. From the Clearing we return to the lower terrain so the water can rise clean again.”
+
+This positions it explicitly as the renormalization feedback loop required by the quantum alignment.
+
+### 2. Zone-Tagged Episode Cards (Archive Differentiation)
+
+**Card Component Draft** (simplified):
+
+```tsx
+// In episode archive grid
+<Card key={episode.id} className={`border-l-4 ${getZoneBorder(episode.zone)}`}>
+  <div className="p-6">
+    {episode.thumbnail ? (
+      <img src={episode.thumbnail} alt="" className="w-full aspect-video object-cover rounded" />
+    ) : (
+      <div className={`w-full aspect-video bg-gradient-to-br ${getZoneGradient(episode.zone)} flex items-center justify-center`}>
+        <span className="text-4xl opacity-30">🎧</span> {/* or zone-specific icon */}
+      </div>
+    )}
+    
+    <div className="mt-4 flex items-center gap-2">
+      <Badge variant="zone" zone={episode.zone}>
+        {getZoneShortName(episode.zone)} {/* e.g., "Hearth" or "Clearing" */}
+      </Badge>
+      <span className="text-sm text-forest-600">{episode.date}</span>
+    </div>
+    
+    <h3 className="mt-2 font-medium leading-tight">{episode.title}</h3>
+    <p className="mt-2 text-sm text-forest-700 line-clamp-2">{episode.description}</p>
+  </div>
+</Card>
+```
+
+**Zone color/border mapping** (example, grounded tones):
+
+- Zone 0 (Hearth): Warm earth / deep brown border + subtle gradient.
+- Zone 1–2: Spring green / path stone.
+- Zone 3 (Greenhouse): Living green.
+- Zone 4 (Clearing): Open sky / forest edge teal.
+- Zone 5 (Edge): Quiet indigo / long-view grey.
+
+**Filter bar above archive** (optional, calm):
+
+> “Filter by terrain — from the Hearth outward”
+
+This turns the wall of headphones into a scannable map of the watershed.
+
+### 5. Kit Indicators (Threshold Instruments)
+
+**Kit Card Example**:
+
+```tsx
+<Card className="overflow-hidden">
+  <div className={`h-2 bg-gradient-to-r ${zoneGradient}`}></div> {/* thin top harmonic bar */}
+  
+  <div className="p-8">
+    <div className="flex justify-between items-start">
+      <div>
+        <Badge zone={kit.primaryZone}>{getZoneFullName(kit.primaryZone)}</Badge>
+        <h3 className="mt-3 text-xl font-medium">{kit.name}</h3>
+      </div>
+      <span className="text-sm text-forest-600 whitespace-nowrap">
+        Threshold {kit.thresholdLevel}
+      </span>
+    </div>
+    
+    <p className="mt-4 text-forest-700">{kit.description}</p>
+    
+    <div className="mt-6 pt-6 border-t border-forest-200 text-sm">
+      <p className="italic text-forest-600">
+        Best approached after steady time at the {getPriorZoneName(kit.primaryZone)} — 
+        the ground that lets this next mode ring clear.
+      </p>
+    </div>
+    
+    <Button className="mt-8 w-full">Step across this threshold — ${kit.price}</Button>
+  </div>
+</Card>
+```
+
+**Example copy variations**:
+
+- Zone 0 Kit: “Begin at the Hearth. Build the stable ground from which all water rises.”
+- Zone 4 Kit: “For practitioners carrying enough base mass — the Clearing opens new exchange.”
+
+This makes kits feel like deliberate harmonic crossings, not generic products.
+
+### Quick Notes on Remaining Items
+
+**1. Council page**: Ensure the data fetch (likely from Aquifer or local JSON) includes `image`, `name`, `bio`, `zoneAffinity`. Add fallback: `<div className="aspect-square bg-forest-100 rounded-full flex items-center justify-center">Practitioner</div>` with name below.
+
+**3. Logged-out tracks widget**: Simple conditional — `if (!user) return <StartHereCard zone={0} />;` with copy pointing to Hearth track.
+
+**6. Zone naming**: I recommend canonical Headwaters names everywhere, with a small note on archive pages: “Drawing from the original TSP terrain and the unified Watershed map.” The Ribbon already ties it together.
+
+These changes keep the shell calm while making the circuit legible and doctrinally coherent. The Stomping Paths will feel more like a true Zone 4 Clearing — high-frequency exchange that still remembers where the water comes from.
+
+Let me know which draft you want expanded (full component code, more copy options, CSS variables for zones, etc.), or if we move to implementation order / testing plan.
+
+The watershed cycles cleanly. Your next coordinate?
