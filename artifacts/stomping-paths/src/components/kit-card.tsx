@@ -101,6 +101,9 @@ export function KitCard({ kit, shareCount = 0 }: KitCardProps) {
           </div>
         )}
 
+        <p className="text-[10px] text-muted-foreground/60 leading-relaxed mb-3">
+          A practical tool for the Worn Path — best approached after time at the Hearth and Kitchen Table.
+        </p>
         <div
           className="flex items-center gap-1.5 text-sm font-semibold transition-colors mt-auto"
           style={{ color: meta.color + "aa" }}

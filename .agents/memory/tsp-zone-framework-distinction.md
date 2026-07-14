@@ -24,10 +24,13 @@ description: Two separate zone systems coexist — Headwaters watershed zones vs
 
 ## Critical rule
 
-The Stomping Paths media is **TSP Zone 4 content** (The Forest). It is served by **Headwaters Zone 2 infrastructure** (Workbench). These labels coexist without contradiction.
+The Stomping Paths **platform** is Headwaters Zone 2 (Workbench / Worn Path). The **archive content** spans all TSP zones 0–5; individual episodes are classified by their tags using `matchZones()` in zones.ts.
 
-**Never use "Zone 2" as a metaphor for how the media is made.** The content is Zone 4 — direct skill, not cultivation. Zone 2 knowledge/permaculture thinking was used to build the operational framework, but the media itself does not require "practice" in the garden sense.
+Platform copy and framing should use Worn Path / Zone 2 language throughout. Episode zone badges use the TSP practitioner zone system for classification — this is an internal tool, not a contradiction of the platform's Zone 2 identity.
 
-**Why:** Owner explicitly corrected this conflation. Zone 4 content is fieldcraft applied — you do it, you don't tend it.
+**Why:** Early in this session the owner said "it's Zone 4 media" meaning the content territory is Zone 4 (The Forest), but Grok and the HANDOFF.md both confirm the platform position is Headwaters Zone 2. The correct synthesis: Zone 2 platform, content spanning TSP Z0–Z5 with Z4 (Forest/wild/bushcraft) being the dominant character of the archive.
 
-**How to apply:** When writing copy about what The Stomping Path IS, frame it as Zone 4 content (wild, direct, no permission required). When describing the artifact's place in the watershed infrastructure, Headwaters Zone 2 is correct.
+**How to apply:**
+- Platform copy (hero, kits, daily stomp, nav descriptions): use Worn Path / Workbench / Zone 2 language
+- Episode classification (zone badges, filters): use TSP practitioner zones from zones.ts
+- Never label the platform itself as "Zone 4" in copy or architecture docs

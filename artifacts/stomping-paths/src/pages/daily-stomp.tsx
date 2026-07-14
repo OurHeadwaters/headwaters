@@ -81,7 +81,10 @@ export default function DailyStompPage() {
         <h1 className="font-serif text-3xl font-bold mb-2 leading-tight">
           Today's Prompt
         </h1>
-        <p className="text-[#FDFBF7]/45 text-sm mb-8">
+        <p className="text-[#FDFBF7]/55 text-sm mb-1">
+          Steady steps on the Worn Path — return to practice so the work stays rooted.
+        </p>
+        <p className="text-[#FDFBF7]/35 text-xs mb-8">
           {new Date().toLocaleDateString("en-CA", {
             weekday: "long",
             year: "numeric",
@@ -102,7 +105,7 @@ export default function DailyStompPage() {
               <CheckCircle2 className="w-10 h-10 text-[#22c55e] mx-auto mb-4" />
               <p className="font-serif text-xl font-bold mb-2">Stomped.</p>
               <p className="text-[#FDFBF7]/55 text-sm leading-relaxed mb-6">
-                You showed up today. That's the whole thing.
+                Steady steps. The work stays rooted.
               </p>
               <p className="text-sm text-[#FDFBF7]/30 italic leading-relaxed">
                 "{prompt}"
