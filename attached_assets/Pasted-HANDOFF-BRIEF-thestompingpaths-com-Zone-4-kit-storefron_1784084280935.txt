@@ -1,0 +1,45 @@
+HANDOFF BRIEF — thestompingpaths.com / Zone 4 kit storefront
+Context for a focused build sprint. Read this before touching any kit or checkout surface.
+
+What this site is
+thestompingpaths.com is the Zone 4 public market face of the Headwaters ecosystem. It's where the kit catalogue lives publicly — the Stomping Paths kits, the Goodbye Kit (Crossing Guards market layer), the Family Kit, the Parr's Jars Kit, and the full Print Suite of doctrine-backed kits. It is deployed in this monorepo at /stomping/ (artifact: artifacts/stomping/_source/stomping-paths/stomping-paths). The production URL is https://codetry.ca/stomping/ — thestompingpaths.com DNS is not yet pointed here.
+
+What's already built and merged
+
+Kit hub page — all 12 Stomping Paths kits browsable in one place
+Kit detail pages with live Stripe checkout URLs wired
+Hemp Seed Kit Stripe price wired and checkout working
+Nine kit doctrine docs + print pages (Propagator, Care, Family, and six more)
+Family Kit surfaced in the TSP storefront
+Parr's Jars Kit wired into TSP checkout
+Replit login gating on practitioner intake and kit purchase
+Kit print margins fixed
+Media Library browsable from TSP
+TSP migrated into the headwaters monorepo at /stomping/
+What's waiting on human ops before you build (do not build checkout or payment surfaces until these are done)
+The steward is currently working through a set of manual Stripe configuration sessions. Until these complete, payment rails are not fully stable:
+
+Session 2 — Stripe Ops (#3404): Three webhook endpoints need to be registered in the Stripe dashboard and signing secrets set in Replit Secrets (COMPASS_WEBHOOK_SECRET, TOOLBOX_WEBHOOK_SECRET, GOODBYE_KIT_WEBHOOK_SECRET). Without this, post-purchase emails and access grants are silently dropped if the buyer closes their browser.
+Hemp Seed Kit price ID (#3443): HEMP_SEED_KIT_PRICE_ID env var slot is wired but not yet set — needs the Stripe price ID from the dashboard after first production checkout.
+All other TSP kit price IDs (#3445): The price-ID pinning pattern needs extending to every kit in the catalogue so cold starts don't hit Stripe on every request.
+These are human-only steps. Code is ready and waiting.
+
+Next build tasks in the TSP backlog
+These are scoped and proposed, ready to execute:
+
+#1627 — Add individual planning sheets for each of the 12 Stomping Paths kits
+#1628 — Link the Stomping Paths hub from the Zone 4 Clearing landing page (/)
+#1633 — Wire the Parr's Jars and Council Kit pages into the TSP storefront navigation
+#3234 — Add the Family Kit to the Stomping Paths kit list so Zone 4 visitors can find it
+#3182 — Add Stripe paywall to the Expecting Different Kit ($127)
+#3191 — Add Stripe paywall to the Freelance Homemaker Kit ($97)
+#3445 — Extend price-ID pinning to all high-traffic TSP kits (do this first — it stabilises checkout before adding more paywalls)
+Recommended sprint order: #3445 → #3234 → #1628 → #1633 → #1627 → then the new paywalls (#3182, #3191).
+
+Tech notes
+
+Stack: React + Vite + Tailwind + shadcn/ui, wouter routing, pnpm monorepo
+Kit checkout hits /api/tsp-kits/checkout — price resolution uses SLUG_PRICE_ENV_VARS map in tsp-kits.ts
+Tone: warm northern, practitioner voice, Zone 4 = market square / exchange — no corporate gloss
+Domain target is thestompingpaths.com — DNS cutover is a separate human ops step, not a build task
+That's the full picture. Let me know when the ops sessions are done and I can update the brief with confirmed price IDs and webhook status.

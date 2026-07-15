@@ -5,9 +5,32 @@
  * if they don't already exist. Populates the `stripePriceId` field on the in-memory
  * KITS array so the checkout route can use it immediately.
  *
- * Env var shortcut: KIT_STRIPE_PRICE_IDS can be set to a JSON object mapping kit
- * slug → Stripe price ID to skip the Stripe API calls entirely:
+ * ── Pinning price IDs (preferred — eliminates all Stripe API calls at startup) ──
+ *
+ * Set individual env vars per kit slug:
+ *
+ *   FAMILY_KIT_PRICE_ID        → "family-kit"
+ *   PRODUCER_KIT_PRICE_ID      → "producer-kit"
+ *   CARE_KIT_PRICE_ID          → "care-kit"
+ *   BUDGET_KIT_PRICE_ID        → "budget-kit"
+ *   DIGITAL_KIT_PRICE_ID       → "digital-kit"
+ *   PARRS_JARS_PRICE_ID        → "parrs-jars"
+ *   PREGNANCY_KIT_PRICE_ID     → "pregnancy-kit"
+ *   BABY_HEALTH_KIT_PRICE_ID   → "baby-health-kit"
+ *   PHYSICAL_KIT_PRICE_ID      → "physical-kit"
+ *   HEMP_SEED_KIT_PRICE_ID     → "hemp-seed-kit"  (pre-wired; populate after first checkout)
+ *
+ * ── Legacy JSON blob (still supported, lower priority than individual vars) ───
+ *
  *   KIT_STRIPE_PRICE_IDS='{"family-kit":"price_xxx","producer-kit":"price_yyy",...}'
+ *   Individual per-slug env vars take precedence over entries in the JSON blob.
+ *
+ * ── Scoping note ────────────────────────────────────────────────────────────
+ *
+ *   DEV:  set env vars in the "development" environment (test-mode Stripe IDs).
+ *   PROD: set env vars in the "production" environment (live-mode Stripe IDs).
+ *   Do NOT use Replit Secrets for these — scoped env vars let dev and prod
+ *   carry different sets of IDs without interfering with each other.
  *
  * Price IDs are logged on first creation so the operator can add them to env.
  */
@@ -16,10 +39,49 @@ import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "./logger";
 import { KITS } from "./kits";
 
+/**
+ * Maps every known kit slug to its individual price-ID env var name.
+ *
+ * Set the env var value (a Stripe price_xxx ID) for each slug you want to pin.
+ * Pinned slugs skip the Stripe API entirely on cold start.
+ *
+ * HEMP_SEED_KIT_PRICE_ID is pre-wired here so the operator can populate it after
+ * the first production checkout, before the kit's checkout route goes live.
+ */
+export const KIT_PRICE_ID_ENV_VARS: Record<string, string> = {
+  "family-kit":      "FAMILY_KIT_PRICE_ID",
+  "producer-kit":    "PRODUCER_KIT_PRICE_ID",
+  "care-kit":        "CARE_KIT_PRICE_ID",
+  "budget-kit":      "BUDGET_KIT_PRICE_ID",
+  "digital-kit":     "DIGITAL_KIT_PRICE_ID",
+  "parrs-jars":      "PARRS_JARS_PRICE_ID",
+  "pregnancy-kit":   "PREGNANCY_KIT_PRICE_ID",
+  "baby-health-kit": "BABY_HEALTH_KIT_PRICE_ID",
+  "physical-kit":    "PHYSICAL_KIT_PRICE_ID",
+  "hemp-seed-kit":   "HEMP_SEED_KIT_PRICE_ID",
+};
+
+/**
+ * Reads a pinned price ID for a kit slug from environment variables.
+ *
+ * Resolution order:
+ *   1. Per-slug env var (e.g. FAMILY_KIT_PRICE_ID)
+ *   2. KIT_STRIPE_PRICE_IDS JSON blob entry for the slug (legacy)
+ *   3. undefined — will fall back to Stripe API lookup
+ */
+function readPinnedPriceId(slug: string, jsonBlob: Record<string, string>): string | undefined {
+  const envVarName = KIT_PRICE_ID_ENV_VARS[slug];
+  if (envVarName) {
+    const val = process.env[envVarName];
+    if (val) return val;
+  }
+  return jsonBlob[slug] ?? undefined;
+}
+
 export async function ensureKitProducts(): Promise<void> {
   const directKits = KITS.filter((k) => k.priceType === "direct" && k.priceCents);
 
-  const envOverrides: Record<string, string> = (() => {
+  const jsonBlob: Record<string, string> = (() => {
     try {
       const raw = process.env.KIT_STRIPE_PRICE_IDS;
       return raw ? (JSON.parse(raw) as Record<string, string>) : {};
@@ -29,15 +91,15 @@ export async function ensureKitProducts(): Promise<void> {
   })();
 
   // ── Fast path: all kits have pinned price IDs — skip Stripe entirely ─────────
-  const allFromEnv = directKits.every((k) => Boolean(envOverrides[k.slug]));
-  if (allFromEnv) {
+  const allPinned = directKits.every((k) => Boolean(readPinnedPriceId(k.slug, jsonBlob)));
+  if (allPinned) {
     for (const kit of directKits) {
-      kit.stripePriceId = envOverrides[kit.slug];
+      kit.stripePriceId = readPinnedPriceId(kit.slug, jsonBlob)!;
       logger.info({ slug: kit.slug, priceId: kit.stripePriceId }, "kit-products: price ID loaded from env");
     }
     logger.info(
       { coveredCount: directKits.length, totalCount: directKits.length },
-      "kit-products: all price IDs loaded from KIT_STRIPE_PRICE_IDS env — no Stripe API calls needed at startup",
+      "kit-products: all price IDs loaded from env — no Stripe API calls needed at startup",
     );
     return;
   }
@@ -45,8 +107,9 @@ export async function ensureKitProducts(): Promise<void> {
   const stripe = await getUncachableStripeClient();
 
   for (const kit of directKits) {
-    if (envOverrides[kit.slug]) {
-      kit.stripePriceId = envOverrides[kit.slug];
+    const pinned = readPinnedPriceId(kit.slug, jsonBlob);
+    if (pinned) {
+      kit.stripePriceId = pinned;
       logger.info({ slug: kit.slug, priceId: kit.stripePriceId }, "kit-products: price ID loaded from env");
       continue;
     }
@@ -96,31 +159,53 @@ export async function ensureKitProducts(): Promise<void> {
     }
   }
 
-  // ── Startup summary ─────────────────────────────────────────────────────────
-  // Pin these IDs to skip Stripe lookups on every cold start.
+  // ── Startup pinning status summary ──────────────────────────────────────────
   //
-  // DEV:  set KIT_STRIPE_PRICE_IDS in the "development" environment variable.
-  // PROD: set KIT_STRIPE_PRICE_IDS in the "production" environment variable.
-  //       (NOT in Replit Secrets — use a scoped env var so dev and prod can
-  //        have different sets of IDs: test-mode for dev, live-mode for prod.)
+  // Pinned slugs = env var already set → zero Stripe API calls on next cold start.
+  // Unpinned slugs = no env var set → Stripe API called on every cold start.
+  //
+  // To pin a slug: set its env var (listed in KIT_PRICE_ID_ENV_VARS) to the
+  // Stripe price ID logged above.  Use scoped env vars (not Replit Secrets) so
+  // dev (test-mode IDs) and prod (live-mode IDs) stay independent.
+  //
+  const pinnedSlugs: string[] = [];
+  const unpinnedSlugs: string[] = [];
   const priceMap: Record<string, string> = {};
-  for (const kit of directKits) {
-    if (kit.stripePriceId) priceMap[kit.slug] = kit.stripePriceId;
-  }
 
-  const coveredCount = Object.keys(priceMap).length;
-  const totalCount = directKits.length;
+  for (const kit of directKits) {
+    if (kit.stripePriceId) {
+      priceMap[kit.slug] = kit.stripePriceId;
+      if (readPinnedPriceId(kit.slug, jsonBlob)) {
+        pinnedSlugs.push(kit.slug);
+      } else {
+        unpinnedSlugs.push(kit.slug);
+      }
+    } else {
+      unpinnedSlugs.push(kit.slug);
+    }
+  }
 
   const isProduction = process.env.REPLIT_DEPLOYMENT === "1";
   const envTarget = isProduction ? "PRODUCTION" : "DEVELOPMENT";
 
-  logger.info(
-    {
-      coveredCount,
-      totalCount,
-      envTarget,
-      KIT_STRIPE_PRICE_IDS: JSON.stringify(priceMap),
-    },
-    `kit-products: copy KIT_STRIPE_PRICE_IDS above into the ${envTarget} environment variable to pin these price IDs and skip Stripe lookups on cold start`,
-  );
+  if (unpinnedSlugs.length > 0) {
+    logger.warn(
+      {
+        pinnedSlugs,
+        unpinnedSlugs,
+        envTarget,
+        hint: Object.fromEntries(
+          unpinnedSlugs
+            .filter((s) => priceMap[s] && KIT_PRICE_ID_ENV_VARS[s])
+            .map((s) => [KIT_PRICE_ID_ENV_VARS[s]!, priceMap[s]!]),
+        ),
+      },
+      `kit-products: ${unpinnedSlugs.length} kit(s) not pinned — set the env vars in 'hint' in the ${envTarget} environment to eliminate Stripe API calls at startup`,
+    );
+  } else {
+    logger.info(
+      { pinnedSlugs, envTarget },
+      "kit-products: all kit price IDs pinned via env vars",
+    );
+  }
 }
